@@ -1,90 +1,69 @@
 
-# Add "Unlimited" Tier Option to Subscription Management
+# Fix "Unlimited" Tier Backend Support
 
 ## Problem
 
-The tier dropdown in the subscription management modal is missing the "Unlimited" option. Currently:
-- `SUBSCRIPTION_TIERS` includes `enterprise` (with -1 values for custom pricing)
-- The dropdown shows it incorrectly as "Enterprise - $-1/mo (-1 credits)"
-- There's no visual styling (icon/color) for enterprise tier
-- The "Unlimited" concept (infinite credits with no limits) is not clearly available
+The database has a check constraint that blocks the "unlimited" and "enterprise" tiers from being saved:
+
+```sql
+CHECK ((subscription_tier = ANY (ARRAY['free', 'starter', 'pro', 'business'])))
+```
+
+When you try to set a user to "Unlimited", the database rejects it with error code `23514`.
+
+---
 
 ## Solution
 
-Add proper support for both "Enterprise" and "Unlimited" tiers in the admin subscription modal.
+### 1. Update Database Constraint
+
+Run this SQL to allow the new tiers:
+
+```sql
+-- Drop old constraint
+ALTER TABLE user_subscriptions 
+DROP CONSTRAINT user_subscriptions_subscription_tier_check;
+
+-- Add new constraint with all tiers
+ALTER TABLE user_subscriptions 
+ADD CONSTRAINT user_subscriptions_subscription_tier_check 
+CHECK (subscription_tier = ANY (ARRAY['free', 'starter', 'pro', 'business', 'enterprise', 'unlimited']));
+```
+
+### 2. Update Edge Function
+
+**File: `supabase/functions/check-subscription/index.ts`**
+
+Add `enterprise` and `unlimited` to `TIER_LIMITS`:
+
+```typescript
+const TIER_LIMITS = {
+  free: { dailyCredits: 5, dailyEngineering: 1, isDaily: true },
+  starter: { monthlyCredits: 500, monthlyEngineering: 10 },
+  pro: { monthlyCredits: 1000, monthlyEngineering: 50 },
+  business: { monthlyCredits: 3000, monthlyEngineering: 100 },
+  enterprise: { monthlyCredits: -1, monthlyEngineering: -1 },  // Custom
+  unlimited: { monthlyCredits: -1, monthlyEngineering: -1 },   // No limits
+};
+```
+
+Also update the logic to preserve admin-assigned tiers (enterprise/unlimited) when checking Stripe:
+
+- If user already has `unlimited` or `enterprise` tier in DB, don't downgrade them based on Stripe status
+- These tiers are admin-only overrides that bypass Stripe billing
 
 ---
 
-## Changes
+## Changes Summary
 
-### 1. Add "unlimited" tier to SUBSCRIPTION_TIERS
-
-**File: `src/contexts/SubscriptionContext.tsx`**
-
-Add a new `unlimited` tier entry:
-
-```text
-unlimited: {
-  name: 'Unlimited',
-  price: 0,  // Admin-granted, no Stripe billing
-  priceId: null,
-  productId: null,
-  limits: { monthlyCredits: -1, monthlyEngineering: -1 },
-  features: ['Unlimited credits', 'Unlimited engineering calcs', 'Full access'],
-}
-```
-
-### 2. Update tierConfig for UI styling
-
-**File: `src/components/admin/SubscriptionManagement.tsx`**
-
-Add entries for `enterprise` and `unlimited` tiers:
-
-```text
-enterprise: { icon: Building, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-unlimited: { icon: Infinity, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-```
-
-### 3. Fix the tier dropdown display
-
-**File: `src/components/admin/SubscriptionManagement.tsx`**
-
-Update the `SelectItem` rendering to handle special cases:
-
-| Tier | Display Text |
-|------|--------------|
-| free | Free - $0/mo (5 credits/day) |
-| starter | Starter - $9/mo (500 credits) |
-| pro | Pro - $29/mo (1000 credits) |
-| business | Business - $79/mo (3000 credits) |
-| enterprise | Enterprise - Contact Sales |
-| unlimited | Unlimited (Admin Override) |
-
-### 4. Update effective credits display
-
-Handle `-1` values to show "Unlimited" instead of "-1":
-
-```text
-Effective credits: Unlimited
-```
-
-### 5. Update metrics to include enterprise/unlimited counts
-
-Add tracking for these tiers in the dashboard metrics.
-
----
-
-## Technical Summary
-
-| File | Changes |
-|------|---------|
-| `SubscriptionContext.tsx` | Add `unlimited` tier definition |
-| `SubscriptionManagement.tsx` | Add tier styling, fix dropdown display, handle -1 as "Unlimited" |
+| Component | Change |
+|-----------|--------|
+| Database | Add `enterprise`, `unlimited` to tier constraint |
+| Edge Function | Add tier definitions, preserve admin overrides |
 
 ## Result
 
 After implementation:
-- Admin can select "Unlimited" from the tier dropdown
-- Enterprise tier displays correctly with "Contact Sales" 
-- The effective credits summary shows "Unlimited" instead of "-1"
-- Both tiers have proper icons and styling in the UI
+- Admins can assign "Unlimited" tier from the Subscriptions tab
+- Users with admin-assigned tiers won't be overwritten by Stripe sync
+- The `-1` credit value correctly represents "unlimited"
