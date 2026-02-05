@@ -1,54 +1,81 @@
 
-# Fix Two Different Black Colors on Landing Page
+# Fix Transient "Two Black Colors" on Landing Page Load
 
-## Problem Identified
+## Problem
 
-In dark mode, the landing page shows two visually different black shades:
-1. **Contact Section**: Background color `hsl(0 0% 4%)` = `#0a0a0a`
-2. **Footer**: Same background BUT has `border-t border-border` which creates a visible line at `hsl(0 0% 15%)` = `#262626`
+During page load in dark mode, a brief visual artifact appears where two different shades of black are visible. This happens in the first 1-3 seconds while animations play.
 
-The border creates a visual separation that makes the two sections appear as different shades.
+## Root Causes Identified
+
+### 1. Hero Absorption Pulse Animation
+**File:** `src/components/landing/Hero.tsx` (lines 279-287)
+
+The "absorption glow" animation uses `bg-foreground/8`:
+```tsx
+<motion.div 
+  initial={{ scale: 0.9, opacity: 0 }}
+  animate={{ scale: 1.1, opacity: 0.4 }}
+  exit={{ scale: 1.3, opacity: 0 }}
+  className="... rounded-full bg-foreground/8 ..."
+/>
+```
+
+In dark mode, `foreground` = `hsl(0 0% 98%)` (near white), so `bg-foreground/8` creates an 8% white overlay. When this animates at 40% opacity, it produces a visible light gray circle that contrasts against the dark background.
+
+### 2. index.html Inline Body Background
+**File:** `index.html`
+
+The body has an inline style:
+```html
+<body style="background-color: #0a0a0a;">
+```
+
+While this is meant to prevent flash-of-white, the CSS theme uses `hsl(0 0% 4%)` for the background. These are nearly identical but can render differently during the initial paint phase.
 
 ---
 
 ## Solution
 
-Remove the border from the footer to create a seamless transition, and optionally add subtle visual separation that doesn't create the "two different blacks" effect.
+### Change 1: Fix Absorption Pulse Color (Hero.tsx)
 
-### File: `src/components/LandingPage.tsx`
+Replace the light foreground overlay with a dark-themed glow that matches the design intent:
 
-**Current code (line 801):**
 ```tsx
-<footer className="py-6 border-t border-border">
+// Before
+className="... bg-foreground/8 ..."
+
+// After  
+className="... bg-white/5 dark:bg-white/3 ..."
 ```
 
-**Updated code:**
-```tsx
-<footer className="py-6">
+This uses a much subtler white opacity that blends seamlessly in both modes.
+
+### Change 2: Align Body Background with Theme (index.html)
+
+Update the inline body style to use the exact same color as the CSS variable:
+
+```html
+<!-- Before -->
+<body style="background-color: #0a0a0a;">
+
+<!-- After -->
+<body style="background-color: hsl(0 0% 4%);">
 ```
 
-This removes the border that creates the visible separation between the contact section and footer.
+This ensures perfect color matching between the initial HTML paint and the CSS theme.
 
 ---
 
-## Alternative (if you want some separation)
+## Summary of Changes
 
-If you prefer to keep some visual distinction, use a subtler approach:
-
-```tsx
-<footer className="py-6 border-t border-border/30">
-```
-
-This makes the border 30% opacity, creating a much softer transition.
-
----
-
-## Technical Summary
-
-| Location | Change |
-|----------|--------|
-| `src/components/LandingPage.tsx` | Remove `border-t border-border` from footer OR reduce opacity to `border-border/30` |
+| File | Change |
+|------|--------|
+| `src/components/landing/Hero.tsx` | Change `bg-foreground/8` to `bg-white/5 dark:bg-white/3` for subtle glow |
+| `index.html` | Change body background from `#0a0a0a` to `hsl(0 0% 4%)` |
 
 ## Result
 
-After this change, the footer and contact section will appear as one seamless dark background without the visible line creating two different shades.
+After these changes:
+- The absorption pulse animation will be barely visible (as intended for a subtle glow effect)
+- The initial body background will match the CSS theme exactly
+- No more "two blacks" visual artifact during page load
