@@ -141,7 +141,7 @@ export const Sidebar = ({
   const { pinnedChats, togglePin } = usePinnedChats(userId, accessToken);
   
   // Fetch credits data directly via hook
-  const { currentUsage: usageFromHook, monthlyLimit: limitFromHook, bonusCredits: bonusFromHook, isUnlimited: isUnlimitedFromHook, resetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
+  const { currentUsage: usageFromHook, limit: limitFromHook, bonusCredits: bonusFromHook, isUnlimited: isUnlimitedFromHook, resetDate: resetFromHook, isDaily: isUsageDaily, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
   
   // Fetch user subscription tier
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
