@@ -370,7 +370,7 @@ const EmotionalEyeComponent = ({
     return 28 + activityBonus;
   };
 
-  const irisRadius = getIrisRadius();
+  const irisRadius = getIrisRadius() || 28; // Fallback to prevent undefined
   
   // Activity-based breathing speed multipliers (lower = faster)
   const ACTIVITY_BREATHING_MULT = {
