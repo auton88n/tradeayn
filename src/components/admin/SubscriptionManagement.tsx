@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { 
   CreditCard, 
   Users, 
@@ -23,7 +24,8 @@ import {
   RefreshCw,
   Calendar,
   Plus,
-  AlertCircle
+   AlertCircle,
+   Settings2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,6 +83,8 @@ export const SubscriptionManagement = () => {
   const [filterTier, setFilterTier] = useState<string>('all');
   const [editingUser, setEditingUser] = useState<MergedUserData | null>(null);
   const [newTier, setNewTier] = useState<TierKey>('free');
+  const [useCustomOverride, setUseCustomOverride] = useState(false);
+  const [customLimit, setCustomLimit] = useState<number>(100);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [metrics, setMetrics] = useState<RevenueMetrics>({
@@ -198,6 +202,7 @@ export const SubscriptionManagement = () => {
 
     try {
       const tierData = SUBSCRIPTION_TIERS[newTier as keyof typeof SUBSCRIPTION_TIERS];
+      const effectiveLimit = useCustomOverride ? customLimit : tierData?.limits.monthlyCredits;
       
       // Use upsert for robustness - handles both new and existing records
       // Only set core tier fields, never overwrite Stripe fields
@@ -221,7 +226,7 @@ export const SubscriptionManagement = () => {
           .from('user_ai_limits')
           .upsert({
             user_id: editingUser.user_id,
-            monthly_messages: tierData.limits.monthlyCredits,
+            monthly_messages: effectiveLimit,
             monthly_engineering: tierData.limits.monthlyEngineering,
             updated_at: new Date().toISOString()
           }, { onConflict: 'user_id' });
@@ -229,8 +234,20 @@ export const SubscriptionManagement = () => {
         if (limitsError) throw limitsError;
       }
 
+      // Also update access_grants for compatibility
+      const { error: grantsError } = await supabase
+        .from('access_grants')
+        .update({ 
+          monthly_limit: effectiveLimit,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', editingUser.user_id);
+
+      if (grantsError) console.error('Error updating access_grants:', grantsError);
+
       toast.success(`Tier set to ${tierData?.name || newTier}`);
       setEditingUser(null);
+      setUseCustomOverride(false);
       fetchSubscriptions();
     } catch (error) {
       console.error('Error updating tier:', error);
@@ -549,10 +566,57 @@ export const SubscriptionManagement = () => {
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Custom Override Section */}
+            <div className="space-y-3 pt-2 border-t border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="w-4 h-4 text-muted-foreground" />
+                  <Label htmlFor="custom-override" className="text-sm font-medium">
+                    Custom Credit Override
+                  </Label>
+                </div>
+                <Switch
+                  id="custom-override"
+                  checked={useCustomOverride}
+                  onCheckedChange={setUseCustomOverride}
+                />
+              </div>
+              
+              {useCustomOverride && (
+                <div className="space-y-2">
+                  <Label htmlFor="custom-limit" className="text-xs text-muted-foreground">
+                    Custom monthly credits
+                  </Label>
+                  <Input
+                    id="custom-limit"
+                    type="number"
+                    min={0}
+                    value={customLimit}
+                    onChange={(e) => setCustomLimit(Number(e.target.value))}
+                    placeholder="Enter custom limit"
+                  />
+                </div>
+              )}
+              
+              {/* Effective Credits Summary */}
+              <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Effective credits:</span>
+                  <span className="font-semibold">
+                    {useCustomOverride 
+                      ? customLimit 
+                      : SUBSCRIPTION_TIERS[newTier]?.limits.monthlyCredits || 0
+                    } / month
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <p className="text-xs text-muted-foreground">
               {editingUser?.hasSubscriptionRecord 
-                ? 'This will manually override the user\'s subscription tier and update their credit limits. Use with caution - this bypasses Stripe billing.'
-                : 'This will create a new subscription record for this user and set their credit limits. No Stripe billing will be created.'
+                ? `This will ${useCustomOverride ? 'set a custom credit limit' : 'apply tier defaults'}. Use with caution - this bypasses Stripe billing.`
+                : `This will create a subscription record ${useCustomOverride ? 'with custom credits' : 'using tier defaults'}.`
               }
             </p>
           </div>
