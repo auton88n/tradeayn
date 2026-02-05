@@ -1,69 +1,54 @@
 
-# Fix "Unlimited" Tier Backend Support
+# Fix Two Different Black Colors on Landing Page
 
-## Problem
+## Problem Identified
 
-The database has a check constraint that blocks the "unlimited" and "enterprise" tiers from being saved:
+In dark mode, the landing page shows two visually different black shades:
+1. **Contact Section**: Background color `hsl(0 0% 4%)` = `#0a0a0a`
+2. **Footer**: Same background BUT has `border-t border-border` which creates a visible line at `hsl(0 0% 15%)` = `#262626`
 
-```sql
-CHECK ((subscription_tier = ANY (ARRAY['free', 'starter', 'pro', 'business'])))
-```
-
-When you try to set a user to "Unlimited", the database rejects it with error code `23514`.
+The border creates a visual separation that makes the two sections appear as different shades.
 
 ---
 
 ## Solution
 
-### 1. Update Database Constraint
+Remove the border from the footer to create a seamless transition, and optionally add subtle visual separation that doesn't create the "two different blacks" effect.
 
-Run this SQL to allow the new tiers:
+### File: `src/components/LandingPage.tsx`
 
-```sql
--- Drop old constraint
-ALTER TABLE user_subscriptions 
-DROP CONSTRAINT user_subscriptions_subscription_tier_check;
-
--- Add new constraint with all tiers
-ALTER TABLE user_subscriptions 
-ADD CONSTRAINT user_subscriptions_subscription_tier_check 
-CHECK (subscription_tier = ANY (ARRAY['free', 'starter', 'pro', 'business', 'enterprise', 'unlimited']));
+**Current code (line 801):**
+```tsx
+<footer className="py-6 border-t border-border">
 ```
 
-### 2. Update Edge Function
-
-**File: `supabase/functions/check-subscription/index.ts`**
-
-Add `enterprise` and `unlimited` to `TIER_LIMITS`:
-
-```typescript
-const TIER_LIMITS = {
-  free: { dailyCredits: 5, dailyEngineering: 1, isDaily: true },
-  starter: { monthlyCredits: 500, monthlyEngineering: 10 },
-  pro: { monthlyCredits: 1000, monthlyEngineering: 50 },
-  business: { monthlyCredits: 3000, monthlyEngineering: 100 },
-  enterprise: { monthlyCredits: -1, monthlyEngineering: -1 },  // Custom
-  unlimited: { monthlyCredits: -1, monthlyEngineering: -1 },   // No limits
-};
+**Updated code:**
+```tsx
+<footer className="py-6">
 ```
 
-Also update the logic to preserve admin-assigned tiers (enterprise/unlimited) when checking Stripe:
-
-- If user already has `unlimited` or `enterprise` tier in DB, don't downgrade them based on Stripe status
-- These tiers are admin-only overrides that bypass Stripe billing
+This removes the border that creates the visible separation between the contact section and footer.
 
 ---
 
-## Changes Summary
+## Alternative (if you want some separation)
 
-| Component | Change |
-|-----------|--------|
-| Database | Add `enterprise`, `unlimited` to tier constraint |
-| Edge Function | Add tier definitions, preserve admin overrides |
+If you prefer to keep some visual distinction, use a subtler approach:
+
+```tsx
+<footer className="py-6 border-t border-border/30">
+```
+
+This makes the border 30% opacity, creating a much softer transition.
+
+---
+
+## Technical Summary
+
+| Location | Change |
+|----------|--------|
+| `src/components/LandingPage.tsx` | Remove `border-t border-border` from footer OR reduce opacity to `border-border/30` |
 
 ## Result
 
-After implementation:
-- Admins can assign "Unlimited" tier from the Subscriptions tab
-- Users with admin-assigned tiers won't be overwritten by Stripe sync
-- The `-1` credit value correctly represents "unlimited"
+After this change, the footer and contact section will appear as one seamless dark background without the visible line creating two different shades.
