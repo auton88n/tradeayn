@@ -1,63 +1,209 @@
 
+# Strengthen File Upload Security
 
-# Fix Arabic RTL Bullet/List Positioning
+## Current State Assessment
 
-## The Problem
+Your main file upload system (`file-upload` edge function) has excellent security protection. However, there are gaps that could allow malicious files to slip through.
 
-When AYN responds in Arabic, bullet points and list numbers appear on the **left side** instead of the **right side**. This is because the `MessageFormatter` component uses CSS classes that hardcode left-side positioning:
+## Issues to Fix
 
-- `pl-5` (padding-left) on list items
-- `before:left-0` for bullet positioning
-- `pl-1` and `pl-5` on `<ul>` and `<ol>` containers
+### 1. Frontend Not Using Advanced Validation
+The `useFileUpload.ts` hook has basic checks, but the comprehensive security functions in `fileValidation.ts` are **never actually called**. This means:
+- Magic byte verification isn't happening on the client
+- Malicious content scanning is skipped
+- The server catches these, but catching them earlier is better
 
-While the component sets `dir="rtl"` on the wrapper for Arabic text, the inner list styling ignores this and always positions bullets/numbers on the left.
+### 2. Survey Uploader Has No Protection
+The `SurveyUploader.tsx` component:
+- Accepts any file without validation
+- Sends raw file content to the backend
+- The `parse-survey-file` edge function has **no authentication**
+- No rate limiting
 
-## Solution
+### 3. Missing Security Headers on Survey Parser
+The `parse-survey-file` function lacks the security headers present in `file-upload`.
 
-Use Tailwind's RTL-aware utility classes (`rtl:` and `ltr:` variants) or logical properties (`ps-` / `pe-` for padding-start/end, `start-0` / `end-0` for positioning). This makes the layout automatically flip based on the `dir` attribute.
+---
 
-## Technical Changes
+## Implementation Plan
 
-### File: `src/components/shared/MessageFormatter.tsx`
+### Phase 1: Integrate Comprehensive Validation in Frontend
 
-**1. Update `<ul>` styling (line 277)**
+**File: `src/hooks/useFileUpload.ts`**
 
-| Before | After |
-|--------|-------|
-| `pl-1` | `ps-1` (padding-start) |
+Import and use the advanced validation:
+```typescript
+import { validateFile } from '@/lib/fileValidation';
 
-**2. Update `<ol>` styling (line 281)**
-
-| Before | After |
-|--------|-------|
-| `pl-5` | `ps-5` (padding-start) |
-
-**3. Update `<li>` styling (line 285)** - Most critical fix
-
-| Before | After |
-|--------|-------|
-| `pl-5` | `ps-5` (padding-start) |
-| `before:left-0` | `before:start-0` (inline-start) |
-| `[ol>&]:pl-0` | `[ol>&]:ps-0` (padding-start) |
-
-### Why Logical Properties Work
-
-- `ps-5` = padding-start → becomes `padding-left` in LTR, `padding-right` in RTL
-- `before:start-0` = inset-inline-start → positions element at start of text direction
-- These automatically flip based on the `dir="rtl"` attribute on the parent
-
-## Expected Result
-
-| Language | Bullet Position | Number Position |
-|----------|-----------------|-----------------|
-| English (LTR) | Left (• item) | Left (1. item) |
-| Arabic (RTL) | Right (item •) | Right (item .1) |
-
-## Visual Comparison
-
-```text
-Before (broken):                After (fixed):
-• نقطة أولى                     نقطة أولى •
-• نقطة ثانية                    نقطة ثانية •
+const handleFileSelect = async (file: File | null) => {
+  if (!file) return;
+  
+  // Basic type/size check first (fast)
+  if (!validateBasic(file)) return;
+  
+  // Then comprehensive security check
+  const validation = await validateFile(file);
+  if (!validation.isValid) {
+    toast({
+      title: "Security Check Failed",
+      description: validation.error,
+      variant: "destructive"
+    });
+    return;
+  }
+  
+  // Warn about suspicious patterns (but allow)
+  if (validation.warnings?.length) {
+    console.warn('File warnings:', validation.warnings);
+  }
+  
+  // Proceed with upload
+  setSelectedFile(file);
+  // ... rest of upload logic
+};
 ```
 
+---
+
+### Phase 2: Secure Survey Uploader Component
+
+**File: `src/components/engineering/SurveyUploader.tsx`**
+
+Add validation before processing:
+```typescript
+import { validateFileExtension, scanForMaliciousContent } from '@/lib/fileValidation';
+
+const handleFile = async (file: File) => {
+  // Check file extension
+  const extCheck = validateFileExtension(file.name);
+  if (!extCheck.isValid) {
+    toast({ title: 'Invalid File', description: extCheck.error, variant: 'destructive' });
+    return;
+  }
+
+  // Check file size (limit to 5MB for survey files)
+  if (file.size > 5 * 1024 * 1024) {
+    toast({ title: 'File Too Large', description: 'Maximum 5MB', variant: 'destructive' });
+    return;
+  }
+
+  // Scan for malicious content
+  const scanResult = await scanForMaliciousContent(file);
+  if (!scanResult.isValid) {
+    toast({ title: 'Security Issue', description: scanResult.error, variant: 'destructive' });
+    return;
+  }
+
+  // Continue with parsing...
+};
+```
+
+---
+
+### Phase 3: Harden Survey Parser Edge Function
+
+**File: `supabase/functions/parse-survey-file/index.ts`**
+
+Add critical security controls:
+
+1. **Authentication** - Require valid user session
+2. **Rate Limiting** - Prevent abuse (e.g., 20 parses per hour)
+3. **Content Size Limit** - Maximum 5MB
+4. **Content Validation** - Scan for malicious patterns
+5. **Security Headers** - Match the main upload function
+
+```typescript
+// Add security headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Content-Security-Policy': "default-src 'self'; script-src 'none';",
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+};
+
+// Suspicious patterns to block
+const SUSPICIOUS_PATTERNS = [
+  /<script[\s>]/i,
+  /javascript:/i,
+  /on\w+\s*=/i,
+  /eval\s*\(/i,
+];
+
+serve(async (req) => {
+  // ... CORS handling
+  
+  // Verify authentication
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+  }
+  
+  const { data: { user }, error } = await supabaseClient.auth.getUser(
+    authHeader.replace('Bearer ', '')
+  );
+  if (error || !user) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+  }
+
+  // Rate limiting
+  const { data: rateLimitResult } = await supabaseClient.rpc('check_api_rate_limit', {
+    p_user_id: user.id,
+    p_endpoint: 'parse-survey',
+    p_max_requests: 20,
+    p_window_minutes: 60
+  });
+  
+  if (rateLimitResult?.[0]?.allowed === false) {
+    return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), { status: 429 });
+  }
+
+  const { content, fileName } = await req.json();
+  
+  // Content size check
+  if (content.length > 5 * 1024 * 1024) {
+    return new Response(JSON.stringify({ error: 'Content too large' }), { status: 400 });
+  }
+
+  // Scan for malicious patterns
+  for (const pattern of SUSPICIOUS_PATTERNS) {
+    if (pattern.test(content)) {
+      console.warn('Malicious pattern detected in survey file', { userId: user.id });
+      return new Response(JSON.stringify({ error: 'Suspicious content detected' }), { status: 400 });
+    }
+  }
+
+  // Continue with parsing...
+});
+```
+
+---
+
+### Phase 4: Add ZIP Bomb Protection (Enhancement)
+
+For any future ZIP/archive handling, add decompression limits:
+
+```typescript
+// In fileValidation.ts - add this check for xlsx files (which are ZIPs)
+const MAX_DECOMPRESSED_SIZE = 100 * 1024 * 1024; // 100MB limit
+const MAX_COMPRESSION_RATIO = 100; // Flag if compressed size × 100 < decompressed size
+```
+
+---
+
+## Summary of Changes
+
+| File | Changes |
+|------|---------|
+| `src/hooks/useFileUpload.ts` | Import and call `validateFile()` before upload |
+| `src/components/engineering/SurveyUploader.tsx` | Add extension check, size limit, and content scan |
+| `supabase/functions/parse-survey-file/index.ts` | Add auth, rate limiting, size limit, pattern scanning, security headers |
+| `src/lib/fileValidation.ts` | Optional: Add ZIP bomb detection |
+
+## Security Benefits
+
+- **Defense in depth**: Validation on frontend AND backend
+- **Consistent protection**: All upload paths use the same security checks
+- **Rate limiting**: Prevents brute-force attacks on all endpoints
+- **Authentication**: Survey parser now requires login
+- **Audit logging**: Suspicious activity is logged for review
