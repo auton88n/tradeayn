@@ -282,7 +282,7 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
               animate={{ scale: 1.1, opacity: 0.4 }}
               exit={{ scale: 1.3, opacity: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="absolute w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px] lg:w-[200px] lg:h-[200px] rounded-full bg-foreground/8 pointer-events-none z-10" 
+              className="absolute w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px] lg:w-[200px] lg:h-[200px] rounded-full bg-white/5 dark:bg-white/3 pointer-events-none z-10" 
             />
           )}
         </AnimatePresence>
