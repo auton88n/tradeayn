@@ -1,9 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Security headers for all responses
+const securityHeaders = {
+  ...corsHeaders,
+  'Content-Type': 'application/json',
+  'Content-Security-Policy': "default-src 'self'; script-src 'none';",
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+};
+
+// Suspicious patterns that could indicate malicious content
+const SUSPICIOUS_PATTERNS = [
+  /<script[\s>]/i,
+  /javascript:/i,
+  /on\w+\s*=/i,
+  /eval\s*\(/i,
+  /document\.(write|cookie)/i,
+  /<iframe[\s>]/i,
+  /<object[\s>]/i,
+  /vbscript:/i,
+];
+
+const MAX_CONTENT_SIZE = 5 * 1024 * 1024; // 5MB limit
 
 interface SurveyPoint {
   id: string;
@@ -123,9 +147,73 @@ serve(async (req) => {
   }
 
   try {
+    // Authentication check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Authentication required',
+      }), {
+        status: 401,
+        headers: securityHeaders,
+      });
+    }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify user token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid or expired session',
+      }), {
+        status: 401,
+        headers: securityHeaders,
+      });
+    }
+
+    // Rate limiting check
+    const { data: rateLimitResult, error: rateLimitError } = await supabase.rpc('check_api_rate_limit', {
+      p_user_id: user.id,
+      p_endpoint: 'parse-survey',
+      p_max_requests: 20,
+      p_window_minutes: 60
+    });
+
+    if (!rateLimitError && rateLimitResult?.[0]?.allowed === false) {
+      const retryAfter = Math.ceil((rateLimitResult[0].blocked_until - Date.now()) / 1000);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Rate limit exceeded. Please try again later.',
+      }), {
+        status: 429,
+        headers: {
+          ...securityHeaders,
+          'Retry-After': String(retryAfter > 0 ? retryAfter : 60),
+        },
+      });
+    }
+
     const { content, fileName } = await req.json();
     
-    if (!content || content.trim() === '') {
+    // Content size validation
+    if (!content || content.length > MAX_CONTENT_SIZE) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: content ? 'File content exceeds maximum size of 5MB' : 'No file content provided',
+      }), {
+        status: 400,
+        headers: securityHeaders,
+      });
+    }
+
+    if (content.trim() === '') {
       return new Response(JSON.stringify({
         success: false,
         error: 'No file content provided',
@@ -133,8 +221,26 @@ serve(async (req) => {
         terrainAnalysis: null,
       }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: securityHeaders,
       });
+    }
+
+    // Malicious content scan
+    for (const pattern of SUSPICIOUS_PATTERNS) {
+      if (pattern.test(content)) {
+        console.warn('Malicious pattern detected in survey file', { 
+          userId: user.id, 
+          pattern: pattern.source,
+          fileName 
+        });
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'File contains potentially harmful content',
+        }), {
+          status: 400,
+          headers: securityHeaders,
+        });
+      }
     }
 
     console.log(`Parsing survey file: ${fileName}`);
@@ -170,7 +276,7 @@ serve(async (req) => {
       points,
       terrainAnalysis,
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: securityHeaders,
     });
   } catch (error) {
     console.error('Error parsing survey file:', error);
@@ -179,7 +285,7 @@ serve(async (req) => {
       error: error.message,
     }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: securityHeaders,
     });
   }
 });

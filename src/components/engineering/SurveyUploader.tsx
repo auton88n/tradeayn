@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { validateFileExtension, scanForMaliciousContent } from '@/lib/fileValidation';
 
 interface SurveyPoint {
   id: string;
@@ -30,6 +31,9 @@ interface SurveyUploaderProps {
   isLoading: boolean;
 }
 
+const MAX_SURVEY_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit for survey files
+const ALLOWED_SURVEY_EXTENSIONS = ['txt', 'csv', 'xlsx'];
+
 export const SurveyUploader: React.FC<SurveyUploaderProps> = ({ 
   onUploadComplete,
   isLoading
@@ -40,6 +44,58 @@ export const SurveyUploader: React.FC<SurveyUploaderProps> = ({
   const [parseResult, setParseResult] = useState<{ points: SurveyPoint[], analysis: TerrainAnalysis } | null>(null);
 
   const handleFile = useCallback(async (file: File) => {
+    // Security check 1: File extension validation
+    const extCheck = validateFileExtension(file.name);
+    if (!extCheck.isValid) {
+      toast({
+        title: 'Invalid File Type',
+        description: extCheck.error || 'This file type is not allowed',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Security check 2: Verify allowed survey extensions
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!ALLOWED_SURVEY_EXTENSIONS.includes(extension)) {
+      toast({
+        title: 'Unsupported Format',
+        description: 'Please upload a .txt, .csv, or .xlsx file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Security check 3: File size limit
+    if (file.size > MAX_SURVEY_FILE_SIZE) {
+      toast({
+        title: 'File Too Large',
+        description: 'Survey files must be smaller than 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Security check 4: Scan for malicious content
+    try {
+      const scanResult = await scanForMaliciousContent(file);
+      if (!scanResult.isValid) {
+        toast({
+          title: 'Security Issue Detected',
+          description: scanResult.error || 'File contains potentially harmful content',
+          variant: 'destructive',
+        });
+        return;
+      }
+    } catch (err) {
+      toast({
+        title: 'Security Scan Failed',
+        description: 'Could not verify file safety. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setFileName(file.name);
     setParsing(true);
     setParseResult(null);
