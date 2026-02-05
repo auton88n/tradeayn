@@ -1,119 +1,166 @@
 
-# Fix Column Results Display and M-N Interaction Diagram Issues
+
+# Unify Usage Limits and Subscription Systems
 
 ## Summary
 
-Two related issues need to be fixed in the Column calculator results display:
-1. **Dimensions showing "0 × 0 mm"** - The inputs aren't being correctly passed or read in the results panel
-2. **M-N Interaction Diagram not visible** - A YAxis dataKey mismatch is preventing proper chart rendering
+Your app currently has two competing systems:
+1. **Subscription tiers** (Free/Starter/Pro/Business) that set credit allocations
+2. **Usage tracking** that enforces limits but uses different columns
+
+These systems are out of sync, causing:
+- Messages appearing in history without AYN responses
+- Confusing limit enforcement (daily vs monthly)
+- "Unlimited" being an admin toggle rather than a subscription option
+
+## What Needs to Change
+
+### 1. Consolidate to Monthly-First Limits
+
+The current system is checking `daily_messages` for free tier but subscriptions set `monthly_messages`. We need to:
+
+- **Free tier**: 5 credits/day = use `daily_messages` column, enforce daily
+- **Paid tiers**: Monthly limits = use `monthly_messages` column, enforce monthly
+- The backend `check_user_ai_limit` function needs to check BOTH and use the appropriate one based on tier
+
+### 2. Prevent Messages from Showing Before AYN Responds
+
+Currently the user message is saved before calling AYN. If AYN returns 429 (limit exceeded), the message appears in history but has no response.
+
+**Fix**: Check limits BEFORE saving the user message to the database. If limit exceeded, block immediately and don't save.
+
+### 3. Add "Unlimited" as a Subscription Option
+
+Currently `is_unlimited` is an admin-only toggle. We should:
+- Keep admin override capability
+- Add an "Unlimited" tier option for enterprise/special users
+- Make the frontend show "Unlimited" status based on both database flag AND subscription tier
 
 ---
 
-## Issue 1: Column Dimensions Display Bug
+## Technical Implementation
 
-### Root Cause
-In `ColumnResultsSection.tsx`, the code tries to read dimensions from `inputs.columnWidth` but the values may not be present when the panel renders. The issue is a data synchronization problem between:
-- The calculation result's `inputs` object
-- The workspace's `currentInputs` state
+### File Changes Overview
 
-When `DetailedResultsPanel` renders, it receives `inputs` from `currentInputs` state, but this might be empty or stale if the calculator's `onInputChange` prop wasn't called before the calculation completed.
-
-### Solution
-Update `ColumnResultsSection.tsx` to also check the calculation outputs for dimension values. The `calculateColumn()` function receives these values but doesn't return them in outputs. We have two options:
-
-**Option A (Quick fix):** In `ColumnResultsSection.tsx`, add additional fallback checks to extract dimensions from any available source including the `outputs` object's derived values like `grossArea`.
-
-**Option B (Proper fix):** Ensure the Column calculator syncs its inputs to the workspace before calculation completes. This is already done via `onInputChange`, but we should also include dimensions in the outputs from `calculateColumn()`.
-
-**Recommended: Option B** - Add `width` and `depth` to the calculation outputs so they're always available.
-
-### Files to Modify
-| File | Change |
-|------|--------|
-| `src/lib/engineeringCalculations.ts` | Add `width` and `depth` to column calculation return object |
-| `src/components/engineering/results/ColumnResultsSection.tsx` | Simplify dimension extraction since values will be in outputs |
+| File | Changes |
+|------|---------|
+| `supabase/migrations/new_migration.sql` | Update `check_user_ai_limit` to check tier-appropriate limits |
+| `supabase/functions/check-subscription/index.ts` | Sync `daily_messages` for free tier users |
+| `src/hooks/useUsageTracking.ts` | Fetch both daily and monthly limits, determine which to display |
+| `src/components/dashboard/CenterStageLayout.tsx` | Update `creditsExhausted` logic to be tier-aware |
+| `supabase/functions/ayn-unified/index.ts` | Move limit check BEFORE message save (or return clear status) |
 
 ---
 
-## Issue 2: M-N Interaction Diagram Not Rendering
+### Step 1: Fix Backend Limit Checking
 
-### Root Cause
-In `InteractionDiagram.tsx`, there's a mismatch between axis configuration and data:
+**New Migration: `check_user_ai_limit` function update**
 
-1. **YAxis Configuration**: Uses `dataKey="P"` (line 153)
-2. **Chart Data**: Has property `curveP` (not `P`) from the data transformation (line 105)
+```text
+Logic changes:
+1. First check if user is_unlimited - if yes, allow (current behavior, keep)
+2. Get user's subscription tier from user_subscriptions table
+3. If tier = 'free' OR tier IS NULL:
+   - Check against daily_messages limit
+   - Use current_daily_messages counter
+4. If tier IN ('starter', 'pro', 'business'):
+   - Check against monthly_messages limit
+   - Use current_monthly_messages counter
+5. Return appropriate limit info for frontend
+```
 
-For Recharts `ComposedChart` with `type="number"` axes, the YAxis `dataKey` should match the data property being plotted, OR the axes should not specify a dataKey and instead rely on the domain calculations.
+### Step 2: Fix Subscription Sync
 
-### Solution
-Remove `dataKey="P"` from the YAxis since it's a number-type axis and the data doesn't have a `P` property (it has `curveP`). The Line component already correctly uses `dataKey="curveP"`.
+**Update `check-subscription/index.ts`**
 
-### Files to Modify
-| File | Change |
-|------|--------|
-| `src/components/engineering/results/InteractionDiagram.tsx` | Remove `dataKey` from YAxis, keep domain calculation |
+When setting limits for free tier:
+- Set `daily_messages = 5` (not monthly_messages)
+- Keep `monthly_messages` for tracking purposes
 
----
+For paid tiers:
+- Set `monthly_messages` = tier allocation
+- Set `daily_messages = NULL` (no daily limit)
 
-## Implementation Steps
+### Step 3: Update Frontend Usage Display
 
-### Step 1: Fix Column Outputs
-**File:** `src/lib/engineeringCalculations.ts`
+**Update `useUsageTracking.ts`**
 
-Add the input dimensions to the return object (around line 554-590):
+Fetch additional columns:
+- `daily_messages`, `current_daily_messages`
+- `monthly_messages`, `current_monthly_messages`
+- Determine which to display based on tier
+
+Return:
 ```typescript
-return {
-  // Add these new properties:
-  width: b,      // Column width in mm
-  depth: h,      // Column depth in mm
-  height: columnHeight,  // Column height in mm
+{
+  // For UI display
+  currentUsage: tierIsDaily ? daily_usage : monthly_usage,
+  limit: tierIsDaily ? daily_limit : monthly_limit,
+  isDaily: boolean, // UI knows whether to show "daily" or "monthly"
   
-  // ... existing properties
-  grossArea: Ac,
-  // ...
-};
+  // Existing fields
+  bonusCredits,
+  isUnlimited,
+  resetDate,
+}
 ```
 
-### Step 2: Fix Interaction Diagram YAxis
-**File:** `src/components/engineering/results/InteractionDiagram.tsx`
+### Step 4: Fix Message Save Timing
 
-Update the YAxis to remove the incorrect dataKey:
-```typescript
-<YAxis
-  type="number"
-  name="Axial"
-  domain={[0, maxP]}
-  tickFormatter={(v) => v.toFixed(0)}
-  // ... keep other props
-/>
-```
+**Option A (Recommended)**: In `ayn-unified`, the limit check happens early. When it fails, return a 429 with `limitExceeded: true`. The frontend hook (`useAYN` or `useMessages`) should:
+1. Check this flag
+2. NOT add the user message to the visible history
+3. Show a toast/modal explaining the limit
 
-### Step 3: Simplify ColumnResultsSection
-**File:** `src/components/engineering/results/ColumnResultsSection.tsx`
+**Option B**: Add a pre-flight check in the frontend before calling AYN. This adds latency but prevents the issue entirely.
 
-Update dimension extraction to prioritize outputs:
-```typescript
-const width = Number(outputs.width) || Number(inputs.columnWidth) || Number(inputs.width) || 0;
-const depth = Number(outputs.depth) || Number(inputs.columnDepth) || Number(inputs.depth) || 0;
-const height = Number(outputs.height) || Number(inputs.columnHeight) || Number(inputs.height) || 0;
+---
+
+## Data Flow After Fix
+
+```text
+User sends message
+    |
+    v
+Frontend: Check local usage state
+    |
+    +-- If exhausted -> Block immediately, show upgrade prompt
+    |
+    +-- If OK -> Call AYN
+            |
+            v
+        Backend: check_user_ai_limit()
+            |
+            +-- Check is_unlimited -> Allow
+            |
+            +-- Check tier-appropriate limit
+            |       |
+            |       +-- Free: daily_messages
+            |       +-- Paid: monthly_messages
+            |
+            +-- If allowed -> Process request, increment counters
+            +-- If blocked -> Return 429 BEFORE saving message
 ```
 
 ---
 
-## Expected Results
+## Summary of Changes
 
-| Issue | Before | After |
-|-------|--------|-------|
-| Column Dimensions | Shows "0 × 0 mm" | Shows actual values like "400 × 400 mm" |
-| M-N Diagram | Not visible / blank chart | Capacity curve displays with dots and applied load star |
-| Adequacy Status | Not shown | Green/red status indicator visible |
+| Component | Current Behavior | New Behavior |
+|-----------|-----------------|--------------|
+| Free tier limits | Checks monthly_messages (5) | Checks daily_messages (5/day) |
+| Paid tier limits | May check daily incorrectly | Checks monthly_messages |
+| is_unlimited | Admin toggle only | Admin toggle + possible tier flag |
+| Message on 429 | Message shows, no response | Block before save, clear feedback |
+| Frontend display | Shows monthly for all | Shows daily/monthly based on tier |
 
 ---
 
-## Testing Checklist
-- [ ] Run a Column calculation with default values (400×400 mm)
-- [ ] Verify dimensions display correctly in results panel
-- [ ] Verify M-N Interaction Diagram shows the capacity envelope curve
-- [ ] Verify the applied load point (star marker) appears on the diagram
-- [ ] Verify the ADEQUATE/INADEQUATE status message displays below the diagram
-- [ ] Test with different column sizes to confirm dynamic updates
+## Expected Result
+
+- Free users get exactly 5 credits per day, reset daily
+- Paid users get their monthly allocation (500/1000/3000)
+- When limit is reached, AYN stops completely (no message saved)
+- "Unlimited" works as admin override AND potential enterprise option
+- UI clearly shows remaining credits with correct reset timing
+
