@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import imageCompression from 'browser-image-compression';
+import { validateFile as validateFileSecurity } from '@/lib/fileValidation';
 import type { FileAttachment, UseFileUploadReturn } from '@/types/dashboard.types';
 
 export const useFileUpload = (userId: string): UseFileUploadReturn => {
@@ -43,7 +44,7 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
   const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
   // Validate file type and size
-  const validateFile = useCallback((file: File): boolean => {
+  const validateBasicFile = useCallback((file: File): boolean => {
     if (!ALLOWED_TYPES.includes(file.type)) {
       toast({
         title: "Unsupported File Type",
@@ -171,7 +172,26 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
   const handleFileSelect = useCallback(async (file: File | null) => {
     if (!file) return;
     
-    if (validateFile(file)) {
+    // Basic type/size validation first (fast)
+    if (!validateBasicFile(file)) return;
+
+    // Comprehensive security validation (magic bytes, malicious content scan)
+    try {
+      const securityValidation = await validateFileSecurity(file);
+      if (!securityValidation.isValid) {
+        toast({
+          title: "Security Check Failed",
+          description: securityValidation.error || "File failed security validation",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Log warnings but allow file (non-blocking issues)
+      if (securityValidation.warnings?.length) {
+        console.warn('File security warnings:', securityValidation.warnings);
+      }
+
       setSelectedFile(file);
       // Clear any previous uploaded attachment and failure state
       setUploadedAttachment(null);
@@ -187,8 +207,14 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
         });
       }
       // If upload fails, error toast is shown by uploadFile
+    } catch (error) {
+      toast({
+        title: "Validation Error",
+        description: "Could not validate file. Please try again.",
+        variant: "destructive"
+      });
     }
-  }, [validateFile, uploadFile, toast]);
+  }, [validateBasicFile, uploadFile, toast]);
 
   // Retry failed upload
   const retryUpload = useCallback(async () => {
