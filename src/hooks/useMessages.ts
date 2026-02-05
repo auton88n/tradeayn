@@ -410,7 +410,11 @@ export const useMessages = (
           timestamp: new Date(),
           status: 'error'
         };
-        setMessages(prev => [...prev, errorMessage]);
+        // Remove the orphaned user message AND add AYN's error response
+        setMessages(prev => [
+          ...prev.filter(m => m.id !== userMessage.id),
+          errorMessage
+        ]);
         
         toast({
           title: toastTitle,
@@ -436,7 +440,11 @@ export const useMessages = (
           timestamp: new Date(),
           status: 'sent'
         };
-        setMessages(prev => [...prev, upgradeMessage]);
+        // Remove the orphaned user message AND add AYN's upgrade prompt
+        setMessages(prev => [
+          ...prev.filter(m => m.id !== userMessage.id),
+          upgradeMessage
+        ]);
         return;
       }
 
