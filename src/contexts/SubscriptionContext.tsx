@@ -45,6 +45,14 @@ export const SUBSCRIPTION_TIERS = {
     limits: { monthlyCredits: -1, monthlyEngineering: -1 },
     features: ['Custom credit allocation', 'Tailored AI solutions', '24/7 priority support'],
   },
+   unlimited: {
+     name: 'Unlimited',
+     price: 0, // Admin-granted, no Stripe billing
+     priceId: null,
+     productId: null,
+     limits: { monthlyCredits: -1, monthlyEngineering: -1 },
+     features: ['Unlimited credits', 'Unlimited engineering calcs', 'Full access'],
+   },
 } as const;
 
 export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIERS;

@@ -20,6 +20,7 @@ const tierIcons: Record<SubscriptionTier, React.ReactNode> = {
   pro: <Crown className="w-6 h-6" />,
   business: <Building2 className="w-6 h-6" />,
   enterprise: <Star className="w-6 h-6" />,
+   unlimited: <Star className="w-6 h-6" />, // Admin-only tier, not displayed
 };
 
 const tierAccentColors: Record<SubscriptionTier, string> = {
@@ -28,6 +29,7 @@ const tierAccentColors: Record<SubscriptionTier, string> = {
   pro: 'from-violet-500/25 to-purple-600/15',
   business: 'from-emerald-500/20 to-green-600/10',
   enterprise: 'from-amber-400/20 to-orange-500/10',
+   unlimited: 'from-emerald-500/20 to-green-600/10', // Admin-only tier, not displayed
 };
 
 const tierGlowColors: Record<SubscriptionTier, string> = {
@@ -36,6 +38,7 @@ const tierGlowColors: Record<SubscriptionTier, string> = {
   pro: 'shadow-[0_0_50px_-10px_rgba(139,92,246,0.4)] hover:shadow-[0_0_70px_-10px_rgba(139,92,246,0.5)]',
   business: 'hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.4)]',
   enterprise: 'hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.4)]',
+   unlimited: 'hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.4)]', // Admin-only tier, not displayed
 };
 
 const tierCheckColors: Record<SubscriptionTier, string> = {
@@ -44,6 +47,7 @@ const tierCheckColors: Record<SubscriptionTier, string> = {
   pro: 'bg-violet-500',
   business: 'bg-emerald-500',
   enterprise: 'bg-amber-500',
+   unlimited: 'bg-emerald-500', // Admin-only tier, not displayed
 };
 
 const tierButtonStyles: Record<SubscriptionTier, string> = {
@@ -52,6 +56,7 @@ const tierButtonStyles: Record<SubscriptionTier, string> = {
   pro: 'bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-purple-500/25',
   business: 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white',
   enterprise: 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white',
+   unlimited: 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white', // Admin-only tier, not displayed
 };
 
 const faqItems = [

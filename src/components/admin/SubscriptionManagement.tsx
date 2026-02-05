@@ -25,7 +25,9 @@ import {
   Calendar,
   Plus,
    AlertCircle,
-   Settings2
+    Settings2,
+    Building,
+    Infinity
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -66,6 +68,8 @@ interface RevenueMetrics {
   starterUsers: number;
   proUsers: number;
   businessUsers: number;
+   enterpriseUsers: number;
+   unlimitedUsers: number;
   noRecordUsers: number;
 }
 
@@ -74,6 +78,8 @@ const tierConfig: Record<string, { icon: React.ElementType; color: string; bg: s
   starter: { icon: Zap, color: 'text-blue-500', bg: 'bg-blue-500/10' },
   pro: { icon: Sparkles, color: 'text-purple-500', bg: 'bg-purple-500/10' },
   business: { icon: Crown, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+   enterprise: { icon: Building, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+   unlimited: { icon: Infinity, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
 };
 
 export const SubscriptionManagement = () => {
@@ -95,6 +101,8 @@ export const SubscriptionManagement = () => {
     starterUsers: 0,
     proUsers: 0,
     businessUsers: 0,
+     enterpriseUsers: 0,
+     unlimitedUsers: 0,
     noRecordUsers: 0,
   });
 
@@ -155,7 +163,7 @@ export const SubscriptionManagement = () => {
       setMergedUsers(merged);
 
       // Calculate metrics
-      const tierCounts = { free: 0, starter: 0, pro: 0, business: 0 };
+       const tierCounts = { free: 0, starter: 0, pro: 0, business: 0, enterprise: 0, unlimited: 0 };
       let mrr = 0;
       let noRecordCount = 0;
 
@@ -168,7 +176,7 @@ export const SubscriptionManagement = () => {
         if (tier in tierCounts) {
           tierCounts[tier as keyof typeof tierCounts]++;
           const tierData = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS];
-          if (user.subscription?.status === 'active' && tier !== 'free' && tierData) {
+           if (user.subscription?.status === 'active' && tier !== 'free' && tier !== 'unlimited' && tierData && tierData.price > 0) {
             mrr += tierData.price || 0;
           }
         }
@@ -182,6 +190,8 @@ export const SubscriptionManagement = () => {
         starterUsers: tierCounts.starter,
         proUsers: tierCounts.pro,
         businessUsers: tierCounts.business,
+         enterpriseUsers: tierCounts.enterprise,
+         unlimitedUsers: tierCounts.unlimited,
         noRecordUsers: noRecordCount,
       });
     } catch (error) {
@@ -413,6 +423,8 @@ export const SubscriptionManagement = () => {
                 <SelectItem value="starter">Starter</SelectItem>
                 <SelectItem value="pro">Pro</SelectItem>
                 <SelectItem value="business">Business</SelectItem>
+                 <SelectItem value="enterprise">Enterprise</SelectItem>
+                 <SelectItem value="unlimited">Unlimited</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -558,11 +570,26 @@ export const SubscriptionManagement = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => (
-                    <SelectItem key={key} value={key}>
-                      {tier.name} - ${tier.price}/mo ({tier.limits.monthlyCredits} credits)
-                    </SelectItem>
-                  ))}
+                   {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => {
+                     // Format display text based on tier type
+                     let displayText = '';
+                     if (key === 'enterprise') {
+                       displayText = 'Enterprise - Contact Sales';
+                     } else if (key === 'unlimited') {
+                       displayText = 'Unlimited (Admin Override)';
+                     } else if (tier.limits.monthlyCredits === -1) {
+                       displayText = `${tier.name} - Unlimited`;
+                     } else if ('isDaily' in tier.limits && tier.limits.isDaily) {
+                       displayText = `${tier.name} - $${tier.price}/mo (${tier.limits.monthlyCredits} credits/day)`;
+                     } else {
+                       displayText = `${tier.name} - $${tier.price}/mo (${tier.limits.monthlyCredits} credits)`;
+                     }
+                     return (
+                       <SelectItem key={key} value={key}>
+                         {displayText}
+                       </SelectItem>
+                     );
+                   })}
                 </SelectContent>
               </Select>
             </div>
@@ -604,10 +631,12 @@ export const SubscriptionManagement = () => {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Effective credits:</span>
                   <span className="font-semibold">
-                    {useCustomOverride 
-                      ? customLimit 
-                      : SUBSCRIPTION_TIERS[newTier]?.limits.monthlyCredits || 0
-                    } / month
+                     {(() => {
+                       const effectiveCredits = useCustomOverride 
+                         ? customLimit 
+                         : SUBSCRIPTION_TIERS[newTier]?.limits.monthlyCredits || 0;
+                       return effectiveCredits === -1 ? 'Unlimited' : `${effectiveCredits} / month`;
+                     })()}
                   </span>
                 </div>
               </div>
