@@ -798,7 +798,7 @@ const LandingPage = memo(() => {
       </section>
 
       {/* Minimal Footer */}
-      <footer className="py-6 border-t border-border">
+      <footer className="py-6">
         <div className="container max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
