@@ -1,77 +1,63 @@
 
-# Fix: Remove User Message When Limit Exceeded
+
+# Fix Arabic RTL Bullet/List Positioning
 
 ## The Problem
 
-When a user sends a message and their limit is exceeded:
+When AYN responds in Arabic, bullet points and list numbers appear on the **left side** instead of the **right side**. This is because the `MessageFormatter` component uses CSS classes that hardcode left-side positioning:
 
-1. User types "hey" and clicks send
-2. "hey" is immediately added to the chat UI (optimistic update)
-3. Backend returns 429 (limit exceeded)
-4. AYN's "you've exceeded your limit" message appears
-5. **Bug**: "hey" remains visible in the chat
+- `pl-5` (padding-left) on list items
+- `before:left-0` for bullet positioning
+- `pl-1` and `pl-5` on `<ul>` and `<ol>` containers
 
-This creates orphaned messages in the UI that shouldn't exist.
-
-## Root Cause
-
-In `useMessages.ts`, the user message is added to UI on line 288-291 BEFORE the API call. When the API returns 429, we add AYN's error response but never remove the user's message.
+While the component sets `dir="rtl"` on the wrapper for Arabic text, the inner list styling ignores this and always positions bullets/numbers on the left.
 
 ## Solution
 
-When a 429 (limit exceeded) response is received, remove the user message that was optimistically added. We already have the `userMessage.id` in scope, so we can filter it out.
+Use Tailwind's RTL-aware utility classes (`rtl:` and `ltr:` variants) or logical properties (`ps-` / `pe-` for padding-start/end, `start-0` / `end-0` for positioning). This makes the layout automatically flip based on the `dir` attribute.
 
 ## Technical Changes
 
-### File: `src/hooks/useMessages.ts`
+### File: `src/components/shared/MessageFormatter.tsx`
 
-**Current flow (lines 378-420):**
-```typescript
-if (webhookResponse.status === 429) {
-  setIsTyping(false);
-  // ... error handling
-  const errorMessage: Message = { ... };
-  setMessages(prev => [...prev, errorMessage]);  // Adds AYN error
-  toast({ ... });
-  return;
-}
-```
-
-**Updated flow:**
-```typescript
-if (webhookResponse.status === 429) {
-  setIsTyping(false);
-  // ... error handling
-  const errorMessage: Message = { ... };
-  
-  // Remove user message AND add AYN's error response
-  setMessages(prev => [
-    ...prev.filter(m => m.id !== userMessage.id),  // Remove orphaned user message
-    errorMessage
-  ]);
-  
-  toast({ ... });
-  return;
-}
-```
-
-This same pattern should be applied to:
-- 429 error handling (daily/chat limit)
-- 403 error handling (premium feature)
-- Any other error that blocks the request before AYN responds
-
-## Summary
+**1. Update `<ul>` styling (line 277)**
 
 | Before | After |
 |--------|-------|
-| User message "hey" stays in chat | User message "hey" is removed |
-| AYN error appears after "hey" | Only AYN error appears |
-| Confusing chat history | Clean chat state |
+| `pl-1` | `ps-1` (padding-start) |
 
-## Testing
+**2. Update `<ol>` styling (line 281)**
 
-After implementation:
-1. Use up all credits (or test with limit set to 0)
-2. Send a message like "hey"
-3. Verify only AYN's limit message appears, not "hey"
-4. Refresh the page - confirm the message doesn't appear in history either
+| Before | After |
+|--------|-------|
+| `pl-5` | `ps-5` (padding-start) |
+
+**3. Update `<li>` styling (line 285)** - Most critical fix
+
+| Before | After |
+|--------|-------|
+| `pl-5` | `ps-5` (padding-start) |
+| `before:left-0` | `before:start-0` (inline-start) |
+| `[ol>&]:pl-0` | `[ol>&]:ps-0` (padding-start) |
+
+### Why Logical Properties Work
+
+- `ps-5` = padding-start → becomes `padding-left` in LTR, `padding-right` in RTL
+- `before:start-0` = inset-inline-start → positions element at start of text direction
+- These automatically flip based on the `dir="rtl"` attribute on the parent
+
+## Expected Result
+
+| Language | Bullet Position | Number Position |
+|----------|-----------------|-----------------|
+| English (LTR) | Left (• item) | Left (1. item) |
+| Arabic (RTL) | Right (item •) | Right (item .1) |
+
+## Visual Comparison
+
+```text
+Before (broken):                After (fixed):
+• نقطة أولى                     نقطة أولى •
+• نقطة ثانية                    نقطة ثانية •
+```
+
