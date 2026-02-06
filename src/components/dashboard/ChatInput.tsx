@@ -428,10 +428,10 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       onFileSelect(file);
     }
   }, [onFileSelect]);
-  return <div className={cn("relative w-full transition-all duration-300 px-3 pb-3")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
+  return <div className={cn("relative w-full transition-all duration-300 px-0 pb-3")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
 
       {/* Main container */}
-      <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
+      <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-t-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
         
         {/* Chat History Section - inside the card at the top */}
         <AnimatePresence>
