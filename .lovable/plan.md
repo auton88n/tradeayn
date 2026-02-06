@@ -1,192 +1,160 @@
 
-# Replace Chat History Sidebar with Collapsible Panel
+# Integrate Chat History Inside ChatInput Component
 
-## Overview
-
-Replace the current full-screen slide-in `TranscriptSidebar` with a collapsible chat history panel that appears **above** the ChatInput. The ChatInput remains always visible; only the chat history expands/collapses.
-
----
-
-## Current Architecture
-
-```text
-+------------------------------------------+
-|              Main Content                |
-|           (AYN Eye + Response)           |
-+------------------------------------------+
-|           [ChatInput - always visible]   |
-+------------------------------------------+
-
-+ TranscriptSidebar (fixed overlay, 420px, slides from right)
-```
+## Problem
+The chat history panel is currently a separate component placed **above** the ChatInput, creating a visible gap between them. The user wants the history panel to be **inside** the ChatInput card container, matching the Engineering workspace pattern.
 
 ---
 
-## New Architecture
+## Solution Overview
 
-```text
-+------------------------------------------+
-|              Main Content                |
-|           (AYN Eye + Response)           |
-+------------------------------------------+
-| [Chat History Collapsible]  <- NEW       |
-|   +-- Header: "Chat History" + badge     |
-|   +-- Collapsed: just header (38px)      |
-|   +-- Expanded: scrollable messages      |
-+------------------------------------------+
-|           [ChatInput - always visible]   |
-+------------------------------------------+
-```
-
----
-
-## Technical Implementation
-
-### 1. Create New Component: `ChatHistoryCollapsible.tsx`
-
-**Location:** `src/components/dashboard/ChatHistoryCollapsible.tsx`
-
-**Props:**
-- `messages: Message[]` - chat messages to display
-- `isOpen: boolean` - collapsed/expanded state
-- `onToggle: () => void` - toggle handler
-- `onClear?: () => void` - clear chat handler
-
-**Structure:**
-```tsx
-<div className="rounded-xl border border-border overflow-hidden bg-card">
-  <Collapsible open={isOpen} onOpenChange={onToggle}>
-    <CollapsibleTrigger>
-      <!-- Header with icon, title, message count, chevron -->
-    </CollapsibleTrigger>
-    
-    <CollapsibleContent>
-      <ScrollArea className="h-64">
-        <!-- Messages using TranscriptMessage component -->
-      </ScrollArea>
-      
-      <!-- Footer: Copy All, Clear buttons -->
-    </CollapsibleContent>
-  </Collapsible>
-</div>
-```
-
-**Features:**
-- Uses existing `TranscriptMessage` component for consistent message styling
-- Animated chevron rotation on expand/collapse (Framer Motion)
-- Badge showing message count
-- Footer with "Copy All" and "Clear" actions
-- Height capped at 256px (h-64) with scroll
-- Smooth expand/collapse animation from Radix Collapsible
-
----
-
-### 2. Update `CenterStageLayout.tsx`
-
-**Changes:**
-1. Import the new `ChatHistoryCollapsible` component
-2. Add new props to receive messages and transcript state
-3. Render the collapsible panel between the content area and ChatInput
-
-**New props needed:**
-```tsx
-transcriptMessages: Message[];
-transcriptOpen: boolean;
-onTranscriptToggle: () => void;
-onTranscriptClear: () => void;
-```
-
-**Placement in layout:**
-```tsx
-<div className="input-container">
-  {/* NEW: Collapsible history panel */}
-  <ChatHistoryCollapsible
-    messages={transcriptMessages}
-    isOpen={transcriptOpen}
-    onToggle={onTranscriptToggle}
-    onClear={onTranscriptClear}
-  />
-  
-  {/* Existing: Chat input */}
-  <ChatInput ... />
-</div>
-```
-
----
-
-### 3. Update `DashboardContainer.tsx`
-
-**Changes:**
-1. Remove the `<TranscriptSidebar>` component entirely
-2. Pass messages and transcript state down to `CenterStageLayout`
-3. Keep the mobile header button - it will now toggle the collapsible panel
-4. Remove the floating toggle button (no longer needed with inline collapsible)
-
----
-
-### 4. Clean Up: Remove TranscriptSidebar Usage
-
-**Files affected:**
-- `src/components/dashboard/DashboardContainer.tsx` - remove import and usage
-- Keep `src/components/transcript/TranscriptSidebar.tsx` file (may be used elsewhere or for reference)
-- Keep `src/components/transcript/TranscriptMessage.tsx` - reused by new component
+Move the chat history collapsible logic **into** the ChatInput component so that:
+1. The expanded history appears at the top of the same card
+2. The toggle button appears inside the input area
+3. No gap between history and input
 
 ---
 
 ## Visual Design
 
-### Collapsed State
+**Collapsed State:**
 ```text
-+--------------------------------------------------+
-| [MessageSquare icon] Chat History (5)    [v]     |
-+--------------------------------------------------+
++---------------------------------------------------+
+| [Text input area]                                 |
++---------------------------------------------------+
+| [+] [Mic] [Speaker]  [History (5)]  [AYN]        |
++---------------------------------------------------+
 ```
-- Single row, ~44px height
-- Left: Icon + "Chat History" label + message count badge
-- Right: Chevron pointing down
 
-### Expanded State
+**Expanded State:**
 ```text
-+--------------------------------------------------+
-| [MessageSquare icon] Chat History (5)    [^]     |
-+--------------------------------------------------+
-|                                                  |
-| [User bubble - right aligned]                    |
-|                                                  |
-|        [AYN bubble - left aligned]               |
-|                                                  |
-| [Scrollable area - max 256px]                    |
-|                                                  |
-+--------------------------------------------------+
-| [Copy All]                      [Clear]          |
-+--------------------------------------------------+
++---------------------------------------------------+
+| AYN Chat History                      [Clear] [X] |
++---------------------------------------------------+
+| [User message - right aligned]                    |
+|        [AYN message - left aligned]               |
+| [Scrollable messages - max 256px]                 |
++---------------------------------------------------+
+| [Text input area]                                 |
++---------------------------------------------------+
+| [+] [Mic] [Speaker]  [History (5)]  [AYN]        |
++---------------------------------------------------+
 ```
 
 ---
 
-## Animation Details
+## Technical Changes
 
-Using Framer Motion for smooth transitions:
-- Chevron rotation: 180 degrees on toggle
-- Content height: Radix Collapsible handles the height animation automatically
-- Message appearance: fade + slide-up (same as current TranscriptMessage)
+### 1. Update ChatInput.tsx
+
+**Add new props:**
+```tsx
+// Chat history props
+transcriptMessages?: Message[];
+transcriptOpen?: boolean;
+onTranscriptToggle?: () => void;
+onTranscriptClear?: () => void;
+```
+
+**Integrate history inside the card:**
+- Add collapsible history section **at the top** of the main container (before the textarea row)
+- Use `AnimatePresence` + `motion.div` for smooth expand/collapse animation
+- Add a "History" toggle button in the **action bar row** (Row 2: where +, mic, speaker are)
+
+**Structure:**
+```tsx
+<div className="relative bg-background/95 border rounded-2xl">
+  {/* History collapsible at top */}
+  <AnimatePresence>
+    {transcriptOpen && transcriptMessages?.length > 0 && (
+      <motion.div>
+        {/* Header with Clear/Close */}
+        {/* ScrollArea with messages */}
+        {/* Border separator */}
+      </motion.div>
+    )}
+  </AnimatePresence>
+  
+  {/* Row 1: Input area (existing) */}
+  {/* Row 2: Action bar + History toggle (existing + add History) */}
+</div>
+```
+
+### 2. Update CenterStageLayout.tsx
+
+**Remove the external ChatHistoryCollapsible:**
+- Delete the `<ChatHistoryCollapsible>` render between SystemNotificationBanner and ChatInput
+- Pass history props directly to ChatInput
+
+**Pass props to ChatInput:**
+```tsx
+<ChatInput
+  // ... existing props
+  transcriptMessages={messages}
+  transcriptOpen={transcriptOpen}
+  onTranscriptToggle={onTranscriptToggle}
+  onTranscriptClear={onTranscriptClear}
+/>
+```
+
+### 3. ChatHistoryCollapsible.tsx
+
+This component will be **deleted** or kept for reference only, as the logic moves inside ChatInput.
 
 ---
 
-## Summary of File Changes
+## Implementation Details
+
+**History Toggle Button (inside Row 2):**
+```tsx
+{transcriptMessages && transcriptMessages.length > 0 && onTranscriptToggle && (
+  <Button
+    variant="ghost"
+    size="sm"
+    onClick={onTranscriptToggle}
+    className="gap-1.5"
+  >
+    <Clock className="h-4 w-4" />
+    <span>History</span>
+    <span className="text-xs bg-muted px-1.5 rounded-full">
+      {transcriptMessages.length}
+    </span>
+  </Button>
+)}
+```
+
+**Expanded History Section (at top of card):**
+```tsx
+<AnimatePresence>
+  {transcriptOpen && transcriptMessages?.length > 0 && (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+    >
+      {/* Header with title + Clear/Close buttons */}
+      {/* ScrollArea with max-height 256px */}
+      {/* Border separator before input area */}
+    </motion.div>
+  )}
+</AnimatePresence>
+```
+
+---
+
+## Files to Modify
 
 | File | Action |
 |------|--------|
-| `src/components/dashboard/ChatHistoryCollapsible.tsx` | **Create** - new collapsible component |
-| `src/components/dashboard/CenterStageLayout.tsx` | **Modify** - add collapsible above ChatInput |
-| `src/components/dashboard/DashboardContainer.tsx` | **Modify** - remove TranscriptSidebar, pass props to CenterStageLayout |
+| `src/components/dashboard/ChatInput.tsx` | Add history props + integrate collapsible section |
+| `src/components/dashboard/CenterStageLayout.tsx` | Remove external ChatHistoryCollapsible, pass props to ChatInput |
 
 ---
 
 ## Benefits
 
-1. **No overlay/backdrop** - Content remains visible and interactive
-2. **Always accessible** - Toggle is right above the chat input
-3. **Consistent pattern** - Matches the Engineering workspace AI panel
-4. **Space efficient** - Collapsed state takes minimal space (~44px)
-5. **Mobile friendly** - Works well on all screen sizes
+1. **No gap** - History is inside the same card as input
+2. **Unified design** - Matches Engineering workspace pattern
+3. **Cleaner architecture** - Single card component manages both history and input
+4. **Smooth UX** - Expand/collapse animation within the same container
