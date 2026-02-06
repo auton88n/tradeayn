@@ -330,12 +330,13 @@ export const useMessages = (
       }
 
       // Build conversation history in ayn-unified format
+      // Strip old [Attached file: ...] references so AYN focuses on the current file
       const conversationMessages = messages.slice(-5).map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'assistant',
-        content: msg.content
+        content: msg.content.replace(/\n\n\[Attached file: [^\]]+\]$/, '')
       }));
 
-      // Add current user message
+      // Add current user message (only current attachment reference)
       conversationMessages.push({
         role: 'user',
         content: messageContent + (attachment ? `\n\n[Attached file: ${attachment.name}]` : '')

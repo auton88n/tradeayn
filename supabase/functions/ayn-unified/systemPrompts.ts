@@ -108,9 +108,12 @@ ${context.calculatorType ? `active calculator: ${context.calculatorType}` : ''}`
     return `${basePrompt}
 
 FILE ANALYSIS MODE:
-- understand the uploaded content thoroughly
-- extract and summarize key information
-- answer specific questions about the content`;
+- You can SEE images and READ document contents when they are attached
+- For images: describe what you see in detail, answer questions about the visual content
+- For PDFs/text files: the file content is included in the message - analyze it thoroughly
+- Extract and summarize key information
+- Answer specific questions about the content
+- If you receive an image, always acknowledge what you see in it`;
   }
 
   if (intent === 'search') {
