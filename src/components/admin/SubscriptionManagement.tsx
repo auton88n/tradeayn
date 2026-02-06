@@ -232,12 +232,14 @@ export const SubscriptionManagement = () => {
 
       // UPSERT user_ai_limits to set credit limits
       if (tierData) {
+        const isUnlimitedTier = newTier === 'unlimited' || newTier === 'enterprise';
         const { error: limitsError } = await supabase
           .from('user_ai_limits')
           .upsert({
             user_id: editingUser.user_id,
             monthly_messages: effectiveLimit,
             monthly_engineering: tierData.limits.monthlyEngineering,
+            is_unlimited: isUnlimitedTier,
             updated_at: new Date().toISOString()
           }, { onConflict: 'user_id' });
 
