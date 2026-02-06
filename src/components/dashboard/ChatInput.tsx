@@ -474,15 +474,14 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               </div>
 
               {/* Messages Area */}
-              <div className="max-h-64 overflow-y-auto" ref={historyScrollRef}>
-                <div className="py-1 space-y-0">
+              <div className="max-h-[50vh] overflow-y-auto" ref={historyScrollRef}>
+                <div className="p-3 space-y-1">
                   {sortedTranscriptMessages.map((msg) => (
                     <TranscriptMessage
                       key={msg.id}
                       content={msg.content}
                       sender={msg.sender}
                       timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
-                      compact
                     />
                   ))}
                 </div>
