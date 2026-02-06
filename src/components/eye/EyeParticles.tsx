@@ -127,7 +127,7 @@ const EyeParticlesComponent = ({
   particleType = 'sparkle',
   isAbsorbing = false,
   isPulsing = false,
-  performanceMultiplier = 1,
+  performanceMultiplier = 0.5,
 }: EyeParticlesProps) => {
   // ALL HOOKS MUST BE AT THE TOP - UNCONDITIONALLY (React Rules of Hooks)
   const [burstParticles, setBurstParticles] = useState<number[]>([]);
@@ -146,7 +146,7 @@ const EyeParticlesComponent = ({
   // useEffect - called unconditionally
   useEffect(() => {
     if (isAbsorbing && !prevAbsorbing.current) {
-      const burstCount = isMobile ? 6 : 12;
+      const burstCount = isMobile ? 3 : 6;
       const newBurst = Array.from({ length: burstCount }, () => burstIdCounter.current++);
       setBurstParticles(newBurst);
       
@@ -200,7 +200,6 @@ const EyeParticlesComponent = ({
           height: particle.size,
           borderRadius: '50%',
           backgroundColor: color,
-          boxShadow: `0 0 ${particle.size * 2}px ${color}`,
         }}
         initial={{
           x: startX - particle.size / 2,
@@ -245,7 +244,6 @@ const EyeParticlesComponent = ({
           height: particle.size,
           borderRadius: '50%',
           backgroundColor: color,
-          boxShadow: `0 0 ${particle.size * 3}px ${color}, 0 0 ${particle.size * 6}px ${color}40`,
         }}
         initial={{
           x: startX - particle.size / 2,
@@ -302,7 +300,6 @@ const EyeParticlesComponent = ({
             height: particle.size,
             borderRadius: '50%',
             backgroundColor: color,
-            boxShadow: `0 0 ${particle.size * 2}px ${color}`,
             transform: `translateX(${orbitRadius}px)`,
           }}
           animate={{
@@ -351,7 +348,7 @@ const EyeParticlesComponent = ({
           height: burstSize,
           borderRadius: '50%',
           backgroundColor: color,
-          boxShadow: `0 0 ${burstSize * 3}px ${color}`,
+          
         }}
         initial={{ 
           x: -burstSize / 2, 

@@ -579,11 +579,9 @@ button, a, input, textarea, select {
   @keyframes eye-breathe {
     0%, 100% { 
       transform: scale(1); 
-      filter: brightness(1);
     }
     50% { 
-      transform: scale(1.045);  /* 4.5% increase - visible breathing! */
-      filter: brightness(1.06); /* Subtle brightness pulse with breath */
+      transform: scale(1.045);
     }
   }
   
@@ -603,21 +601,7 @@ button, a, input, textarea, select {
     }
   }
 
-  /* Eye glow breathing animation */
-  .animate-glow-breathe {
-    animation: glow-breathe 4s ease-in-out infinite;
-  }
-
-  @keyframes glow-breathe {
-    0%, 100% { 
-      opacity: 0.3;
-      transform: scale(1);
-    }
-    50% { 
-      opacity: 0.5;
-      transform: scale(1.08);
-    }
-  }
+  /* Duplicate .animate-glow-breathe removed for performance */
 
   /* Bounce dot animation for thinking indicator */
   .animate-bounce-dot {
