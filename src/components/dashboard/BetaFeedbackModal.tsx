@@ -88,8 +88,10 @@ export const BetaFeedbackModal = ({
 
       if (creditsError) throw creditsError;
 
-      // Trigger immediate credit refresh
-      onCreditsUpdated?.();
+      // Trigger credit refresh after a short delay to ensure DB commit
+      setTimeout(() => {
+        onCreditsUpdated?.();
+      }, 500);
 
       setStep('success');
       onSuccess?.();
