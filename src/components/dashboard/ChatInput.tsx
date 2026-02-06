@@ -499,6 +499,10 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                         content={msg.content}
                         sender={msg.sender}
                         timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
+                        onReply={(text) => {
+                          setInputMessage(`> ${text.split('\n')[0]}\n`);
+                          textareaRef.current?.focus();
+                        }}
                       />
                     ))}
                   </div>
