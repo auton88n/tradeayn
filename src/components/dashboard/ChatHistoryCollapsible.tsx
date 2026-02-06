@@ -1,12 +1,9 @@
-import { useMemo, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { MessageSquare, ChevronDown, Copy, Trash2 } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useMemo, useEffect, useRef, useCallback, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Brain, X, Clock } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { TranscriptMessage } from '@/components/transcript/TranscriptMessage';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -18,7 +15,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useState } from 'react';
 import type { Message } from '@/types/dashboard.types';
 
 interface ChatHistoryCollapsibleProps {
@@ -34,7 +30,6 @@ export const ChatHistoryCollapsible = ({
   onToggle,
   onClear,
 }: ChatHistoryCollapsibleProps) => {
-  const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -58,17 +53,6 @@ export const ChatHistoryCollapsible = ({
     }
   }, [messages.length, isOpen]);
 
-  // Copy all messages
-  const handleCopyAll = useCallback(async () => {
-    const text = messages.map(msg => `[${msg.sender === 'user' ? 'You' : 'AYN'}]: ${msg.content}`).join('\n\n');
-    try {
-      await navigator.clipboard.writeText(text);
-      toast({ title: 'Copied to clipboard' });
-    } catch {
-      toast({ title: 'Copy failed', variant: 'destructive' });
-    }
-  }, [messages, toast]);
-
   // Handle clear with confirmation
   const handleClearClick = useCallback(() => {
     setShowClearConfirm(true);
@@ -87,71 +71,84 @@ export const ChatHistoryCollapsible = ({
   return (
     <>
       <div className="w-full max-w-3xl mx-auto px-4 mb-2">
-        <Collapsible open={isOpen} onOpenChange={onToggle}>
-          <div className="rounded-xl border border-border overflow-hidden bg-card/80 backdrop-blur-sm shadow-sm">
-            {/* Collapsible Header/Trigger */}
-            <CollapsibleTrigger asChild>
-              <button className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-foreground/10 flex items-center justify-center">
-                    <MessageSquare className="w-4 h-4 text-foreground/70" />
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -10 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -10 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg overflow-hidden">
+                {/* Header - styled like Engineering AI Panel */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 rounded-lg bg-foreground/10">
+                      <Brain className="h-4 w-4 text-foreground/70" />
+                    </div>
+                    <span className="font-medium text-sm">AYN Engineering</span>
                   </div>
-                  <span className="font-medium text-sm">Chat History</span>
-                  <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-full">
-                    {messages.length}
-                  </Badge>
+                  <div className="flex items-center gap-1">
+                    {onClear && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearClick}
+                        className="h-7 px-2 text-xs font-normal text-muted-foreground hover:text-foreground"
+                      >
+                        Clear
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onToggle}
+                      className="h-7 w-7"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <motion.div
-                  animate={{ rotate: isOpen ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </motion.div>
-              </button>
-            </CollapsibleTrigger>
 
-            {/* Collapsible Content */}
-            <CollapsibleContent>
-              {/* Messages List */}
-              <ScrollArea className="h-64" ref={scrollRef}>
-                <div className="p-2">
-                  {sortedMessages.map((msg) => (
-                    <TranscriptMessage
-                      key={msg.id}
-                      content={msg.content}
-                      sender={msg.sender}
-                      timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-
-              {/* Footer Actions */}
-              <div className="flex items-center justify-between p-3 border-t border-border bg-muted/30">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-3 rounded-lg text-xs font-medium"
-                  onClick={handleCopyAll}
-                >
-                  <Copy className="w-3.5 h-3.5 mr-1.5" />
-                  Copy All
-                </Button>
-                {onClear && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-3 rounded-lg text-xs font-medium text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={handleClearClick}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                    Clear
-                  </Button>
-                )}
+                {/* Messages Area */}
+                <ScrollArea className="h-72" ref={scrollRef}>
+                  <div className="p-3 space-y-1">
+                    {sortedMessages.map((msg) => (
+                      <TranscriptMessage
+                        key={msg.id}
+                        content={msg.content}
+                        sender={msg.sender}
+                        timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
+                      />
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Toggle Button - shown when collapsed */}
+        {!isOpen && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={onToggle}
+            className={cn(
+              "w-full flex items-center justify-center gap-2",
+              "px-4 py-2.5 rounded-xl",
+              "border border-border bg-card/80 backdrop-blur-sm",
+              "text-sm text-muted-foreground",
+              "hover:bg-muted/50 hover:text-foreground",
+              "transition-colors"
+            )}
+          >
+            <Clock className="h-4 w-4" />
+            <span>History</span>
+            <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{messages.length}</span>
+          </motion.button>
+        )}
       </div>
 
       {/* Clear Confirmation Dialog */}
