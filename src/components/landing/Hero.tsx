@@ -42,6 +42,18 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
         bottomRight: { x: 15, y: 70 }
       };
     }
+    // Tablet: 768px - 1024px
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      return {
+        topLeft: { x: -120, y: -80 },
+        middleLeft: { x: -160, y: 0 },
+        bottomLeft: { x: -120, y: 80 },
+        topRight: { x: 120, y: -80 },
+        middleRight: { x: 160, y: 0 },
+        bottomRight: { x: 120, y: 80 }
+      };
+    }
+    // Desktop
     return {
       topLeft: { x: -160, y: -100 },
       middleLeft: { x: -220, y: 0 },

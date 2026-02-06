@@ -18,7 +18,7 @@ export const UserMessageBubble = ({
   onComplete,
 }: UserMessageBubbleProps) => {
   const bubbleRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 140, height: 44 });
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   // Measure actual bubble dimensions after render
   useLayoutEffect(() => {
@@ -64,7 +64,7 @@ export const UserMessageBubble = ({
         left: 0,
         top: 0,
         transformOrigin: 'center center',
-        transform: 'translateZ(0)', // GPU acceleration
+        willChange: 'transform, opacity',
       }}
       initial={{
         x: startPosition.x - halfWidth,

@@ -20,7 +20,7 @@ export const FlyingSuggestionBubble = ({
   onComplete,
 }: FlyingSuggestionBubbleProps) => {
   const bubbleRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 180, height: 50 });
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   // Measure actual bubble dimensions after render
   useLayoutEffect(() => {
@@ -68,7 +68,7 @@ export const FlyingSuggestionBubble = ({
         left: 0,
         top: 0,
         transformOrigin: 'center center',
-        transform: 'translateZ(0)', // GPU acceleration
+        willChange: 'transform, opacity',
       }}
       initial={{
         x: startPosition.x - halfWidth,
