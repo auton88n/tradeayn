@@ -433,34 +433,45 @@ export const CenterStageLayout = ({
       clearSuggestions();
       resetEmpathy();
 
-      // Start flying animation
-      const inputPos = getInputPosition();
-      const eyePos = getEyePosition();
-      startMessageAnimation(content, inputPos, eyePos);
+      // On mobile, blur input first to dismiss keyboard before reading positions
+      if (isMobile) {
+        const activeEl = document.activeElement as HTMLElement;
+        activeEl?.blur?.();
+      }
 
       // CRITICAL FIX: Send message IMMEDIATELY - don't wait for animation
       // This prevents the 350ms delay from causing lost messages
       onSendMessage(content, file);
 
-      // Animation effects run in parallel (non-blocking) - synced with 400ms flying animation
-      setTimeout(() => {
-        triggerBlink();
-        triggerAbsorption();
-        playSound?.('message-absorb');
-        orchestrateEmotionChange('thinking');
-        setIsResponding(true);
-        
-        // Trigger particle burst at fresh eye position
-        const freshEyePos = getEyePosition();
-        setBurstPosition(freshEyePos);
-        setShowParticleBurst(true);
-        setTimeout(() => setShowParticleBurst(false), 400);
-        
-        completeAbsorption();
+      // Small delay on mobile to let keyboard dismiss and layout settle
+      const animationDelay = isMobile ? 60 : 0;
 
-        // Clear file after animation completes
-        onRemoveFile();
-      }, 400);
+      setTimeout(() => {
+        // Read positions AFTER keyboard dismissal on mobile
+        const inputPos = getInputPosition();
+        const eyePos = getEyePosition();
+        startMessageAnimation(content, inputPos, eyePos);
+
+        // Animation effects run in parallel (non-blocking) - synced with 400ms flying animation
+        setTimeout(() => {
+          triggerBlink();
+          triggerAbsorption();
+          playSound?.('message-absorb');
+          orchestrateEmotionChange('thinking');
+          setIsResponding(true);
+          
+          // Re-read eye position for particle burst (layout may have settled further)
+          const freshEyePos = getEyePosition();
+          setBurstPosition(freshEyePos);
+          setShowParticleBurst(true);
+          setTimeout(() => setShowParticleBurst(false), 400);
+          
+          completeAbsorption();
+
+          // Clear file after animation completes
+          onRemoveFile();
+        }, 400);
+      }, animationDelay);
     },
     [
       isUploading,
