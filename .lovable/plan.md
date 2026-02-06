@@ -1,74 +1,34 @@
 
-# Fix "Earn 5 Credits" and Admin Unlimited Assignment
+# Performance Optimization Implementation
 
-## Problem 1: Earn 5 Credits -- Credits Not Reflected
+## Changes
 
-The bonus credits are correctly saved to the database, but the user doesn't see them reflected immediately because of a timing issue. After the `add_bonus_credits` RPC completes, `onCreditsUpdated` fires `refreshUsage()` instantly. However, the database transaction may not have fully committed yet, so the re-fetch reads stale data.
+### 1. EmotionalEye.tsx
+- Replace the `filter: blur(24px)` on the outer glow halo (line 455) with a wider radial gradient that looks pre-blurred (zero GPU cost)
+- Remove the "check-in" double-blink timer (lines 297-317) -- fires every 10 seconds for minimal visual benefit
+- Increase idle blink minimum interval from 1800ms to 3000ms (line 256)
+- Disable mouse tracking entirely on mobile by checking `isMobile` in the gaze effect
 
-**Fix**: Add a small delay (500ms) before refreshing usage data after credit award, ensuring the DB transaction completes.
+### 2. EyeParticles.tsx
+- Remove `boxShadow` from all particle render functions (sparkle, energy, orbit, burst) -- this is the biggest per-particle GPU cost
+- Reduce burst particle count from 12/6 to 6/3 (desktop/mobile)
+- Lower default `performanceMultiplier` prop from 1 to 0.5
 
-**File**: `src/components/dashboard/BetaFeedbackModal.tsx`
-- After `add_bonus_credits` RPC succeeds, delay the `onCreditsUpdated` call by 500ms
+### 3. Hero.tsx
+- Consolidate 6 separate `AnimatePresence` wrappers into 1 single wrapper (reduces React reconciliation overhead)
+- Remove the pulse ring animation (lines 290-301)
+- Slow the animation cycle interval from 9500ms to 12000ms
 
-## Problem 2: Admin Assigning "Unlimited" Tier -- User Gets Blocked
+### 4. index.css
+- Remove the duplicate `.animate-glow-breathe` definition (lines 606-620)
+- Simplify `eye-breathe` keyframes to use only `transform: scale()` without `filter: brightness()` changes (filter triggers compositing)
 
-When an admin assigns the "Unlimited" or "Enterprise" tier, the `SubscriptionManagement` component updates `user_subscriptions.subscription_tier` to `'unlimited'` and sets `user_ai_limits.monthly_messages` to `-1`. However, it never sets `is_unlimited = true` in `user_ai_limits`.
+### 5. App.tsx
+- No changes needed -- the AYNEmotionProvider children are already sufficiently isolated through memo on individual components
 
-The database function `check_user_ai_limit` only bypasses limits when `is_unlimited = true`. Since that flag is never set, the user's limit becomes `-1`, which means `current_val >= -1` is ALWAYS true, actually **blocking** the user entirely instead of giving them unlimited access.
-
-**Fix**: When admin sets tier to `unlimited` or `enterprise`, also set `is_unlimited = true` in `user_ai_limits`. When setting any other tier, ensure `is_unlimited = false`.
-
-**File**: `src/components/admin/SubscriptionManagement.tsx`
-- In `handleSetOrOverrideTier`, add `is_unlimited` flag to the `user_ai_limits` upsert:
-  - `is_unlimited: true` when tier is `'unlimited'` or `'enterprise'`
-  - `is_unlimited: false` for all other tiers
-
-## Technical Changes
-
-### 1. SubscriptionManagement.tsx -- Fix unlimited flag
-
-In the `handleSetOrOverrideTier` function (around line 234-244), update the `user_ai_limits` upsert to include `is_unlimited`:
-
-```typescript
-const isUnlimitedTier = newTier === 'unlimited' || newTier === 'enterprise';
-
-const { error: limitsError } = await supabase
-  .from('user_ai_limits')
-  .upsert({
-    user_id: editingUser.user_id,
-    monthly_messages: effectiveLimit,
-    monthly_engineering: tierData.limits.monthlyEngineering,
-    is_unlimited: isUnlimitedTier,   // <-- NEW
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'user_id' });
-```
-
-### 2. BetaFeedbackModal.tsx -- Delayed credit refresh
-
-In the `handleSubmit` function (around line 91-92), add a delay before calling `onCreditsUpdated`:
-
-```typescript
-// Trigger credit refresh after a short delay to ensure DB commit
-setTimeout(() => {
-  onCreditsUpdated?.();
-}, 500);
-```
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/components/admin/SubscriptionManagement.tsx` | Add `is_unlimited` flag when upserting `user_ai_limits` based on tier |
-| `src/components/dashboard/BetaFeedbackModal.tsx` | Add 500ms delay before refreshing credits after submission |
-
-## Existing Data Fix
-
-Any users already assigned "unlimited" or "enterprise" tier in the database currently have `is_unlimited = false` and are being blocked. A one-time SQL migration will fix existing records:
-
-```sql
-UPDATE user_ai_limits SET is_unlimited = true
-WHERE user_id IN (
-  SELECT user_id FROM user_subscriptions
-  WHERE subscription_tier IN ('unlimited', 'enterprise')
-);
-```
+## Summary of Impact
+- Fewer GPU composite layers (no blur filter, no box-shadows on particles)
+- Less JavaScript timer activity (removed check-in blink, slower idle blinks)
+- Reduced React reconciliation (single AnimatePresence instead of 6)
+- Simpler CSS animations (no brightness filter in breathing)
+- All visual effects remain -- just rendered more efficiently
