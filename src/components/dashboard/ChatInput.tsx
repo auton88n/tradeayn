@@ -474,7 +474,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               </div>
 
               {/* Messages Area */}
-              <ScrollArea className="h-64" ref={historyScrollRef}>
+              <ScrollArea className="max-h-64" ref={historyScrollRef}>
                 <div className="p-3 space-y-1">
                   {sortedTranscriptMessages.map((msg) => (
                     <TranscriptMessage
