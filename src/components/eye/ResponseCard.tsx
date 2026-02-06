@@ -305,9 +305,9 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             // Clean white background
             "bg-background",
             // Simple subtle border
-            "border border-border",
-            // Minimal shadow
-            "shadow-sm",
+            "border border-border/40",
+            // Subtle depth
+            "shadow-md shadow-black/5 backdrop-blur-sm",
             // Rounding
             variant === 'sheet' ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
             "overflow-hidden"
@@ -327,11 +327,11 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
         >
           {/* Speech bubble pointer */}
           {showPointer && variant !== 'sheet' && (
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background border-l border-t border-border" />
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background border-l border-t border-border/40" />
           )}
 
           {/* Header */}
-          <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-border">
+          <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-muted/30">
             <div className="flex items-center gap-2">
               <div className="p-1 rounded-lg bg-muted">
                 <Brain className="w-3.5 h-3.5 text-foreground" />
@@ -356,7 +356,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
               "flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
               variant === 'inline' && "max-h-[28vh] sm:max-h-[32vh]",
               "[&_img]:w-full [&_img]:max-h-[200px] [&_img]:object-cover [&_img]:rounded-lg",
-              "[&>div]:px-3 [&>div]:py-2.5",
+              "[&>div]:px-4 [&>div]:py-3",
               "[-webkit-overflow-scrolling:touch]"
             )}
           >
@@ -406,7 +406,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           )}
 
           {/* Clean action bar */}
-          <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-t border-border">
+          <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-t border-border/40">
             {/* Left: Copy button */}
             <button
               onClick={copyContent}
@@ -437,7 +437,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                 )}
                 aria-label="Helpful"
               >
-                <ThumbsUp size={18} />
+                <ThumbsUp size={16} />
               </button>
               <button 
                 onClick={() => handleFeedback('down')}
@@ -449,7 +449,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                 )}
                 aria-label="Not helpful"
               >
-                <ThumbsDown size={18} />
+                <ThumbsDown size={16} />
               </button>
               
               <button
@@ -457,7 +457,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                 className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 aria-label="Expand"
               >
-                <Maximize2 size={18} />
+                <Maximize2 size={16} />
               </button>
               
               {detectedImageUrl && (
