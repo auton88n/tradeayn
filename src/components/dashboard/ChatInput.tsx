@@ -197,6 +197,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const historyScrollRef = useRef<HTMLDivElement>(null);
   const visibleSuggestions = suggestions.filter(s => s.isVisible);
 
@@ -212,13 +213,24 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
   // Auto-scroll history to bottom when messages change or panel opens
   useEffect(() => {
-    if (transcriptOpen) {
+    if (transcriptOpen && historyScrollRef.current) {
       requestAnimationFrame(() => {
-        const viewport = historyScrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-        if (viewport) viewport.scrollTop = viewport.scrollHeight;
+        const el = historyScrollRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
       });
     }
   }, [transcriptMessages.length, transcriptOpen]);
+
+  // Track scroll position for scroll-to-bottom button
+  const handleHistoryScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowScrollDown(distFromBottom > 100);
+  }, []);
+
+  const scrollHistoryToBottom = useCallback(() => {
+    historyScrollRef.current?.scrollTo({ top: historyScrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, []);
 
   // Handle clear with confirmation
   const handleClearClick = useCallback(() => {
@@ -474,17 +486,39 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               </div>
 
               {/* Messages Area */}
-              <div className="max-h-[50vh] overflow-y-auto" ref={historyScrollRef}>
-                <div className="p-3 space-y-1">
-                  {sortedTranscriptMessages.map((msg) => (
-                    <TranscriptMessage
-                      key={msg.id}
-                      content={msg.content}
-                      sender={msg.sender}
-                      timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
-                    />
-                  ))}
+              <div className="relative">
+                <div
+                  className="max-h-[50vh] overflow-y-auto"
+                  ref={historyScrollRef}
+                  onScroll={handleHistoryScroll}
+                >
+                  <div className="p-3 space-y-1 flex flex-col justify-end min-h-full">
+                    {sortedTranscriptMessages.map((msg) => (
+                      <TranscriptMessage
+                        key={msg.id}
+                        content={msg.content}
+                        sender={msg.sender}
+                        timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
+                      />
+                    ))}
+                  </div>
                 </div>
+
+                {/* Scroll to bottom button */}
+                <AnimatePresence>
+                  {showScrollDown && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      onClick={scrollHistoryToBottom}
+                      className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 h-8 w-8 rounded-full bg-foreground/90 text-background flex items-center justify-center shadow-lg hover:bg-foreground transition-colors"
+                      aria-label="Scroll to bottom"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           )}
