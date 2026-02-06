@@ -11,29 +11,21 @@ import { detectLanguage, DetectedLanguage } from '@/lib/languageDetection';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TranscriptMessage } from '@/components/transcript/TranscriptMessage';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { AIMode, Message } from '@/types/dashboard.types';
-
 interface Suggestion {
   id: string;
   content: string;
   emoji: string;
   isVisible: boolean;
 }
-
 interface ChatInputProps {
   onSend: (message: string, file?: File | null) => void;
   suggestions?: Suggestion[];
-  onSuggestionClick?: (content: string, emoji: string, position: { x: number; y: number }) => void;
+  onSuggestionClick?: (content: string, emoji: string, position: {
+    x: number;
+    y: number;
+  }) => void;
   isDisabled?: boolean;
   selectedMode: AIMode;
   onModeChange: (mode: AIMode) => void;
@@ -103,53 +95,58 @@ const getFileExtension = (filename: string): string => {
 };
 
 // FileTypeIcon component - shows different icons based on file extension
-const FileTypeIcon = ({ filename, className }: { filename: string; className?: string }) => {
+const FileTypeIcon = ({
+  filename,
+  className
+}: {
+  filename: string;
+  className?: string;
+}) => {
   const ext = getFileExtension(filename);
-  
+
   // PDF files
   if (ext === 'pdf') {
     return <FileText className={cn(className, "text-red-400")} />;
   }
-  
+
   // Image files
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico', 'heic'].includes(ext)) {
     return <FileImage className={cn(className, "text-emerald-400")} />;
   }
-  
+
   // Code files
   if (['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'xml', 'py', 'java', 'cpp', 'c', 'go', 'rs', 'php', 'rb', 'swift', 'kt'].includes(ext)) {
     return <FileCode className={cn(className, "text-blue-400")} />;
   }
-  
+
   // Spreadsheet files
   if (['xls', 'xlsx', 'csv', 'numbers'].includes(ext)) {
     return <FileSpreadsheet className={cn(className, "text-green-400")} />;
   }
-  
+
   // Archive files
   if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2'].includes(ext)) {
     return <FileArchive className={cn(className, "text-amber-400")} />;
   }
-  
+
   // Audio files
   if (['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'].includes(ext)) {
     return <FileAudio className={cn(className, "text-purple-400")} />;
   }
-  
+
   // Video files
   if (['mp4', 'avi', 'mov', 'wmv', 'mkv', 'webm', 'flv'].includes(ext)) {
     return <FileVideo className={cn(className, "text-pink-400")} />;
   }
-  
+
   // Document files (Word, etc.)
   if (['doc', 'docx', 'txt', 'rtf', 'odt', 'pages'].includes(ext)) {
     return <FileText className={cn(className, "text-blue-400")} />;
   }
-  
+
   // Default file icon
   return <File className={cn(className, "text-neutral-400")} />;
 };
-
 const getFileIcon = (file: File) => {
   if (file.type.startsWith('image/')) return <FileImage className="w-4 h-4 text-emerald-400" />;
   return <FileText className="w-4 h-4 text-neutral-400" />;
@@ -193,7 +190,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   uploadFailed = false,
   onRetryUpload,
   maintenanceActive = false,
-  creditsExhausted = false,
+  creditsExhausted = false
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -202,14 +199,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   const visibleSuggestions = suggestions.filter(s => s.isVisible);
 
   // Sort messages chronologically (oldest first)
-  const sortedTranscriptMessages = useMemo(() => 
-    [...transcriptMessages].sort((a, b) => {
-      const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-      const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
-      return timeA - timeB;
-    }),
-    [transcriptMessages]
-  );
+  const sortedTranscriptMessages = useMemo(() => [...transcriptMessages].sort((a, b) => {
+    const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+    const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+    return timeA - timeB;
+  }), [transcriptMessages]);
 
   // Auto-scroll history to bottom when messages change or panel opens
   useEffect(() => {
@@ -227,27 +221,30 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     setShowScrollDown(distFromBottom > 100);
   }, []);
-
   const scrollHistoryToBottom = useCallback(() => {
-    historyScrollRef.current?.scrollTo({ top: historyScrollRef.current.scrollHeight, behavior: 'smooth' });
+    historyScrollRef.current?.scrollTo({
+      top: historyScrollRef.current.scrollHeight,
+      behavior: 'smooth'
+    });
   }, []);
 
   // Handle clear with confirmation
   const handleClearClick = useCallback(() => {
     setShowClearConfirm(true);
   }, []);
-
   const handleClearConfirm = useCallback(() => {
     setShowClearConfirm(false);
     onTranscriptClear?.();
   }, [onTranscriptClear]);
-
   const handleSuggestionClickInternal = (suggestion: Suggestion, e: React.MouseEvent<HTMLButtonElement>) => {
     if (!onSuggestionClick) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
-    onSuggestionClick(suggestion.content, suggestion.emoji, { x, y });
+    onSuggestionClick(suggestion.content, suggestion.emoji, {
+      x,
+      y
+    });
   };
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
@@ -261,12 +258,12 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setIsAttentive,
     updateActivity,
     triggerAttentionBlink,
-    bumpActivity,
+    bumpActivity
   } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
   const playSound = soundContext?.playSound;
   const playModeChange = soundContext?.playModeChange;
-  
+
   // Voice-to-text integration
   const {
     isSupported: voiceSupported,
@@ -276,7 +273,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     error: voiceError,
     startListening: startVoice,
     stopListening: stopVoice,
-    resetTranscript: resetVoice,
+    resetTranscript: resetVoice
   } = useSpeechRecognition();
 
   // Handle prefilled input
@@ -305,7 +302,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       const displayText = voiceTranscript + (voiceInterim ? voiceInterim : '');
       setInputMessage(displayText);
       setShowPlaceholder(!displayText);
-      
+
       // Auto-resize textarea
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
@@ -341,11 +338,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
   // Track typing state to only trigger context updates on start/stop
   const wasTypingRef = useRef(false);
-  
+
   // Optimized typing detection - only update context on START/STOP transitions
   useEffect(() => {
     const hasContent = inputMessage.trim().length > 0;
-    
+
     // Only notify when STARTING to type (first character)
     if (hasContent && !wasTypingRef.current) {
       setIsUserTyping(true);
@@ -353,7 +350,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       updateActivity();
       wasTypingRef.current = true;
     }
-    
+
     // Handle empty input - stopped typing
     if (!hasContent && wasTypingRef.current) {
       setIsUserTyping(false);
@@ -364,7 +361,6 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
     // Stop typing timeout (debounced)
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    
     typingTimeoutRef.current = setTimeout(() => {
       setIsUserTyping(false);
       wasTypingRef.current = false;
@@ -373,7 +369,6 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     // Detect language after a brief pause (keep 200ms debounce)
     if (hasContent) {
       if (languageTimeoutRef.current) clearTimeout(languageTimeoutRef.current);
-      
       languageTimeoutRef.current = setTimeout(() => {
         if (inputMessage.trim().length > 2) {
           const langResult = detectLanguage(inputMessage);
@@ -382,13 +377,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         }
       }, 200);
     }
-    
     return () => {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       if (languageTimeoutRef.current) clearTimeout(languageTimeoutRef.current);
     };
   }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity, onLanguageChange, onTypingContentChange]);
-
   const handleSend = useCallback(() => {
     if (!inputMessage.trim() && !selectedFile) return;
     if (isDisabled || isUploading) return;
@@ -398,10 +391,10 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setInputMessage('');
     setShowPlaceholder(true);
     setDetectedLang(null);
-    
+
     // NOTE: File removal is handled by CenterStageLayout after animation
     // Do NOT call onRemoveFile here to avoid race condition
-    
+
     if (textareaRef.current) {
       textareaRef.current.style.height = '44px';
     }
@@ -447,39 +440,33 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         
         {/* Chat History Section - inside the card at the top */}
         <AnimatePresence>
-          {transcriptOpen && sortedTranscriptMessages.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="overflow-hidden"
-            >
+          {transcriptOpen && sortedTranscriptMessages.length > 0 && <motion.div initial={{
+          opacity: 0,
+          height: 0
+        }} animate={{
+          opacity: 1,
+          height: 'auto'
+        }} exit={{
+          opacity: 0,
+          height: 0
+        }} transition={{
+          type: 'spring',
+          damping: 25,
+          stiffness: 300
+        }} className="overflow-hidden">
               {/* History Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                 <div className="flex items-center gap-3">
                   <div className="p-1.5 rounded-lg bg-foreground/10">
                     <Brain className="h-4 w-4 text-foreground/70" />
                   </div>
-                  <span className="font-medium text-sm">AYN Engineering</span>
+                  <span className="font-medium text-sm">AYN AI </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  {onTranscriptClear && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleClearClick}
-                      className="h-7 px-2 text-xs font-normal text-muted-foreground hover:text-foreground"
-                    >
+                  {onTranscriptClear && <Button variant="ghost" size="sm" onClick={handleClearClick} className="h-7 px-2 text-xs font-normal text-muted-foreground hover:text-foreground">
                       Clear
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onTranscriptToggle}
-                    className="h-7 w-7"
-                  >
+                    </Button>}
+                  <Button variant="ghost" size="icon" onClick={onTranscriptToggle} className="h-7 w-7">
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -487,92 +474,75 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
               {/* Messages Area */}
               <div className="relative">
-                <div
-                  className="max-h-[50vh] overflow-y-auto"
-                  ref={historyScrollRef}
-                  onScroll={handleHistoryScroll}
-                >
+                <div className="max-h-[50vh] overflow-y-auto" ref={historyScrollRef} onScroll={handleHistoryScroll}>
                   <div className="p-3 space-y-1 flex flex-col justify-end min-h-full">
-                    {sortedTranscriptMessages.map((msg) => (
-                      <TranscriptMessage
-                        key={msg.id}
-                        content={msg.content}
-                        sender={msg.sender}
-                        timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
-                        onReply={(text) => {
-                          setInputMessage(`> ${text.split('\n')[0]}\n`);
-                          textareaRef.current?.focus();
-                        }}
-                      />
-                    ))}
+                    {sortedTranscriptMessages.map(msg => <TranscriptMessage key={msg.id} content={msg.content} sender={msg.sender} timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)} onReply={text => {
+                  setInputMessage(`> ${text.split('\n')[0]}\n`);
+                  textareaRef.current?.focus();
+                }} />)}
                   </div>
                 </div>
 
                 {/* Scroll to bottom button */}
                 <AnimatePresence>
-                  {showScrollDown && (
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      onClick={scrollHistoryToBottom}
-                      className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 h-8 w-8 rounded-full bg-foreground/90 text-background flex items-center justify-center shadow-lg hover:bg-foreground transition-colors"
-                      aria-label="Scroll to bottom"
-                    >
+                  {showScrollDown && <motion.button initial={{
+                opacity: 0,
+                scale: 0.8
+              }} animate={{
+                opacity: 1,
+                scale: 1
+              }} exit={{
+                opacity: 0,
+                scale: 0.8
+              }} onClick={scrollHistoryToBottom} className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 h-8 w-8 rounded-full bg-foreground/90 text-background flex items-center justify-center shadow-lg hover:bg-foreground transition-colors" aria-label="Scroll to bottom">
                       <ChevronDown className="h-4 w-4" />
-                    </motion.button>
-                  )}
+                    </motion.button>}
                 </AnimatePresence>
               </div>
-            </motion.div>
-          )}
+            </motion.div>}
         </AnimatePresence>
         
         {/* Drag overlay - INSIDE the card container for proper sizing */}
         <AnimatePresence>
-          {isDragOver && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-2xl flex items-center justify-center z-30 pointer-events-none"
-            >
+          {isDragOver && <motion.div initial={{
+          opacity: 0
+        }} animate={{
+          opacity: 1
+        }} exit={{
+          opacity: 0
+        }} className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-2xl flex items-center justify-center z-30 pointer-events-none">
               <p className="text-primary font-medium">Drop file here</p>
-            </motion.div>
-          )}
+            </motion.div>}
         </AnimatePresence>
 
         {/* Limit reached overlay */}
         <AnimatePresence>
-          {hasReachedLimit && !maintenanceActive && !creditsExhausted && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-20 rounded-2xl"
-            >
+          {hasReachedLimit && !maintenanceActive && !creditsExhausted && <motion.div initial={{
+          opacity: 0
+        }} animate={{
+          opacity: 1
+        }} exit={{
+          opacity: 0
+        }} className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-20 rounded-2xl">
             <p className="text-sm text-muted-foreground">
               you exceeded your limit open new chat
             </p>
-              {onStartNewChat && (
-                <Button onClick={onStartNewChat} size="sm" className="gap-2">
+              {onStartNewChat && <Button onClick={onStartNewChat} size="sm" className="gap-2">
                   <MessageSquarePlus className="w-4 h-4" />
                   New Chat
-                </Button>
-              )}
-            </motion.div>
-          )}
+                </Button>}
+            </motion.div>}
         </AnimatePresence>
 
         {/* Credits exhausted overlay */}
         <AnimatePresence>
-          {creditsExhausted && !maintenanceActive && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-20 rounded-2xl px-4"
-            >
+          {creditsExhausted && !maintenanceActive && <motion.div initial={{
+          opacity: 0
+        }} animate={{
+          opacity: 1
+        }} exit={{
+          opacity: 0
+        }} className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-20 rounded-2xl px-4">
               <div className="flex items-center gap-2 text-amber-500">
                 <AlertTriangle className="w-5 h-5" />
                 <span className="font-medium">Credits Exhausted</span>
@@ -580,184 +550,126 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               <p className="text-sm text-muted-foreground text-center">
                 You've used all your credits for this period.
               </p>
-              <Button 
-                onClick={() => window.location.href = '/pricing'} 
-                size="sm" 
-                className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0"
-              >
+              <Button onClick={() => window.location.href = '/pricing'} size="sm" className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0">
                 <Sparkles className="w-4 h-4" />
                 Upgrade Plan
               </Button>
-            </motion.div>
-          )}
+            </motion.div>}
         </AnimatePresence>
         {/* Row 1: Input area with flexbox layout */}
         <div className="flex items-end gap-3 px-4 pt-3 pb-2">
           <div className="relative flex-1 min-w-0">
-            <Textarea 
-              ref={textareaRef} 
-              value={inputMessage} 
-              onChange={handleTextareaChange} 
-              onKeyDown={handleKeyPress} 
-              onFocus={() => setIsInputFocused(true)} 
-              onBlur={() => setIsInputFocused(false)} 
-              disabled={isDisabled || isUploading} 
-              className={cn(
-                "w-full resize-none min-h-[44px] max-h-[200px]",
-                "text-base bg-transparent",
-                "border-0 focus-visible:ring-0 focus-visible:ring-offset-0",
-                "text-foreground placeholder:text-muted-foreground",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                "leading-relaxed",
-                "overflow-y-auto",
-                "px-2 py-2"
-              )}
-            />
+            <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyDown={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} disabled={isDisabled || isUploading} className={cn("w-full resize-none min-h-[44px] max-h-[200px]", "text-base bg-transparent", "border-0 focus-visible:ring-0 focus-visible:ring-offset-0", "text-foreground placeholder:text-muted-foreground", "disabled:opacity-50 disabled:cursor-not-allowed", "leading-relaxed", "overflow-y-auto", "px-2 py-2")} />
 
             {/* Typewriter placeholder */}
-            {showPlaceholder && !inputMessage && !isInputFocused && (
-              <div className="absolute top-[10px] left-[10px] pointer-events-none">
-                <motion.span 
-                  key={currentPlaceholder} 
-                  initial={{ opacity: 0, y: 5 }} 
-                  animate={{ opacity: 0.5, y: 0 }} 
-                  exit={{ opacity: 0, y: -5 }} 
-                  transition={{ duration: 0.3 }} 
-                  className="text-muted-foreground text-base md:text-lg"
-                >
+            {showPlaceholder && !inputMessage && !isInputFocused && <div className="absolute top-[10px] left-[10px] pointer-events-none">
+                <motion.span key={currentPlaceholder} initial={{
+              opacity: 0,
+              y: 5
+            }} animate={{
+              opacity: 0.5,
+              y: 0
+            }} exit={{
+              opacity: 0,
+              y: -5
+            }} transition={{
+              duration: 0.3
+            }} className="text-muted-foreground text-base md:text-lg">
                   {placeholders[currentPlaceholder]}
                 </motion.span>
-              </div>
-            )}
+              </div>}
           </div>
 
           {/* Send button - flexbox aligned to bottom */}
           <AnimatePresence>
-            {(inputMessage.trim() || selectedFile) && !isDisabled && (
-              <motion.button 
-                initial={{ scale: 0, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }} 
-                exit={{ scale: 0, opacity: 0 }} 
-                transition={{ duration: 0.15, ease: "easeOut" }} 
-                onClick={handleSend} 
-                disabled={isDisabled || isUploading} 
-                className={cn(
-                  "shrink-0 mb-1",
-                  "w-10 h-10 rounded-xl",
-                  "flex items-center justify-center",
-                  "transition-all duration-200",
-                  "shadow-lg hover:shadow-xl",
-                  "disabled:cursor-not-allowed disabled:hover:scale-100",
-                  isUploading 
-                    ? "bg-muted cursor-wait opacity-70" 
-                    : cn("hover:scale-105 active:scale-95", getSendButtonClass(selectedMode))
-                )}
-              >
-                {isUploading ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                ) : (
-                  <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
-                )}
-              </motion.button>
-            )}
+            {(inputMessage.trim() || selectedFile) && !isDisabled && <motion.button initial={{
+            scale: 0,
+            opacity: 0
+          }} animate={{
+            scale: 1,
+            opacity: 1
+          }} exit={{
+            scale: 0,
+            opacity: 0
+          }} transition={{
+            duration: 0.15,
+            ease: "easeOut"
+          }} onClick={handleSend} disabled={isDisabled || isUploading} className={cn("shrink-0 mb-1", "w-10 h-10 rounded-xl", "flex items-center justify-center", "transition-all duration-200", "shadow-lg hover:shadow-xl", "disabled:cursor-not-allowed disabled:hover:scale-100", isUploading ? "bg-muted cursor-wait opacity-70" : cn("hover:scale-105 active:scale-95", getSendButtonClass(selectedMode)))}>
+                {isUploading ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> : <ArrowUp className="w-5 h-5" strokeWidth={2.5} />}
+              </motion.button>}
           </AnimatePresence>
         </div>
 
         {/* Premium File Chip with Upload Progress */}
         <AnimatePresence>
-          {selectedFile && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="px-4 pb-3 overflow-hidden"
-            >
-              <motion.div 
-                initial={{ scale: 0.95, opacity: 0, y: 5 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: -5 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className={cn(
-                  "relative inline-flex items-center gap-2.5",
-                  "px-3.5 py-2.5 rounded-2xl",
-                  "bg-neutral-900 dark:bg-neutral-950",
-                  "border border-neutral-700/50",
-                  "shadow-lg shadow-black/20",
-                  "max-w-[320px]",
-                  "overflow-hidden"
-                )}
-              >
+          {selectedFile && <motion.div initial={{
+          height: 0,
+          opacity: 0
+        }} animate={{
+          height: 'auto',
+          opacity: 1
+        }} exit={{
+          height: 0,
+          opacity: 0
+        }} className="px-4 pb-3 overflow-hidden">
+              <motion.div initial={{
+            scale: 0.95,
+            opacity: 0,
+            y: 5
+          }} animate={{
+            scale: 1,
+            opacity: 1,
+            y: 0
+          }} exit={{
+            scale: 0.95,
+            opacity: 0,
+            y: -5
+          }} transition={{
+            duration: 0.2,
+            ease: "easeOut"
+          }} className={cn("relative inline-flex items-center gap-2.5", "px-3.5 py-2.5 rounded-2xl", "bg-neutral-900 dark:bg-neutral-950", "border border-neutral-700/50", "shadow-lg shadow-black/20", "max-w-[320px]", "overflow-hidden")}>
                 {/* Progress bar background */}
-                {isUploading && (
-                  <motion.div
-                    initial={{ width: '0%' }}
-                    animate={{ width: `${uploadProgress}%` }}
-                    className="absolute inset-0 bg-primary/20 rounded-2xl"
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                  />
-                )}
+                {isUploading && <motion.div initial={{
+              width: '0%'
+            }} animate={{
+              width: `${uploadProgress}%`
+            }} className="absolute inset-0 bg-primary/20 rounded-2xl" transition={{
+              duration: 0.3,
+              ease: "easeOut"
+            }} />}
                 
                 {/* Failed upload indicator */}
-                {uploadFailed && !isUploading && (
-                  <div className="absolute inset-0 bg-red-500/10 rounded-2xl" />
-                )}
+                {uploadFailed && !isUploading && <div className="absolute inset-0 bg-red-500/10 rounded-2xl" />}
                 
                 {/* File Icon based on file type or status */}
-                <div className={cn(
-                  "relative shrink-0",
-                  isUploading && "animate-pulse"
-                )}>
-                  {isUploading ? (
-                    <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                  ) : uploadFailed ? (
-                    <AlertTriangle className="w-4 h-4 text-red-400" />
-                  ) : (
-                    <FileTypeIcon filename={selectedFile.name} className="w-4 h-4" />
-                  )}
+                <div className={cn("relative shrink-0", isUploading && "animate-pulse")}>
+                  {isUploading ? <Loader2 className="w-4 h-4 text-primary animate-spin" /> : uploadFailed ? <AlertTriangle className="w-4 h-4 text-red-400" /> : <FileTypeIcon filename={selectedFile.name} className="w-4 h-4" />}
                 </div>
                 
                 {/* Filename - truncated */}
-                <span className={cn(
-                  "text-sm truncate max-w-[100px] font-medium relative z-10",
-                  uploadFailed ? "text-red-300" : "text-neutral-200"
-                )}>
+                <span className={cn("text-sm truncate max-w-[100px] font-medium relative z-10", uploadFailed ? "text-red-300" : "text-neutral-200")}>
                   {selectedFile.name}
                 </span>
                 
                 {/* File size, Upload progress, or Failed status */}
-                <span className={cn(
-                  "text-xs shrink-0 relative z-10 min-w-[48px] text-right",
-                  uploadFailed ? "text-red-400" : "text-neutral-500"
-                )}>
+                <span className={cn("text-xs shrink-0 relative z-10 min-w-[48px] text-right", uploadFailed ? "text-red-400" : "text-neutral-500")}>
                   {isUploading ? `${uploadProgress}%` : uploadFailed ? 'Failed' : formatFileSize(selectedFile.size)}
                 </span>
                 
                 {/* Retry button - shown when upload failed */}
-                {uploadFailed && !isUploading && onRetryUpload && (
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRetryUpload();
-                    }}
-                    className="p-1 rounded-full bg-amber-500/20 hover:bg-amber-500/40 transition-colors shrink-0 relative z-10"
-                    title="Retry upload"
-                  >
+                {uploadFailed && !isUploading && onRetryUpload && <button onClick={e => {
+              e.stopPropagation();
+              onRetryUpload();
+            }} className="p-1 rounded-full bg-amber-500/20 hover:bg-amber-500/40 transition-colors shrink-0 relative z-10" title="Retry upload">
                     <RefreshCw className="w-3.5 h-3.5 text-amber-400 hover:text-amber-300 transition-colors" />
-                  </button>
-                )}
+                  </button>}
                 
                 {/* Remove button - hidden while uploading */}
-                {!isUploading && (
-                  <button 
-                    onClick={handleRemoveFile}
-                    className="p-1 rounded-full hover:bg-neutral-700/60 transition-colors shrink-0 relative z-10"
-                  >
+                {!isUploading && <button onClick={handleRemoveFile} className="p-1 rounded-full hover:bg-neutral-700/60 transition-colors shrink-0 relative z-10">
                     <X className="w-3.5 h-3.5 text-neutral-400 hover:text-neutral-200 transition-colors" />
-                  </button>
-                )}
+                  </button>}
               </motion.div>
-            </motion.div>
-          )}
+            </motion.div>}
         </AnimatePresence>
 
         {/* Row 2: Toolbar */}
@@ -769,90 +681,45 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             </button>
             
             {/* Voice Input Button - only show if supported */}
-            {voiceSupported && (
-              <button 
-                onClick={handleVoiceToggle}
-                disabled={isDisabled || isUploading}
-                className={cn(
-                  "relative p-2 rounded-lg",
-                  "transition-all duration-200",
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                  isVoiceListening 
-                    ? "bg-red-500/20 hover:bg-red-500/30" 
-                    : "hover:bg-muted/60"
-                )}
-                title={isVoiceListening ? "Stop voice input" : "Start voice input"}
-              >
-                {isVoiceListening ? (
-                  <>
+            {voiceSupported && <button onClick={handleVoiceToggle} disabled={isDisabled || isUploading} className={cn("relative p-2 rounded-lg", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed", isVoiceListening ? "bg-red-500/20 hover:bg-red-500/30" : "hover:bg-muted/60")} title={isVoiceListening ? "Stop voice input" : "Start voice input"}>
+                {isVoiceListening ? <>
                     {/* Pulsing animation when listening */}
-                    <motion.div
-                      className="absolute inset-0 rounded-lg bg-red-500/30"
-                      animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                    />
+                    <motion.div className="absolute inset-0 rounded-lg bg-red-500/30" animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.5, 0.2, 0.5]
+              }} transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }} />
                     <Mic className="w-4 h-4 text-red-500 relative z-10" />
                     {/* Recording indicator dot */}
-                    <motion.span 
-                      className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full z-10"
-                      animate={{ opacity: [1, 0.5, 1] }}
-                      transition={{ duration: 0.8, repeat: Infinity }}
-                    />
-                  </>
-                ) : (
-                  <Mic className="w-4 h-4 text-muted-foreground" />
-                )}
-              </button>
-            )}
+                    <motion.span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full z-10" animate={{
+                opacity: [1, 0.5, 1]
+              }} transition={{
+                duration: 0.8,
+                repeat: Infinity
+              }} />
+                  </> : <Mic className="w-4 h-4 text-muted-foreground" />}
+              </button>}
             
             {/* Sound Toggle Indicator */}
-            <button 
-              onClick={() => soundContext?.toggleEnabled()} 
-              className={cn(
-                "p-2 rounded-lg",
-                "hover:bg-muted/60",
-                "transition-all duration-200"
-              )}
-              title={soundContext?.enabled ? "Sound on - click to mute" : "Sound off - click to enable"}
-            >
-              {soundContext?.enabled ? (
-                <Volume2 className="w-4 h-4 text-muted-foreground" />
-              ) : (
-                <VolumeX className="w-4 h-4 text-muted-foreground/50" />
-              )}
+            <button onClick={() => soundContext?.toggleEnabled()} className={cn("p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200")} title={soundContext?.enabled ? "Sound on - click to mute" : "Sound off - click to enable"}>
+              {soundContext?.enabled ? <Volume2 className="w-4 h-4 text-muted-foreground" /> : <VolumeX className="w-4 h-4 text-muted-foreground/50" />}
             </button>
           </div>
 
           {/* History Toggle Button */}
-          {transcriptMessages.length > 0 && onTranscriptToggle && (
-            <button
-              onClick={onTranscriptToggle}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg",
-                "text-sm text-muted-foreground",
-                "hover:bg-muted/60 transition-colors",
-                transcriptOpen && "bg-muted/60"
-              )}
-            >
+          {transcriptMessages.length > 0 && onTranscriptToggle && <button onClick={onTranscriptToggle} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg", "text-sm text-muted-foreground", "hover:bg-muted/60 transition-colors", transcriptOpen && "bg-muted/60")}>
               <Clock className="h-4 w-4" />
               <span>History</span>
               <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{transcriptMessages.length}</span>
-            </button>
-          )}
+            </button>}
 
           {/* Message counter */}
-          {messageCount > 0 && (
-            <div className={cn(
-              "text-xs px-2 py-1 rounded-md",
-              hasReachedLimit 
-                ? "bg-destructive/10 text-destructive" 
-                : messageCount >= maxMessages * 0.8 
-                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                  : "text-muted-foreground"
-            )}>
+          {messageCount > 0 && <div className={cn("text-xs px-2 py-1 rounded-md", hasReachedLimit ? "bg-destructive/10 text-destructive" : messageCount >= maxMessages * 0.8 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
               {messageCount}/{maxMessages}
-            </div>
-          )}
+            </div>}
 
           {/* AYN Mode Label - no dropdown */}
           <div className="h-9 px-3 rounded-xl flex items-center gap-2 text-muted-foreground">
@@ -881,10 +748,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleClearConfirm} 
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={handleClearConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Clear
             </AlertDialogAction>
           </AlertDialogFooter>
