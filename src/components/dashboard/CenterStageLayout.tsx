@@ -719,10 +719,11 @@ export const CenterStageLayout = ({
           {/* Eye container - shrinks when response visible */}
           <motion.div 
             ref={eyeRef} 
-            className="relative overflow-visible"
+            className={cn("relative overflow-visible", transcriptOpen && "pointer-events-none")}
             data-tutorial="eye"
             animate={{
               scale: (hasVisibleResponses || transcriptOpen) ? (isMobile ? 0.55 : 0.5) : 1,
+              opacity: transcriptOpen ? 0 : 1,
               marginBottom: (hasVisibleResponses || transcriptOpen) ? -20 : 0,
             }}
             transition={{
@@ -812,7 +813,7 @@ export const CenterStageLayout = ({
           "pb-safe",
           "transition-all duration-300",
           sidebarOpen && "md:left-[20rem]",
-          transcriptOpen && "md:right-[20rem]"
+          
         )}
       >
         {/* System notification banner - above chat input (maintenance OR usage warning) */}
