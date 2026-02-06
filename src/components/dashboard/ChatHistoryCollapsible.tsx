@@ -113,13 +113,14 @@ export const ChatHistoryCollapsible = ({
 
                 {/* Messages Area */}
                 <ScrollArea className="h-72" ref={scrollRef}>
-                  <div className="p-3 space-y-1">
+                  <div className="py-1 space-y-0">
                     {sortedMessages.map((msg) => (
                       <TranscriptMessage
                         key={msg.id}
                         content={msg.content}
                         sender={msg.sender}
                         timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
+                        compact
                       />
                     ))}
                   </div>
