@@ -440,19 +440,18 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         
         {/* Chat History Section - inside the card at the top */}
         <AnimatePresence>
-          {transcriptOpen && sortedTranscriptMessages.length > 0 && <motion.div initial={{
+        {transcriptOpen && sortedTranscriptMessages.length > 0 && <motion.div initial={{
           opacity: 0,
-          height: 0
+          y: -8
         }} animate={{
           opacity: 1,
-          height: 'auto'
+          y: 0
         }} exit={{
           opacity: 0,
-          height: 0
+          y: -8
         }} transition={{
-          type: 'spring',
-          damping: 25,
-          stiffness: 300
+          duration: 0.2,
+          ease: 'easeOut'
         }} className="overflow-hidden">
               {/* History Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
@@ -710,7 +709,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           </div>
 
           {/* History Toggle Button */}
-          {transcriptMessages.length > 0 && onTranscriptToggle && <button onClick={onTranscriptToggle} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg", "text-sm text-muted-foreground", "hover:bg-muted/60 transition-colors", transcriptOpen && "bg-muted/60")}>
+          {transcriptMessages.length > 0 && onTranscriptToggle && <button onClick={onTranscriptToggle} className={cn("inline-flex items-center gap-2 px-4 py-1.5 rounded-full", "border border-border bg-card/80 backdrop-blur-sm", "text-sm text-muted-foreground shadow-sm", "hover:bg-muted/50 hover:text-foreground hover:shadow-md", "active:scale-95 transition-all cursor-pointer", transcriptOpen && "bg-muted/60")}>
               <Clock className="h-4 w-4" />
               <span>History</span>
               <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{transcriptMessages.length}</span>
