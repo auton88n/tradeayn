@@ -450,9 +450,8 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           opacity: 0,
           height: 0
         }} transition={{
-          type: 'spring',
-          damping: 25,
-          stiffness: 300
+          duration: 0.15,
+          ease: 'easeOut'
         }} className="overflow-hidden">
               {/* History Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
@@ -710,7 +709,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           </div>
 
           {/* History Toggle Button */}
-          {transcriptMessages.length > 0 && onTranscriptToggle && <button onClick={onTranscriptToggle} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg", "text-sm text-muted-foreground", "hover:bg-muted/60 transition-colors", transcriptOpen && "bg-muted/60")}>
+          {transcriptMessages.length > 0 && onTranscriptToggle && <button onClick={onTranscriptToggle} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg", "text-sm text-muted-foreground", "bg-muted/50 border border-border", "hover:bg-muted transition-colors", transcriptOpen && "bg-muted border-border/80")}>
               <Clock className="h-4 w-4" />
               <span>History</span>
               <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{transcriptMessages.length}</span>
