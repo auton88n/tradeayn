@@ -1,35 +1,30 @@
 
-
-# Improve Chat History Message Bubbles
+# Fix Centered Text in Chat History Bubbles
 
 ## Problem
 
-The AYN reply messages in the chat history (TranscriptMessage component) look gray and boxy -- they use a flat `bg-muted` background with hard edges, making them feel heavy and lifeless instead of like natural chat messages.
+The message text inside chat bubbles is inheriting `text-right` / `text-left` from the parent container. This causes AYN's long messages to appear visually centered/oddly aligned, and user messages to be right-aligned inside their bubble. The text inside bubbles should always be left-aligned regardless of which side the bubble is on.
 
-## Changes to `src/components/transcript/TranscriptMessage.tsx`
+## Fix in `src/components/transcript/TranscriptMessage.tsx`
 
-### Soften the AYN message bubble (line 91-96)
-- Replace the flat `bg-muted` with a softer, slightly translucent `bg-muted/50` for AYN messages
-- The user messages (`bg-primary`) are fine as-is
+### Add `text-left` to the bubble div (line 91)
 
-### Improve bubble shape (lines 91-96)
-- Increase border radius from `rounded-2xl` to `rounded-[20px]` for a smoother, more modern bubble shape
-- Add a very subtle shadow on AYN bubbles: `shadow-sm` for slight depth instead of flat
+Add `text-left` (or `text-start` for RTL support) directly on the bubble `<div>` so the inner text is always left-aligned, overriding the parent's `text-right`/`text-left` which is only meant for positioning the bubble itself (via `inline-block`).
 
-### Lighten the text density (lines 98-103)
-- Add slightly more padding inside the bubble for breathing room (compact mode unchanged)
-- Normal mode: from `px-4 py-2` to `px-4 py-2.5`
+**Before (line 91-97):**
+```
+<div className={cn(
+  "inline-block rounded-[20px]",
+  ...
+)}>
+```
 
-### Overall feel
-The messages will look more like iMessage/WhatsApp bubbles -- softer backgrounds, rounder corners, and a touch of depth.
+**After:**
+```
+<div className={cn(
+  "inline-block rounded-[20px] text-start",
+  ...
+)}>
+```
 
-## Technical Details
-
-### File: `src/components/transcript/TranscriptMessage.tsx`
-
-| Line Range | What Changes |
-|------------|-------------|
-| 91-96 | AYN bubble: `bg-muted` becomes `bg-muted/50 shadow-sm`; keep user bubble as-is |
-| 93 | Normal padding: `px-4 py-2` becomes `px-4 py-2.5` |
-| 91 | Rounding: `rounded-2xl` becomes `rounded-[20px]` |
-
+This single class addition ensures bubble text is always start-aligned while the parent alignment still correctly positions the bubble on the left or right side of the chat.
