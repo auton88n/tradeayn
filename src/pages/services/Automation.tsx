@@ -56,7 +56,7 @@ const StepCard = memo(({ step }: { step: any }) => (
 StepCard.displayName = 'StepCard';
 
 const Automation = () => {
-  const { language } = useLanguage();
+  const { language, direction } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -208,7 +208,7 @@ const Automation = () => {
         jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
         language={language as 'en' | 'ar' | 'fr'}
       />
-      <div className="min-h-screen bg-neutral-950 text-white">
+      <div dir={direction} className="min-h-screen bg-neutral-950 text-white">
         {/* Back Button */}
         <Link to="/" className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
           <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2">

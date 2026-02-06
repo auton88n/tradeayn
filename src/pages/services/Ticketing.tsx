@@ -46,7 +46,7 @@ const AIFeatureCard = memo(({ feature }: { feature: any }) => (
 AIFeatureCard.displayName = 'AIFeatureCard';
 
 const Ticketing = () => {
-  const { language } = useLanguage();
+  const { language, direction } = useLanguage();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,7 +198,7 @@ const Ticketing = () => {
         language={language as 'en' | 'ar' | 'fr'}
       />
       
-      <div className="min-h-screen bg-background">
+      <div dir={direction} className="min-h-screen bg-background">
         {/* Back Button */}
         <div className="fixed top-4 left-4 z-50">
           <Link to="/">

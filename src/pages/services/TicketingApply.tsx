@@ -13,7 +13,7 @@ import { SEO } from '@/components/shared/SEO';
 import { motion } from 'framer-motion';
 
 const TicketingApply = () => {
-  const { language } = useLanguage();
+  const { language, direction } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,7 +124,7 @@ const TicketingApply = () => {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div dir={direction} className="min-h-screen bg-background flex items-center justify-center px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -151,7 +151,7 @@ const TicketingApply = () => {
         canonical="/services/ticketing/apply"
       />
       
-      <div className="min-h-screen bg-background">
+      <div dir={direction} className="min-h-screen bg-background">
         {/* Back Button */}
         <div className="fixed top-4 left-4 z-50">
           <Link to="/services/ticketing">

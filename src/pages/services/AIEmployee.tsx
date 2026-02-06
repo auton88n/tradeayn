@@ -43,7 +43,7 @@ const ComparisonRow = memo(({ item }: { item: any }) => (
 ComparisonRow.displayName = 'ComparisonRow';
 
 const AIEmployee = () => {
-  const { language } = useLanguage();
+  const { language, direction } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -172,7 +172,7 @@ const AIEmployee = () => {
         jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
         language={language as 'en' | 'ar' | 'fr'}
       />
-      <div className="min-h-screen bg-neutral-950 text-white">
+      <div dir={direction} className="min-h-screen bg-neutral-950 text-white">
         {/* Navigation */}
         <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
           <Link to="/">
