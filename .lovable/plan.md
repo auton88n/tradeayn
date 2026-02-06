@@ -1,143 +1,54 @@
 
-# Fix Mobile/Tablet Responsiveness and Message-to-Eye Animation
+# Improve Response Card Visual Design
 
-## What's Being Fixed
+## Problem
 
-When you send a message on mobile or tablet, the bubble should fly directly to the exact center of the eye. Currently there are two issues:
-
-1. **Mobile keyboard offset**: When you tap "Send" on mobile, the virtual keyboard is still visible, which pushes the eye upward. The bubble's end position is calculated with the keyboard-shifted layout, but the keyboard then dismisses mid-animation, causing the bubble to miss the eye center.
-
-2. **Scaled eye targeting**: When the eye is scaled down (after a response is visible), the bubble still needs to target the visual center of the scaled element precisely.
+The AYN response card currently has a heavy, boxy appearance with:
+- A thick visible border (`border border-border`) that creates a harsh frame
+- A flat, utilitarian header bar with a visible bottom border
+- No visual depth or softness -- looks like a system dialog rather than a chat bubble
+- The speech bubble pointer arrow also has visible borders making it look mechanical
 
 ## Changes
 
-### 1. CenterStageLayout.tsx -- Fix eye targeting on mobile
+### ResponseCard.tsx -- Soften the card design
 
-**Problem**: `getEyePosition()` reads `getBoundingClientRect()` at send time, but on mobile the keyboard shifts everything. The keyboard starts closing after send, so the eye moves during the bubble flight.
+**Outer card container (lines 301-313):**
+- Replace `border border-border` with a much softer `border border-border/40` (reduce border opacity)
+- Upgrade `shadow-sm` to `shadow-md shadow-black/5` for subtle depth that replaces the border as the visual boundary
+- Add a slight backdrop blur for a glass-like feel on mobile
 
-**Fix**: On mobile, blur the textarea before reading eye position. This triggers keyboard dismissal first, then read the eye position after a short delay to get the true position. Also ensure the eye position accounts for any ongoing scale animation.
+**Speech bubble pointer (line 330):**
+- Match the softer border: `border-border/40` instead of `border-border`
 
-In `handleSendWithAnimation` (around line 405):
-- On mobile: blur the input first, then use `requestAnimationFrame` to read eye position after keyboard starts closing
-- Add a small delay (50ms) before starting the animation on mobile to let the layout settle
+**Header bar (line 334):**
+- Remove the harsh `border-b border-border` bottom separator
+- Replace with a subtle background tint: `bg-muted/30` so AYN label area is gently distinguished without a hard line
 
-### 2. UserMessageBubble.tsx -- Ensure precise center targeting
+**Content area (lines 355-361):**
+- Add slightly more generous padding: `[&>div]:px-4 [&>div]:py-3` instead of `px-3 py-2.5`
 
-**Problem**: The bubble calculates its own center offset using `useLayoutEffect` to measure dimensions, but the initial `useState` defaults (140x44) are used on the first render frame before measurement completes.
-
-**Fix**: Use a ref-based measurement that runs synchronously before the animation starts, and add `will-change: transform` for smoother GPU-accelerated animation on mobile.
-
-### 3. FlyingSuggestionBubble.tsx -- Same fix for suggestions
-
-Apply the same measurement fix as UserMessageBubble for consistency on tablet/mobile.
-
-### 4. Hero.tsx -- Add tablet-specific card positions
-
-**Problem**: Tablets (768px-1024px) use the desktop card positions which can look too spread out on smaller tablets.
-
-**Fix**: Add an intermediate card position set for tablets (using a width check in `getCardPositions`).
+**Action bar (line 409):**
+- Soften the top border: `border-t border-border/40` instead of `border-border`
+- Reduce button visual weight: smaller icon sizes (16 instead of 18 for feedback buttons)
 
 ## Technical Details
 
-### File: src/components/dashboard/CenterStageLayout.tsx
+### File: src/components/eye/ResponseCard.tsx
 
-In `handleSendWithAnimation`, wrap the position reading in a mobile-aware flow:
+| Line Range | Change |
+|------------|--------|
+| 301-313 | Softer border (`border-border/40`), better shadow (`shadow-md shadow-black/5`) |
+| 330 | Pointer arrow border opacity reduced |
+| 334 | Header: remove `border-b`, add `bg-muted/30` |
+| 359 | Content padding from `px-3 py-2.5` to `px-4 py-3` |
+| 409 | Action bar border softened to `border-border/40` |
+| 440, 452 | Feedback icon size from 18 to 16 |
+| 458 | Expand icon size from 18 to 16 |
 
-```typescript
-const handleSendWithAnimation = useCallback(
-  async (content: string, file?: File | null) => {
-    if (isUploading || (!content.trim() && !file)) return;
+### Expected Result
 
-    // ... existing setup code ...
-
-    // On mobile, blur input first to dismiss keyboard before reading positions
-    if (isMobile) {
-      const activeEl = document.activeElement as HTMLElement;
-      activeEl?.blur?.();
-    }
-
-    // Small delay on mobile to let keyboard dismiss and layout settle
-    const animationDelay = isMobile ? 60 : 0;
-
-    // Send message IMMEDIATELY (don't wait for animation)
-    onSendMessage(content, file);
-
-    setTimeout(() => {
-      const inputPos = getInputPosition();
-      const eyePos = getEyePosition();
-      startMessageAnimation(content, inputPos, eyePos);
-
-      setTimeout(() => {
-        // ... existing absorption/blink/particle code ...
-        // Re-read eye position for particle burst (layout may have settled)
-        const freshEyePos = getEyePosition();
-        setBurstPosition(freshEyePos);
-        // ...
-      }, 400);
-    }, animationDelay);
-  },
-  [/* deps */]
-);
-```
-
-### File: src/components/eye/UserMessageBubble.tsx
-
-Update to use more reliable initial dimensions and add mobile GPU hints:
-
-```typescript
-// Use 0,0 defaults so first frame uses actual measured position
-const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-
-// Add will-change for GPU acceleration on mobile
-style={{
-  left: 0,
-  top: 0,
-  transformOrigin: 'center center',
-  willChange: 'transform, opacity',
-}}
-```
-
-### File: src/components/eye/FlyingSuggestionBubble.tsx
-
-Same dimension fix as UserMessageBubble.
-
-### File: src/components/landing/Hero.tsx
-
-Add tablet breakpoint for card positions:
-
-```typescript
-const getCardPositions = () => {
-  if (isMobile) {
-    // existing mobile positions
-  }
-  // Tablet: 768px - 1024px
-  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-    return {
-      topLeft: { x: -120, y: -80 },
-      middleLeft: { x: -160, y: 0 },
-      bottomLeft: { x: -120, y: 80 },
-      topRight: { x: 120, y: -80 },
-      middleRight: { x: 160, y: 0 },
-      bottomRight: { x: 120, y: 80 }
-    };
-  }
-  // Desktop positions (existing)
-  return { /* existing */ };
-};
-```
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/components/dashboard/CenterStageLayout.tsx` | Blur input on mobile before reading eye position; add small delay for keyboard dismissal |
-| `src/components/eye/UserMessageBubble.tsx` | Fix initial dimension defaults; add `will-change` for mobile GPU |
-| `src/components/eye/FlyingSuggestionBubble.tsx` | Same dimension fix as UserMessageBubble |
-| `src/components/landing/Hero.tsx` | Add tablet-specific card positions (768px-1024px) |
-
-## Expected Result
-
-- Messages will fly precisely to the eye center on all devices (mobile, tablet, desktop)
-- The virtual keyboard on mobile won't cause the bubble to miss the eye
-- Hero cards on tablets will have proportional spacing instead of using desktop-sized offsets
-- Smoother animations on mobile with proper GPU hints
+- The card will feel lighter and more modern -- like a floating chat bubble rather than a bordered box
+- Softer borders and subtle shadows create depth without heaviness
+- More breathing room in the content area for readability
+- Overall cleaner, more polished look matching modern chat interfaces
