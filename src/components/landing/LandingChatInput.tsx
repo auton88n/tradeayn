@@ -6,23 +6,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface LandingChatInputProps {
   onSendAttempt: (message: string) => void;
+  onPlaceholderChange?: () => void;
 }
 
 const placeholders = ["What's on your mind?", "Ask AYN anything...", "How can I help you today?"];
 
-export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttempt }) => {
+export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttempt, onPlaceholderChange }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Rotate placeholders
+  // Rotate placeholders and notify parent (eye blinks)
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
+      onPlaceholderChange?.();
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [onPlaceholderChange]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -50,11 +52,7 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ 
-        duration: 0.5, 
-        delay: 0.4,
-        ease: [0.22, 1, 0.36, 1]
-      }}
+      transition={{ duration: 0.5, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className="w-full max-w-xl mx-auto mt-8 md:mt-12 px-4"
     >
       <div
@@ -88,7 +86,6 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
             />
           </div>
 
-          {/* Send Button - Only shows when there's text */}
           <AnimatePresence>
             {inputMessage.trim() && (
               <motion.button
@@ -114,7 +111,6 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
 
         {/* Row 2: Toolbar */}
         <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
-          {/* Plus Button (visual only) */}
           <button
             className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center",
@@ -124,14 +120,7 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
           >
             <Plus className="w-5 h-5" />
           </button>
-
-          {/* AYN Label */}
-          <div
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg",
-              "text-sm text-muted-foreground"
-            )}
-          >
+          <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg", "text-sm text-muted-foreground")}>
             <Brain className="w-4 h-4" />
             <span>AYN</span>
           </div>
