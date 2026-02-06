@@ -474,7 +474,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               </div>
 
               {/* Messages Area */}
-              <ScrollArea className="max-h-64" ref={historyScrollRef}>
+              <div className="max-h-64 overflow-y-auto" ref={historyScrollRef}>
                 <div className="p-3 space-y-1">
                   {sortedTranscriptMessages.map((msg) => (
                     <TranscriptMessage
@@ -485,7 +485,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                     />
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
