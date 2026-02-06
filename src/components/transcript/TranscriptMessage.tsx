@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Copy, Check, User, Brain } from 'lucide-react';
+import { Copy, Check, User, Brain, CornerDownLeft } from 'lucide-react';
 import { useState } from 'react';
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
 
@@ -9,6 +9,7 @@ interface TranscriptMessageProps {
   sender: 'user' | 'ayn';
   timestamp: Date;
   compact?: boolean;
+  onReply?: (content: string) => void;
 }
 
 // Helper to strip markdown for clipboard
@@ -30,6 +31,7 @@ export const TranscriptMessage = ({
   sender,
   timestamp,
   compact = false,
+  onReply,
 }: TranscriptMessageProps) => {
   const isUser = sender === 'user';
   const [copied, setCopied] = useState(false);
@@ -101,24 +103,34 @@ export const TranscriptMessage = ({
           </div>
         </div>
 
-        {/* Copy button - only in non-compact mode */}
+        {/* Action buttons - only in non-compact mode */}
         {!compact && (
-          <button
-            onClick={handleCopy}
-            className={cn(
-              "flex items-center gap-1 mt-1 p-1 rounded-md",
-              "opacity-0 group-hover:opacity-100",
-              "hover:bg-muted/50 transition-all",
-              isUser ? "ml-auto" : "mr-auto"
+          <div className={cn(
+            "flex items-center gap-0.5 mt-1",
+            "opacity-0 group-hover:opacity-100 transition-all",
+            isUser ? "justify-end" : "justify-start"
+          )}>
+            <button
+              onClick={handleCopy}
+              className="p-1 rounded-md hover:bg-muted/50 transition-all"
+              title="Copy"
+            >
+              {copied ? (
+                <Check className="w-3.5 h-3.5 text-green-500" />
+              ) : (
+                <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+              )}
+            </button>
+            {onReply && (
+              <button
+                onClick={() => onReply(content)}
+                className="p-1 rounded-md hover:bg-muted/50 transition-all"
+                title="Reply"
+              >
+                <CornerDownLeft className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
             )}
-            title="Copy"
-          >
-            {copied ? (
-              <Check className="w-3.5 h-3.5 text-green-500" />
-            ) : (
-              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-            )}
-          </button>
+          </div>
         )}
       </div>
     </div>
