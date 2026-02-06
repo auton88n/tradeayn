@@ -1,34 +1,143 @@
 
-# Performance Optimization Implementation
+# Fix Mobile/Tablet Responsiveness and Message-to-Eye Animation
+
+## What's Being Fixed
+
+When you send a message on mobile or tablet, the bubble should fly directly to the exact center of the eye. Currently there are two issues:
+
+1. **Mobile keyboard offset**: When you tap "Send" on mobile, the virtual keyboard is still visible, which pushes the eye upward. The bubble's end position is calculated with the keyboard-shifted layout, but the keyboard then dismisses mid-animation, causing the bubble to miss the eye center.
+
+2. **Scaled eye targeting**: When the eye is scaled down (after a response is visible), the bubble still needs to target the visual center of the scaled element precisely.
 
 ## Changes
 
-### 1. EmotionalEye.tsx
-- Replace the `filter: blur(24px)` on the outer glow halo (line 455) with a wider radial gradient that looks pre-blurred (zero GPU cost)
-- Remove the "check-in" double-blink timer (lines 297-317) -- fires every 10 seconds for minimal visual benefit
-- Increase idle blink minimum interval from 1800ms to 3000ms (line 256)
-- Disable mouse tracking entirely on mobile by checking `isMobile` in the gaze effect
+### 1. CenterStageLayout.tsx -- Fix eye targeting on mobile
 
-### 2. EyeParticles.tsx
-- Remove `boxShadow` from all particle render functions (sparkle, energy, orbit, burst) -- this is the biggest per-particle GPU cost
-- Reduce burst particle count from 12/6 to 6/3 (desktop/mobile)
-- Lower default `performanceMultiplier` prop from 1 to 0.5
+**Problem**: `getEyePosition()` reads `getBoundingClientRect()` at send time, but on mobile the keyboard shifts everything. The keyboard starts closing after send, so the eye moves during the bubble flight.
 
-### 3. Hero.tsx
-- Consolidate 6 separate `AnimatePresence` wrappers into 1 single wrapper (reduces React reconciliation overhead)
-- Remove the pulse ring animation (lines 290-301)
-- Slow the animation cycle interval from 9500ms to 12000ms
+**Fix**: On mobile, blur the textarea before reading eye position. This triggers keyboard dismissal first, then read the eye position after a short delay to get the true position. Also ensure the eye position accounts for any ongoing scale animation.
 
-### 4. index.css
-- Remove the duplicate `.animate-glow-breathe` definition (lines 606-620)
-- Simplify `eye-breathe` keyframes to use only `transform: scale()` without `filter: brightness()` changes (filter triggers compositing)
+In `handleSendWithAnimation` (around line 405):
+- On mobile: blur the input first, then use `requestAnimationFrame` to read eye position after keyboard starts closing
+- Add a small delay (50ms) before starting the animation on mobile to let the layout settle
 
-### 5. App.tsx
-- No changes needed -- the AYNEmotionProvider children are already sufficiently isolated through memo on individual components
+### 2. UserMessageBubble.tsx -- Ensure precise center targeting
 
-## Summary of Impact
-- Fewer GPU composite layers (no blur filter, no box-shadows on particles)
-- Less JavaScript timer activity (removed check-in blink, slower idle blinks)
-- Reduced React reconciliation (single AnimatePresence instead of 6)
-- Simpler CSS animations (no brightness filter in breathing)
-- All visual effects remain -- just rendered more efficiently
+**Problem**: The bubble calculates its own center offset using `useLayoutEffect` to measure dimensions, but the initial `useState` defaults (140x44) are used on the first render frame before measurement completes.
+
+**Fix**: Use a ref-based measurement that runs synchronously before the animation starts, and add `will-change: transform` for smoother GPU-accelerated animation on mobile.
+
+### 3. FlyingSuggestionBubble.tsx -- Same fix for suggestions
+
+Apply the same measurement fix as UserMessageBubble for consistency on tablet/mobile.
+
+### 4. Hero.tsx -- Add tablet-specific card positions
+
+**Problem**: Tablets (768px-1024px) use the desktop card positions which can look too spread out on smaller tablets.
+
+**Fix**: Add an intermediate card position set for tablets (using a width check in `getCardPositions`).
+
+## Technical Details
+
+### File: src/components/dashboard/CenterStageLayout.tsx
+
+In `handleSendWithAnimation`, wrap the position reading in a mobile-aware flow:
+
+```typescript
+const handleSendWithAnimation = useCallback(
+  async (content: string, file?: File | null) => {
+    if (isUploading || (!content.trim() && !file)) return;
+
+    // ... existing setup code ...
+
+    // On mobile, blur input first to dismiss keyboard before reading positions
+    if (isMobile) {
+      const activeEl = document.activeElement as HTMLElement;
+      activeEl?.blur?.();
+    }
+
+    // Small delay on mobile to let keyboard dismiss and layout settle
+    const animationDelay = isMobile ? 60 : 0;
+
+    // Send message IMMEDIATELY (don't wait for animation)
+    onSendMessage(content, file);
+
+    setTimeout(() => {
+      const inputPos = getInputPosition();
+      const eyePos = getEyePosition();
+      startMessageAnimation(content, inputPos, eyePos);
+
+      setTimeout(() => {
+        // ... existing absorption/blink/particle code ...
+        // Re-read eye position for particle burst (layout may have settled)
+        const freshEyePos = getEyePosition();
+        setBurstPosition(freshEyePos);
+        // ...
+      }, 400);
+    }, animationDelay);
+  },
+  [/* deps */]
+);
+```
+
+### File: src/components/eye/UserMessageBubble.tsx
+
+Update to use more reliable initial dimensions and add mobile GPU hints:
+
+```typescript
+// Use 0,0 defaults so first frame uses actual measured position
+const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+// Add will-change for GPU acceleration on mobile
+style={{
+  left: 0,
+  top: 0,
+  transformOrigin: 'center center',
+  willChange: 'transform, opacity',
+}}
+```
+
+### File: src/components/eye/FlyingSuggestionBubble.tsx
+
+Same dimension fix as UserMessageBubble.
+
+### File: src/components/landing/Hero.tsx
+
+Add tablet breakpoint for card positions:
+
+```typescript
+const getCardPositions = () => {
+  if (isMobile) {
+    // existing mobile positions
+  }
+  // Tablet: 768px - 1024px
+  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+    return {
+      topLeft: { x: -120, y: -80 },
+      middleLeft: { x: -160, y: 0 },
+      bottomLeft: { x: -120, y: 80 },
+      topRight: { x: 120, y: -80 },
+      middleRight: { x: 160, y: 0 },
+      bottomRight: { x: 120, y: 80 }
+    };
+  }
+  // Desktop positions (existing)
+  return { /* existing */ };
+};
+```
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/components/dashboard/CenterStageLayout.tsx` | Blur input on mobile before reading eye position; add small delay for keyboard dismissal |
+| `src/components/eye/UserMessageBubble.tsx` | Fix initial dimension defaults; add `will-change` for mobile GPU |
+| `src/components/eye/FlyingSuggestionBubble.tsx` | Same dimension fix as UserMessageBubble |
+| `src/components/landing/Hero.tsx` | Add tablet-specific card positions (768px-1024px) |
+
+## Expected Result
+
+- Messages will fly precisely to the eye center on all devices (mobile, tablet, desktop)
+- The virtual keyboard on mobile won't cause the bubble to miss the eye
+- Hero cards on tablets will have proportional spacing instead of using desktop-sized offsets
+- Smoother animations on mobile with proper GPU hints
