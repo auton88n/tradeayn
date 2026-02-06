@@ -93,7 +93,7 @@ export const TranscriptMessage = ({
           compact ? "px-2.5 py-1" : "px-4 py-2.5",
           isUser 
             ? "bg-primary text-primary-foreground rounded-br-sm" 
-            : "bg-muted/30 text-foreground rounded-bl-sm"
+            : "bg-muted/50 text-foreground rounded-bl-sm shadow-sm"
         )}>
           <div className={cn(
             "leading-relaxed break-words [&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:pb-0 [&_li]:pl-3 [&_li]:before:text-sm",
