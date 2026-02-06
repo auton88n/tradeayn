@@ -1,37 +1,74 @@
 
-# Add "Reply" Button Next to Copy in Chat Messages
+# Fix "Earn 5 Credits" and Admin Unlimited Assignment
 
-## What This Does
-Adds a reply button (arrow icon) next to the existing copy button on each message. Clicking it will prefill the chat input with the message content so you can quickly reference or respond to it.
+## Problem 1: Earn 5 Credits -- Credits Not Reflected
+
+The bonus credits are correctly saved to the database, but the user doesn't see them reflected immediately because of a timing issue. After the `add_bonus_credits` RPC completes, `onCreditsUpdated` fires `refreshUsage()` instantly. However, the database transaction may not have fully committed yet, so the re-fetch reads stale data.
+
+**Fix**: Add a small delay (500ms) before refreshing usage data after credit award, ensuring the DB transaction completes.
+
+**File**: `src/components/dashboard/BetaFeedbackModal.tsx`
+- After `add_bonus_credits` RPC succeeds, delay the `onCreditsUpdated` call by 500ms
+
+## Problem 2: Admin Assigning "Unlimited" Tier -- User Gets Blocked
+
+When an admin assigns the "Unlimited" or "Enterprise" tier, the `SubscriptionManagement` component updates `user_subscriptions.subscription_tier` to `'unlimited'` and sets `user_ai_limits.monthly_messages` to `-1`. However, it never sets `is_unlimited = true` in `user_ai_limits`.
+
+The database function `check_user_ai_limit` only bypasses limits when `is_unlimited = true`. Since that flag is never set, the user's limit becomes `-1`, which means `current_val >= -1` is ALWAYS true, actually **blocking** the user entirely instead of giving them unlimited access.
+
+**Fix**: When admin sets tier to `unlimited` or `enterprise`, also set `is_unlimited = true` in `user_ai_limits`. When setting any other tier, ensure `is_unlimited = false`.
+
+**File**: `src/components/admin/SubscriptionManagement.tsx`
+- In `handleSetOrOverrideTier`, add `is_unlimited` flag to the `user_ai_limits` upsert:
+  - `is_unlimited: true` when tier is `'unlimited'` or `'enterprise'`
+  - `is_unlimited: false` for all other tiers
 
 ## Technical Changes
 
-### 1. TranscriptMessage.tsx -- Add reply button and callback
+### 1. SubscriptionManagement.tsx -- Fix unlimited flag
 
-- Add an optional `onReply` prop to `TranscriptMessageProps`
-- Import `Reply` (or `CornerDownLeft`) icon from lucide-react
-- Render a reply button next to the copy button in the action row (non-compact mode only)
-- Clicking it calls `onReply(content)` with the message text
+In the `handleSetOrOverrideTier` function (around line 234-244), update the `user_ai_limits` upsert to include `is_unlimited`:
 
-The action buttons row changes from a single copy button to a flex row with both copy and reply:
+```typescript
+const isUnlimitedTier = newTier === 'unlimited' || newTier === 'enterprise';
 
+const { error: limitsError } = await supabase
+  .from('user_ai_limits')
+  .upsert({
+    user_id: editingUser.user_id,
+    monthly_messages: effectiveLimit,
+    monthly_engineering: tierData.limits.monthlyEngineering,
+    is_unlimited: isUnlimitedTier,   // <-- NEW
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' });
 ```
-Before:  [Copy]
-After:   [Copy] [Reply]
+
+### 2. BetaFeedbackModal.tsx -- Delayed credit refresh
+
+In the `handleSubmit` function (around line 91-92), add a delay before calling `onCreditsUpdated`:
+
+```typescript
+// Trigger credit refresh after a short delay to ensure DB commit
+setTimeout(() => {
+  onCreditsUpdated?.();
+}, 500);
 ```
-
-### 2. ChatInput.tsx -- Pass onReply to TranscriptMessage and prefill input
-
-- Pass an `onReply` callback to each `<TranscriptMessage>` that sets the input value to the replied message content (or a quoted version like `> original message`)
-- When reply is clicked, the chat input gets prefilled and focused so the user can immediately type their follow-up
-
-### 3. ChatHistoryCollapsible.tsx and TranscriptSidebar.tsx -- Pass onReply (optional)
-
-These also render `<TranscriptMessage>`. The prop is optional so they won't break, but if desired they can also wire up reply.
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/transcript/TranscriptMessage.tsx` | Add optional `onReply` prop; render reply button next to copy |
-| `src/components/dashboard/ChatInput.tsx` | Pass `onReply` handler that prefills the input with the message content |
+| `src/components/admin/SubscriptionManagement.tsx` | Add `is_unlimited` flag when upserting `user_ai_limits` based on tier |
+| `src/components/dashboard/BetaFeedbackModal.tsx` | Add 500ms delay before refreshing credits after submission |
+
+## Existing Data Fix
+
+Any users already assigned "unlimited" or "enterprise" tier in the database currently have `is_unlimited = false` and are being blocked. A one-time SQL migration will fix existing records:
+
+```sql
+UPDATE user_ai_limits SET is_unlimited = true
+WHERE user_id IN (
+  SELECT user_id FROM user_subscriptions
+  WHERE subscription_tier IN ('unlimited', 'enterprise')
+);
+```
