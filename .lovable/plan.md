@@ -1,32 +1,51 @@
 
 
-# Remove Compact Mode from Chat History
+# Fix Full-Width Chat and Eye Overlap Issues
 
-## Problem
-The chat input and history panel are displaying in a shrunken/compact mode. The user wants them displayed at full size — normal-sized avatars, full padding, and proper spacing — exactly as shown in their screenshot.
+## Problems Identified
+
+1. **History panel not full width**: The footer container applies `md:right-[20rem]` when `transcriptOpen` is true (line 815 of CenterStageLayout.tsx). This was originally designed for a separate transcript sidebar panel, but now the history lives *inside* the ChatInput card. This right-offset creates a large empty gap on the right side.
+
+2. **Eye overlapping the history panel**: The eye shrinks to scale 0.5 but remains visible, overlapping with the top of the history panel. When history is open, the eye should either hide or shrink further to avoid visual clutter.
+
+---
 
 ## Changes
 
-### 1. ChatInput.tsx — Remove compact mode and restore full spacing
+### 1. CenterStageLayout.tsx -- Remove right offset when history is open
 
-- **Messages area**: Change `max-h-64` to `max-h-[50vh]` to give the history more room (like the screenshot shows)
-- **Container spacing**: Change `py-1 space-y-0` back to `p-3 space-y-1` for proper message gaps
-- **TranscriptMessage**: Remove the `compact` prop so messages render at full size with normal avatars, padding, and copy buttons
+The footer's `transcriptOpen && "md:right-[20rem]"` class should be removed or conditioned differently. Since the transcript/history now lives inside the ChatInput card (not as a separate sidebar), this offset is no longer needed.
+
+**Line ~815**: Remove the `transcriptOpen` right offset from the footer:
 
 ```
-Before:  <TranscriptMessage ... compact />
-After:   <TranscriptMessage ... />
-
-Before:  <div className="py-1 space-y-0">
-After:   <div className="p-3 space-y-1">
-
-Before:  <div className="max-h-64 overflow-y-auto">
-After:   <div className="max-h-[50vh] overflow-y-auto">
+Before:  transcriptOpen && "md:right-[20rem]"
+After:   (remove this line entirely)
 ```
+
+This lets the footer (and ChatInput) stretch to the full right edge of the viewport.
+
+### 2. CenterStageLayout.tsx -- Hide the eye when history is open
+
+When `transcriptOpen` is true, hide the eye completely so it doesn't overlap with the history panel. Use `opacity: 0` and `pointer-events: none` to hide it cleanly.
+
+**Line ~720-746**: Add opacity animation to the eye container:
+
+```
+animate={{
+  scale: (hasVisibleResponses || transcriptOpen) ? 0.5 : 1,
+  opacity: transcriptOpen ? 0 : 1,
+  marginBottom: (hasVisibleResponses || transcriptOpen) ? -20 : 0,
+}}
+```
+
+And add `pointer-events-none` when transcript is open to prevent interaction with the invisible eye.
+
+---
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/dashboard/ChatInput.tsx` | Remove `compact` prop, restore `p-3 space-y-1` spacing, increase max-height to `50vh` |
+| `src/components/dashboard/CenterStageLayout.tsx` | Remove `transcriptOpen && "md:right-[20rem]"` from footer; add `opacity: 0` to eye when `transcriptOpen` is true |
 
