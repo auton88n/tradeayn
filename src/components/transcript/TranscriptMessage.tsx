@@ -8,6 +8,7 @@ interface TranscriptMessageProps {
   content: string;
   sender: 'user' | 'ayn';
   timestamp: Date;
+  compact?: boolean;
 }
 
 // Helper to strip markdown for clipboard
@@ -28,6 +29,7 @@ export const TranscriptMessage = ({
   content,
   sender,
   timestamp,
+  compact = false,
 }: TranscriptMessageProps) => {
   const isUser = sender === 'user';
   const [copied, setCopied] = useState(false);
@@ -41,68 +43,83 @@ export const TranscriptMessage = ({
 
   return (
     <div className={cn(
-      "group flex gap-3 p-3 transition-colors",
+      "group flex gap-2 transition-colors",
+      compact ? "py-1 px-2" : "p-3 gap-3",
       isUser ? "flex-row-reverse" : "flex-row"
     )}>
       {/* Avatar */}
       <div className={cn(
-        "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+        "rounded-full flex items-center justify-center shrink-0",
+        compact ? "w-5 h-5" : "w-8 h-8",
         isUser 
           ? "bg-primary text-primary-foreground" 
           : "bg-foreground text-background"
       )}>
         {isUser ? (
-          <User className="w-4 h-4" />
+          <User className={compact ? "w-3 h-3" : "w-4 h-4"} />
         ) : (
-          <Brain className="w-4 h-4" />
+          <Brain className={compact ? "w-3 h-3" : "w-4 h-4"} />
         )}
       </div>
 
       {/* Content */}
       <div className={cn(
-        "flex-1 min-w-0 max-w-[80%]",
+        "min-w-0",
+        compact ? "max-w-[85%]" : "flex-1 max-w-[80%]",
         isUser ? "text-right" : "text-left"
       )}>
         <div className={cn(
-          "flex items-center gap-2 mb-1",
+          "flex items-center gap-1.5 mb-0.5",
           isUser ? "justify-end" : "justify-start"
         )}>
-          <span className="font-medium text-sm text-foreground">
+          <span className={cn(
+            "font-medium text-foreground",
+            compact ? "text-[11px]" : "text-sm"
+          )}>
             {isUser ? 'You' : 'AYN'}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className={cn(
+            "text-muted-foreground",
+            compact ? "text-[10px]" : "text-xs"
+          )}>
             {format(timestamp, 'h:mm a')}
           </span>
         </div>
         
         <div className={cn(
-          "inline-block rounded-2xl px-4 py-2",
+          "inline-block rounded-2xl",
+          compact ? "px-2.5 py-1" : "px-4 py-2",
           isUser 
             ? "bg-primary text-primary-foreground rounded-br-sm" 
             : "bg-muted text-foreground rounded-bl-sm"
         )}>
-          <div className="text-sm leading-relaxed break-words [&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:pb-0 [&_li]:pl-3 [&_li]:before:text-sm">
+          <div className={cn(
+            "leading-relaxed break-words [&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:pb-0 [&_li]:pl-3 [&_li]:before:text-sm",
+            compact ? "text-xs" : "text-sm"
+          )}>
             <MessageFormatter content={content} />
           </div>
         </div>
 
-        {/* Copy button - underneath the bubble */}
-        <button
-          onClick={handleCopy}
-          className={cn(
-            "flex items-center gap-1 mt-1 p-1 rounded-md",
-            "opacity-0 group-hover:opacity-100",
-            "hover:bg-muted/50 transition-all",
-            isUser ? "ml-auto" : "mr-auto"
-          )}
-          title="Copy"
-        >
-          {copied ? (
-            <Check className="w-3.5 h-3.5 text-green-500" />
-          ) : (
-            <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-          )}
-        </button>
+        {/* Copy button - only in non-compact mode */}
+        {!compact && (
+          <button
+            onClick={handleCopy}
+            className={cn(
+              "flex items-center gap-1 mt-1 p-1 rounded-md",
+              "opacity-0 group-hover:opacity-100",
+              "hover:bg-muted/50 transition-all",
+              isUser ? "ml-auto" : "mr-auto"
+            )}
+            title="Copy"
+          >
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-green-500" />
+            ) : (
+              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
