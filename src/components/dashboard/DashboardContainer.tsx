@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SidebarProvider, Sidebar as ShadcnSidebar, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Sidebar as DashboardSidebar } from './Sidebar';
 import { CenterStageLayout } from './CenterStageLayout';
-import { TranscriptSidebar } from '@/components/transcript/TranscriptSidebar';
+
 import { TutorialWelcome } from '@/components/tutorial/TutorialWelcome';
 import { TutorialOverlay } from '@/components/tutorial/TutorialOverlay';
 import { Button } from '@/components/ui/button';
@@ -548,6 +548,8 @@ const DashboardContent = ({
           fileInputRef={fileUpload.fileInputRef}
           sidebarOpen={open}
           transcriptOpen={transcriptOpen}
+          onTranscriptToggle={() => handleToggleTranscript()}
+          onTranscriptClear={handleClearTranscript}
           modes={modes}
           onModeChange={setSelectedMode}
           prefillValue={replyPrefill}
@@ -577,15 +579,6 @@ const DashboardContent = ({
         />
       </main>
 
-      {/* Right Sidebar - Transcript */}
-      <TranscriptSidebar
-          messages={messagesHook.messages}
-          isOpen={transcriptOpen}
-          onToggle={handleToggleTranscript}
-          onClear={handleClearTranscript}
-          currentMode={selectedMode}
-          onReply={handleReply}
-        />
       </div>
     </>
   );

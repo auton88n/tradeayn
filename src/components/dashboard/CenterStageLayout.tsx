@@ -9,6 +9,7 @@ import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble'
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { SystemNotificationBanner } from './SystemNotificationBanner';
+import { ChatHistoryCollapsible } from './ChatHistoryCollapsible';
 import { BetaBadge } from '@/components/ui/BetaBadge';
 
 import { BetaFeedbackModal } from './BetaFeedbackModal';
@@ -51,6 +52,8 @@ interface CenterStageLayoutProps {
   fileInputRef: React.RefObject<HTMLInputElement>;
   sidebarOpen: boolean;
   transcriptOpen?: boolean;
+  onTranscriptToggle?: () => void;
+  onTranscriptClear?: () => void;
   modes: AIModeConfig[];
   onModeChange: (mode: AIMode) => void;
   prefillValue?: string;
@@ -117,6 +120,8 @@ export const CenterStageLayout = ({
   fileInputRef,
   sidebarOpen,
   transcriptOpen,
+  onTranscriptToggle,
+  onTranscriptClear,
   modes,
   onModeChange,
   prefillValue,
@@ -810,6 +815,16 @@ export const CenterStageLayout = ({
           isUnlimited={isUnlimited ?? false}
           usageResetDate={usageResetDate ?? null}
         />
+
+        {/* Chat History Collapsible - above chat input */}
+        {onTranscriptToggle && (
+          <ChatHistoryCollapsible
+            messages={messages}
+            isOpen={transcriptOpen ?? false}
+            onToggle={onTranscriptToggle}
+            onClear={onTranscriptClear}
+          />
+        )}
         
         <ChatInput
           ref={inputRef}
