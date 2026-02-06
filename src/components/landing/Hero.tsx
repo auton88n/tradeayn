@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, memo } from 'react';
+import { useEffect, useRef, useState, memo, useCallback } from 'react';
 import { Brain } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,361 +9,110 @@ import { useDebugContextOptional } from '@/contexts/DebugContext';
 interface HeroProps {
   onGetStarted: (prefillMessage?: string) => void;
 }
-const CARDS_EN = ["Always watching over you.", "I understand context.", "Ready when you are.", "Let me handle that.", "Optimizing your workflow.", "Done. What's next?"];
-const CARDS_AR = ["معك في كل خطوة.", "أفهم ما تحتاجه.", "جاهز لخدمتك.", "اترك الأمر لي.", "أُنجز المهام بذكاء.", "تمّ. ماذا بعد؟"];
 
 export const Hero = memo(({ onGetStarted }: HeroProps) => {
   const { language } = useLanguage();
   const isMobile = useIsMobile();
-  // Use ref to avoid re-renders from debug context updates
   const debugRef = useRef(useDebugContextOptional());
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [visibleCardIndex, setVisibleCardIndex] = useState<number | null>(null);
-  const [absorptionPulse, setAbsorptionPulse] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
-  const previousCardRef = useRef<number | null>(null);
-  
-  // Debug render logging - use ref to avoid dependency on context
+
   if (debugRef.current?.isDebugMode) {
     debugRef.current.incrementRenderCount('Hero');
   }
 
-  // Responsive card positions - mobile uses tighter positions to prevent clipping
-  const getCardPositions = () => {
-    if (isMobile) {
-      // Tighter positions to prevent clipping on small screens (320px+)
-      return {
-        topLeft: { x: -15, y: -70 },
-        middleLeft: { x: 0, y: -80 },
-        bottomLeft: { x: 15, y: -70 },
-        topRight: { x: -15, y: 70 },
-        middleRight: { x: 0, y: 80 },
-        bottomRight: { x: 15, y: 70 }
-      };
-    }
-    // Tablet: 768px - 1024px
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      return {
-        topLeft: { x: -120, y: -80 },
-        middleLeft: { x: -160, y: 0 },
-        bottomLeft: { x: -120, y: 80 },
-        topRight: { x: 120, y: -80 },
-        middleRight: { x: 160, y: 0 },
-        bottomRight: { x: 120, y: 80 }
-      };
-    }
-    // Desktop
-    return {
-      topLeft: { x: -160, y: -100 },
-      middleLeft: { x: -220, y: 0 },
-      bottomLeft: { x: -160, y: 100 },
-      topRight: { x: 160, y: -100 },
-      middleRight: { x: 220, y: 0 },
-      bottomRight: { x: 160, y: 100 }
-    };
-  };
-  const cardPositions = getCardPositions();
-
-  // Mouse tracking removed for performance
-
-
-  // Unified animation cycle - 3 second rhythm
-  // 0.0s: Eye blinks (preparing to speak)
-  // 0.15s: Card bursts out (eye speaks)
-  // 2.4s: Card returns + absorption pulse
-  // 3.0s: Cycle repeats
-  useEffect(() => {
-    const runAnimationCycle = () => {
-      // Phase 1: Blink (0ms) - eye prepares to speak
-      setIsBlinking(true);
-
-      // Phase 2: Emit card (150ms after blink completes)
-      setTimeout(() => {
-        setIsBlinking(false);
-        // Get a random card that's different from the previous one
-        let availableIndices = [0, 1, 2, 3, 4, 5];
-        if (previousCardRef.current !== null) {
-          availableIndices = availableIndices.filter(i => i !== previousCardRef.current);
-        }
-        const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
-        previousCardRef.current = randomIndex;
-        setVisibleCardIndex(randomIndex);
-      }, 150);
-
-      // Phase 3: Start absorption (2400ms - card returns)
-      setTimeout(() => {
-        setAbsorptionPulse(true);
-        setVisibleCardIndex(null);
-      }, 2400);
-
-      // Phase 4: Reset absorption pulse (2700ms)
-      setTimeout(() => {
-        setAbsorptionPulse(false);
-      }, 2700);
-    };
-
-    // Initial delay of 1.5s before first card burst (after eye appears)
-    const initialDelay = setTimeout(() => {
-      runAnimationCycle();
-    }, 1500);
-
-    // Repeat every 8 seconds (slower for performance)
-    const interval = setInterval(runAnimationCycle, 12000);
-    return () => {
-      clearTimeout(initialDelay);
-      clearInterval(interval);
-    };
+  // Blink callback — called by LandingChatInput when placeholder rotates
+  const handlePlaceholderChange = useCallback(() => {
+    setIsBlinking(true);
+    setTimeout(() => setIsBlinking(false), 150);
   }, []);
 
-  const CARDS = language === 'ar' ? CARDS_AR : CARDS_EN;
-  return <section ref={containerRef} className="relative min-h-[100dvh] flex flex-col items-center justify-between pt-20 md:pt-24 pb-6 md:pb-8 px-4 md:px-12 lg:px-24 overflow-x-hidden overflow-y-visible" aria-label="Hero">
-      {/* Background handled by global layer in LandingPage */}
-
-      {/* Headline - instant appearance */}
+  return (
+    <section
+      ref={containerRef}
+      className="relative min-h-[100dvh] flex flex-col items-center justify-between pt-20 md:pt-24 pb-6 md:pb-8 px-4 md:px-12 lg:px-24 overflow-x-hidden overflow-y-visible"
+      aria-label="Hero"
+    >
+      {/* Headline */}
       <div className="w-full max-w-4xl text-center mb-4 md:mb-6">
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ 
-            duration: 0.5, 
-            delay: 0,
-            ease: [0.22, 1, 0.36, 1]
-          }}
+          transition={{ duration: 0.5, delay: 0, ease: [0.22, 1, 0.36, 1] }}
           className="font-display font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3 text-5xl sm:text-6xl md:text-7xl lg:text-8xl"
         >
           {language === 'ar' ? 'تعرّف على AYN' : language === 'fr' ? 'Découvrez AYN' : 'Meet AYN'}
         </motion.h1>
-        {/* Subtitle - quick follow */}
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ 
-            duration: 0.4, 
-            delay: 0.15,
-            ease: [0.22, 1, 0.36, 1]
-          }}
+          transition={{ duration: 0.4, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
           className="text-base md:text-lg lg:text-xl text-muted-foreground font-light max-w-2xl mx-auto"
         >
-          {language === 'ar' 
-            ? 'رفيقك الذكي الذي يساعدك على التنظيم والتخطيط والعيش بشكل أفضل.' 
+          {language === 'ar'
+            ? 'رفيقك الذكي الذي يساعدك على التنظيم والتخطيط والعيش بشكل أفضل.'
             : language === 'fr'
             ? 'Le compagnon intelligent qui vous aide à organiser, planifier et mieux vivre.'
             : 'The intelligent companion that helps you organize, plan, and live better.'}
         </motion.p>
       </div>
 
-      {/* Central area with eye and cards - fast appearance */}
-      <motion.div 
+      {/* Central eye — clean, no floating cards */}
+      <motion.div
         className="relative w-full max-w-5xl flex-1 flex items-center justify-center"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ 
-          duration: 0.5, 
-          delay: 0.25,
-          ease: [0.22, 1, 0.36, 1]
-        }}
+        transition={{ duration: 0.5, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
       >
-        {/* ring / subtle light behind the eye */}
-        <div className="absolute w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[360px] md:h-[360px] lg:w-[480px] lg:h-[480px] rounded-full -z-10 pointer-events-none
-                        bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
+        {/* Subtle light behind the eye */}
+        <div className="absolute w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[360px] md:h-[360px] lg:w-[480px] lg:h-[480px] rounded-full -z-10 pointer-events-none bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
 
-
-        {/* Cards - optimized animations without blur filters - visible on all devices */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none will-change-transform overflow-visible">
-          {/* Top-left card */}
-          <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 0 && (
-              <motion.div 
-                key="card-0" 
-                initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
-                animate={{ x: cardPositions.topLeft.x, y: cardPositions.topLeft.y, opacity: 1, scale: 1 }}
-                exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
-                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
-              >
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
-                  <span className="text-[10px] sm:text-sm font-medium text-foreground">{CARDS[0]}</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Middle-left card */}
-          <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 1 && (
-              <motion.div 
-                key="card-1" 
-                initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
-                animate={{ x: cardPositions.middleLeft.x, y: cardPositions.middleLeft.y, opacity: 1, scale: 1 }}
-                exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
-                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
-              >
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
-                  <span className="text-[10px] sm:text-sm font-medium text-foreground">{CARDS[1]}</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Bottom-left card */}
-          <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 2 && (
-              <motion.div 
-                key="card-2" 
-                initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
-                animate={{ x: cardPositions.bottomLeft.x, y: cardPositions.bottomLeft.y, opacity: 1, scale: 1 }}
-                exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
-                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
-              >
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
-                  <span className="text-[10px] sm:text-sm font-medium text-foreground">{CARDS[2]}</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Top-right card */}
-          <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 3 && (
-              <motion.div 
-                key="card-3" 
-                initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
-                animate={{ x: cardPositions.topRight.x, y: cardPositions.topRight.y, opacity: 1, scale: 1 }}
-                exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
-                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
-              >
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
-                  <span className="text-[10px] sm:text-sm font-medium text-foreground">{CARDS[3]}</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Middle-right card */}
-          <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 4 && (
-              <motion.div 
-                key="card-4" 
-                initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
-                animate={{ x: cardPositions.middleRight.x, y: cardPositions.middleRight.y, opacity: 1, scale: 1 }}
-                exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
-                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
-              >
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
-                  <span className="text-[10px] sm:text-sm font-medium text-foreground">{CARDS[4]}</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Bottom-right card */}
-          <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 5 && (
-              <motion.div 
-                key="card-5" 
-                initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
-                animate={{ x: cardPositions.bottomRight.x, y: cardPositions.bottomRight.y, opacity: 1, scale: 1 }}
-                exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
-                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
-              >
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
-                  <span className="text-[10px] sm:text-sm font-medium text-foreground">{CARDS[5]}</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Absorption glow - simplified without blur */}
-        <AnimatePresence>
-          {absorptionPulse && (
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1.1, opacity: 0.4 }}
-              exit={{ scale: 1.3, opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="absolute w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px] lg:w-[200px] lg:h-[200px] rounded-full bg-white/5 dark:bg-white/3 pointer-events-none z-10" 
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Pulse ring removed for performance */}
-
-        {/* Eye - Clean minimal design matching dashboard EmotionalEye */}
-        <div 
-          className="relative z-10 flex items-center justify-center group cursor-pointer" 
-          onMouseEnter={() => setIsHovered(true)} 
+        {/* Eye */}
+        <div
+          className="relative z-10 flex items-center justify-center group cursor-pointer"
+          onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          {/* Soft outer glow halo - radial gradient for smooth edges */}
           <div className="absolute -inset-8 rounded-full blur-2xl pointer-events-none bg-[radial-gradient(circle,_rgba(229,229,229,0.3)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(38,38,38,0.15)_0%,_transparent_70%)]" />
 
-          {/* Main eye container - matches EmotionalEye exactly */}
-          {/* Main eye container - static, no continuous animation for performance */}
-          <div 
-            className="relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[200px] md:h-[200px] lg:w-[240px] lg:h-[240px] rounded-full bg-white dark:bg-neutral-900 flex items-center justify-center overflow-hidden shadow-xl"
-          >
-            {/* Inner shadow for depth */}
+          <div className="relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[200px] md:h-[200px] lg:w-[240px] lg:h-[240px] rounded-full bg-white dark:bg-neutral-900 flex items-center justify-center overflow-hidden shadow-xl">
             <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.25)]" />
-
-            {/* Neutral ring - matches dashboard calm state */}
             <div className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-700" />
 
-            {/* Iris container with SVG */}
-            <motion.svg 
-              viewBox="0 0 100 100" 
+            <motion.svg
+              viewBox="0 0 100 100"
               className="w-[70%] h-[70%] relative z-10"
               xmlns="http://www.w3.org/2000/svg"
               animate={{
                 scaleY: isBlinking ? 0.05 : 1,
-                opacity: isBlinking ? 0.7 : 1
+                opacity: isBlinking ? 0.7 : 1,
               }}
               transition={{
                 duration: isBlinking ? 0.08 : 0.12,
-                ease: isBlinking ? [0.55, 0.055, 0.675, 0.19] : [0.34, 1.56, 0.64, 1]
+                ease: isBlinking
+                  ? [0.55, 0.055, 0.675, 0.19]
+                  : [0.34, 1.56, 0.64, 1],
               }}
               style={{ transformOrigin: 'center center' }}
             >
-              {/* Solid black pupil */}
-              <circle 
-                cx="50" 
-                cy="50" 
-                r={absorptionPulse ? 22 : isHovered ? 32 : 28}
+              <circle
+                cx="50"
+                cy="50"
+                r={isHovered ? 32 : 28}
                 fill="#000000"
-                style={{
-                  transition: absorptionPulse 
-                    ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
-                }}
+                style={{ transition: 'r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
               />
-              
-              {/* Brain icon - centered with flexbox */}
               <foreignObject x="0" y="0" width="100" height="100">
-                <div 
+                <div
                   className="w-full h-full flex items-center justify-center"
-                  style={{
-                    transition: absorptionPulse 
-                      ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                      : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
-                  }}
+                  style={{ transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                 >
-                  <Brain 
-                    className="text-white/90" 
-                    style={{ 
-                      width: absorptionPulse ? '28%' : isHovered ? '40%' : '36%',
-                      height: absorptionPulse ? '28%' : isHovered ? '40%' : '36%'
+                  <Brain
+                    className="text-white/90"
+                    style={{
+                      width: isHovered ? '40%' : '36%',
+                      height: isHovered ? '40%' : '36%',
                     }}
                   />
                 </div>
@@ -374,6 +123,10 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
       </motion.div>
 
       {/* Interactive Chat Input */}
-      <LandingChatInput onSendAttempt={(message) => onGetStarted(message)} />
-    </section>;
+      <LandingChatInput
+        onSendAttempt={(message) => onGetStarted(message)}
+        onPlaceholderChange={handlePlaceholderChange}
+      />
+    </section>
+  );
 });
