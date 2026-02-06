@@ -15,7 +15,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const AIEmployeeApply = () => {
-  const { language } = useLanguage();
+  const { language, direction } = useLanguage();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -124,7 +124,7 @@ const AIEmployeeApply = () => {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center px-4">
+      <div dir={direction} className="min-h-screen bg-neutral-950 text-white flex items-center justify-center px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -146,7 +146,7 @@ const AIEmployeeApply = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white">
+    <div dir={direction} className="min-h-screen bg-neutral-950 text-white">
       {/* Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
         <Link to="/services/ai-employee">

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Shield, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { SEO } from '@/components/shared/SEO';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const PolicySection = ({ number, title, children }: { number: string; title: string; children: React.ReactNode }) => (
   <div className="space-y-4" id={`section-${number}`}>
@@ -34,6 +35,7 @@ const BulletList = ({ items }: { items: string[] }) => (
 );
 
 const Terms = () => {
+  const { direction } = useLanguage();
   return (
     <>
       <SEO 
@@ -41,7 +43,7 @@ const Terms = () => {
         description="Read AYN's Terms of Service including our privacy policy, refund policy, and AI disclaimer."
       />
       
-      <div className="min-h-screen bg-neutral-950 py-12 px-4">
+      <div dir={direction} className="min-h-screen bg-neutral-950 py-12 px-4">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
           <div className="mb-8">

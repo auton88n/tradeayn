@@ -59,7 +59,8 @@ const LandingPage = memo(() => {
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const {
     t,
-    language
+    language,
+    direction
   } = useLanguage();
   const {
     toast
@@ -290,7 +291,7 @@ const LandingPage = memo(() => {
     <SEO title="AYN AI - Personal AI Assistant That Learns You | Smart AI Platform" description="AYN AI is a perceptive artificial intelligence that learns your habits, understands your goals, and helps you succeed. AI employees, custom AI agents, business automation, and more." canonical="/" keywords="AYN AI, AYN artificial intelligence, personal AI assistant, AI that learns you, perceptive AI, smart AI platform, AI employees, AI agents, business automation, Arabic AI assistant, عين AI, machine learning assistant, AI productivity tools, custom AI bots, virtual employees" jsonLd={{
       '@graph': [organizationSchema, websiteSchema, softwareApplicationSchema, faqSchema]
     }} />
-    <div className="min-h-screen bg-background scroll-smooth">
+    <div dir={direction} className="min-h-screen bg-background scroll-smooth">
       {/* Vertical Dropdown Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
         <div className="relative">

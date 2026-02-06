@@ -1965,14 +1965,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     // Update document direction and language for public pages (Landing, Services, Pricing)
     // Dashboard overrides this with its own dir="ltr" container
     document.documentElement.lang = language;
-    document.documentElement.dir = direction;
-    
-    // Add/remove RTL class for global styling hooks
-    if (language === 'ar') {
-      document.documentElement.classList.add('rtl');
-    } else {
-      document.documentElement.classList.remove('rtl');
-    }
+    // Direction is applied per-page via dir={direction}, not globally,
+    // to prevent dashboard portals (modals, toasts, dropdowns) from breaking
   }, [language, direction]);
 
   const setLanguage = (lang: Language) => {
