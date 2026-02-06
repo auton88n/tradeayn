@@ -123,7 +123,7 @@ async function extractAndSaveMemories(
 // Call LLM with specific provider - optimized with max_tokens and smart follow-up
 async function callLLM(
   model: LLMModel,
-  messages: Array<{ role: string; content: string }>,
+  messages: Array<{ role: string; content: any }>,
   stream: boolean = false
 ): Promise<Response | { content: string; wasIncomplete?: boolean }> {
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -225,7 +225,7 @@ async function callLLM(
 // Call with fallback chain
 async function callWithFallback(
   intent: string,
-  messages: Array<{ role: string; content: string }>,
+  messages: Array<{ role: string; content: any }>,
   stream: boolean,
   supabase: ReturnType<typeof createClient>,
   userId: string
@@ -813,10 +813,49 @@ serve(async (req) => {
     }
 
     // Add system prompt
-    const fullMessages = [
+    const fullMessages: Array<{ role: string; content: any }> = [
       { role: 'system', content: systemPrompt },
       ...enrichedMessages
     ];
+
+    // === MULTIMODAL FILE SUPPORT ===
+    // If fileContext is present, build multimodal content for the last user message
+    const fileContext = context?.fileContext as { name?: string; type?: string; url?: string } | undefined;
+    if (fileContext?.url && fileContext?.type) {
+      const lastIdx = fullMessages.length - 1;
+      const lastTextContent = typeof fullMessages[lastIdx].content === 'string' 
+        ? fullMessages[lastIdx].content 
+        : '';
+
+      if (fileContext.type.startsWith('image/')) {
+        // For images: use image_url content part so the model can SEE the image
+        console.log('[ayn-unified] Building multimodal message with image:', fileContext.name);
+        fullMessages[lastIdx] = {
+          role: 'user',
+          content: [
+            { type: 'text', text: lastTextContent },
+            { type: 'image_url', image_url: { url: fileContext.url } }
+          ]
+        };
+      } else if (fileContext.type === 'application/pdf' || fileContext.type.startsWith('text/') || 
+                 ['application/json', 'text/csv', 'application/xml'].includes(fileContext.type)) {
+        // For text-based files: fetch and inline the content
+        try {
+          console.log('[ayn-unified] Fetching file content:', fileContext.name);
+          const fileResponse = await fetch(fileContext.url);
+          if (fileResponse.ok) {
+            const fileText = await fileResponse.text();
+            const truncatedContent = fileText.substring(0, 15000); // Limit to ~15k chars
+            fullMessages[lastIdx] = {
+              role: 'user',
+              content: `${lastTextContent}\n\n--- File Content: ${fileContext.name} ---\n${truncatedContent}${fileText.length > 15000 ? '\n\n[Content truncated...]' : ''}`
+            };
+          }
+        } catch (fetchErr) {
+          console.error('[ayn-unified] Failed to fetch file content:', fetchErr);
+        }
+      }
+    }
 
     // Call with fallback
     const { response, modelUsed, wasFallback } = await callWithFallback(

@@ -1,9 +1,11 @@
 import { useRef, useLayoutEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { FileText } from 'lucide-react';
 
 interface UserMessageBubbleProps {
   content: string;
+  attachment?: { name: string; type: string; url: string };
   status: 'flying' | 'absorbing' | 'done';
   startPosition: { x: number; y: number };
   endPosition: { x: number; y: number };
@@ -12,6 +14,7 @@ interface UserMessageBubbleProps {
 
 export const UserMessageBubble = ({
   content,
+  attachment,
   status,
   startPosition,
   endPosition,
@@ -85,6 +88,16 @@ export const UserMessageBubble = ({
       }}
     >
       <p className="text-sm font-medium line-clamp-3">{content}</p>
+      {attachment && (
+        attachment.type.startsWith('image/') ? (
+          <img src={attachment.url} alt={attachment.name} className="mt-1 rounded max-h-12 max-w-20 object-cover" />
+        ) : (
+          <div className="mt-1 flex items-center gap-1 text-xs opacity-80">
+            <FileText className="w-3 h-3" />
+            <span className="truncate max-w-[120px]">{attachment.name}</span>
+          </div>
+        )
+      )}
     </motion.div>
   );
 };
