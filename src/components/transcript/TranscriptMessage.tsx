@@ -89,7 +89,7 @@ export const TranscriptMessage = ({
         </div>
         
         <div className={cn(
-          "inline-block rounded-[20px]",
+          "inline-block rounded-[20px] text-start",
           compact ? "px-2.5 py-1" : "px-4 py-2.5",
           isUser 
             ? "bg-primary text-primary-foreground rounded-br-sm" 
