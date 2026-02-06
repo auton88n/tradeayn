@@ -58,7 +58,7 @@ const EmotionalEyeComponent = ({
   const [isHovered, setIsHovered] = useState(false);
   const lastBlinkRef = useRef(Date.now());
   const idleBlinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const checkInTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const prevBlinkingRef = useRef(false);
   // Track if current blink is "significant" (user-triggered) vs idle blink
   const isSignificantBlinkRef = useRef(false);
@@ -115,8 +115,8 @@ const EmotionalEyeComponent = ({
 
   // Unified gaze tracking - combines mouse, AI target, and typing state
   useEffect(() => {
-    // Skip mouse tracking if disabled or deep idle
-    if (!performanceConfig.enableMouseTracking || isDeepIdle || performanceConfig.shouldReduceAnimations) {
+    // Skip mouse tracking if disabled, deep idle, or mobile (touch devices don't benefit)
+    if (!performanceConfig.enableMouseTracking || isDeepIdle || performanceConfig.shouldReduceAnimations || isMobile) {
       gazeX.set(0);
       gazeY.set(0);
       return;
@@ -253,7 +253,7 @@ const EmotionalEyeComponent = ({
     if (isResponding) return 800 + Math.random() * 400;
     
     // Idle state - frequent natural blinks
-    return 1800 + Math.random() * 1200;
+    return 3000 + Math.random() * 1500;
   }, [isUserTyping, isResponding, blinkPattern]);
 
   // Idle blinking effect (silent - no sounds for idle blinks)
@@ -294,27 +294,7 @@ const EmotionalEyeComponent = ({
     };
   }, [isAbsorbing, isAttentive, getBlinkInterval, triggerBlink, blinkPattern]);
 
-  // "Check-in" blink after long user inactivity
-  useEffect(() => {
-    if (checkInTimeoutRef.current) {
-      clearTimeout(checkInTimeoutRef.current);
-    }
-
-    checkInTimeoutRef.current = setTimeout(() => {
-      if (!isUserTyping && !isResponding && !isAbsorbing) {
-        triggerBlink();
-        setTimeout(() => {
-          triggerBlink();
-        }, 300);
-      }
-    }, 10000);
-
-    return () => {
-      if (checkInTimeoutRef.current) {
-        clearTimeout(checkInTimeoutRef.current);
-      }
-    };
-  }, [lastActivityTime, isUserTyping, isResponding, isAbsorbing, triggerBlink]);
+  // "Check-in" blink removed for performance (minimal visual benefit, fires every 10s)
 
   // Get tilt based on emotion - simplified, no micro-movements
   const getEmotionTilt = useCallback(() => {
@@ -451,8 +431,7 @@ const EmotionalEyeComponent = ({
         <motion.div 
           className="absolute -inset-8 rounded-full pointer-events-none animate-glow-breathe"
           style={{
-            background: `radial-gradient(circle, ${boostedGlowColor}50 0%, transparent 70%)`,
-            filter: 'blur(24px)',
+            background: `radial-gradient(circle, ${boostedGlowColor}40 0%, ${boostedGlowColor}20 30%, ${boostedGlowColor}08 55%, transparent 75%)`,
             transition: 'background 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
             '--breathing-duration': `${breathingDuration}s`,
           } as React.CSSProperties}

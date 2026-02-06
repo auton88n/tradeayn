@@ -97,7 +97,7 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
     }, 1500);
 
     // Repeat every 8 seconds (slower for performance)
-    const interval = setInterval(runAnimationCycle, 9500); // 1500 + 8000
+    const interval = setInterval(runAnimationCycle, 12000);
     return () => {
       clearTimeout(initialDelay);
       clearInterval(interval);
@@ -287,18 +287,7 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
           )}
         </AnimatePresence>
 
-        {/* Single pulse ring - simplified */}
-        <AnimatePresence mode="wait">
-          {visibleCardIndex !== null && (
-            <motion.div 
-              key={visibleCardIndex} 
-              initial={{ scale: 0.6, opacity: 0.3 }}
-              animate={{ scale: 2, opacity: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="absolute w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[200px] md:h-[200px] lg:w-[240px] lg:h-[240px] rounded-full border border-foreground/10 pointer-events-none" 
-            />
-          )}
-        </AnimatePresence>
+        {/* Pulse ring removed for performance */}
 
         {/* Eye - Clean minimal design matching dashboard EmotionalEye */}
         <div 
