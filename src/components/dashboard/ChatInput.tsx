@@ -1,15 +1,27 @@
-import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useCallback, useMemo } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check, Volume2, VolumeX, Brain, Sparkles, Mic, MicOff } from 'lucide-react';
+import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check, Volume2, VolumeX, Brain, Sparkles, Mic, MicOff, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { detectLanguage, DetectedLanguage } from '@/lib/languageDetection';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import type { AIMode } from '@/types/dashboard.types';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { TranscriptMessage } from '@/components/transcript/TranscriptMessage';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import type { AIMode, Message } from '@/types/dashboard.types';
 
 interface Suggestion {
   id: string;
@@ -39,6 +51,9 @@ interface ChatInputProps {
   hasMessages?: boolean;
   sidebarOpen?: boolean;
   transcriptOpen?: boolean;
+  onTranscriptToggle?: () => void;
+  onTranscriptClear?: () => void;
+  transcriptMessages?: Message[];
   modes?: Array<{
     name: string;
     translatedName: string;
@@ -162,6 +177,10 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   onFileSelect,
   onRemoveFile,
   fileInputRef,
+  transcriptOpen = false,
+  onTranscriptToggle,
+  onTranscriptClear,
+  transcriptMessages = [],
   modes,
   prefillValue = '',
   onPrefillConsumed,
@@ -177,7 +196,39 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   creditsExhausted = false,
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const historyScrollRef = useRef<HTMLDivElement>(null);
   const visibleSuggestions = suggestions.filter(s => s.isVisible);
+
+  // Sort messages chronologically (oldest first)
+  const sortedTranscriptMessages = useMemo(() => 
+    [...transcriptMessages].sort((a, b) => {
+      const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+      const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+      return timeA - timeB;
+    }),
+    [transcriptMessages]
+  );
+
+  // Auto-scroll history to bottom when messages change or panel opens
+  useEffect(() => {
+    if (transcriptOpen) {
+      requestAnimationFrame(() => {
+        const viewport = historyScrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+        if (viewport) viewport.scrollTop = viewport.scrollHeight;
+      });
+    }
+  }, [transcriptMessages.length, transcriptOpen]);
+
+  // Handle clear with confirmation
+  const handleClearClick = useCallback(() => {
+    setShowClearConfirm(true);
+  }, []);
+
+  const handleClearConfirm = useCallback(() => {
+    setShowClearConfirm(false);
+    onTranscriptClear?.();
+  }, [onTranscriptClear]);
 
   const handleSuggestionClickInternal = (suggestion: Suggestion, e: React.MouseEvent<HTMLButtonElement>) => {
     if (!onSuggestionClick) return;
@@ -382,7 +433,62 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       {/* Main container */}
       <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
         
-        {/* Suggestions row removed per user request */}
+        {/* Chat History Section - inside the card at the top */}
+        <AnimatePresence>
+          {transcriptOpen && sortedTranscriptMessages.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="overflow-hidden"
+            >
+              {/* History Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 rounded-lg bg-foreground/10">
+                    <Brain className="h-4 w-4 text-foreground/70" />
+                  </div>
+                  <span className="font-medium text-sm">AYN Engineering</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {onTranscriptClear && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearClick}
+                      className="h-7 px-2 text-xs font-normal text-muted-foreground hover:text-foreground"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onTranscriptToggle}
+                    className="h-7 w-7"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Messages Area */}
+              <ScrollArea className="h-64" ref={historyScrollRef}>
+                <div className="p-3 space-y-1">
+                  {sortedTranscriptMessages.map((msg) => (
+                    <TranscriptMessage
+                      key={msg.id}
+                      content={msg.content}
+                      sender={msg.sender}
+                      timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         {/* Drag overlay - INSIDE the card container for proper sizing */}
         <AnimatePresence>
@@ -679,6 +785,23 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             </button>
           </div>
 
+          {/* History Toggle Button */}
+          {transcriptMessages.length > 0 && onTranscriptToggle && (
+            <button
+              onClick={onTranscriptToggle}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg",
+                "text-sm text-muted-foreground",
+                "hover:bg-muted/60 transition-colors",
+                transcriptOpen && "bg-muted/60"
+              )}
+            >
+              <Clock className="h-4 w-4" />
+              <span>History</span>
+              <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{transcriptMessages.length}</span>
+            </button>
+          )}
+
           {/* Message counter */}
           {messageCount > 0 && (
             <div className={cn(
@@ -708,6 +831,27 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
       {/* Hidden file input */}
       <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.txt,.json,.xml,.html,.htm,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg" onChange={handleFileInputChange} />
+
+      {/* Clear Confirmation Dialog */}
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear chat history?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear all messages and start a new chat. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleClearConfirm} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Clear
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>;
 });
 ChatInput.displayName = 'ChatInput';

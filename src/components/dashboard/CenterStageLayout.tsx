@@ -9,7 +9,6 @@ import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble'
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { SystemNotificationBanner } from './SystemNotificationBanner';
-import { ChatHistoryCollapsible } from './ChatHistoryCollapsible';
 import { BetaBadge } from '@/components/ui/BetaBadge';
 
 import { BetaFeedbackModal } from './BetaFeedbackModal';
@@ -816,16 +815,6 @@ export const CenterStageLayout = ({
           usageResetDate={usageResetDate ?? null}
         />
 
-        {/* Chat History Collapsible - above chat input */}
-        {onTranscriptToggle && (
-          <ChatHistoryCollapsible
-            messages={messages}
-            isOpen={transcriptOpen ?? false}
-            onToggle={onTranscriptToggle}
-            onClear={onTranscriptClear}
-          />
-        )}
-        
         <ChatInput
           ref={inputRef}
           onSend={handleSendWithAnimation}
@@ -847,6 +836,9 @@ export const CenterStageLayout = ({
           hasMessages={messages.length > 0}
           sidebarOpen={sidebarOpen}
           transcriptOpen={transcriptOpen}
+          onTranscriptToggle={onTranscriptToggle}
+          onTranscriptClear={onTranscriptClear}
+          transcriptMessages={messages}
           modes={modes}
           onModeChange={onModeChange}
           prefillValue={prefillValue}
