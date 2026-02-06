@@ -74,10 +74,10 @@ export const ChatHistoryCollapsible = ({
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0, y: -10 }}
-              animate={{ opacity: 1, height: 'auto', y: 0 }}
-              exit={{ opacity: 0, height: 0, y: -10 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
               className="overflow-hidden"
             >
               <div className="rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg overflow-hidden">
@@ -132,23 +132,25 @@ export const ChatHistoryCollapsible = ({
 
         {/* Toggle Button - shown when collapsed */}
         {!isOpen && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            onClick={onToggle}
-            className={cn(
-              "w-full flex items-center justify-center gap-2",
-              "px-4 py-2.5 rounded-xl",
-              "border border-border bg-card/80 backdrop-blur-sm",
-              "text-sm text-muted-foreground",
-              "hover:bg-muted/50 hover:text-foreground",
-              "transition-colors"
-            )}
-          >
-            <Clock className="h-4 w-4" />
-            <span>History</span>
-            <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{messages.length}</span>
-          </motion.button>
+          <div className="flex justify-center">
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={onToggle}
+              className={cn(
+                "inline-flex items-center gap-2",
+                "px-4 py-2 rounded-full",
+                "border border-border bg-card/80 backdrop-blur-sm shadow-sm",
+                "text-sm text-muted-foreground",
+                "hover:bg-muted/50 hover:text-foreground",
+                "transition-colors"
+              )}
+            >
+              <Clock className="h-4 w-4" />
+              <span>History</span>
+              <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{messages.length}</span>
+            </motion.button>
+          </div>
         )}
       </div>
 
