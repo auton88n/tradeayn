@@ -1,100 +1,53 @@
 
 
-# Fix: Scope RTL Direction to Public Pages Only
+# Fix: History Button Styling, Centering, and Smooth Open Animation
 
-## Problem
+## Issues to Fix
 
-When Arabic is selected, `LanguageContext` sets `document.documentElement.dir = "rtl"` on the `<html>` element. This causes the entire application -- including the dashboard, admin panel, modals, toasts, dropdowns, and all portal-based UI -- to flip to RTL. The dashboard has `dir="ltr"` on its container, but portals (rendered under `<body>`) still inherit RTL from `<html>`, breaking layouts.
+1. **Not button-like** -- The History toggle looks like a plain text bar spanning full width. Users don't recognize it as clickable.
+2. **Not centered** -- It stretches `w-full` instead of being a compact, centered button.
+3. **Laggy opening** -- The panel animates upward with `height: 0 -> auto` using a spring transition, which causes jank because the browser must calculate the auto height mid-animation.
 
-Per the project's design rules: **translations should only affect public pages (Landing, Services). The dashboard must always stay LTR.**
+## Changes
 
-## Solution
+### File: `src/components/dashboard/ChatHistoryCollapsible.tsx`
 
-1. **Stop setting `dir` on `<html>`** -- remove the global `document.documentElement.dir = direction` from `LanguageContext`
-2. **Add a `dir` wrapper on public pages** -- each public page component already has a root `<div>`, so we add `dir={direction}` from the language context to scope RTL only where needed
-3. Keep `document.documentElement.lang` for SEO/accessibility
+**1. Toggle button (lines 134-152)** -- Replace the full-width bar with a compact, centered, pill-shaped button:
 
-## Technical Changes
+- Remove `w-full` so it auto-sizes to content
+- Wrap in a `flex justify-center` container
+- Add `shadow-sm hover:shadow-md` and `active:scale-95` for tactile feedback
+- Keep the Clock icon, "History" text, and message count badge
 
-### 1. `src/contexts/LanguageContext.tsx` (~line 1964-1975)
+**2. Panel open animation (lines 76-80)** -- Replace the spring-based height animation with a simpler, faster transition to eliminate lag:
 
-Remove the global direction and RTL class assignments. Keep only the `lang` attribute:
+- Change from `height: 0 -> auto` (causes layout thrashing) to a simple `opacity + y` slide-down
+- Use `transition={{ duration: 0.2, ease: 'easeOut' }}` instead of a spring
+- Remove `height` from the animation entirely since animating to `height: auto` is what causes the jank
 
-**Before:**
+## Technical Details
+
+Toggle button becomes:
 ```
-document.documentElement.lang = language;
-document.documentElement.dir = direction;
-
-if (language === 'ar') {
-  document.documentElement.classList.add('rtl');
-} else {
-  document.documentElement.classList.remove('rtl');
-}
-```
-
-**After:**
-```
-document.documentElement.lang = language;
-// Direction is applied per-page, not globally, to prevent dashboard/portal breakage
-```
-
-### 2. `src/components/LandingPage.tsx` (~line 293)
-
-Add `dir={direction}` to the root div:
-
-```tsx
-const { t, language, direction } = useLanguage();
-// ...
-<div dir={direction} className="min-h-screen bg-background scroll-smooth">
+<div className="flex justify-center">
+  <motion.button
+    className="inline-flex items-center gap-2 px-5 py-2 rounded-full
+               border border-border bg-card/80 backdrop-blur-sm
+               text-sm text-muted-foreground shadow-sm
+               hover:bg-muted/50 hover:text-foreground hover:shadow-md
+               active:scale-95 transition-all cursor-pointer"
+  >
+    ...
+  </motion.button>
+</div>
 ```
 
-### 3. Service pages (all 11 files in `src/pages/services/`)
+Panel animation becomes:
+```
+initial={{ opacity: 0, y: -8 }}
+animate={{ opacity: 1, y: 0 }}
+exit={{ opacity: 0, y: -8 }}
+transition={{ duration: 0.2, ease: 'easeOut' }}
+```
 
-Each service page already imports `useLanguage`. Add `direction` to the destructure and `dir={direction}` to their root wrapper div:
-
-- `AIEmployee.tsx`
-- `AIEmployeeApply.tsx`
-- `AIAgents.tsx`
-- `AIAgentsApply.tsx`
-- `Automation.tsx`
-- `AutomationApply.tsx`
-- `InfluencerSites.tsx`
-- `InfluencerSitesApply.tsx`
-- `Ticketing.tsx`
-- `TicketingApply.tsx`
-- `CivilEngineering.tsx`
-
-### 4. Other public pages
-
-- `src/pages/Terms.tsx` -- add direction wrapper
-- `src/pages/Privacy.tsx` -- add direction wrapper
-
-### 5. Pages that stay LTR (NO changes needed)
-
-- Dashboard -- already has `dir="ltr"`
-- Settings -- dashboard child
-- Pricing -- accessed from dashboard, no RTL needed
-- Engineering workspace -- already has `dir="ltr"`
-- Admin panel -- dashboard child
-
-### 6. CSS cleanup in `src/index.css`
-
-Review and update any `html.rtl` or `[dir="rtl"]` selectors to work with the scoped approach (they will now match within the public page wrappers instead of the html element).
-
-## Why This Works
-
-- The `<html>` element stays LTR, so all portals (modals, toasts, dropdowns, popovers) default to LTR
-- Public pages explicitly opt into RTL via their own wrapper
-- The dashboard and all its components remain completely unaffected by language changes
-- `lang` attribute stays on `<html>` for SEO and screen readers
-
-## Files Modified (summary)
-
-| File | Change |
-|------|--------|
-| `LanguageContext.tsx` | Remove global `dir` and `rtl` class |
-| `LandingPage.tsx` | Add `dir={direction}` to root div |
-| 11 service page files | Add `dir={direction}` to root div |
-| `Terms.tsx`, `Privacy.tsx` | Add `dir={direction}` to root div |
-| `index.css` | Update RTL selectors if needed |
-
+Only one file is modified: `ChatHistoryCollapsible.tsx`.
