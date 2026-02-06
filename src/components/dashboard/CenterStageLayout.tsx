@@ -622,16 +622,19 @@ export const CenterStageLayout = ({
             type: messageAttachment.type,
           } : undefined;
           
-          emitResponseBubble(response, bubbleType, attachment);
-          
-          // Show dynamic suggestions after response bubble appears (debounced to reduce API calls)
-          setTimeout(() => {
-            debouncedFetchAndEmitSuggestions(
-              lastUserMessage || 'Hello',
-              messageContent,
-              selectedMode
-            );
-          }, 600);
+          // Only emit ResponseCard + suggestions when history is closed
+          if (!transcriptOpen) {
+            emitResponseBubble(response, bubbleType, attachment);
+            
+            // Show dynamic suggestions after response bubble appears (debounced to reduce API calls)
+            setTimeout(() => {
+              debouncedFetchAndEmitSuggestions(
+                lastUserMessage || 'Hello',
+                messageContent,
+                selectedMode
+              );
+            }, 600);
+          }
         } catch (error) {
           console.error('[CenterStageLayout] Error processing response:', error);
           responseProcessingRef.current.active = false;
@@ -654,10 +657,16 @@ export const CenterStageLayout = ({
     debouncedFetchAndEmitSuggestions,
     lastUserMessage,
     selectedMode,
-    orchestrateEmotionChange,
-    playSound,
-    bumpActivity,
+    transcriptOpen,
   ]);
+
+  // Clear ResponseCard and suggestions when history opens
+  useEffect(() => {
+    if (transcriptOpen) {
+      clearResponseBubbles();
+      clearSuggestions();
+    }
+  }, [transcriptOpen, clearResponseBubbles, clearSuggestions]);
 
   // Update emotion when typing - only set thinking if not recently set from a response
   useEffect(() => {
@@ -693,7 +702,7 @@ export const CenterStageLayout = ({
         className={cn(
           "flex-1 flex flex-col relative w-full",
           "items-center",
-          hasVisibleResponses ? "justify-start pt-4" : "justify-center",
+          (hasVisibleResponses || transcriptOpen) ? "justify-start pt-4" : "justify-center",
           "transition-all duration-300 ease-out"
         )}
       >
@@ -713,8 +722,8 @@ export const CenterStageLayout = ({
             className="relative overflow-visible"
             data-tutorial="eye"
             animate={{
-              scale: hasVisibleResponses ? (isMobile ? 0.55 : 0.5) : 1,
-              marginBottom: hasVisibleResponses ? -20 : 0,
+              scale: (hasVisibleResponses || transcriptOpen) ? (isMobile ? 0.55 : 0.5) : 1,
+              marginBottom: (hasVisibleResponses || transcriptOpen) ? -20 : 0,
             }}
             transition={{
               type: 'spring',
