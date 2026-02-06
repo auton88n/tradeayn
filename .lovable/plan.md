@@ -1,53 +1,50 @@
 
-# Fix Chat History Gap Issue
+# Fix ScrollArea Height Issue in Chat History
 
 ## Problem
-The chat history panel has a fixed height of 256px (`h-64`) which creates a large empty gap when there are only a few messages.
+When opening the chat history, the input area shrinks because the Radix `ScrollArea` component's internal `Viewport` uses `h-full w-full` which doesn't work properly with `max-h-64` on the parent. The viewport needs an explicit height to calculate "100%" from.
+
+## Root Cause
+In `scroll-area.tsx` (line 14):
+```tsx
+<ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+```
+
+When the parent `ScrollArea` has `max-h-64`, the viewport's `h-full` (100% height) has no explicit height to reference, causing layout issues.
 
 ## Solution
-Change the ScrollArea from fixed height to maximum height so it only takes up as much space as needed:
-- Change `h-64` to `max-h-64`
-- This allows the panel to shrink when there are few messages and expand up to 256px when there are many
+Instead of modifying the shared `ScrollArea` component (which could break other usages), wrap the messages in a container with explicit max-height constraints.
+
+**Change in `ChatInput.tsx`:**
+
+Replace:
+```tsx
+<ScrollArea className="max-h-64" ref={historyScrollRef}>
+  <div className="p-3 space-y-1">
+    {/* messages */}
+  </div>
+</ScrollArea>
+```
+
+With:
+```tsx
+<div className="max-h-64 overflow-y-auto" ref={historyScrollRef}>
+  <div className="p-3 space-y-1">
+    {/* messages */}
+  </div>
+</div>
+```
+
+This uses native overflow scrolling which works correctly with `max-height` and will shrink to fit content naturally.
 
 ## File to Modify
 
-**`src/components/dashboard/ChatInput.tsx`** (line 477)
+| File | Change |
+|------|--------|
+| `src/components/dashboard/ChatInput.tsx` | Replace `ScrollArea` with a native scrollable `div` for the history messages |
 
-Change:
-```tsx
-<ScrollArea className="h-64" ref={historyScrollRef}>
-```
-
-To:
-```tsx
-<ScrollArea className="max-h-64" ref={historyScrollRef}>
-```
-
-## Visual Result
-
-**Before (fixed height):**
-```text
-+---------------------------------------------------+
-| AYN Engineering                      [Clear] [X]  |
-+---------------------------------------------------+
-| [AYN message]                                     |
-|                                                   |
-|          (large empty gap - 256px fixed)          |
-|                                                   |
-+---------------------------------------------------+
-| [Text input area]                                 |
-+---------------------------------------------------+
-```
-
-**After (max height):**
-```text
-+---------------------------------------------------+
-| AYN Engineering                      [Clear] [X]  |
-+---------------------------------------------------+
-| [AYN message]                                     |
-+---------------------------------------------------+
-| [Text input area]                                 |
-+---------------------------------------------------+
-```
-
-When more messages are added, the panel will expand up to 256px, then become scrollable.
+## Benefits
+- Works correctly with `max-height` for dynamic sizing
+- Shrinks to fit content when few messages
+- Scrolls when content exceeds 256px
+- No impact on other components using `ScrollArea`
