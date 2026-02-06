@@ -719,7 +719,7 @@ export const CenterStageLayout = ({
           {/* Eye container - shrinks when response visible */}
           <motion.div 
             ref={eyeRef} 
-            className="relative overflow-visible"
+            className="relative overflow-visible z-40"
             data-tutorial="eye"
             animate={{
               scale: (hasVisibleResponses || transcriptOpen) ? (isMobile ? 0.55 : 0.5) : 1,
