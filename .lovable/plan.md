@@ -1,50 +1,39 @@
 
-# Fix ScrollArea Height Issue in Chat History
+
+# Fix Disorganized Chat History Layout in ChatInput
 
 ## Problem
-When opening the chat history, the input area shrinks because the Radix `ScrollArea` component's internal `Viewport` uses `h-full w-full` which doesn't work properly with `max-h-64` on the parent. The viewport needs an explicit height to calculate "100%" from.
-
-## Root Cause
-In `scroll-area.tsx` (line 14):
-```tsx
-<ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
-```
-
-When the parent `ScrollArea` has `max-h-64`, the viewport's `h-full` (100% height) has no explicit height to reference, causing layout issues.
+The chat history messages inside the ChatInput card look messy and unstructured. The `TranscriptMessage` component was designed for a full sidebar view and uses oversized spacing, large avatars, and copy buttons that don't work in the compact inline panel.
 
 ## Solution
-Instead of modifying the shared `ScrollArea` component (which could break other usages), wrap the messages in a container with explicit max-height constraints.
+Add a `compact` prop to `TranscriptMessage` that reduces sizing and spacing when used inside the ChatInput history panel.
 
-**Change in `ChatInput.tsx`:**
+---
 
-Replace:
-```tsx
-<ScrollArea className="max-h-64" ref={historyScrollRef}>
-  <div className="p-3 space-y-1">
-    {/* messages */}
-  </div>
-</ScrollArea>
-```
+## Technical Changes
 
-With:
-```tsx
-<div className="max-h-64 overflow-y-auto" ref={historyScrollRef}>
-  <div className="p-3 space-y-1">
-    {/* messages */}
-  </div>
-</div>
-```
+### 1. TranscriptMessage.tsx - Add `compact` mode
 
-This uses native overflow scrolling which works correctly with `max-height` and will shrink to fit content naturally.
+Add an optional `compact` prop that adjusts:
+- Container padding: `p-3` down to `py-1 px-2`
+- Avatar size: `w-8 h-8` down to `w-5 h-5` with smaller icons
+- Content max-width: `max-w-[80%]` down to `max-w-[85%]`
+- Bubble padding: `px-4 py-2` down to `px-2.5 py-1`
+- Text size: `text-sm` down to `text-xs`
+- Hide the copy button entirely in compact mode
+- Smaller timestamp text
 
-## File to Modify
+### 2. ChatInput.tsx - Use compact mode and tighter container
+
+- Pass `compact={true}` to each `TranscriptMessage` in the history panel
+- Reduce container padding from `p-3 space-y-1` to `py-1 space-y-0` (messages handle their own spacing)
+
+---
+
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/dashboard/ChatInput.tsx` | Replace `ScrollArea` with a native scrollable `div` for the history messages |
+| `src/components/transcript/TranscriptMessage.tsx` | Add `compact` prop with reduced sizing for all elements |
+| `src/components/dashboard/ChatInput.tsx` | Pass `compact={true}` to TranscriptMessage, tighten container spacing |
 
-## Benefits
-- Works correctly with `max-height` for dynamic sizing
-- Shrinks to fit content when few messages
-- Scrolls when content exceeds 256px
-- No impact on other components using `ScrollArea`
