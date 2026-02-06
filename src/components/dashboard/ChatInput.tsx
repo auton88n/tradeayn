@@ -709,7 +709,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           </div>
 
           {/* History Toggle Button */}
-          {transcriptMessages.length > 0 && onTranscriptToggle && <button onClick={onTranscriptToggle} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full", "text-sm text-muted-foreground", "bg-muted/50 border border-border", "hover:bg-muted transition-colors", transcriptOpen && "bg-muted border-border/80")}>
+          {transcriptMessages.length > 0 && onTranscriptToggle && <button onClick={onTranscriptToggle} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg", "text-sm text-muted-foreground", "bg-muted/50 border border-border", "hover:bg-muted transition-colors", transcriptOpen && "bg-muted border-border/80")}>
               <Clock className="h-4 w-4" />
               <span>History</span>
               <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{transcriptMessages.length}</span>
