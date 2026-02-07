@@ -32,20 +32,15 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = window.document.documentElement
+    const resolvedTheme = theme === "system"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+      : theme
+
+    // Skip if the correct class is already set (e.g., by the inline head script)
+    if (root.classList.contains(resolvedTheme)) return
 
     root.classList.remove("light", "dark")
-
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-
-      root.classList.add(systemTheme)
-      return
-    }
-
-    root.classList.add(theme)
+    root.classList.add(resolvedTheme)
   }, [theme])
 
   const value = {
