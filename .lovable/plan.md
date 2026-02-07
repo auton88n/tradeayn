@@ -1,70 +1,45 @@
 
 
-# Self-Host Critical Fonts via @fontsource
+# Fix Dark Background Flash on Light Mode Refresh
 
 ## Problem
 
-The external Google Fonts CSS link is a render-blocking resource that adds network latency (DNS lookup to googleapis.com + gstatic.com, CSS download, then font file download). While `&display=swap` is already set, the progressive React render -- where "Meet AYN" appears alone before JS chunks finish -- makes the font swap visible. Self-hosting eliminates the external dependency entirely.
+The `<body>` tag in `index.html` has a hardcoded dark background: `style="background-color: hsl(0 0% 4%);"`. This is always dark regardless of theme. The inline theme script in `<head>` tries to fix it with `if (document.body) document.body.style.backgroundColor = bgColor`, but `document.body` doesn't exist yet when the script runs in `<head>`, so the fix never applies.
 
-## Approach
-
-Replace the Google Fonts `<link>` in `index.html` with locally bundled fonts via `@fontsource` packages. Fonts get bundled into the Vite build, served from the same origin, and load with zero extra network round-trips.
+**Result**: On every refresh in light mode, the dark body background is visible for a split second before React/CSS takes over.
 
 ## Changes
 
-### 1. Install @fontsource packages
+### File: `index.html`
 
+**1. Remove the hardcoded dark background from `<body>` (line 174)**
+
+Change:
+```html
+<body style="background-color: hsl(0 0% 4%);">
 ```
-@fontsource/syne (weights: 400, 500, 600, 700, 800)
-@fontsource/inter (weights: 300, 400, 500, 600, 700)
-@fontsource/jetbrains-mono (weights: 400, 500, 600)
-@fontsource/playfair-display (weights: 400, 500, 600, 700)
-@fontsource/noto-sans-arabic (weights: 400, 500, 600, 700)
-```
-
-### 2. Import fonts in `src/main.tsx`
-
-Add imports for each font weight used. Only the weights actually needed are imported -- no full family bundles. Example:
-
-```
-import '@fontsource/syne/400.css';
-import '@fontsource/syne/500.css';
-import '@fontsource/syne/600.css';
-import '@fontsource/syne/700.css';
-import '@fontsource/syne/800.css';
-import '@fontsource/inter/300.css';
-import '@fontsource/inter/400.css';
-// ... etc for each family/weight
+To:
+```html
+<body>
 ```
 
-Each import is a small CSS file that references a WOFF2 file bundled in `node_modules`. Vite handles asset resolution automatically.
+**2. Update the inline theme script (line 138-154) to set background on `<html>` only (which it already does) and also add a small `<script>` right after `<body>` opens to set the body background immediately when body exists.**
 
-### 3. Remove external Google Fonts from `index.html`
+Move body background assignment into a tiny inline script right after the `<body>` tag:
+```html
+<body>
+  <script>
+    // Apply theme background to body (runs immediately when body exists)
+    var isDark = document.documentElement.classList.contains('dark');
+    document.body.style.backgroundColor = isDark ? 'hsl(0 0% 4%)' : 'hsl(0 0% 100%)';
+  </script>
+  <div id="root" ...>
+```
 
-Remove these lines (~63-66):
+This way:
+- The `<head>` script determines theme and sets it on `<html>` (already works)
+- The `<body>` script runs immediately when body is created and reads the class from `<html>` to apply the correct background
+- No more hardcoded dark-only background
 
-- `<link rel="preconnect" href="https://fonts.googleapis.com">`
-- `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`
-- The Google Fonts `<link href="https://fonts.googleapis.com/css2?..." rel="stylesheet">`
-
-Keep the Supabase preconnect as-is.
-
-### 4. No changes to CSS or Tailwind config
-
-The `font-family` declarations in your Tailwind config / CSS already reference `'Syne'`, `'Inter'`, etc. by name. @fontsource registers the exact same family names, so everything continues to work.
-
-## What This Fixes
-
-- Eliminates 2 external DNS lookups (googleapis.com + gstatic.com)
-- Eliminates render-blocking external CSS fetch
-- Fonts are bundled and served from your own domain via Vite
-- Font files are cache-busted with content hashes automatically
-- No fragile hardcoded gstatic URLs
-- You control `font-display` directly if needed in the future
-
-## Files Affected
-
-- `package.json` -- 5 new @fontsource dependencies
-- `src/main.tsx` -- font CSS imports added
-- `index.html` -- 3 lines removed (Google Fonts preconnect + stylesheet)
-
+### Files affected
+- `index.html` only (2 small edits)
