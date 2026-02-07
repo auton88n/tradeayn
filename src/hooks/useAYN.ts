@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SUPABASE_URL } from '@/config';
 
 interface AYNMessage {
   role: 'user' | 'assistant' | 'system';
@@ -140,7 +141,7 @@ export function useAYN(options: UseAYNOptions = {}) {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ayn-unified`,
+        `${SUPABASE_URL}/functions/v1/ayn-unified`,
         {
           method: 'POST',
           headers: {

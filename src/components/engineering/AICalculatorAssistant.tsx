@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
 import { CalculatorType } from '@/lib/engineeringKnowledge';
 
 interface Suggestion {
@@ -340,12 +341,12 @@ export const AICalculatorAssistant: React.FC<AICalculatorAssistantProps> = ({
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/engineering-ai-chat`,
+        `${SUPABASE_URL}/functions/v1/engineering-ai-chat`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             calculatorType,

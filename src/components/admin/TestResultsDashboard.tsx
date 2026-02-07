@@ -90,7 +90,7 @@ interface BugReport {
   suggestedFix: string;
 }
 
-const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+import { SUPABASE_URL } from '@/config';
 
 /**
  * Safely fetch JSON from an edge function with proper content-type validation

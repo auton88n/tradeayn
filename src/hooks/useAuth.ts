@@ -4,11 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { trackDeviceLogin } from '@/hooks/useDeviceTracking';
 import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
-// Supabase config - using direct fetch to avoid client deadlocks
-
-// Get URL and key from environment - centralized source of truth
-const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
 
 const QUERY_TIMEOUT_MS = 5000;
 
@@ -21,7 +17,7 @@ const fetchFromSupabase = async (
   const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
     ...options,
     headers: {
-      'apikey': SUPABASE_KEY,
+      'apikey': SUPABASE_ANON_KEY,
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
       'Prefer': options.method === 'POST' ? 'return=minimal' : 'return=representation',
@@ -142,7 +138,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       await fetch(`${SUPABASE_URL}/rest/v1/user_settings`, {
         method: 'POST',
         headers: {
-          'apikey': SUPABASE_KEY,
+          'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
           'Prefer': 'resolution=merge-duplicates',

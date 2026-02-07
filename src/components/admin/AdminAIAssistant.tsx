@@ -30,7 +30,7 @@ interface Message {
   timestamp?: Date;
 }
 
-const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+import { SUPABASE_URL } from '@/config';
 
 // Typing indicator dots
 const TypingIndicator = () => (
