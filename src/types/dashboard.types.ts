@@ -314,6 +314,7 @@ export interface SidebarProps {
   selectedChats: Set<number>;
   currentUsage?: number;
   dailyLimit?: number | null;
+  bonusCredits?: number;
   isUnlimited?: boolean;
   usageResetDate?: string | null;
   onModeSelect: (mode: AIMode) => void;
