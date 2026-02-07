@@ -408,6 +408,7 @@ const DashboardContent = ({
           selectedChats={chatSession.selectedChats}
           currentUsage={usageTracking.currentUsage}
           dailyLimit={usageTracking.limit}
+          bonusCredits={usageTracking.bonusCredits}
           isUnlimited={usageTracking.isUnlimited}
           usageResetDate={usageTracking.resetDate}
           onModeSelect={setSelectedMode}

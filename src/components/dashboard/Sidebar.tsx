@@ -32,7 +32,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-import { useUsageTracking } from '@/hooks/useUsageTracking';
 import { usePinnedChats } from '@/hooks/usePinnedChats';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -103,6 +102,7 @@ export const Sidebar = ({
   selectedChats,
   currentUsage = 0,
   dailyLimit = null,
+  bonusCredits: bonusCreditsProp = 0,
   isUnlimited: isUnlimitedProp = false,
   usageResetDate = null,
   onModeSelect,
@@ -140,8 +140,13 @@ export const Sidebar = ({
   // Use database-synced pinned chats hook instead of localStorage
   const { pinnedChats, togglePin } = usePinnedChats(userId, accessToken);
   
-  // Fetch credits data directly via hook
-  const { currentUsage: usageFromHook, limit: limitFromHook, bonusCredits: bonusFromHook, isUnlimited: isUnlimitedFromHook, resetDate: resetFromHook, isDaily: isUsageDaily, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
+  // Use props from DashboardContainer (single source of truth)
+  const usageFromHook = currentUsage;
+  const limitFromHook = dailyLimit;
+  const bonusFromHook = bonusCreditsProp;
+  const isUnlimitedFromHook = isUnlimitedProp;
+  const resetFromHook = usageResetDate ?? null;
+  const isUsageLoading = false;
   
   // Fetch user subscription tier
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
