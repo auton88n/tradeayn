@@ -1,42 +1,27 @@
 
-
-# Fix History Panel Clipping Issues
+# Fix: Credits Not Updating After Feedback Submission
 
 ## Problem
 
-Two things are cut off in the chat history panel:
-1. The scroll-to-bottom chevron arrow at the bottom
-2. The bottom of the message list
+The Sidebar's `CreditUpgradeCard` uses its own separate `useUsageTracking` hook instance (line 144 of `Sidebar.tsx`). When feedback is submitted, the `onCreditsUpdated` callback only refreshes the DashboardContainer's usage hook -- not the Sidebar's. So the Sidebar shows stale credit data until a page refresh.
 
-The root cause is the animated `maxHeight: 400` on the outer container combined with `overflow-hidden`. The inner scroll area uses `max-h-[50vh]` which can exceed 400px, and the scroll-to-bottom button positioned at `bottom-2` gets clipped by the outer overflow-hidden container.
+The real-time Supabase subscription in `useUsageTracking` listens for `UPDATE` events on `user_ai_limits`, which should catch it, but there may be a timing issue or the channel might not be reliably delivering the update.
 
-## Changes
+## Solution
 
-### File: `src/components/dashboard/ChatInput.tsx`
+Remove the duplicate `useUsageTracking` hook from `Sidebar.tsx` and instead pass the usage data down as props from `DashboardContainer`, which already has the hook and refreshes it after feedback submission.
 
-**1. Increase the animated maxHeight from 400 to 500** (line 448)
+### File: `src/components/dashboard/DashboardContainer.tsx`
 
-The 400px limit is too tight -- it clips the messages and the floating scroll button. Increasing to 500px gives enough room.
+Pass the usage tracking data to the Sidebar component so it uses the same data source that gets refreshed after feedback:
 
-```
-maxHeight: 400  -->  maxHeight: 500
-```
+- Add props: `currentUsage`, `dailyLimit`, `bonusCredits`, `isUnlimited`, `resetDate`, `isDaily` from the existing `usageTracking` hook
+- Wire these into the Sidebar component call
 
-**2. Reduce inner scroll area max-height to stay within bounds** (line 476)
+### File: `src/components/dashboard/Sidebar.tsx`
 
-Change `max-h-[50vh]` to `max-h-[340px]` so the messages area plus the header (roughly 50px) plus the scroll button (40px) all fit within the 500px animated container.
+- Remove the internal `useUsageTracking` hook call (line 144)
+- Use the props passed from DashboardContainer instead of hook-fetched values for the `CreditUpgradeCard`
+- This ensures when `refreshUsage` is called after feedback submission, the Sidebar immediately reflects the updated credits
 
-```
-max-h-[50vh]  -->  max-h-[340px]
-```
-
-**3. Add padding-bottom to the relative container** (line 475)
-
-Add `pb-3` to the relative container so the absolute-positioned scroll-to-bottom button at `bottom-2` has space and doesn't get clipped.
-
-```
-<div className="relative">  -->  <div className="relative pb-3">
-```
-
-These three changes together ensure the scroll-to-bottom arrow and the last message are fully visible within the history panel.
-
+This is a single-source-of-truth fix: one hook instance, one refresh call, all UI in sync.
