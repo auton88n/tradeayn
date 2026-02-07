@@ -531,7 +531,7 @@ const LandingPage = memo(() => {
               {/* Top Left - Content Creator Sites */}
               <ScrollReveal>
                 <Link to={`/services/${services[0].slug}`} className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-hidden contain-layout" whileHover={{
+                  <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-hidden contain-layout" whileHover={{
                     y: -4
                   }} transition={{
                     duration: 0.3,
@@ -560,7 +560,7 @@ const LandingPage = memo(() => {
               {/* Bottom Left - Automation */}
               <ScrollReveal delay={0.2}>
                 <Link to={`/services/${services[2].slug}`} className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer contain-layout" whileHover={{
+                  <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer contain-layout" whileHover={{
                     y: -4
                   }} transition={{
                     duration: 0.3,
@@ -591,7 +591,7 @@ const LandingPage = memo(() => {
               {/* Ticketing System - Featured Card */}
               <ScrollReveal delay={0.3}>
                 <Link to="/services/ticketing" className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[500px] flex flex-col group cursor-pointer overflow-hidden contain-layout" whileHover={{
+                  <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[500px] flex flex-col group cursor-pointer overflow-hidden contain-layout" whileHover={{
                     y: -4
                   }} transition={{
                     duration: 0.3,
@@ -623,7 +623,7 @@ const LandingPage = memo(() => {
               {/* Top Right - AI Agents */}
               <ScrollReveal delay={0.1}>
                 <Link to={`/services/${services[1].slug}`} className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer contain-layout" whileHover={{
+                  <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer contain-layout" whileHover={{
                     y: -4
                   }} transition={{
                     duration: 0.3,
@@ -654,7 +654,7 @@ const LandingPage = memo(() => {
               {/* Bottom Right - AI Employees */}
               <ScrollReveal delay={0.3}>
                 <Link to={`/services/${services[3].slug}`} className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[480px] group cursor-pointer overflow-hidden contain-layout" whileHover={{
+                  <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[480px] group cursor-pointer overflow-hidden contain-layout" whileHover={{
                     y: -4
                   }} transition={{
                     duration: 0.3,
