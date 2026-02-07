@@ -1,19 +1,25 @@
 
 
-# Fix Dark Mode Card Background Mismatch
+# Fix Loading-to-Loaded Eye Color Flash
 
-## What's Changing
+## Problem
 
-Update **only the dark mode** background class on 5 service cards in the "Six Ways We Help" bento grid.
+The eye loader shows for ~2 seconds with mismatched colors compared to the actual EmotionalEye, causing a visible flash -- most notably a white-to-black pupil jump and a #0A0A0A-to-#171717 outer circle shift.
 
-- Light mode (`bg-neutral-50`) stays exactly as-is
-- Dark mode changes from `dark:bg-neutral-900/80` to `dark:bg-card`
+## Changes
 
-This uses your existing `--card` CSS variable (#0F0F0F) instead of the mismatched #171717 at 80% opacity.
+**File: `src/components/ui/page-loader.tsx`**
 
-## File
+Update all 4 loader variants (AYNLoader, PageLoader, DashboardLoader, AdminLoader):
 
-**`src/components/LandingPage.tsx`** -- 5 occurrences of `dark:bg-neutral-900/80` replaced with `dark:bg-card` (lines ~534, 563, 594, 626, 657).
+1. **Outer circle**: `bg-background` → `bg-neutral-100 dark:bg-neutral-900`
+2. **Inner ring**: `bg-background/80` → `bg-neutral-200/80 dark:bg-neutral-900/80`
+3. **Emotional ring**: `bg-muted/50` → `bg-neutral-300/50 dark:bg-neutral-700/50` + add `blur-sm` for glow consistency
+4. **Center pupil**: `bg-foreground` → `bg-neutral-900 dark:bg-black`
+5. **Brain icon**: `text-background` → `text-neutral-100 dark:text-neutral-400`
+6. **Sync comment**: Add `// Keep in sync with EmotionalEye dark mode colors` at the top of the file
 
-No other files or modes affected.
+AdminLoader retains its purple-tinted glow but gets the same structural fixes.
+
+No other files affected.
 
