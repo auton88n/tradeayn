@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
 import { toast } from '@/hooks/use-toast';
 import { CalculatorType } from '@/lib/engineeringKnowledge';
 import ReactMarkdown from 'react-markdown';
@@ -185,12 +186,12 @@ export const EngineeringAIChat = ({
       }));
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/engineering-ai-chat`,
+        `${SUPABASE_URL}/functions/v1/engineering-ai-chat`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             calculatorType,

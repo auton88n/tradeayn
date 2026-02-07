@@ -14,9 +14,7 @@ import type {
   LABResponse
 } from '@/types/dashboard.types';
 
-// Same constants from useAuth.ts - direct REST API bypasses deadlocking Supabase client
-const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
 
 // Maximum messages allowed per chat session
 const MAX_MESSAGES_PER_CHAT = 100;
@@ -47,7 +45,7 @@ const fetchFromSupabase = async (
 ): Promise<any> => {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
     headers: {
-      'apikey': SUPABASE_KEY,
+      'apikey': SUPABASE_ANON_KEY,
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
@@ -229,7 +227,7 @@ export const useMessages = (
       const rpcResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_usage`, {
         method: 'POST',
         headers: {
-          'apikey': SUPABASE_KEY,
+          'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
@@ -361,7 +359,7 @@ export const useMessages = (
         method: 'POST',
         signal: controller.signal,
         headers: {
-          'apikey': SUPABASE_KEY,
+          'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
@@ -613,7 +611,7 @@ export const useMessages = (
           `${SUPABASE_URL}/rest/v1/chat_sessions?session_id=eq.${sessionId}&user_id=eq.${userId}&select=id`,
           {
             headers: {
-              'apikey': SUPABASE_KEY,
+              'apikey': SUPABASE_ANON_KEY,
               'Authorization': `Bearer ${session.access_token}`,
             }
           }
@@ -626,7 +624,7 @@ export const useMessages = (
           await fetch(`${SUPABASE_URL}/rest/v1/chat_sessions`, {
             method: 'POST',
             headers: {
-              'apikey': SUPABASE_KEY,
+              'apikey': SUPABASE_ANON_KEY,
               'Authorization': `Bearer ${session.access_token}`,
               'Content-Type': 'application/json',
               'Prefer': 'return=minimal',
@@ -646,7 +644,7 @@ export const useMessages = (
       const saveResponse = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
         method: 'POST',
         headers: {
-          'apikey': SUPABASE_KEY,
+          'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal',
