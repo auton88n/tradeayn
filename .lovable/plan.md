@@ -1,24 +1,19 @@
 
 
-# Add "Maximum Liability" Subsection to Section 5 (Payment Terms)
+# Fix Dark Mode Card Background Mismatch
 
-## What Changes
+## What's Changing
 
-Add a new subsection called "Maximum Liability" at the end of Section 5 (Payment Terms), after the existing "Disputes" subsection in `src/pages/Terms.tsx`.
+Update **only the dark mode** background class on 5 service cards in the "Six Ways We Help" bento grid.
 
-## Content
+- Light mode (`bg-neutral-50`) stays exactly as-is
+- Dark mode changes from `dark:bg-neutral-900/80` to `dark:bg-card`
 
-The new subsection will include:
-- Title: "Maximum Liability"
-- An introductory line: "In no event shall our total liability exceed the lesser of:"
-- Two bullet points:
-  - The amount you paid to AYN in the 12 months preceding any claim
-  - $100 USD (or equivalent in your local currency)
-- A closing paragraph about the limitation applying to all claims regardless of legal theory.
+This uses your existing `--card` CSS variable (#0F0F0F) instead of the mismatched #171717 at 80% opacity.
 
-## Technical Detail
+## File
 
-- Uses the existing `SubSection`, `BulletList`, and `<p>` components already in the file -- no new components needed.
-- Inserted right after the "Disputes" subsection inside `PolicySection number="5"`.
-- No other files affected.
+**`src/components/LandingPage.tsx`** -- 5 occurrences of `dark:bg-neutral-900/80` replaced with `dark:bg-card` (lines ~534, 563, 594, 626, 657).
+
+No other files or modes affected.
 
