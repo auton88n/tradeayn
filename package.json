@@ -11,6 +11,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/noto-sans-arabic": "^5.2.10",
+    "@fontsource/playfair-display": "^5.2.8",
+    "@fontsource/syne": "^5.2.7",
     "@hookform/resolvers": "^3.10.0",
     "@playwright/test": "^1.57.0",
     "@radix-ui/react-alert-dialog": "^1.1.14",
