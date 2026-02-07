@@ -171,7 +171,11 @@
   <meta name="twitter:description" content="AYN AI learns your habits, understands your goals, and helps you succeed.">
 </head>
 
-  <body style="background-color: hsl(0 0% 4%);">
+  <body>
+    <script>
+      var isDark = document.documentElement.classList.contains('dark');
+      document.body.style.backgroundColor = isDark ? 'hsl(0 0% 4%)' : 'hsl(0 0% 100%)';
+    </script>
     <div id="root" style="min-height: 100vh;"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
