@@ -123,6 +123,12 @@ html:not(.light):not(.dark) #root {
   visibility: hidden;
 }
 
+/* Suppress transitions on initial load - re-enable after first paint */
+html:not([data-ready]),
+html:not([data-ready]) body {
+  transition: none !important;
+}
+
 /* Theme transitions - scoped for performance */
 html, body {
   transition: background-color 0.2s ease-out, color 0.2s ease-out;
@@ -377,11 +383,12 @@ button, a, input, textarea, select {
   }
 
   html.dark body {
-    background: hsl(var(--background));
+    background-color: hsl(var(--background));
   }
 
   html:not(.dark) body {
-    background: radial-gradient(ellipse at top, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
+    background-color: hsl(0 0% 100%);
+    background-image: radial-gradient(ellipse at top, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
   }
 
   /* Message bubble styling */
