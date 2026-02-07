@@ -1,25 +1,70 @@
 
 
-# Fix Loading-to-Loaded Eye Color Flash
+# Self-Host Critical Fonts via @fontsource
 
 ## Problem
 
-The eye loader shows for ~2 seconds with mismatched colors compared to the actual EmotionalEye, causing a visible flash -- most notably a white-to-black pupil jump and a #0A0A0A-to-#171717 outer circle shift.
+The external Google Fonts CSS link is a render-blocking resource that adds network latency (DNS lookup to googleapis.com + gstatic.com, CSS download, then font file download). While `&display=swap` is already set, the progressive React render -- where "Meet AYN" appears alone before JS chunks finish -- makes the font swap visible. Self-hosting eliminates the external dependency entirely.
+
+## Approach
+
+Replace the Google Fonts `<link>` in `index.html` with locally bundled fonts via `@fontsource` packages. Fonts get bundled into the Vite build, served from the same origin, and load with zero extra network round-trips.
 
 ## Changes
 
-**File: `src/components/ui/page-loader.tsx`**
+### 1. Install @fontsource packages
 
-Update all 4 loader variants (AYNLoader, PageLoader, DashboardLoader, AdminLoader):
+```
+@fontsource/syne (weights: 400, 500, 600, 700, 800)
+@fontsource/inter (weights: 300, 400, 500, 600, 700)
+@fontsource/jetbrains-mono (weights: 400, 500, 600)
+@fontsource/playfair-display (weights: 400, 500, 600, 700)
+@fontsource/noto-sans-arabic (weights: 400, 500, 600, 700)
+```
 
-1. **Outer circle**: `bg-background` → `bg-neutral-100 dark:bg-neutral-900`
-2. **Inner ring**: `bg-background/80` → `bg-neutral-200/80 dark:bg-neutral-900/80`
-3. **Emotional ring**: `bg-muted/50` → `bg-neutral-300/50 dark:bg-neutral-700/50` + add `blur-sm` for glow consistency
-4. **Center pupil**: `bg-foreground` → `bg-neutral-900 dark:bg-black`
-5. **Brain icon**: `text-background` → `text-neutral-100 dark:text-neutral-400`
-6. **Sync comment**: Add `// Keep in sync with EmotionalEye dark mode colors` at the top of the file
+### 2. Import fonts in `src/main.tsx`
 
-AdminLoader retains its purple-tinted glow but gets the same structural fixes.
+Add imports for each font weight used. Only the weights actually needed are imported -- no full family bundles. Example:
 
-No other files affected.
+```
+import '@fontsource/syne/400.css';
+import '@fontsource/syne/500.css';
+import '@fontsource/syne/600.css';
+import '@fontsource/syne/700.css';
+import '@fontsource/syne/800.css';
+import '@fontsource/inter/300.css';
+import '@fontsource/inter/400.css';
+// ... etc for each family/weight
+```
+
+Each import is a small CSS file that references a WOFF2 file bundled in `node_modules`. Vite handles asset resolution automatically.
+
+### 3. Remove external Google Fonts from `index.html`
+
+Remove these lines (~63-66):
+
+- `<link rel="preconnect" href="https://fonts.googleapis.com">`
+- `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`
+- The Google Fonts `<link href="https://fonts.googleapis.com/css2?..." rel="stylesheet">`
+
+Keep the Supabase preconnect as-is.
+
+### 4. No changes to CSS or Tailwind config
+
+The `font-family` declarations in your Tailwind config / CSS already reference `'Syne'`, `'Inter'`, etc. by name. @fontsource registers the exact same family names, so everything continues to work.
+
+## What This Fixes
+
+- Eliminates 2 external DNS lookups (googleapis.com + gstatic.com)
+- Eliminates render-blocking external CSS fetch
+- Fonts are bundled and served from your own domain via Vite
+- Font files are cache-busted with content hashes automatically
+- No fragile hardcoded gstatic URLs
+- You control `font-display` directly if needed in the future
+
+## Files Affected
+
+- `package.json` -- 5 new @fontsource dependencies
+- `src/main.tsx` -- font CSS imports added
+- `index.html` -- 3 lines removed (Google Fonts preconnect + stylesheet)
 
