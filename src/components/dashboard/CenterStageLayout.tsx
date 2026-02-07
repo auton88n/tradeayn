@@ -735,7 +735,7 @@ export const CenterStageLayout = ({
             animate={{
               scale: (hasVisibleResponses || transcriptOpen) ? (isMobile ? 0.55 : 0.5) : 1,
               marginBottom: (hasVisibleResponses || transcriptOpen) ? -20 : 0,
-              y: (hasVisibleResponses || transcriptOpen) ? -10 : -30,
+              y: (hasVisibleResponses || transcriptOpen) ? 10 : -30,
             }}
             transition={{
               type: 'spring',
