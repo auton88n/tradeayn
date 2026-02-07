@@ -1,45 +1,53 @@
 
 
-# Fix Dark Background Flash on Light Mode Refresh
+# Fix Persistent Background Flash on Dark Mode Refresh
 
-## Problem
+## Root Cause
 
-The `<body>` tag in `index.html` has a hardcoded dark background: `style="background-color: hsl(0 0% 4%);"`. This is always dark regardless of theme. The inline theme script in `<head>` tries to fix it with `if (document.body) document.body.style.backgroundColor = bgColor`, but `document.body` doesn't exist yet when the script runs in `<head>`, so the fix never applies.
+Two issues are combining to create the flash:
 
-**Result**: On every refresh in light mode, the dark body background is visible for a split second before React/CSS takes over.
+1. **CSS transition on initial load**: `index.css` line 127-130 applies `transition: background-color 0.2s ease-out` to `html, body`. When the CSS bundle loads after the inline scripts have already set the background, the transition animates the "re-application" of the same color -- creating a visible flicker.
+
+2. **CSS `background` shorthand overrides inline style**: The rules at lines 379-384 use `background:` (shorthand), which resets the inline `backgroundColor` set by the body script. The browser briefly shows the default before re-applying.
 
 ## Changes
 
+### File: `src/index.css`
+
+**1. Disable transition on initial page load**
+
+Add a rule that suppresses background transitions until the page is ready. The inline `<head>` script already adds a class (`dark` or `light`) to `<html>`, so we can use a CSS approach:
+
+```css
+/* Suppress transitions on initial load - re-enable after first paint */
+html:not([data-ready]),
+html:not([data-ready]) body {
+  transition: none !important;
+}
+```
+
+**2. Add `data-ready` attribute after first paint**
+
 ### File: `index.html`
 
-**1. Remove the hardcoded dark background from `<body>` (line 174)**
+Add at the end of the `<body>` script (after setting background):
 
-Change:
 ```html
-<body style="background-color: hsl(0 0% 4%);">
-```
-To:
-```html
-<body>
-```
-
-**2. Update the inline theme script (line 138-154) to set background on `<html>` only (which it already does) and also add a small `<script>` right after `<body>` opens to set the body background immediately when body exists.**
-
-Move body background assignment into a tiny inline script right after the `<body>` tag:
-```html
-<body>
-  <script>
-    // Apply theme background to body (runs immediately when body exists)
-    var isDark = document.documentElement.classList.contains('dark');
-    document.body.style.backgroundColor = isDark ? 'hsl(0 0% 4%)' : 'hsl(0 0% 100%)';
-  </script>
-  <div id="root" ...>
+<script>
+  var isDark = document.documentElement.classList.contains('dark');
+  document.body.style.backgroundColor = isDark ? 'hsl(0 0% 4%)' : 'hsl(0 0% 100%)';
+  // Re-enable transitions after first paint
+  requestAnimationFrame(function() {
+    document.documentElement.setAttribute('data-ready', '');
+  });
+</script>
 ```
 
-This way:
-- The `<head>` script determines theme and sets it on `<html>` (already works)
-- The `<body>` script runs immediately when body is created and reads the class from `<html>` to apply the correct background
-- No more hardcoded dark-only background
+This ensures:
+- The inline script sets the correct background instantly (no transition)
+- After the first paint, `data-ready` is added, re-enabling smooth transitions for theme toggling
+- No visible flash on refresh in either light or dark mode
 
 ### Files affected
-- `index.html` only (2 small edits)
+- `src/index.css` -- add 4 lines (transition suppression rule)
+- `index.html` -- add 3 lines to existing body script
