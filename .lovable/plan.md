@@ -1,35 +1,26 @@
 
-
-# Move the Eye Up Slightly
+# Move Eye Inside the History Card
 
 ## Problem
 
-The eye sits too low in the center stage area, especially when the chat panel is open. It needs to be shifted up a bit for better visual balance.
+When the history panel is open, the eye floats above the card header. The user wants it positioned within the history card, near the top.
 
 ## Change
 
-### File: `src/components/dashboard/CenterStageLayout.tsx` (line 737)
+### File: `src/components/dashboard/CenterStageLayout.tsx` (line 738)
 
-Add a negative `marginTop` to the eye container's animate block to shift it upward:
+Adjust the `y` value when transcript/responses are open from `-10` to `10`, so the eye sits inside the card rather than above it. Keep the idle `y` at `-30`.
 
-**Current (line 735-738):**
+**Current:**
 ```tsx
-animate={{
-  scale: (hasVisibleResponses || transcriptOpen) ? (isMobile ? 0.55 : 0.5) : 1,
-  marginBottom: (hasVisibleResponses || transcriptOpen) ? -20 : 0,
-}}
+y: (hasVisibleResponses || transcriptOpen) ? -10 : -30,
 ```
 
 **Updated:**
 ```tsx
-animate={{
-  scale: (hasVisibleResponses || transcriptOpen) ? (isMobile ? 0.55 : 0.5) : 1,
-  marginBottom: (hasVisibleResponses || transcriptOpen) ? -20 : 0,
-  y: (hasVisibleResponses || transcriptOpen) ? -10 : -30,
-}}
+y: (hasVisibleResponses || transcriptOpen) ? 10 : -30,
 ```
 
-This shifts the eye up by 30px in its default/idle position and 10px when the response panel is open, creating a more balanced visual layout without affecting any other elements.
+This pushes the eye down by 20px when the history card is visible, placing it within the card's top area instead of floating above it.
 
-One file modified: `CenterStageLayout.tsx`, lines 735-738.
-
+One line changed in one file.
