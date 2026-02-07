@@ -1,48 +1,44 @@
 
 
-# Fix Background Shift Between Service Cards on Scroll
+# Fix Landing Page Dark Mode to Match Dashboard Quality
 
 ## Problem
 
-When scrolling between service cards (e.g., "Smart Ticketing System" to "Custom AI Agents"), you see the background shift from a lighter dark shade to a darker shade and back. This happens because:
+The landing page dark mode has two issues that the dashboard doesn't have:
 
-- Each service card has a `dark:bg-card` background (6% lightness -- slightly lighter black)
-- The page background is `bg-background` (4% lightness -- darker black)
-- The `ScrollReveal` wrapper starts each card at **opacity: 0** (fully invisible)
-- As you scroll, the invisible card reveals the darker page background underneath
-- When the card fades in, it shifts from dark black (4%) to light black (6%)
+1. **Two shades of black visible while scrolling**: The page background is `--background` (4% lightness / #0A0A0A) while service cards use `dark:bg-card` (6% lightness / #0F0F0F). The gap between cards reveals the darker page background, creating a noticeable color shift as you scroll.
 
-This creates the "two shades of black" flicker you see between cards.
+2. **Remaining scroll animations cause flicker**: The "About" section (6 value prop items) and the "Contact" section still use `ScrollReveal` wrappers, which start elements at `opacity: 0` and fade them in. This makes the darker background flash through as elements appear.
+
+The dashboard avoids both issues because it doesn't use scroll animations and has a uniform background throughout.
 
 ## Solution
 
-Remove the `ScrollReveal` animation wrappers from the 6 service cards in the bento grid. The cards will simply be visible immediately -- no fade-in, no background shift. The section header ("Six Ways We Help") keeps its animation.
+### 1. Unify the landing page background with the card color
+
+Wrap the services section in a seamless dark background so there's no visible shift between the page and the cards. Specifically, give the services section container a `bg-card` background in dark mode so the gaps between cards match the cards themselves -- eliminating the two-tone effect.
+
+### 2. Remove remaining ScrollReveal wrappers
+
+Remove the `ScrollReveal` wrappers from the 6 value prop items in the "About" section (lines 424-507) and the 2 wrappers in the "Contact" section (lines 708, 722). This prevents the opacity:0 flash that reveals the darker background as you scroll.
+
+## Technical Details
 
 ### File: `src/components/LandingPage.tsx`
 
-For each of the 6 service cards (around lines 532, 560, 592, 624, 655, 685), replace `<ScrollReveal>` and `</ScrollReveal>` wrappers with plain fragments or remove them entirely.
+**Change 1 -- Services section background**: On line 513, add a dark-mode background to the services section so the space between cards is the same shade as the cards:
 
-**Before** (repeated 6 times with different content):
 ```tsx
-<ScrollReveal>
-  <Link to="/services/...">
-    <motion.div className="... dark:bg-card ...">
-      ...
-    </motion.div>
-  </Link>
-</ScrollReveal>
+// Before:
+<section id="services" className="py-16 md:py-32 px-4 md:px-6 overflow-x-hidden">
+
+// After:
+<section id="services" className="py-16 md:py-32 px-4 md:px-6 overflow-x-hidden dark:bg-card">
 ```
 
-**After**:
-```tsx
-<Link to="/services/...">
-  <motion.div className="... dark:bg-card ...">
-    ...
-  </motion.div>
-</Link>
-```
+**Change 2 -- Remove ScrollReveal from About section value props** (lines 424-507): Remove the 6 `<ScrollReveal>` wrappers around the value proposition items. Keep the section header's `ScrollReveal` (line 407).
 
-The cards still keep their hover lift animation (`whileHover: { y: -4 }`), just without the scroll-triggered fade-in that causes the background color shift.
+**Change 3 -- Remove ScrollReveal from Contact section** (lines 708 and 722): Remove the 2 `<ScrollReveal>` wrappers in the contact section so the heading and form appear immediately.
 
 ### Files affected
-- `src/components/LandingPage.tsx` -- remove `ScrollReveal` from 6 service card wrappers
+- `src/components/LandingPage.tsx` -- add dark:bg-card to services section, remove 8 ScrollReveal wrappers (6 in About + 2 in Contact)
