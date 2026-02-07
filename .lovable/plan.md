@@ -1,48 +1,70 @@
 
+# Centralize Supabase Credentials
 
-# Fix: ThemeProvider Class Removal Causing Background Flash
+## Problem
 
-## Root Cause
+The Supabase URL and anon key are copy-pasted across **8 files** in `src/`:
 
-The `ThemeProvider` component (`src/components/shared/theme-provider.tsx`) has a `useEffect` that runs on mount and does this:
+1. `src/integrations/supabase/client.ts`
+2. `src/lib/supabaseApi.ts`
+3. `src/hooks/useAuth.ts`
+4. `src/hooks/useMessages.ts`
+5. `src/components/AdminPanel.tsx`
+6. `src/components/admin/AdminAIAssistant.tsx` (URL only)
+7. `src/components/admin/TestResultsDashboard.tsx` (URL only)
+8. `src/components/engineering/AICalculatorAssistant.tsx` and `EngineeringAIChat.tsx` (use `import.meta.env.VITE_*` which is unsupported)
 
-```
-root.classList.remove("light", "dark")   // <-- removes BOTH classes
-root.classList.add(theme)                // <-- adds correct one back
-```
+If the project ID or key ever changes, every file must be updated manually -- error-prone and a maintenance risk.
 
-The inline script in `index.html` already sets the correct class (`dark` or `light`) on `<html>` before React loads. But when React hydrates and ThemeProvider mounts, the `useEffect` strips both classes for one frame, then re-adds the same class. During that frame:
+## Solution
 
-- CSS variables defined under `.dark { ... }` disappear
-- `html:not(.light):not(.dark) #root { visibility: hidden }` kicks in
-- The background flashes to the browser default
+### Step 1: Create `src/config.ts`
 
-## Fix
-
-### File: `src/components/shared/theme-provider.tsx`
-
-Update the `useEffect` to skip the class swap when the correct class is already present:
+A single source of truth exporting both values:
 
 ```typescript
-useEffect(() => {
-  const root = window.document.documentElement;
-  const resolvedTheme = theme === "system"
-    ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-    : theme;
-
-  // Skip if the correct class is already set (e.g., by the inline head script)
-  if (root.classList.contains(resolvedTheme)) return;
-
-  root.classList.remove("light", "dark");
-  root.classList.add(resolvedTheme);
-}, [theme]);
+export const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIs...';
 ```
 
-This way:
-- On initial load, the inline script has already set the class, so the effect is a no-op (no flash)
-- On theme toggle, the class changes, so the effect runs normally
-- System theme is resolved before checking
+### Step 2: Update all 8 files
 
-### Files affected
-- `src/components/shared/theme-provider.tsx` -- update the `useEffect` (lines 33-49)
+Each file's local `SUPABASE_URL` / `SUPABASE_KEY` / `SUPABASE_ANON_KEY` / `SUPABASE_PUBLISHABLE_KEY` declarations are **removed** and replaced with a single import:
 
+```typescript
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
+```
+
+For files that only use the URL (e.g., `AdminAIAssistant.tsx`, `TestResultsDashboard.tsx`):
+
+```typescript
+import { SUPABASE_URL } from '@/config';
+```
+
+For files using the broken `import.meta.env.VITE_*` pattern (`AICalculatorAssistant.tsx`, `EngineeringAIChat.tsx`, `useAYN.ts`), those references are also replaced with the centralized import.
+
+The `src/integrations/supabase/client.ts` file will import from `@/config` instead of declaring its own constants.
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `src/config.ts` | **New file** -- single source of truth |
+| `src/integrations/supabase/client.ts` | Remove local constants, import from config |
+| `src/lib/supabaseApi.ts` | Remove local constants, import from config |
+| `src/hooks/useAuth.ts` | Remove local constants, import from config |
+| `src/hooks/useMessages.ts` | Remove local constants, import from config |
+| `src/components/AdminPanel.tsx` | Remove local constants, import from config |
+| `src/components/admin/AdminAIAssistant.tsx` | Remove local URL, import from config |
+| `src/components/admin/TestResultsDashboard.tsx` | Remove local URL, import from config |
+| `src/components/engineering/AICalculatorAssistant.tsx` | Replace `import.meta.env.VITE_*` with config import |
+| `src/components/engineering/EngineeringAIChat.tsx` | Replace `import.meta.env.VITE_*` with config import |
+| `src/hooks/useAYN.ts` | Replace `import.meta.env.VITE_*` with config import |
+
+Note: The `e2e/` test files and `supabase/functions/` edge functions are outside the app bundle and will keep their own constants since they run in different environments (Playwright/Deno).
+
+### What this does NOT do
+
+- Does not change any runtime behavior -- same values, just imported from one place
+- Does not use environment variables (not supported in Lovable)
+- Does not touch edge functions or e2e tests (different runtime contexts)
