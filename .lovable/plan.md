@@ -1,48 +1,48 @@
 
 
-# Fix: ThemeProvider Class Removal Causing Background Flash
+# Fix Background Shift Between Service Cards on Scroll
 
-## Root Cause
+## Problem
 
-The `ThemeProvider` component (`src/components/shared/theme-provider.tsx`) has a `useEffect` that runs on mount and does this:
+When scrolling between service cards (e.g., "Smart Ticketing System" to "Custom AI Agents"), you see the background shift from a lighter dark shade to a darker shade and back. This happens because:
 
-```
-root.classList.remove("light", "dark")   // <-- removes BOTH classes
-root.classList.add(theme)                // <-- adds correct one back
-```
+- Each service card has a `dark:bg-card` background (6% lightness -- slightly lighter black)
+- The page background is `bg-background` (4% lightness -- darker black)
+- The `ScrollReveal` wrapper starts each card at **opacity: 0** (fully invisible)
+- As you scroll, the invisible card reveals the darker page background underneath
+- When the card fades in, it shifts from dark black (4%) to light black (6%)
 
-The inline script in `index.html` already sets the correct class (`dark` or `light`) on `<html>` before React loads. But when React hydrates and ThemeProvider mounts, the `useEffect` strips both classes for one frame, then re-adds the same class. During that frame:
+This creates the "two shades of black" flicker you see between cards.
 
-- CSS variables defined under `.dark { ... }` disappear
-- `html:not(.light):not(.dark) #root { visibility: hidden }` kicks in
-- The background flashes to the browser default
+## Solution
 
-## Fix
+Remove the `ScrollReveal` animation wrappers from the 6 service cards in the bento grid. The cards will simply be visible immediately -- no fade-in, no background shift. The section header ("Six Ways We Help") keeps its animation.
 
-### File: `src/components/shared/theme-provider.tsx`
+### File: `src/components/LandingPage.tsx`
 
-Update the `useEffect` to skip the class swap when the correct class is already present:
+For each of the 6 service cards (around lines 532, 560, 592, 624, 655, 685), replace `<ScrollReveal>` and `</ScrollReveal>` wrappers with plain fragments or remove them entirely.
 
-```typescript
-useEffect(() => {
-  const root = window.document.documentElement;
-  const resolvedTheme = theme === "system"
-    ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-    : theme;
-
-  // Skip if the correct class is already set (e.g., by the inline head script)
-  if (root.classList.contains(resolvedTheme)) return;
-
-  root.classList.remove("light", "dark");
-  root.classList.add(resolvedTheme);
-}, [theme]);
+**Before** (repeated 6 times with different content):
+```tsx
+<ScrollReveal>
+  <Link to="/services/...">
+    <motion.div className="... dark:bg-card ...">
+      ...
+    </motion.div>
+  </Link>
+</ScrollReveal>
 ```
 
-This way:
-- On initial load, the inline script has already set the class, so the effect is a no-op (no flash)
-- On theme toggle, the class changes, so the effect runs normally
-- System theme is resolved before checking
+**After**:
+```tsx
+<Link to="/services/...">
+  <motion.div className="... dark:bg-card ...">
+    ...
+  </motion.div>
+</Link>
+```
+
+The cards still keep their hover lift animation (`whileHover: { y: -4 }`), just without the scroll-triggered fade-in that causes the background color shift.
 
 ### Files affected
-- `src/components/shared/theme-provider.tsx` -- update the `useEffect` (lines 33-49)
-
+- `src/components/LandingPage.tsx` -- remove `ScrollReveal` from 6 service card wrappers
