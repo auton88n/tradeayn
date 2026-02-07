@@ -445,7 +445,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           maxHeight: 0
         }} animate={{
           opacity: 1,
-          maxHeight: 400
+          maxHeight: 500
         }} exit={{
           opacity: 0,
           maxHeight: 0
@@ -472,8 +472,8 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               </div>
 
               {/* Messages Area */}
-              <div className="relative">
-                <div className="max-h-[50vh] overflow-y-auto" ref={historyScrollRef} onScroll={handleHistoryScroll}>
+              <div className="relative pb-3">
+                <div className="max-h-[340px] overflow-y-auto" ref={historyScrollRef} onScroll={handleHistoryScroll}>
                   <div className="p-3 space-y-1 flex flex-col justify-end min-h-full">
                     {sortedTranscriptMessages.map(msg => <TranscriptMessage key={msg.id} content={msg.content} sender={msg.sender} timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)} onReply={text => {
                   setInputMessage(`> ${text.split('\n')[0]}\n`);
