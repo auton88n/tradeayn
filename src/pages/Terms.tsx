@@ -244,6 +244,20 @@ const Terms = () => {
                     Contact support@aynn.io with your account details and transaction information.
                   </p>
                 </SubSection>
+                <SubSection title="Maximum Liability">
+                  <p className="text-white/60">
+                    In no event shall our total liability exceed the lesser of:
+                  </p>
+                  <BulletList items={[
+                    "The amount you paid to AYN in the 12 months preceding any claim",
+                    "$100 USD (or equivalent in your local currency)"
+                  ]} />
+                  <p className="text-white/60">
+                    This limitation applies to all claims, whether based on warranty, contract, tort, 
+                    or any other legal theory, and regardless of whether AYN has been advised of the 
+                    possibility of such damages.
+                  </p>
+                </SubSection>
               </PolicySection>
 
               {/* Section 6 */}
