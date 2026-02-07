@@ -1,44 +1,48 @@
 
 
-# Fix Landing Page Dark Mode to Match Dashboard Quality
+# Fix: ThemeProvider Class Removal Causing Background Flash
 
-## Problem
+## Root Cause
 
-The landing page dark mode has two issues that the dashboard doesn't have:
+The `ThemeProvider` component (`src/components/shared/theme-provider.tsx`) has a `useEffect` that runs on mount and does this:
 
-1. **Two shades of black visible while scrolling**: The page background is `--background` (4% lightness / #0A0A0A) while service cards use `dark:bg-card` (6% lightness / #0F0F0F). The gap between cards reveals the darker page background, creating a noticeable color shift as you scroll.
-
-2. **Remaining scroll animations cause flicker**: The "About" section (6 value prop items) and the "Contact" section still use `ScrollReveal` wrappers, which start elements at `opacity: 0` and fade them in. This makes the darker background flash through as elements appear.
-
-The dashboard avoids both issues because it doesn't use scroll animations and has a uniform background throughout.
-
-## Solution
-
-### 1. Unify the landing page background with the card color
-
-Wrap the services section in a seamless dark background so there's no visible shift between the page and the cards. Specifically, give the services section container a `bg-card` background in dark mode so the gaps between cards match the cards themselves -- eliminating the two-tone effect.
-
-### 2. Remove remaining ScrollReveal wrappers
-
-Remove the `ScrollReveal` wrappers from the 6 value prop items in the "About" section (lines 424-507) and the 2 wrappers in the "Contact" section (lines 708, 722). This prevents the opacity:0 flash that reveals the darker background as you scroll.
-
-## Technical Details
-
-### File: `src/components/LandingPage.tsx`
-
-**Change 1 -- Services section background**: On line 513, add a dark-mode background to the services section so the space between cards is the same shade as the cards:
-
-```tsx
-// Before:
-<section id="services" className="py-16 md:py-32 px-4 md:px-6 overflow-x-hidden">
-
-// After:
-<section id="services" className="py-16 md:py-32 px-4 md:px-6 overflow-x-hidden dark:bg-card">
+```
+root.classList.remove("light", "dark")   // <-- removes BOTH classes
+root.classList.add(theme)                // <-- adds correct one back
 ```
 
-**Change 2 -- Remove ScrollReveal from About section value props** (lines 424-507): Remove the 6 `<ScrollReveal>` wrappers around the value proposition items. Keep the section header's `ScrollReveal` (line 407).
+The inline script in `index.html` already sets the correct class (`dark` or `light`) on `<html>` before React loads. But when React hydrates and ThemeProvider mounts, the `useEffect` strips both classes for one frame, then re-adds the same class. During that frame:
 
-**Change 3 -- Remove ScrollReveal from Contact section** (lines 708 and 722): Remove the 2 `<ScrollReveal>` wrappers in the contact section so the heading and form appear immediately.
+- CSS variables defined under `.dark { ... }` disappear
+- `html:not(.light):not(.dark) #root { visibility: hidden }` kicks in
+- The background flashes to the browser default
+
+## Fix
+
+### File: `src/components/shared/theme-provider.tsx`
+
+Update the `useEffect` to skip the class swap when the correct class is already present:
+
+```typescript
+useEffect(() => {
+  const root = window.document.documentElement;
+  const resolvedTheme = theme === "system"
+    ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    : theme;
+
+  // Skip if the correct class is already set (e.g., by the inline head script)
+  if (root.classList.contains(resolvedTheme)) return;
+
+  root.classList.remove("light", "dark");
+  root.classList.add(resolvedTheme);
+}, [theme]);
+```
+
+This way:
+- On initial load, the inline script has already set the class, so the effect is a no-op (no flash)
+- On theme toggle, the class changes, so the effect runs normally
+- System theme is resolved before checking
 
 ### Files affected
-- `src/components/LandingPage.tsx` -- add dark:bg-card to services section, remove 8 ScrollReveal wrappers (6 in About + 2 in Contact)
+- `src/components/shared/theme-provider.tsx` -- update the `useEffect` (lines 33-49)
+

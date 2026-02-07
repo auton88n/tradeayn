@@ -421,7 +421,8 @@ const LandingPage = memo(() => {
           {/* 6 Value Props - 2 Rows */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             {/* Row 1: AI Capabilities */}
-            <div className="text-center space-y-3 md:space-y-4">
+            <ScrollReveal delay={0.1}>
+              <div className="text-center space-y-3 md:space-y-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
                   <Brain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
@@ -432,8 +433,10 @@ const LandingPage = memo(() => {
                   {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم إرشادات تناسبك.' : language === 'fr' ? 'Apprend vos préférences et offre des conseils personnalisés.' : 'Learns your preferences and offers personalized guidance tailored to you.'}
                 </p>
               </div>
+            </ScrollReveal>
 
-            <div className="text-center space-y-3 md:space-y-4">
+            <ScrollReveal delay={0.2}>
+              <div className="text-center space-y-3 md:space-y-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
                   <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
@@ -444,8 +447,10 @@ const LandingPage = memo(() => {
                   {language === 'ar' ? 'رفيق متاح ٢٤ ساعة جاهز لمساعدتك.' : language === 'fr' ? 'Un compagnon disponible 24/7, prêt à vous aider.' : 'A thoughtful companion available 24/7, ready to help whenever you need.'}
                 </p>
               </div>
+            </ScrollReveal>
 
-            <div className="text-center space-y-3 md:space-y-4">
+            <ScrollReveal delay={0.3}>
+              <div className="text-center space-y-3 md:space-y-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
                   <Shield className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
@@ -456,9 +461,11 @@ const LandingPage = memo(() => {
                   {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل.' : language === 'fr' ? 'Vos données sont sécurisées avec chiffrement.' : 'Your conversations and data are secured with end-to-end encryption.'}
                 </p>
               </div>
+            </ScrollReveal>
 
             {/* Row 2: Engineering Tools */}
-            <div className="text-center space-y-3 md:space-y-4">
+            <ScrollReveal delay={0.4}>
+              <div className="text-center space-y-3 md:space-y-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
                   <Calculator className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
@@ -469,8 +476,10 @@ const LandingPage = memo(() => {
                   {language === 'ar' ? 'تصميم الكمرات والأعمدة والأساسات مع تصور ثلاثي الأبعاد.' : language === 'fr' ? 'Concevez poutres, colonnes et fondations avec visualisation 3D.' : 'Design beams, columns, slabs and foundations with 3D visualization.'}
                 </p>
               </div>
+            </ScrollReveal>
 
-            <div className="text-center space-y-3 md:space-y-4">
+            <ScrollReveal delay={0.5}>
+              <div className="text-center space-y-3 md:space-y-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
                   <Car className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
@@ -481,8 +490,10 @@ const LandingPage = memo(() => {
                   {language === 'ar' ? 'تصميم مواقف السيارات مع تصدير DXF وPDF.' : language === 'fr' ? 'Aménagez les parkings avec exports DXF et PDF.' : 'Layout parking lots with custom boundaries and DXF/PDF exports.'}
                 </p>
               </div>
+            </ScrollReveal>
 
-            <div className="text-center space-y-3 md:space-y-4">
+            <ScrollReveal delay={0.6}>
+              <div className="text-center space-y-3 md:space-y-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
                   <Mountain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
@@ -493,12 +504,13 @@ const LandingPage = memo(() => {
                   {language === 'ar' ? 'تحليل التضاريس وتصميم المناسيب بالذكاء الاصطناعي.' : language === 'fr' ? 'Analyse du terrain et conception d\'élévation avec IA.' : 'Terrain analysis and elevation design with AI assistance.'}
                 </p>
               </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
 
       {/* Services Section - Bento Grid */}
-      <section id="services" className="py-16 md:py-32 px-4 md:px-6 overflow-x-hidden dark:bg-card">
+      <section id="services" className="py-16 md:py-32 px-4 md:px-6 overflow-x-hidden">
         <div className="container mx-auto max-w-6xl">
           {/* Section header */}
           <ScrollReveal>
@@ -517,6 +529,7 @@ const LandingPage = memo(() => {
             {/* Left Column */}
             <div className="flex flex-col gap-6">
               {/* Top Left - Content Creator Sites */}
+              <ScrollReveal>
                 <Link to={`/services/${services[0].slug}`} className="block">
                   <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-hidden contain-layout" whileHover={{
                     y: -4
@@ -542,8 +555,10 @@ const LandingPage = memo(() => {
                     </div>
                   </motion.div>
                 </Link>
+              </ScrollReveal>
 
               {/* Bottom Left - Automation */}
+              <ScrollReveal delay={0.2}>
                 <Link to={`/services/${services[2].slug}`} className="block">
                   <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer contain-layout" whileHover={{
                     y: -4
@@ -571,8 +586,10 @@ const LandingPage = memo(() => {
                     </div>
                   </motion.div>
                 </Link>
+              </ScrollReveal>
 
               {/* Ticketing System - Featured Card */}
+              <ScrollReveal delay={0.3}>
                 <Link to="/services/ticketing" className="block">
                   <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[500px] flex flex-col group cursor-pointer overflow-hidden contain-layout" whileHover={{
                     y: -4
@@ -598,11 +615,13 @@ const LandingPage = memo(() => {
                     </div>
                   </motion.div>
                 </Link>
+              </ScrollReveal>
             </div>
 
             {/* Right Column */}
             <div className="flex flex-col gap-6">
               {/* Top Right - AI Agents */}
+              <ScrollReveal delay={0.1}>
                 <Link to={`/services/${services[1].slug}`} className="block">
                   <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer contain-layout" whileHover={{
                     y: -4
@@ -630,8 +649,10 @@ const LandingPage = memo(() => {
                     </div>
                   </motion.div>
                 </Link>
+              </ScrollReveal>
 
               {/* Bottom Right - AI Employees */}
+              <ScrollReveal delay={0.3}>
                 <Link to={`/services/${services[3].slug}`} className="block">
                   <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[480px] group cursor-pointer overflow-hidden contain-layout" whileHover={{
                     y: -4
@@ -658,8 +679,10 @@ const LandingPage = memo(() => {
                     </div>
                   </motion.div>
                 </Link>
-
+              </ScrollReveal>
+              
               {/* Engineering Tools - Featured Card */}
+              <ScrollReveal delay={0.4}>
                 <Link to="/engineering" className="block">
                   <motion.div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-hidden contain-layout" whileHover={{
                     y: -4
@@ -685,6 +708,7 @@ const LandingPage = memo(() => {
                     </div>
                   </motion.div>
                 </Link>
+              </ScrollReveal>
             </div>
           </div>
         </div>
@@ -693,7 +717,8 @@ const LandingPage = memo(() => {
       {/* Premium Contact Section */}
       <section id="contact" className="py-16 md:py-32 px-4 md:px-6">
         <div className="container mx-auto max-w-3xl">
-          <div className="text-center mb-10 md:mb-16">
+          <ScrollReveal>
+            <div className="text-center mb-10 md:mb-16">
               <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
                 {language === 'ar' ? 'راسلنا' : language === 'fr' ? 'Contactez-Nous' : 'Get In Touch'}
               </span>
@@ -704,8 +729,9 @@ const LandingPage = memo(() => {
                 {language === 'ar' ? 'شاركنا فكرتك، ودعنا نحوّلها إلى واقع' : language === 'fr' ? 'Parlez-nous de votre projet et nous vous aiderons à réaliser votre vision' : "Tell us about your project and we'll help transform your vision into reality"}
               </p>
             </div>
+          </ScrollReveal>
 
-          
+          <ScrollReveal delay={0.2}>
             {isSubmitted ?
             // Success state
             <div className="text-center py-20 animate-scale-fade-in">
@@ -768,8 +794,7 @@ const LandingPage = memo(() => {
                     </>}
                 </Button>
               </form>}
-
-
+          </ScrollReveal>
         </div>
       </section>
 
