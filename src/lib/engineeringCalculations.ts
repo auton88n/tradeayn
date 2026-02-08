@@ -231,6 +231,11 @@ export function calculateSlab(inputs: SlabInputs) {
   const barDia = 10;
   const d = thickness - cover - barDia / 2;
 
+  // Code-specific resistance factors for reinforcement calculations
+  const phiFlex = codeParams.resistanceFactors.flexure;
+  const phiSteel = codeParams.resistanceFactors.steel;
+  const effectivePhi = buildingCode === 'CSA' ? phiFlex * phiSteel : 0.87;
+
   let results: Record<string, unknown>;
 
   if (slabType === 'one_way') {
@@ -245,10 +250,10 @@ export function calculateSlab(inputs: SlabInputs) {
     const MuPos = (Wu * Lx * Lx) / (1000 * 1000 * coeffs.positive);
     const MuNeg = coeffs.negative > 0 ? (Wu * Lx * Lx) / (1000 * 1000 * coeffs.negative) : 0;
 
-    const AstPos = (MuPos * 1e6) / (0.87 * fy * 0.9 * d);
-    const AstNeg = (MuNeg * 1e6) / (0.87 * fy * 0.9 * d);
+    const AstPos = (MuPos * 1e6) / (effectivePhi * fy * 0.9 * d);
+    const AstNeg = (MuNeg * 1e6) / (effectivePhi * fy * 0.9 * d);
 
-    const rhoMin = 0.0018;
+    const rhoMin = codeParams.minRho;
     const AstMin = rhoMin * 1000 * thickness;
 
     const mainAst = Math.max(AstPos, AstMin);
@@ -308,12 +313,12 @@ export function calculateSlab(inputs: SlabInputs) {
     const MyPos = MuY * posRatio;
     const MyNeg = MuY * negRatio;
 
-    const AstXPos = (MxPos * 1e6) / (0.87 * fy * 0.9 * d);
-    const AstXNeg = (MxNeg * 1e6) / (0.87 * fy * 0.9 * d);
-    const AstYPos = (MyPos * 1e6) / (0.87 * fy * 0.9 * (d - barDia));
-    const AstYNeg = (MyNeg * 1e6) / (0.87 * fy * 0.9 * (d - barDia));
+    const AstXPos = (MxPos * 1e6) / (effectivePhi * fy * 0.9 * d);
+    const AstXNeg = (MxNeg * 1e6) / (effectivePhi * fy * 0.9 * d);
+    const AstYPos = (MyPos * 1e6) / (effectivePhi * fy * 0.9 * (d - barDia));
+    const AstYNeg = (MyNeg * 1e6) / (effectivePhi * fy * 0.9 * (d - barDia));
 
-    const rhoMin = 0.0018;
+    const rhoMin = codeParams.minRho;
     const AstMin = rhoMin * 1000 * thickness;
 
     const xBottomAst = Math.max(AstXPos, AstMin);
@@ -431,7 +436,7 @@ export function calculateSlab(inputs: SlabInputs) {
       overallStatus: deflectionStatus === 'OK' ? 'PASS' : 'REVIEW REQUIRED',
     },
     status: 'OK',
-    designCode: 'ACI 318 / Eurocode 2',
+    designCode: codeParams.name,
   };
 }
 
