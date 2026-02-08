@@ -177,9 +177,14 @@ export const DetailedResultsPanel: React.FC<DetailedResultsPanelProps> = ({
               </div>
 
               {/* Disclaimer */}
-              <p className="text-xs text-muted-foreground mt-4 text-center">
-                Results require verification by a licensed Professional Engineer (PE/P.Eng)
-              </p>
+              {outputs.disclaimer && (
+                <div className="bg-amber-950/30 border border-amber-800/40 rounded-lg p-3 mt-4">
+                  <p className="text-xs text-amber-500 dark:text-amber-400/80 flex items-start gap-2">
+                    <span className="mt-0.5">⚠️</span>
+                    {outputs.disclaimer}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </motion.div>
         )}

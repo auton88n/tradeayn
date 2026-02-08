@@ -67,6 +67,7 @@ export interface BeamOutputs {
   buildingCode: string;
   loadFactorsUsed: string;
   resistanceFactorUsed: number;
+  disclaimer: string;
 }
 
 export function calculateBeam(inputs: BeamInputs): BeamOutputs {
@@ -181,6 +182,7 @@ export function calculateBeam(inputs: BeamInputs): BeamOutputs {
     buildingCode: codeParams.name,
     loadFactorsUsed: `${codeParams.loadFactors.dead}D + ${codeParams.loadFactors.live}L`,
     resistanceFactorUsed: phiFlex,
+    disclaimer: 'Preliminary estimate for initial sizing only. All structural designs must be reviewed and verified by a licensed Professional Engineer (P.Eng / PE) using approved design software before construction or permit submission.',
   };
 }
 
@@ -437,6 +439,7 @@ export function calculateSlab(inputs: SlabInputs) {
     },
     status: 'OK',
     designCode: codeParams.name,
+    disclaimer: 'Preliminary estimate for initial sizing only. All structural designs must be reviewed and verified by a licensed Professional Engineer (P.Eng / PE) using approved design software before construction or permit submission.',
   };
 }
 
@@ -614,7 +617,8 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
       ...(isSlender ? ['Column is slender - second order effects included'] : []),
       ...(reinforcementRatio > 3 ? ['High reinforcement ratio - consider increasing section'] : []),
       ...(utilizationRatio > 90 ? ['High utilization - consider increasing section or reinforcement'] : [])
-    ]
+    ],
+    disclaimer: 'Preliminary estimate for initial sizing only. All structural designs must be reviewed and verified by a licensed Professional Engineer (P.Eng / PE) using approved design software before construction or permit submission.',
   };
 }
 
@@ -833,6 +837,7 @@ export function calculateFoundation(inputs: FoundationInputs, buildingCode: Buil
     designCode: codeParams.name,
     buildingCode: codeParams.name,
     loadFactorsUsed: `${codeParams.loadFactors.dead}D + ${codeParams.loadFactors.live}L`,
+    disclaimer: 'Preliminary estimate for initial sizing only. All structural designs must be reviewed and verified by a licensed Professional Engineer (P.Eng / PE) using approved design software before construction or permit submission.',
   };
 }
 
@@ -1046,5 +1051,6 @@ export function calculateRetainingWall(inputs: RetainingWallInputs, buildingCode
     designCode: `Rankine Theory / ${codeParams.name}`,
     buildingCode: codeParams.name,
     loadFactorsUsed: `${codeParams.loadFactors.dead}D + ${codeParams.loadFactors.live}L`,
+    disclaimer: 'Preliminary estimate for initial sizing only. All structural designs must be reviewed and verified by a licensed Professional Engineer (P.Eng / PE) using approved design software before construction or permit submission.',
   };
 }
