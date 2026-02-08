@@ -741,7 +741,7 @@ export const CenterStageLayout = ({
             animate={{
               scale: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? (isMobile ? 0.55 : 0.5) : 1,
               marginBottom: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? -20 : 0,
-              y: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? 20 : -15,
+              y: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? 20 : -40,
             }}
             transition={{
               type: 'tween',
