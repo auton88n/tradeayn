@@ -1,36 +1,35 @@
 
-
-# Show History in ResponseCard Area (No Eye Fade)
+# Merge History into the ResponseCard
 
 ## What Changes
-When you tap "History", the chat history will appear in the center of the screen (where the ResponseCard normally shows), styled the same way. The eye stays completely normal -- no fading, no moving. The history card simply appears below it, just like AI responses do.
+Instead of a separate HistoryCard component, the existing ResponseCard will gain a "history mode". When the user clicks "History", the same card switches its content area from showing the AI response to showing the full chat transcript. No new card appears -- the same card, same styling, same position.
+
+## How It Works
+1. The ResponseCard receives new props: `transcriptOpen`, `transcriptMessages`, `isTyping`, `onTranscriptClose`, `onTranscriptClear`
+2. When `transcriptOpen` is true, the content area renders transcript messages (using TranscriptMessage) instead of the markdown response
+3. The header shows "Clear" and "Close" buttons (replacing the dismiss X) when in history mode
+4. The action bar (Copy, thumbs, expand) hides when in history mode since it's not relevant to transcript view
+5. The card always renders (either response content or history) -- no separate component needed
 
 ## Technical Changes
 
-### 1. Remove eye opacity fade (`CenterStageLayout.tsx`)
-- Remove `opacity: transcriptOpen ? 0 : 1` from the eye's animate prop (line 745)
-- Remove the `opacity` transition config (line 751)
-- The eye stays fully visible at all times
+### 1. ResponseCard.tsx -- Add history mode
+- Add new props: `transcriptOpen`, `transcriptMessages`, `isTyping`, `onHistoryClose`, `onHistoryClear`
+- When `transcriptOpen` is true:
+  - Header shows "AYN" label + Clear button + Close (X) button (calls `onHistoryClose`)
+  - Content area renders sorted `TranscriptMessage` components with typing indicator
+  - Action bar (Copy, thumbs, expand, design) is hidden
+  - The early return for empty content is skipped (history has its own content)
+- When `transcriptOpen` is false: everything works exactly as before (no behavior change)
+- Import `TranscriptMessage` and `AlertDialog` components
+- Add scroll-to-bottom button for history mode
+- Add clear confirmation AlertDialog
 
-### 2. Add HistoryCard rendering in center stage (`CenterStageLayout.tsx`)
-- After the ResponseCard `AnimatePresence` block (line 791), add a new block that renders a `HistoryCard` component when `transcriptOpen` is true
-- Pass: `transcriptMessages`, `isTyping`, `onClose` (calls `onTranscriptToggle`), `onClear` (calls `onTranscriptClear`)
-- Uses the same wrapper pattern as ResponseCard (centered, with max-height constraint)
+### 2. CenterStageLayout.tsx -- Remove HistoryCard, pass history props to ResponseCard
+- Remove the separate HistoryCard rendering block (lines 786-802)
+- Remove the HistoryCard import
+- Pass history-related props to the existing ResponseCard: `transcriptOpen`, `transcriptMessages={messages}`, `isTyping={showThinking}`, `onHistoryClose`, `onHistoryClear`
+- Ensure the ResponseCard renders when either `responseBubbles.length > 0` OR `transcriptOpen` is true (update the condition on line 763)
 
-### 3. Remove history panel from ChatInput (`ChatInput.tsx`)
-- Remove the entire history panel section (lines 434-528): the `AnimatePresence` with the motion.div containing the header, messages area, typing indicator, and scroll button
-- Remove related state/refs: `historyScrollRef`, `showScrollDown`, `handleHistoryScroll`, `scrollHistoryToBottom`, `seenMessageIdsRef`
-- Keep the "History" toggle button -- it still triggers `onTranscriptToggle`
-
-### 4. New component: `src/components/eye/HistoryCard.tsx`
-- Styled identically to ResponseCard: same border, shadow, rounded corners, header with Brain icon
-- Header shows "AYN" label with Clear and Close buttons
-- Scrollable message area (`max-h-[50vh]`) rendering `TranscriptMessage` components
-- Typing indicator (three bouncing dots) when AI is processing
-- Scroll-to-bottom button when not at bottom
-- No entry/exit animations -- just renders/unmounts instantly for zero lag
-
-### 5. Stop clearing ResponseCard on history open (`CenterStageLayout.tsx`)
-- Remove the `useEffect` that calls `clearResponseBubbles()` and `clearSuggestions()` when `transcriptOpen` changes (lines 676-682)
-- The ResponseCard will naturally be hidden since it won't emit new bubbles while history is open (line 639 already handles this), but existing ones can stay
-
+### 3. Delete HistoryCard.tsx
+- Remove `src/components/eye/HistoryCard.tsx` entirely since it's no longer needed
