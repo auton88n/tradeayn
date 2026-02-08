@@ -54,6 +54,7 @@ const parseSSEStream = async (
   const decoder = new TextDecoder();
   let fullContent = '';
   let buffer = '';
+  let currentData = '';
 
   try {
     while (true) {
@@ -62,33 +63,45 @@ const parseSSEStream = async (
 
       buffer += decoder.decode(value, { stream: true });
 
-      // Process complete lines
       let newlineIndex: number;
       while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
         const line = buffer.slice(0, newlineIndex).trim();
         buffer = buffer.slice(newlineIndex + 1);
 
         if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') continue;
-
+          currentData += line.slice(6);
+        } else if (line === '' && currentData) {
+          if (currentData === '[DONE]') {
+            currentData = '';
+            continue;
+          }
           try {
-            const parsed = JSON.parse(data);
-            // Handle OpenAI-style streaming format
+            const parsed = JSON.parse(currentData);
             const content = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.text;
             if (content) {
               fullContent += content;
               onChunk(content);
             }
           } catch {
-            // If not JSON, treat as raw text content
-            if (data && data !== '[DONE]') {
-              fullContent += data;
-              onChunk(data);
+            if (import.meta.env.DEV) {
+              console.warn('[SSE] Failed to parse event:', currentData.slice(0, 100));
             }
           }
+          currentData = '';
         }
       }
+    }
+
+    // Handle any remaining accumulated data after stream ends
+    if (currentData) {
+      try {
+        const parsed = JSON.parse(currentData);
+        const content = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.text;
+        if (content) {
+          fullContent += content;
+          onChunk(content);
+        }
+      } catch { /* final chunk incomplete */ }
     }
   } finally {
     reader.releaseLock();
