@@ -558,15 +558,14 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             </motion.div>}
         </AnimatePresence>
 
-        {/* Row 2: Toolbar */}
-        <div className="flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 border-t border-border/30 bg-muted/20">
+        {/* Row 2: Toolbar - 3-column grid: left actions | center history | right info */}
+        <div className="grid grid-cols-3 items-center px-2 sm:px-3 py-1.5 sm:py-2 border-t border-border/30 bg-muted/20">
           {/* Left: Action buttons */}
           <div className="flex items-center gap-0.5 sm:gap-2">
             <button onClick={handleFileClick} disabled={isDisabled || isUploading} className={cn("p-1.5 sm:p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed")}>
               <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
             </button>
             
-            {/* Voice Input Button - only show if supported */}
             {voiceSupported && <button onClick={handleVoiceToggle} disabled={isDisabled || isUploading} className={cn("relative p-1.5 sm:p-2 rounded-lg", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed", isVoiceListening ? "bg-red-500/20 hover:bg-red-500/30" : "hover:bg-muted/60")} title={isVoiceListening ? "Stop voice input" : "Start voice input"}>
                 {isVoiceListening ? <>
                     <motion.div className="absolute inset-0 rounded-lg bg-red-500/30" animate={{
@@ -587,28 +586,30 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   </> : <Mic className="w-4 h-4 text-muted-foreground" />}
               </button>}
             
-            {/* Sound Toggle Indicator */}
             <button onClick={() => soundContext?.toggleEnabled()} className={cn("p-1.5 sm:p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200")} title={soundContext?.enabled ? "Sound on - click to mute" : "Sound off - click to enable"}>
               {soundContext?.enabled ? <Volume2 className="w-4 h-4 text-muted-foreground" /> : <VolumeX className="w-4 h-4 text-muted-foreground/50" />}
             </button>
           </div>
 
-          {/* History Toggle Button */}
-          {transcriptMessages.length > 0 && onTranscriptToggle && <button onClick={onTranscriptToggle} className={cn("inline-flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full", "border border-border bg-card/80 backdrop-blur-sm", "text-xs sm:text-sm text-muted-foreground shadow-sm", "hover:bg-muted/50 hover:text-foreground hover:shadow-md", "active:scale-95 transition-all cursor-pointer", transcriptOpen && "bg-muted/60")}>
-              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">History</span>
-              <span className="text-[10px] sm:text-xs bg-muted px-1 sm:px-1.5 py-0.5 rounded-full">{transcriptMessages.length}</span>
-            </button>}
+          {/* Center: History Toggle Button */}
+          <div className="flex justify-center">
+            {transcriptMessages.length > 0 && onTranscriptToggle && <button onClick={onTranscriptToggle} className={cn("inline-flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full", "border border-border bg-card/80 backdrop-blur-sm", "text-xs sm:text-sm text-muted-foreground shadow-sm", "hover:bg-muted/50 hover:text-foreground hover:shadow-md", "active:scale-95 transition-all cursor-pointer", transcriptOpen && "bg-muted/60")}>
+                <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">History</span>
+                <span className="text-[10px] sm:text-xs bg-muted px-1 sm:px-1.5 py-0.5 rounded-full">{transcriptMessages.length}</span>
+              </button>}
+          </div>
 
-          {/* Message counter */}
-          {messageCount > 0 && <div className={cn("text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md", hasReachedLimit ? "bg-destructive/10 text-destructive" : messageCount >= maxMessages * 0.8 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
-              {messageCount}/{maxMessages}
-            </div>}
+          {/* Right: Counter + AYN */}
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2">
+            {messageCount > 0 && <div className={cn("text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md", hasReachedLimit ? "bg-destructive/10 text-destructive" : messageCount >= maxMessages * 0.8 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
+                {messageCount}/{maxMessages}
+              </div>}
 
-          {/* AYN Mode Label - no dropdown */}
-          <div className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
-            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
-            <span className="text-xs sm:text-sm font-medium">AYN</span>
+            <div className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
+              <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
+              <span className="text-xs sm:text-sm font-medium">AYN</span>
+            </div>
           </div>
         </div>
       </div>
