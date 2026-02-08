@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+import { chatRateLimiter } from '@/lib/rateLimiter';
 import { detectLanguage } from '@/lib/languageDetection';
 import type { 
   Message, 
@@ -195,6 +196,17 @@ export const useMessages = (
     content: string,
     attachment: FileAttachment | null = null
   ) => {
+    // Client-side rate limit check (UX safeguard, not a security boundary)
+    if (!chatRateLimiter.canProceed()) {
+      const waitTime = Math.ceil(chatRateLimiter.getTimeUntilNext() / 1000);
+      toast({
+        title: 'Slow down',
+        description: `Please wait ${waitTime} seconds before sending another message.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Show thinking state IMMEDIATELY - before any validation
     console.log('[useMessages] sendMessage called:', { content: content.substring(0, 50), hasAttachment: !!attachment });
     setIsTyping(true);
