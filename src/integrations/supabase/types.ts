@@ -352,6 +352,54 @@ export type Database = {
         }
         Relationships: []
       }
+      building_codes: {
+        Row: {
+          applies_to: string | null
+          category: string
+          check_type: string
+          code_system: string
+          created_at: string
+          exception_notes: string | null
+          fix_suggestion: string | null
+          id: string
+          requirement_id: string
+          requirement_name: string
+          unit: string | null
+          value_max: number | null
+          value_min: number | null
+        }
+        Insert: {
+          applies_to?: string | null
+          category: string
+          check_type: string
+          code_system: string
+          created_at?: string
+          exception_notes?: string | null
+          fix_suggestion?: string | null
+          id?: string
+          requirement_id: string
+          requirement_name: string
+          unit?: string | null
+          value_max?: number | null
+          value_min?: number | null
+        }
+        Update: {
+          applies_to?: string | null
+          category?: string
+          check_type?: string
+          code_system?: string
+          created_at?: string
+          exception_notes?: string | null
+          fix_suggestion?: string | null
+          id?: string
+          requirement_id?: string
+          requirement_name?: string
+          unit?: string | null
+          value_max?: number | null
+          value_min?: number | null
+        }
+        Relationships: []
+      }
       calculation_history: {
         Row: {
           ai_analysis: Json | null
@@ -419,6 +467,314 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      climate_zones: {
+        Row: {
+          air_sealing_max_ach50: number | null
+          ceiling_insulation_min: string | null
+          country: string
+          frost_depth_mm: number | null
+          ground_snow_load_kpa: number | null
+          heating_degree_days: number | null
+          id: string
+          region: string
+          seismic_category: string | null
+          wall_insulation_min: string | null
+          wind_speed_kmh: number | null
+          window_u_factor_max: number | null
+          zone_code: string | null
+        }
+        Insert: {
+          air_sealing_max_ach50?: number | null
+          ceiling_insulation_min?: string | null
+          country: string
+          frost_depth_mm?: number | null
+          ground_snow_load_kpa?: number | null
+          heating_degree_days?: number | null
+          id?: string
+          region: string
+          seismic_category?: string | null
+          wall_insulation_min?: string | null
+          wind_speed_kmh?: number | null
+          window_u_factor_max?: number | null
+          zone_code?: string | null
+        }
+        Update: {
+          air_sealing_max_ach50?: number | null
+          ceiling_insulation_min?: string | null
+          country?: string
+          frost_depth_mm?: number | null
+          ground_snow_load_kpa?: number | null
+          heating_degree_days?: number | null
+          id?: string
+          region?: string
+          seismic_category?: string | null
+          wall_insulation_min?: string | null
+          wind_speed_kmh?: number | null
+          window_u_factor_max?: number | null
+          zone_code?: string | null
+        }
+        Relationships: []
+      }
+      compliance_inputs: {
+        Row: {
+          ceiling_height: number | null
+          created_at: string
+          door_height: number | null
+          door_is_egress: boolean | null
+          door_width: number | null
+          has_sloped_ceiling: boolean | null
+          id: string
+          input_type: string
+          project_id: string
+          room_area: number | null
+          room_min_dimension: number | null
+          room_name: string | null
+          room_type: string | null
+          sloped_area_above_min_pct: number | null
+          stair_flight_height: number | null
+          stair_handrail_height: number | null
+          stair_has_handrail: boolean | null
+          stair_has_landing: boolean | null
+          stair_headroom: number | null
+          stair_landing_length: number | null
+          stair_num_risers: number | null
+          stair_riser_height: number | null
+          stair_tread_depth: number | null
+          stair_width: number | null
+          unit_system: string | null
+          window_glazing_area: number | null
+          window_is_egress: boolean | null
+          window_opening_area: number | null
+          window_opening_height: number | null
+          window_opening_width: number | null
+          window_sill_height: number | null
+        }
+        Insert: {
+          ceiling_height?: number | null
+          created_at?: string
+          door_height?: number | null
+          door_is_egress?: boolean | null
+          door_width?: number | null
+          has_sloped_ceiling?: boolean | null
+          id?: string
+          input_type: string
+          project_id: string
+          room_area?: number | null
+          room_min_dimension?: number | null
+          room_name?: string | null
+          room_type?: string | null
+          sloped_area_above_min_pct?: number | null
+          stair_flight_height?: number | null
+          stair_handrail_height?: number | null
+          stair_has_handrail?: boolean | null
+          stair_has_landing?: boolean | null
+          stair_headroom?: number | null
+          stair_landing_length?: number | null
+          stair_num_risers?: number | null
+          stair_riser_height?: number | null
+          stair_tread_depth?: number | null
+          stair_width?: number | null
+          unit_system?: string | null
+          window_glazing_area?: number | null
+          window_is_egress?: boolean | null
+          window_opening_area?: number | null
+          window_opening_height?: number | null
+          window_opening_width?: number | null
+          window_sill_height?: number | null
+        }
+        Update: {
+          ceiling_height?: number | null
+          created_at?: string
+          door_height?: number | null
+          door_is_egress?: boolean | null
+          door_width?: number | null
+          has_sloped_ceiling?: boolean | null
+          id?: string
+          input_type?: string
+          project_id?: string
+          room_area?: number | null
+          room_min_dimension?: number | null
+          room_name?: string | null
+          room_type?: string | null
+          sloped_area_above_min_pct?: number | null
+          stair_flight_height?: number | null
+          stair_handrail_height?: number | null
+          stair_has_handrail?: boolean | null
+          stair_has_landing?: boolean | null
+          stair_headroom?: number | null
+          stair_landing_length?: number | null
+          stair_num_risers?: number | null
+          stair_riser_height?: number | null
+          stair_tread_depth?: number | null
+          stair_width?: number | null
+          unit_system?: string | null
+          window_glazing_area?: number | null
+          window_is_egress?: boolean | null
+          window_opening_area?: number | null
+          window_opening_height?: number | null
+          window_opening_width?: number | null
+          window_sill_height?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_inputs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_projects: {
+        Row: {
+          building_type: string | null
+          climate_zone_id: string | null
+          code_system: string | null
+          created_at: string
+          failed_checks: number | null
+          garage_attached: boolean | null
+          has_basement: boolean | null
+          has_fuel_burning_appliance: boolean | null
+          has_garage: boolean | null
+          id: string
+          location_city: string | null
+          location_country: string | null
+          location_state_province: string | null
+          location_zip_postal: string | null
+          num_storeys: number | null
+          passed_checks: number | null
+          project_name: string
+          report_pdf_url: string | null
+          total_checks: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          building_type?: string | null
+          climate_zone_id?: string | null
+          code_system?: string | null
+          created_at?: string
+          failed_checks?: number | null
+          garage_attached?: boolean | null
+          has_basement?: boolean | null
+          has_fuel_burning_appliance?: boolean | null
+          has_garage?: boolean | null
+          id?: string
+          location_city?: string | null
+          location_country?: string | null
+          location_state_province?: string | null
+          location_zip_postal?: string | null
+          num_storeys?: number | null
+          passed_checks?: number | null
+          project_name: string
+          report_pdf_url?: string | null
+          total_checks?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          building_type?: string | null
+          climate_zone_id?: string | null
+          code_system?: string | null
+          created_at?: string
+          failed_checks?: number | null
+          garage_attached?: boolean | null
+          has_basement?: boolean | null
+          has_fuel_burning_appliance?: boolean | null
+          has_garage?: boolean | null
+          id?: string
+          location_city?: string | null
+          location_country?: string | null
+          location_state_province?: string | null
+          location_zip_postal?: string | null
+          num_storeys?: number | null
+          passed_checks?: number | null
+          project_name?: string
+          report_pdf_url?: string | null
+          total_checks?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_projects_climate_zone_id_fkey"
+            columns: ["climate_zone_id"]
+            isOneToOne: false
+            referencedRelation: "climate_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_results: {
+        Row: {
+          code_requirement_id: string | null
+          created_at: string
+          fix_suggestion: string | null
+          id: string
+          input_id: string | null
+          project_id: string
+          required_value: string | null
+          requirement_clause: string | null
+          requirement_name: string | null
+          room_name: string | null
+          status: string
+          unit: string | null
+          user_value: number | null
+        }
+        Insert: {
+          code_requirement_id?: string | null
+          created_at?: string
+          fix_suggestion?: string | null
+          id?: string
+          input_id?: string | null
+          project_id: string
+          required_value?: string | null
+          requirement_clause?: string | null
+          requirement_name?: string | null
+          room_name?: string | null
+          status: string
+          unit?: string | null
+          user_value?: number | null
+        }
+        Update: {
+          code_requirement_id?: string | null
+          created_at?: string
+          fix_suggestion?: string | null
+          id?: string
+          input_id?: string | null
+          project_id?: string
+          required_value?: string | null
+          requirement_clause?: string | null
+          requirement_name?: string | null
+          room_name?: string | null
+          status?: string
+          unit?: string | null
+          user_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_results_code_requirement_id_fkey"
+            columns: ["code_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "building_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_results_input_id_fkey"
+            columns: ["input_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_inputs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_results_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contact_messages: {
         Row: {

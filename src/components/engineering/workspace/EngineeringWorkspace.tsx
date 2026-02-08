@@ -26,6 +26,7 @@ const SlabCalculator = lazy(() => import('@/components/engineering/SlabCalculato
 const RetainingWallCalculator = lazy(() => import('@/components/engineering/RetainingWallCalculator'));
 const ParkingDesigner = lazy(() => import('@/components/engineering/ParkingDesigner').then(m => ({ default: m.ParkingDesigner })));
 const GradingDesigner = lazy(() => import('@/components/engineering/GradingDesignerPanel'));
+const ComplianceWizard = lazy(() => import('@/components/engineering/compliance/ComplianceWizard'));
 
 // Lazy load 3D visualizations
 const BeamVisualization3D = lazy(() => import('@/components/engineering/BeamVisualization3D').then(m => ({ default: m.BeamVisualization3D })));
@@ -385,6 +386,12 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
         return (
           <Suspense fallback={<LoadingFallback />}>
             <GradingDesigner onInputChange={handleInputChange} />
+          </Suspense>
+        );
+      case 'compliance':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <ComplianceWizard userId={userId} />
           </Suspense>
         );
       default:
