@@ -79,7 +79,7 @@ export const TranscriptMessage = ({
       {/* Content */}
       <div className={cn(
         "min-w-0",
-        compact ? "flex-1 max-w-[92%]" : "flex-1 max-w-[80%]",
+        compact ? "flex-1 max-w-[95%]" : "flex-1 max-w-[80%]",
         isUser ? "text-right" : "text-left"
       )}>
         <div className={cn(

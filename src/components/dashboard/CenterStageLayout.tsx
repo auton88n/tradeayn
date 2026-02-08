@@ -753,9 +753,11 @@ export const CenterStageLayout = ({
           <AnimatePresence>
             {(responseBubbles.length > 0 || transcriptOpen) && (
               <motion.div
-                className="w-full flex justify-center mt-2 overflow-hidden"
+                className="w-full flex justify-center mt-2"
                 style={{ 
+                  height: transcriptOpen ? `calc(100vh - ${footerHeight + 240}px)` : undefined,
                   maxHeight: `calc(100vh - ${footerHeight + 240}px)`,
+                  overflow: transcriptOpen ? 'visible' : 'hidden',
                 }}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

@@ -244,7 +244,7 @@ const ResponseCardComponent = ({
           // Delayed check to handle race condition with layout
           setTimeout(() => {
             if (el) {
-              setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 100);
+              setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 50);
             }
           }, 100);
         }
@@ -258,7 +258,7 @@ const ResponseCardComponent = ({
     const el = historyScrollRef.current;
     if (!el) return;
     const checkScroll = () => {
-      setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 100);
+      setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 50);
     };
     checkScroll();
     el.addEventListener('scroll', checkScroll, { passive: true });
@@ -307,7 +307,7 @@ const ResponseCardComponent = ({
             "shadow-md shadow-black/5 backdrop-blur-sm",
             variant === 'sheet' ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
             "overflow-hidden",
-            transcriptOpen && "h-[50vh] max-h-[50vh]"
+            transcriptOpen && "h-full"
           )}
           style={{
             willChange: 'transform, opacity',
