@@ -6,6 +6,14 @@ const ALLOWED_ORIGINS = [
   'http://localhost:8080',
 ];
 
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  // Allow Lovable preview/project origins
+  if (/^https:\/\/[a-z0-9-]+\.lovableproject\.com$/.test(origin)) return true;
+  if (/^https:\/\/[a-z0-9-]+--[a-z0-9-]+\.lovable\.app$/.test(origin)) return true;
+  return false;
+}
+
 /**
  * Validates the Origin header against the whitelist.
  * Allows requests with NO Origin (server-to-server, Postman).
@@ -14,7 +22,7 @@ const ALLOWED_ORIGINS = [
 export function validateOrigin(req: Request): boolean {
   const origin = req.headers.get('Origin');
   if (!origin) return true; // No origin = not a browser CSRF
-  return ALLOWED_ORIGINS.includes(origin);
+  return isAllowedOrigin(origin);
 }
 
 /**
@@ -23,7 +31,7 @@ export function validateOrigin(req: Request): boolean {
  */
 export function getAllowedOrigin(req: Request): string {
   const origin = req.headers.get('Origin') || '';
-  return ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
 }
 
 export { ALLOWED_ORIGINS };
