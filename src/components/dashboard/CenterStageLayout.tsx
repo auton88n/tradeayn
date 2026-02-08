@@ -6,7 +6,7 @@ import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
 
 import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
-import { ParticleBurst } from '@/components/eye/ParticleBurst';
+
 import { ChatInput } from './ChatInput';
 import { SystemNotificationBanner } from './SystemNotificationBanner';
 import { BetaBadge } from '@/components/ui/BetaBadge';
@@ -209,8 +209,7 @@ export const CenterStageLayout = ({
 
   // Ref-based guard to track already-processed AYN message IDs (prevents re-render race condition)
   const lastProcessedAynMessageIdRef = useRef<string | null>(null);
-  const [showParticleBurst, setShowParticleBurst] = useState(false);
-  const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
+  const [isAbsorbPulsing, setIsAbsorbPulsing] = useState(false);
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   // Use ref for gaze index to prevent re-renders from gaze cycling
   const gazeIndexRef = useRef<number | null>(null);
@@ -457,22 +456,19 @@ export const CenterStageLayout = ({
 
         // Animation effects run in parallel (non-blocking) - synced with 400ms flying animation
         setTimeout(() => {
+          // Batched: React 18 auto-batches these in setTimeout
           triggerBlink();
           triggerAbsorption();
           playSound?.('message-absorb');
-          orchestrateEmotionChange('thinking');
           setIsResponding(true);
-          
-          // Re-read eye position for particle burst (layout may have settled further)
-          const freshEyePos = getEyePosition();
-          setBurstPosition(freshEyePos);
-          setShowParticleBurst(true);
-          setTimeout(() => setShowParticleBurst(false), 400);
+          setIsAbsorbPulsing(true);
+          setTimeout(() => setIsAbsorbPulsing(false), 300);
           
           completeAbsorption();
-
-          // Clear file after animation completes
           onRemoveFile();
+
+          // Defer emotion change to next frame to avoid competing with absorption visuals
+          requestAnimationFrame(() => orchestrateEmotionChange('thinking'));
         }, 300);
       }, animationDelay);
     },
@@ -484,7 +480,6 @@ export const CenterStageLayout = ({
       resetEmpathy,
       getInputPosition,
       getEyePosition,
-      startMessageAnimation,
       triggerBlink,
       triggerAbsorption,
       playSound,
@@ -518,26 +513,20 @@ export const CenterStageLayout = ({
 
     // After flight completes, trigger absorption and send (reduced delays)
     setTimeout(() => {
+      // Batched: React 18 auto-batches these in setTimeout
       triggerBlink();
       triggerAbsorption();
       playSound?.('message-absorb');
-      // Use orchestrator for synchronized thinking state
-      orchestrateEmotionChange('thinking');
       setIsResponding(true);
-      
-      // Get fresh eye position for particle burst
-      const freshEyePos = getEyePosition();
-      setBurstPosition(freshEyePos);
-      setShowParticleBurst(true);
-      setTimeout(() => setShowParticleBurst(false), 400);
+      setIsAbsorbPulsing(true);
+      setTimeout(() => setIsAbsorbPulsing(false), 300);
       
       completeSuggestionAbsorption();
-      
-      // Clear previous response bubbles
       clearResponseBubbles();
-      
-      // Send the message immediately
       onSendMessage(content, null);
+
+      // Defer emotion change to next frame
+      requestAnimationFrame(() => orchestrateEmotionChange('thinking'));
     }, 300);
   }, [
     messages,
@@ -734,8 +723,9 @@ export const CenterStageLayout = ({
           <motion.div 
             ref={eyeRef} 
             className={cn(
-              "relative overflow-visible z-40",
-              (hasVisibleResponses || transcriptOpen || isTransitioningToChat) && "pb-4"
+              "relative overflow-visible z-40 transition-transform duration-300",
+              (hasVisibleResponses || transcriptOpen || isTransitioningToChat) && "pb-4",
+              isAbsorbPulsing && "scale-105"
             )}
             data-tutorial="eye"
             style={{ willChange: 'transform' }}
@@ -815,12 +805,6 @@ export const CenterStageLayout = ({
         />
       )}
 
-      {/* Particle burst on absorption */}
-      <ParticleBurst
-        isActive={showParticleBurst}
-        position={burstPosition}
-        particleCount={isMobile ? 8 : 16}
-      />
 
 
       {/* Input area - Fixed at bottom */}
