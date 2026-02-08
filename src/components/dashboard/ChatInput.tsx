@@ -9,9 +9,7 @@ import { useAYNEmotion } from '@/stores/emotionStore';
 import { useSoundStore } from '@/stores/soundStore';
 import { detectLanguage, DetectedLanguage } from '@/lib/languageDetection';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { TranscriptMessage } from '@/components/transcript/TranscriptMessage';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 import type { AIMode, Message } from '@/types/dashboard.types';
 interface Suggestion {
   id: string;
@@ -196,50 +194,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   isTyping = false
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [showScrollDown, setShowScrollDown] = useState(false);
-  const historyScrollRef = useRef<HTMLDivElement>(null);
-  const seenMessageIdsRef = useRef<Set<string>>(new Set());
   const visibleSuggestions = suggestions.filter(s => s.isVisible);
-
-  // Sort messages chronologically (oldest first)
-  const sortedTranscriptMessages = useMemo(() => [...transcriptMessages].sort((a, b) => {
-    const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-    const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
-    return timeA - timeB;
-  }), [transcriptMessages]);
-
-  // Auto-scroll history to bottom when messages change or panel opens
-  useEffect(() => {
-    if (transcriptOpen && historyScrollRef.current) {
-      requestAnimationFrame(() => {
-        const el = historyScrollRef.current;
-        if (el) el.scrollTop = el.scrollHeight;
-      });
-    }
-  }, [transcriptMessages.length, transcriptOpen]);
-
-  // Track scroll position for scroll-to-bottom button
-  const handleHistoryScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setShowScrollDown(distFromBottom > 100);
-  }, []);
-  const scrollHistoryToBottom = useCallback(() => {
-    historyScrollRef.current?.scrollTo({
-      top: historyScrollRef.current.scrollHeight,
-      behavior: 'smooth'
-    });
-  }, []);
-
-  // Handle clear with confirmation
-  const handleClearClick = useCallback(() => {
-    setShowClearConfirm(true);
-  }, []);
-  const handleClearConfirm = useCallback(() => {
-    setShowClearConfirm(false);
-    onTranscriptClear?.();
-  }, [onTranscriptClear]);
   const handleSuggestionClickInternal = (suggestion: Suggestion, e: React.MouseEvent<HTMLButtonElement>) => {
     if (!onSuggestionClick) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -431,101 +386,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       {/* Main container */}
       <div className={cn("relative bg-background/95 border border-border rounded-t-2xl shadow-lg overflow-hidden transition-[border-color,box-shadow] duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
         
-        {/* Chat History Section - inside the card at the top */}
-        <AnimatePresence>
-        {transcriptOpen && sortedTranscriptMessages.length > 0 && <motion.div initial={{
-          opacity: 0,
-          height: 0
-        }} animate={{
-          opacity: 1,
-          height: 'auto'
-        }} exit={{
-          opacity: 0,
-          height: 0
-        }} transition={{
-          duration: 0.2,
-          ease: [0.4, 0, 0.2, 1]
-        }} className="overflow-hidden">
-              {/* History Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-                <div className="flex items-center gap-3">
-                  <div className="p-1.5 rounded-lg bg-foreground/10">
-                    <Brain className="h-4 w-4 text-foreground/70" />
-                  </div>
-                  <span className="font-medium text-sm">AYN AI </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  {onTranscriptClear && <Button variant="ghost" size="sm" onClick={handleClearClick} className="h-7 px-2 text-xs font-normal text-muted-foreground hover:text-foreground">
-                      Clear
-                    </Button>}
-                  <Button variant="ghost" size="icon" onClick={onTranscriptToggle} className="h-7 w-7">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Messages Area */}
-              <div className="relative pb-3">
-                <div className="max-h-[340px] overflow-y-auto" ref={historyScrollRef} onScroll={handleHistoryScroll}>
-                  <div className="p-3 space-y-1 flex flex-col justify-end min-h-full">
-                    {sortedTranscriptMessages.map((msg, idx) => {
-                      const isLastAyn = msg.sender === 'ayn' && idx === sortedTranscriptMessages.length - 1;
-                      const isNew = !seenMessageIdsRef.current.has(msg.id);
-                      if (!isNew) {
-                        // Already seen
-                      } else if (!isLastAyn || isTyping) {
-                        // Mark as seen immediately if not the latest AYN or still typing
-                        seenMessageIdsRef.current.add(msg.id);
-                      }
-                      const shouldStream = isLastAyn && isNew && !isTyping && msg.sender === 'ayn';
-                      if (shouldStream) {
-                        // Mark seen after streaming starts
-                        seenMessageIdsRef.current.add(msg.id);
-                      }
-                      // Only animate messages that arrived AFTER the panel was already open
-                      const shouldAnimate = isNew;
-                      return <TranscriptMessage key={msg.id} content={msg.content} sender={msg.sender} timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)} status={msg.status} isStreaming={shouldStream} shouldAnimate={shouldAnimate} onReply={text => {
-                        setInputMessage(`> ${text.split('\n')[0]}\n`);
-                        textareaRef.current?.focus();
-                      }} />;
-                    })}
-                    {/* Typing indicator - CSS-only three dots */}
-                    {isTyping && transcriptOpen && (
-                      <div className="flex gap-2 p-3">
-                        <div className="rounded-full w-8 h-8 bg-foreground text-background flex items-center justify-center shrink-0">
-                          <Brain className="w-4 h-4" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-foreground mb-0.5">AYN</span>
-                          <div className="inline-flex items-center gap-1 px-4 py-2.5 rounded-[20px] rounded-bl-sm bg-muted/50 shadow-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '0ms' }} />
-                            <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '150ms' }} />
-                            <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '300ms' }} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Scroll to bottom button */}
-                <AnimatePresence>
-                  {showScrollDown && <motion.button initial={{
-                opacity: 0,
-                scale: 0.8
-              }} animate={{
-                opacity: 1,
-                scale: 1
-              }} exit={{
-                opacity: 0,
-                scale: 0.8
-              }} onClick={scrollHistoryToBottom} className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 h-8 w-8 rounded-full bg-foreground/90 text-background flex items-center justify-center shadow-lg hover:bg-foreground transition-colors" aria-label="Scroll to bottom">
-                      <ChevronDown className="h-4 w-4" />
-                    </motion.button>}
-                </AnimatePresence>
-              </div>
-            </motion.div>}
-        </AnimatePresence>
+        
         
         {/* Drag overlay - INSIDE the card container for proper sizing */}
         <AnimatePresence>
@@ -762,23 +623,6 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       {/* Hidden file input */}
       <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.txt,.json,.xml,.html,.htm,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg" onChange={handleFileInputChange} />
 
-      {/* Clear Confirmation Dialog */}
-      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Clear chat history?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will clear all messages and start a new chat. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClearConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Clear
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>;
 });
 ChatInput.displayName = 'ChatInput';
