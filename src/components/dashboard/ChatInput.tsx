@@ -434,14 +434,17 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         {/* Chat History Section - inside the card at the top */}
         <AnimatePresence>
         {transcriptOpen && sortedTranscriptMessages.length > 0 && <motion.div initial={{
-          opacity: 0
+          opacity: 0,
+          height: 0
         }} animate={{
-          opacity: 1
+          opacity: 1,
+          height: 'auto'
         }} exit={{
-          opacity: 0
+          opacity: 0,
+          height: 0
         }} transition={{
-          duration: 0.1,
-          ease: 'easeOut'
+          duration: 0.2,
+          ease: [0.4, 0, 0.2, 1]
         }} className="overflow-hidden">
               {/* History Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
