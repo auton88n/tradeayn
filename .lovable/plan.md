@@ -1,71 +1,41 @@
 
+# Rebuild: History Card
 
-# Rebuild: History Card with Bulletproof Layout
+Replace the placeholder with a complete, bulletproof history card inside `ResponseCard.tsx`.
 
-## Root Cause
+## Layout Strategy
 
-The history card has accumulated conflicting height constraints across multiple layers:
+The parent (`CenterStageLayout`) already constrains the card via `maxHeight: calc(...)` and `overflow-hidden`. The history card uses `flex-1 min-h-0` containers with an `absolute inset-0` scroll area -- the proven pattern from the previous fix.
 
-1. **CenterStageLayout wrapper**: `maxHeight: calc(100vh - footerHeight - 240px)` + `overflow-hidden`
-2. **ResponseCard outer**: `max-h-[75vh]` + `overflow-hidden`
-3. **Scroll container**: `max-h-[55vh]`
-4. **Individual messages**: `max-h-[40vh]`
-
-These all compete. The outer `calc()` wrapper might be smaller than `75vh`, the `55vh` scroll container plus header/footer might exceed `75vh`, and `inline-block` on message bubbles can still push content outside bounds. The `min-h-0` was removed but is actually needed for flex children to shrink below their content size.
-
-## The Fix
-
-Use a single, clean height strategy: **the outer card fills its parent, and the scroll area takes all remaining space using `flex-1 min-h-0`** (the correct flex pattern). No competing vh values.
-
-### File: `src/components/eye/ResponseCard.tsx`
-
-**Change 1 — Outer card (line 301-311)**
-- Remove `max-h-[75vh]`. The parent in CenterStageLayout already constrains height via `maxHeight: calc(...)`.
-- Keep `overflow-hidden flex flex-col`.
-
-**Change 2 — History wrapper (line 369)**
-- Change from `flex flex-col min-h-0` to `flex flex-col flex-1 min-h-0` so it actually fills and is constrained by the outer card.
-
-**Change 3 — Scroll area wrapper (line 371)**
-- Change from `relative min-h-0` to `relative flex-1 min-h-0` so it grows to fill remaining space after header/footer.
-
-**Change 4 — Scroll container (line 375)**
-- Remove `max-h-[55vh]`.
-- Add `flex-1` and keep `overflow-y-auto overscroll-contain`.
-- Change the wrapper div (line 371) to be a flex column so `flex-1` works on the scroll container.
-- Actually, simpler: make the scroll container use `h-full` or just let it be `overflow-y-auto` with `position: absolute; inset: 0` inside the `relative flex-1 min-h-0` wrapper. This is the most reliable pattern.
-
-**Change 5 — Individual messages (TranscriptMessage.tsx line 115)**
-- Keep `max-h-[40vh] overflow-y-auto overscroll-contain` — this is correct and prevents single messages from dominating.
-
-### File: `src/components/dashboard/CenterStageLayout.tsx`
-
-No changes needed. The existing `maxHeight: calc(100vh - footerHeight - 240px)` with `overflow-hidden` is the single source of truth for the card's maximum size.
-
-### Final Structure
+## Structure
 
 ```text
-CenterStageLayout wrapper
-  maxHeight: calc(100vh - footer - 240px), overflow-hidden
-  
-  ResponseCard outer (overflow-hidden, flex flex-col) -- NO max-h-[75vh]
-    Header (flex-shrink-0)
-    History wrapper (flex-1, min-h-0, flex flex-col)
-      Scroll wrapper (relative, flex-1, min-h-0)
-        Scroll container (absolute inset-0, overflow-y-auto)
-          Messages...
-        Scroll-to-bottom button (absolute)
-      Reply footer (flex-shrink-0)
+ResponseCard outer (flex flex-col, overflow-hidden, constrained by parent)
+  Header (flex-shrink-0) -- already exists, shows message count + Clear/Close
+  History wrapper (flex-1, min-h-0, flex flex-col)
+    Scroll wrapper (relative, flex-1, min-h-0)
+      Scroll container (absolute inset-0, overflow-y-auto)
+        Messages (TranscriptMessage components)
+        Typing indicator (3-dot bounce)
+      Scroll-to-bottom button (absolute bottom-3, z-10)
+    Reply footer (flex-shrink-0, border-t)
 ```
 
-### Why This Works
+## Changes in `src/components/eye/ResponseCard.tsx`
 
-- Only ONE height constraint exists: the CenterStageLayout `calc()` wrapper
-- `flex-1 min-h-0` on intermediate containers lets them shrink to fit
-- `absolute inset-0` on the scroll container means it exactly fills its `relative` parent — guaranteed no overflow
-- No competing `max-h-[55vh]` or `max-h-[75vh]` values
+Replace the placeholder block (lines 366-370) with:
 
-## Summary
+1. **History wrapper**: `flex-1 min-h-0 flex flex-col` -- fills all space below the header
+2. **Scroll wrapper**: `relative flex-1 min-h-0` -- sized by flex, acts as positioning context
+3. **Scroll container**: `absolute inset-0 overflow-y-auto overscroll-contain` -- scrolls within exact bounds, no overflow possible
+4. **Messages**: Render `sortedMessages` using `TranscriptMessage` with streaming logic for the last AYN message (reuses existing `seenMessageIdsRef` logic)
+5. **Typing indicator**: 3-dot CSS bounce when `historyTyping` is true, with Brain avatar
+6. **Scroll-to-bottom button**: `AnimatePresence`-wrapped `ChevronDown` circle at `absolute bottom-3 left-1/2`, shown when `showHistoryScrollDown` is true
+7. **Reply footer**: `flex-shrink-0` bar with a `CornerDownLeft` Reply button that calls `onHistoryClose`
 
-- 2 files modified: `ResponseCard.tsx` (4 class changes), `TranscriptMessage.tsx` (no changes needed)
-- Strategy: single height source + flex shrink + absolute positioned scroll container
+Individual message bubbles already have `max-h-[40vh] overflow-y-auto` in `TranscriptMessage.tsx` -- no changes needed there.
+
+## No Other Files Changed
+
+- `TranscriptMessage.tsx` -- already has the `max-h-[40vh]` constraint, no changes
+- `CenterStageLayout.tsx` -- already provides the outer height constraint, no changes
