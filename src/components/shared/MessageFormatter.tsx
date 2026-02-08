@@ -262,11 +262,11 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           components={{
             // Bold text
             strong: ({ children }) => (
-              <strong className="font-semibold text-gray-900 dark:text-white">{children}</strong>
+              <strong className="font-semibold text-foreground">{children}</strong>
             ),
             // Italic text
             em: ({ children }) => (
-              <em className="italic text-gray-600 dark:text-gray-300">{children}</em>
+              <em className="italic text-muted-foreground">{children}</em>
             ),
             // Strikethrough (GFM)
             del: ({ children }) => (
@@ -274,49 +274,59 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             ),
             // Unordered lists with styled bullets
             ul: ({ children }) => (
-              <ul className="space-y-2.5 my-4 first:mt-0 last:mb-0 ps-1 list-none">{children}</ul>
+              <ul className="space-y-2 my-3 first:mt-0 last:mb-0 ps-1 list-none">{children}</ul>
             ),
             // Ordered lists with styled markers
             ol: ({ children }) => (
-              <ol className="space-y-2.5 my-4 first:mt-0 last:mb-0 ps-5 list-decimal list-outside marker:text-primary/70 marker:font-medium">{children}</ol>
+              <ol className="space-y-2 my-3 first:mt-0 last:mb-0 ps-5 list-decimal list-outside marker:text-primary/60 marker:font-medium">{children}</ol>
             ),
             // List items with custom bullet styling
             li: ({ children }) => (
-              <li className="relative ps-5 leading-relaxed pb-1 break-words [overflow-wrap:anywhere] [&>p]:inline [&>p]:m-0 before:content-['•'] before:absolute before:start-0 before:text-primary/70 before:font-bold before:text-lg [ol>&]:before:content-none [ol>&]:ps-0">{children}</li>
+              <li className="relative ps-5 leading-relaxed pb-0.5 break-words [overflow-wrap:anywhere] [&>p]:inline [&>p]:m-0 before:content-['•'] before:absolute before:start-0 before:text-primary/60 before:font-bold before:text-base [ol>&]:before:content-none [ol>&]:ps-0">{children}</li>
             ),
-            // Paragraphs with improved spacing
+            // Paragraphs
             p: ({ children }) => (
-              <p className="leading-relaxed mb-4 last:mb-0 text-current break-words">{children}</p>
+              <p className="leading-[1.75] mb-3 last:mb-0 text-current break-words">{children}</p>
             ),
-            // Code blocks with copy button
+            // Code blocks with language label and copy button
             code: ({ children, className: codeClassName }) => {
-              // ONLY treat as code block if explicitly marked with language class
               const isBlock = codeClassName?.includes('language-');
               const codeString = String(children).replace(/\n$/, '');
               const codeId = `code-${Math.random().toString(36).slice(2, 9)}`;
+              const language = codeClassName?.replace('language-', '') || '';
               
               if (isBlock) {
                 return (
-                  <div className="relative group my-3 first:mt-0 last:mb-0 max-w-full overflow-hidden">
-                    <button
-                      onClick={() => copyCodeToClipboard(codeString, codeId)}
-                      className={cn(
-                        "absolute right-2 top-2 p-1.5 rounded-md z-10",
-                        "bg-gray-200/80 dark:bg-gray-700/80",
-                        "hover:bg-gray-300 dark:hover:bg-gray-600",
-                        "opacity-0 group-hover:opacity-100 transition-opacity",
-                        "text-gray-600 dark:text-gray-300"
-                      )}
-                      title="Copy code"
-                    >
-                      {copiedCodeId === codeId ? (
-                        <Check size={14} className="text-green-500" />
-                      ) : (
-                        <Copy size={14} />
-                      )}
-                    </button>
-                    <pre className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 pr-10 overflow-x-auto max-w-full w-full">
-                      <code className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">
+                  <div className="relative group my-4 first:mt-0 last:mb-0 max-w-full overflow-hidden rounded-xl border border-border">
+                    {/* Language label + copy button header */}
+                    <div className="flex items-center justify-between px-4 py-2 bg-muted/80 border-b border-border">
+                      <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                        {language || 'code'}
+                      </span>
+                      <button
+                        onClick={() => copyCodeToClipboard(codeString, codeId)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2 py-1 rounded-md text-xs",
+                          "text-muted-foreground hover:text-foreground hover:bg-muted",
+                          "transition-colors"
+                        )}
+                        title="Copy code"
+                      >
+                        {copiedCodeId === codeId ? (
+                          <>
+                            <Check size={13} className="text-green-500" />
+                            <span className="text-green-500">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={13} />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <pre className="bg-muted/40 p-4 overflow-x-auto max-w-full w-full">
+                      <code className="text-[13px] font-mono text-foreground/90 whitespace-pre leading-relaxed">
                         {children}
                       </code>
                     </pre>
@@ -324,36 +334,36 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                 );
               }
               return (
-                <code className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-1.5 py-0.5 rounded text-sm font-mono border border-gray-200 dark:border-gray-700">
+                <code className="bg-muted/70 text-foreground px-1.5 py-0.5 rounded-md text-[13px] font-mono border border-border/50">
                   {children}
                 </code>
               );
             },
-            // Pre blocks (for code) - let code component handle rendering
+            // Pre blocks - let code component handle rendering
             pre: ({ children }) => <>{children}</>,
-            // Headers with improved spacing
+            // Headers
             h1: ({ children }) => (
-              <h1 className="text-xl font-bold mt-6 mb-3 first:mt-0 text-gray-900 dark:text-white">{children}</h1>
+              <h1 className="text-xl font-bold mt-6 mb-3 first:mt-0 text-foreground tracking-tight">{children}</h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-lg font-semibold mt-6 mb-3 first:mt-0 text-gray-900 dark:text-white">{children}</h2>
+              <h2 className="text-lg font-semibold mt-6 mb-2.5 first:mt-0 text-foreground tracking-tight">{children}</h2>
             ),
             h3: ({ children }) => (
-              <h3 className="text-base font-medium mt-5 mb-2.5 first:mt-0 text-gray-900 dark:text-white">{children}</h3>
+              <h3 className="text-base font-semibold mt-5 mb-2 first:mt-0 text-foreground">{children}</h3>
             ),
             h4: ({ children }) => (
-              <h4 className="text-sm font-medium mt-4 mb-2 first:mt-0 text-gray-900 dark:text-white">{children}</h4>
+              <h4 className="text-sm font-semibold mt-4 mb-1.5 first:mt-0 text-foreground">{children}</h4>
             ),
-            // Blockquotes with improved spacing
+            // Blockquotes
             blockquote: ({ children }) => (
-              <blockquote className="border-l-4 border-primary/50 bg-gray-50 dark:bg-gray-800/50 pl-4 py-3 italic my-4 first:mt-0 last:mb-0 rounded-r text-gray-600 dark:text-gray-300">
+              <blockquote className="border-l-[3px] border-primary/40 bg-muted/30 ps-4 py-2.5 my-4 first:mt-0 last:mb-0 rounded-e-lg text-muted-foreground [&>p]:mb-1 [&>p:last-child]:mb-0">
                 {children}
               </blockquote>
             ),
-            // Tables (enhanced with GFM support and horizontal scrolling)
+            // Tables
             table: ({ children }) => (
-              <div className="my-4 first:mt-0 last:mb-0 rounded-xl border border-gray-200/80 dark:border-gray-700/60 overflow-hidden bg-gray-50/50 dark:bg-gray-800/30">
-                <div className="overflow-x-auto [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-gray-100/50 dark:[&::-webkit-scrollbar-track]:bg-gray-800/50 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full">
+              <div className="my-4 first:mt-0 last:mb-0 rounded-xl border border-border overflow-hidden">
+                <div className="overflow-x-auto">
                   <table className="min-w-full border-collapse text-sm">
                     {children}
                   </table>
@@ -361,27 +371,27 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
               </div>
             ),
             thead: ({ children }) => (
-              <thead className="bg-gray-100/80 dark:bg-gray-800/80">{children}</thead>
+              <thead className="bg-muted/60">{children}</thead>
             ),
             tbody: ({ children }) => (
-              <tbody className="divide-y divide-gray-200/60 dark:divide-gray-700/40">{children}</tbody>
+              <tbody className="divide-y divide-border/60">{children}</tbody>
             ),
             tr: ({ children }) => (
-              <tr className="even:bg-gray-50/50 dark:even:bg-gray-800/30 hover:bg-gray-100/70 dark:hover:bg-gray-700/40 transition-colors">{children}</tr>
+              <tr className="even:bg-muted/20 hover:bg-muted/40 transition-colors">{children}</tr>
             ),
             th: ({ children }) => (
-              <th className="px-4 py-3 text-left font-semibold text-sm text-gray-900 dark:text-white whitespace-nowrap border-b border-gray-200/80 dark:border-gray-700/60">
+              <th className="px-4 py-2.5 text-left font-semibold text-xs uppercase tracking-wider text-foreground whitespace-nowrap border-b border-border">
                 {children}
               </th>
             ),
             td: ({ children }) => (
-              <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200 break-words">
+              <td className="px-4 py-2.5 text-sm text-foreground/80 break-words">
                 {children}
               </td>
             ),
             // Horizontal rule
             hr: () => (
-              <hr className="my-4 border-gray-200 dark:border-gray-700" />
+              <hr className="my-5 border-border" />
             ),
             // Links - route document storage URLs through proxy for reliable downloads
             a: ({ children, href }) => {
@@ -433,14 +443,14 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                   />
                   {/* Saving indicator */}
                   {isSaving && (
-                    <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-white text-xs">
+                    <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full bg-foreground/70 text-background text-xs">
                       <Loader2 size={12} className="animate-spin" />
                       <span>Saving...</span>
                     </div>
                   )}
                   {/* Failed/Expired indicator */}
                   {hasFailed && displaySrc === cleanSrc && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
                       <div className="text-center p-4">
                         <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
                         <p className="text-sm text-muted-foreground">Image has expired</p>
