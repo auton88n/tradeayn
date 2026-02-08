@@ -292,7 +292,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           textareaRef.current.style.height = 'auto';
           const scrollHeight = textareaRef.current.scrollHeight;
           // Then set to actual content height, respecting max (280px)
-          textareaRef.current.style.height = Math.max(44, Math.min(scrollHeight, 200)) + 'px';
+          textareaRef.current.style.height = Math.max(44, Math.min(scrollHeight, 100)) + 'px';
           textareaRef.current.focus();
         }
       }, 0);
@@ -310,7 +310,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       // Auto-resize textarea
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
-        textareaRef.current.style.height = Math.max(44, Math.min(textareaRef.current.scrollHeight, 200)) + 'px';
+        textareaRef.current.style.height = Math.max(44, Math.min(textareaRef.current.scrollHeight, 100)) + 'px';
       }
     }
   }, [voiceTranscript, voiceInterim]);
@@ -424,7 +424,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       if (resizeRafRef.current) cancelAnimationFrame(resizeRafRef.current);
       resizeRafRef.current = requestAnimationFrame(() => {
         textarea.style.height = 'auto';
-        textarea.style.height = Math.max(44, Math.min(textarea.scrollHeight, 200)) + 'px';
+        textarea.style.height = Math.max(44, Math.min(textarea.scrollHeight, 100)) + 'px';
       });
     }
   }, []);
@@ -599,7 +599,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         {/* Row 1: Input area with flexbox layout */}
         <div className="flex items-end gap-3 px-4 pt-3 pb-2">
           <div className="relative flex-1 min-w-0">
-            <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyDown={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} disabled={isDisabled || isUploading} className={cn("w-full resize-none min-h-[44px] max-h-[200px]", "text-base bg-transparent", "border-0 focus-visible:ring-0 focus-visible:ring-offset-0", "text-foreground placeholder:text-muted-foreground", "disabled:opacity-50 disabled:cursor-not-allowed", "leading-relaxed", "overflow-y-auto", "px-2 py-2")} />
+            <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyDown={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} disabled={isDisabled || isUploading} className={cn("w-full resize-none min-h-[44px] max-h-[100px]", "text-base bg-transparent", "border-0 focus-visible:ring-0 focus-visible:ring-offset-0", "text-foreground placeholder:text-muted-foreground", "disabled:opacity-50 disabled:cursor-not-allowed", "leading-relaxed", "overflow-y-auto", "px-2 py-2")} />
 
             {/* Typewriter placeholder */}
             {showPlaceholder && !inputMessage && !isInputFocused && <div className="absolute top-[10px] left-[10px] pointer-events-none">
