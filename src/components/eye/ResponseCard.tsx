@@ -306,7 +306,7 @@ const ResponseCardComponent = ({
             "border border-border/40",
             "shadow-md shadow-black/5 backdrop-blur-sm",
             variant === 'sheet' ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
-            "overflow-hidden",
+            transcriptOpen ? "overflow-visible" : "overflow-hidden",
             transcriptOpen && "h-full"
           )}
           style={{
