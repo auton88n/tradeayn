@@ -1,97 +1,70 @@
 
-# Fix Foundation Calculator Code-Specific Resistance Factors
 
-## Overview
+# Fix Column Calculator Code-Specific Resistance Factors
 
-The `calculateFoundation()` function in `src/lib/engineeringCalculations.ts` already fetches `codeParams` via `getCodeParameters(buildingCode)` but never uses them. All four issues are in lines 714-798 of that single file.
+## Problem
 
-Note: The component (`FoundationCalculator.tsx`) already calls `calculateFoundation()` client-side and passes `buildingCode` -- no component changes needed.
+The `calculateColumn()` function uses Eurocode 2 material partial safety factors (gamma_c=1.5, gamma_s=1.15) regardless of the selected building code. The `codeParams` is fetched (line 465) but never used for capacity calculations.
 
 ## Changes (single file: `src/lib/engineeringCalculations.ts`)
 
-### Fix 1: Replace hardcoded 1.4 load factor (line 745)
+### Fix 1: Replace EC2 material factors with code-specific approach (lines 470-473)
 
-**Current:**
-```typescript
-const Pu = columnLoad * 1.4;
-```
+Remove the hardcoded gamma factors and compute `fcd`/`fyd` based on building code:
 
-**Fixed:**
-```typescript
-const avgFactor = (codeParams.loadFactors.dead + codeParams.loadFactors.live) / 2;
-const Pu = columnLoad * avgFactor;
-```
+- **CSA**: Resistance factors applied directly to material strengths (phi_c x 0.85 x f'c and phi_s x fy)
+- **ACI**: Use nominal strengths (0.85 x f'c and fy); phi applied to capacity later
 
-This produces 1.4 for ACI (average of 1.2 + 1.6) and 1.375 for CSA (average of 1.25 + 1.5). Not ideal without separate D/L inputs, but responds to code selection and matches user's request.
+### Fix 2: Replace capacity formula (line 547)
 
-### Fix 2: Code-aware punching shear (lines 749, 752-754)
+Update `NRd` to use code-specific capacity equations:
 
-**Current:**
-```typescript
-const Vc_punch = 0.33 * Math.sqrt(fck) * b0 * d_trial / 1000;
-// ...
-if (Pu > Vc_punch * 0.75) {
-  depth = Math.ceil((Pu * 1000) / (0.33 * Math.sqrt(fck) * b0 * 0.75) / 25) * 25;
-}
-```
+- **CSA**: `Pr = fcd x (Ag - As) + fyd x As` (factors already in fcd/fyd)
+- **ACI**: `phi_Pn_max = 0.80 x 0.65 x [0.85f'c(Ag-Ast) + fy x Ast]` (phi and 0.80 reduction for tied columns)
 
-**Fixed:**
-```typescript
-const punchingCoeff = buildingCode === 'CSA'
-  ? 0.38 * codeParams.resistanceFactors.flexure    // 0.38 * 0.65 = 0.247
-  : 0.33 * codeParams.resistanceFactors.shear;      // 0.33 * 0.75 = 0.2475
-const Vc_punch = punchingCoeff * Math.sqrt(fck) * b0 * d_trial / 1000;
-// ...
-if (Pu > Vc_punch) {
-  depth = Math.ceil((Pu * 1000) / (punchingCoeff * Math.sqrt(fck) * b0) / 25) * 25;
-}
-```
+### Fix 3: Update slenderness check (line 486)
 
-The resistance factor is now baked into `punchingCoeff`, so the separate `* 0.75` is removed.
+Replace the EC2 slenderness formula `20 x sqrt(fck) / sqrt(N/Ac)` with the ACI/CSA threshold of `kLu/r > 22` for braced frames.
 
-### Fix 3: Code-specific flexural reinforcement (line 765)
+### Fix 4: Update minimum reinforcement (line 520)
 
-**Current:**
-```typescript
-const Ast = Mu * 1e6 / (0.87 * fy * 0.9 * d);
-```
+Change `AsMin` from 0.2% (EC2 value) to 1% (both ACI 318 Section 10.6.1.1 and CSA A23.3 Cl. 10.9.1 require 1% minimum).
 
-**Fixed (add effectivePhi before this line, then use it):**
-```typescript
-const phiFlex = codeParams.resistanceFactors.flexure;
-const phiSteel = codeParams.resistanceFactors.steel;
-const effectivePhi = buildingCode === 'CSA' ? phiFlex * phiSteel : 0.87;
-const Ast = Mu * 1e6 / (effectivePhi * fy * 0.9 * d);
-```
+### Fix 5: Update `generateInteractionCurve()` (lines 603-700)
 
-### Fix 4: Code-specific minimum reinforcement (line 767)
+Add `buildingCode` parameter so the function can compute code-specific:
 
-**Current:**
-```typescript
-const AstMin = 0.0012 * width * 1000 * d;
-```
+- **P0** (pure compression): CSA uses factored values directly; ACI applies 0.80 x 0.65 reduction
+- **Concrete compression force** (`Cc`): uses the appropriate `fcd` (already passed in)
+- **Pure bending point** (`M0`): consistent with the passed `fcd`/`fyd`
 
-**Fixed:**
-```typescript
-const AstMin = codeParams.minRho * 0.6 * width * 1000 * d;
-```
+### Fix 6: Update adequacy check (line 550)
 
-Foundation minimum is typically 60% of the slab minimum ratio per code practice. This gives 0.00108 for ACI and 0.0012 for CSA.
+Change minimum reinforcement ratio check from 0.2% to 1% to match the updated `AsMin`.
 
-### Fix 5: Add metadata to return object (after line 797)
+### Fix 7: Add metadata to return object
 
-Add these fields to the return object:
-```typescript
-designCode: codeParams.name,
-buildingCode: codeParams.name,
-loadFactorsUsed: `${codeParams.loadFactors.dead}D + ${codeParams.loadFactors.live}L`,
-```
+Add `buildingCode: codeParams.name` to the return object.
 
-## What is NOT changed
+## Technical Details
 
-- Foundation sizing logic (iterative sizing with eccentricity -- correct)
-- Bearing capacity safety factor (1.5 divisor)
-- Bar diameter selection and spacing logic
-- Material volume/weight calculations
-- The edge function file (cleanup is a separate task)
-- The component file (already uses client-side calculation)
+### Lines to modify
+
+| Area | Lines | Description |
+|------|-------|-------------|
+| Material factors | 470-473 | Replace gammaC/gammaS with code-specific fcd/fyd |
+| Slenderness | 486-487 | Replace EC2 formula with kLu/r > 22 |
+| AsMin | 520 | Change 0.002 to 0.01 |
+| NRd capacity | 547 | Code-specific capacity equation |
+| Adequacy check | 550 | Change 0.2 threshold to 1.0 |
+| Interaction curve call | 553 | Pass buildingCode to generateInteractionCurve |
+| Return object | 559-598 | Add buildingCode field |
+| generateInteractionCurve | 603-610, 623, 666, 692-693 | Add buildingCode param, update P0 and Cc |
+
+### Impact
+
+- CSA designs will produce more conservative results (lower capacity) due to resistance factors applied to material strengths
+- ACI designs will show the 0.80 x phi reduction for tied columns per ACI 318
+- Both codes now correctly use 1% minimum reinforcement ratio
+- Slenderness classification uses the standard 22 threshold instead of the EC2 variable formula
+
