@@ -1,17 +1,22 @@
 
 
-# Fix: Eye Visible Above History Card
+# Fix: Eye Moving Up + Reduce History Card Height
 
 ## Problem
-The eye is still showing above the history card because the card doesn't grow tall enough to cover it. The chat input is fixed at the bottom (`z-30`) and the eye is at `z-10`, so stacking is correct -- the card just needs more height.
+1. The eye has a default `y: -40` offset, causing it to shift upward visually even when idle. This makes it look like it "jumps" when the history card opens.
+2. The history card at `max-h-[60vh]` is too tall.
 
 ## Changes
 
-### 1. ChatInput.tsx -- Increase max-height significantly
-Change `max-h-[440px]` to `max-h-[60vh]` on the history messages scroll area (line 466). Using a viewport-relative unit ensures the card always grows tall enough to cover the eye regardless of screen size.
+### 1. CenterStageLayout.tsx -- Remove the upward offset
+On line 744, the eye's default `y` value is `-40`, which pushes it up unnecessarily. Change it to `0` so the eye stays in its natural position and doesn't appear to move when the history card opens over it.
 
-### 2. CenterStageLayout.tsx -- Lower eye z-index further
-Change `z-10` to `z-0` on the eye container (line 736) to guarantee it sits behind everything, including the chat input's history panel which is inside the `z-30` fixed footer.
+- Before: `y: (hasVisibleResponses || isTransitioningToChat) ? -20 : -40`
+- After: `y: (hasVisibleResponses || isTransitioningToChat) ? -20 : 0`
 
-These two changes together ensure the history card is tall enough to cover the eye, and the eye's stacking order is definitively below the chat input area.
+### 2. ChatInput.tsx -- Reduce history card height
+On line 466, reduce the max height from `max-h-[60vh]` to `max-h-[340px]` to make the history card shorter and more compact.
+
+- Before: `max-h-[60vh]`
+- After: `max-h-[340px]`
 
