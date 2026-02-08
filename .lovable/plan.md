@@ -1,53 +1,63 @@
 
-# Add Disclaimer Field to All Calculators
+
+# Unify Building Code Parameters: Single Source of Truth
 
 ## Overview
 
-Add a legal disclaimer string to every calculator's return object and display it as an amber warning banner in the results panel.
+Replace the local `getCodeParameters()` function in `engineeringCalculations.ts` with a new `getCodeDesignParameters()` wrapper exported from `src/lib/buildingCodes/calculator.ts`, so all calculators pull from the comprehensive code configs.
 
-## Part 1: Add `disclaimer` field to 5 return objects in `src/lib/engineeringCalculations.ts`
+## Changes
 
-Add this field to each function's return object:
+### File 1: `src/lib/buildingCodes/calculator.ts`
+
+Add a new exported function at the end of the file that maps the comprehensive `BuildingCodeConfig` to the simplified shape used by the calculators:
 
 ```typescript
-disclaimer: 'Preliminary estimate for initial sizing only. All structural designs must be reviewed and verified by a licensed Professional Engineer (P.Eng / PE) using approved design software before construction or permit submission.',
+export function getCodeDesignParameters(codeId: BuildingCodeId) {
+  const config = getBuildingCode(codeId);
+  return {
+    loadFactors: { dead: config.loadFactors.dead, live: config.loadFactors.live },
+    resistanceFactors: {
+      flexure: config.resistanceFactors.flexure,
+      shear: config.resistanceFactors.shear,
+      steel: config.resistanceFactors.steel,
+    },
+    minRho: config.reinforcement.minFlexural,
+    name: config.name,
+  };
+}
 ```
 
-**Locations:**
-- `calculateBeam()` return (around line 160)
-- `calculateSlab()` return (around line 414)
-- `calculateColumn()` return (around line 577)
-- `calculateFoundation()` return (around line 815)
-- `calculateRetainingWall()` return (around line 989)
+Property mapping notes (from the comprehensive configs):
+- `resistanceFactors.flexure` -- exists directly (0.90 ACI, 0.65 CSA)
+- `resistanceFactors.steel` -- exists directly (1.0 ACI, 0.85 CSA)
+- `reinforcement.minFlexural` -- the correct property name (not `minRatio`)
 
-## Part 2: Display disclaimer banner in `DetailedResultsPanel.tsx`
+### File 2: `src/lib/buildingCodes/index.ts`
 
-Since all five calculators render through the single `DetailedResultsPanel` component, the banner only needs to be added once -- replacing the existing plain-text disclaimer at line 180.
+Add `getCodeDesignParameters` to the exports from `./calculator`:
 
-**Current (line 179-182):**
-```tsx
-{/* Disclaimer */}
-<p className="text-xs text-muted-foreground mt-4 text-center">
-  Results require verification by a licensed Professional Engineer (PE/P.Eng)
-</p>
+```typescript
+export {
+  // ... existing exports ...
+  getCodeDesignParameters,
+} from './calculator';
 ```
 
-**Replaced with:**
-```tsx
-{/* Disclaimer */}
-{outputs.disclaimer && (
-  <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-3 mt-4">
-    <p className="text-amber-200/80 text-xs flex items-start gap-2">
-      <span className="text-amber-400 mt-0.5">⚠️</span>
-      {outputs.disclaimer}
-    </p>
-  </div>
-)}
-```
+### File 3: `src/lib/engineeringCalculations.ts`
 
-This upgrades the existing subtle text into a visible amber warning banner with a warning icon, positioned at the bottom of the results section (same location, better visibility).
+1. **Remove** the local `CodeParameters` interface (lines 9-14) and `getCodeParameters()` function (lines 16-32)
+2. **Update** the import on line 6 to:
+   ```typescript
+   import type { BuildingCodeId } from '@/lib/buildingCodes';
+   import { getCodeDesignParameters } from '@/lib/buildingCodes';
+   ```
+3. **Replace** all occurrences of `getCodeParameters(buildingCode)` with `getCodeDesignParameters(buildingCode)` -- there are 5 calls (one per calculator function)
 
-## Files Modified
+## What does NOT change
 
-- `src/lib/engineeringCalculations.ts` -- add `disclaimer` field to 5 return objects
-- `src/components/engineering/results/DetailedResultsPanel.tsx` -- replace plain text disclaimer with amber banner
+- The comprehensive config files (`aci-318-25.ts`, `csa-a23-3-24.ts`)
+- No existing exports removed from `buildingCodes/index.ts`
+- No calculator logic changes -- only the parameter source changes
+- The returned values are identical (same numbers), so no calculator output changes
+
