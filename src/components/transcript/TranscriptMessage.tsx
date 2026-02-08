@@ -112,7 +112,7 @@ export const TranscriptMessage = ({
             "[&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3",
             "[&_code]:text-sm [&_table]:text-sm [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground/30 [&_blockquote]:pl-3",
             compact ? "text-xs" : "text-sm",
-            "max-h-[40vh] overflow-y-auto overscroll-contain"
+            compact ? "" : "max-h-[40vh] overflow-y-auto overscroll-contain"
           )}>
             {isStreaming ? (
               <StreamingMarkdown content={content} speed={15} />

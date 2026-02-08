@@ -306,7 +306,7 @@ const ResponseCardComponent = ({
             "border border-border/40",
             "shadow-md shadow-black/5 backdrop-blur-sm",
             variant === 'sheet' ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
-            transcriptOpen ? "overflow-visible" : "overflow-hidden",
+            "overflow-hidden",
             transcriptOpen && "h-full"
           )}
           style={{
@@ -366,9 +366,9 @@ const ResponseCardComponent = ({
           {/* Content area */}
           {transcriptOpen ? (
             /* History mode */
-            <div className="flex-1 min-h-0 flex flex-col">
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
               {/* Scroll wrapper */}
-              <div className="relative flex-1 min-h-0">
+              <div className="relative flex-1 min-h-0 overflow-hidden">
                 <div
                   ref={historyScrollRef}
                   onScroll={handleHistoryScroll}
