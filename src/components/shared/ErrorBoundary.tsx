@@ -25,6 +25,9 @@ export class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
+    // Non-blocking error report to Supabase
+    this.reportError(error, errorInfo).catch(() => {});
+    
     // Auto-reload on dynamic import failures (stale chunk errors)
     const message = error?.message || '';
     const shouldReload =
@@ -46,6 +49,24 @@ export class ErrorBoundary extends Component<Props, State> {
         // If sessionStorage is unavailable, still attempt a single reload.
         window.location.reload();
       }
+    }
+  }
+
+  private async reportError(error: Error, errorInfo: ErrorInfo) {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+
+      await (supabase as any).from('error_logs').insert({
+        error_message: (error.message || 'Unknown error').slice(0, 1000),
+        error_stack: error.stack?.slice(0, 5000) || null,
+        component_stack: errorInfo.componentStack?.slice(0, 5000) || null,
+        url: window.location.href,
+        user_id: session?.user?.id || null,
+        user_agent: navigator.userAgent,
+      });
+    } catch {
+      // Silent failure — error reporting should never break the app
     }
   }
 
