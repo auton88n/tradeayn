@@ -445,12 +445,18 @@ export const CenterStageLayout = ({
       // This prevents the 350ms delay from causing lost messages
       onSendMessage(content, file);
 
-      // When history panel is open, skip all flying bubble animations for instant ChatGPT-like feel
+      // When history panel is open, skip flying bubble animation but keep all eye reactions
       if (transcriptOpen) {
         onRemoveFile();
         clearResponseBubbles();
         clearSuggestions();
+        triggerBlink();
+        triggerAbsorption();
+        playSound?.('message-absorb');
         setIsResponding(true);
+        setIsAbsorbPulsing(true);
+        setTimeout(() => setIsAbsorbPulsing(false), 300);
+        completeAbsorption();
         requestAnimationFrame(() => orchestrateEmotionChange('thinking'));
         return;
       }
