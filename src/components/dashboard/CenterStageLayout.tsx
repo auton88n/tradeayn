@@ -733,7 +733,7 @@ export const CenterStageLayout = ({
           <motion.div 
             ref={eyeRef} 
             className={cn(
-              "relative overflow-visible z-40",
+              "relative overflow-visible z-10",
               (hasVisibleResponses || isTransitioningToChat) && "pb-4",
               isAbsorbPulsing && "scale-105 transition-transform duration-300"
             )}
