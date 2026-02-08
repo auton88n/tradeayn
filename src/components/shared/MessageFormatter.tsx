@@ -197,10 +197,10 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   // Step 4: Sanitize content to prevent XSS attacks
   const sanitizedContent = isValidUserInput(decodedContent) ? decodedContent : sanitizeUserInput(decodedContent);
 
-  const copyCodeToClipboard = async (code: string, id: string) => {
+  const copyCodeToClipboard = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
-      setCopiedCodeId(id);
+      setCopiedCodeId(code);
       setTimeout(() => setCopiedCodeId(null), 2000);
     } catch (err) {
       console.error('Failed to copy code:', err);
@@ -295,7 +295,6 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             code: ({ children, className: codeClassName }) => {
               const isBlock = codeClassName?.includes('language-');
               const codeString = String(children).replace(/\n$/, '');
-              const codeId = `code-${Math.random().toString(36).slice(2, 9)}`;
               const language = codeClassName?.replace('language-', '') || '';
               
               if (isBlock) {
@@ -307,7 +306,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                         {language || 'code'}
                       </span>
                       <button
-                        onClick={() => copyCodeToClipboard(codeString, codeId)}
+                        onClick={() => copyCodeToClipboard(codeString)}
                         className={cn(
                           "flex items-center gap-1.5 px-2 py-1 rounded-md text-xs",
                           "text-muted-foreground hover:text-foreground hover:bg-muted",
@@ -315,7 +314,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                         )}
                         title="Copy code"
                       >
-                        {copiedCodeId === codeId ? (
+                        {copiedCodeId === codeString ? (
                           <>
                             <Check size={13} className="text-green-500" />
                             <span className="text-green-500">Copied</span>
