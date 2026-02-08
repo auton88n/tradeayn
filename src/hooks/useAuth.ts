@@ -4,62 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { trackDeviceLogin } from '@/hooks/useDeviceTracking';
 import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
-
-const QUERY_TIMEOUT_MS = 5000;
-
-// Helper function for direct REST API calls
-const fetchFromSupabase = async (
-  endpoint: string,
-  token: string,
-  options: RequestInit = {}
-): Promise<any> => {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
-    ...options,
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Prefer': options.method === 'POST' ? 'return=minimal' : 'return=representation',
-      ...options.headers,
-    },
-  });
-  
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
-  }
-  
-  // For upserts with return=minimal, there's no body
-  if (options.method === 'POST' && response.status === 201) {
-    return { success: true };
-  }
-  
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
-};
-
-// Retry helper for transient failures
-const fetchWithRetry = async (
-  endpoint: string,
-  token: string,
-  retries = 2
-): Promise<any> => {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await fetchFromSupabase(endpoint, token);
-    } catch (error) {
-      if (attempt === retries) {
-        if (import.meta.env.DEV) {
-          console.error(`Auth query failed after ${retries + 1} attempts:`, endpoint, error);
-        }
-        return null;
-      }
-      // Wait before retry
-      await new Promise(r => setTimeout(r, 300));
-    }
-  }
-  return null;
-};
+import { supabaseApi } from '@/lib/supabaseApi';
 
 export const useAuth = (user: User, session: Session): UseAuthReturn => {
   const [hasAccess, setHasAccess] = useState(false);
@@ -78,7 +23,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   // Check if user has active access - uses direct fetch
   const checkAccess = useCallback(async () => {
     try {
-      const data = await fetchFromSupabase(
+      const data = await supabaseApi.get<any[]>(
         `access_grants?user_id=eq.${user.id}&select=is_active,expires_at,current_month_usage,monthly_limit,usage_reset_date`,
         session.access_token
       );
@@ -102,7 +47,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   // Check if user is admin or duty - uses direct fetch
   const checkAdminRole = useCallback(async () => {
     try {
-      const data = await fetchFromSupabase(
+      const data = await supabaseApi.get<any[]>(
         `user_roles?user_id=eq.${user.id}&select=role`,
         session.access_token
       );
@@ -118,7 +63,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   // Load user profile - uses direct fetch
   const loadUserProfile = useCallback(async () => {
     try {
-      const data = await fetchFromSupabase(
+      const data = await supabaseApi.get<any[]>(
         `profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,avatar_url`,
         session.access_token
       );
@@ -134,20 +79,12 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   // Accept terms and conditions - uses direct fetch
   const acceptTerms = useCallback(async () => {
     try {
-      // Use POST with upsert via Prefer header
-      await fetch(`${SUPABASE_URL}/rest/v1/user_settings`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=merge-duplicates',
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          has_accepted_terms: true,
-          updated_at: new Date().toISOString()
-        }),
+      await supabaseApi.post('user_settings', session.access_token, {
+        user_id: user.id,
+        has_accepted_terms: true,
+        updated_at: new Date().toISOString()
+      }, {
+        headers: { 'Prefer': 'resolution=merge-duplicates' }
       });
 
       setHasAcceptedTerms(true);
@@ -187,10 +124,10 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       try {
         // Use retry logic for all queries
         const results = await Promise.all([
-          fetchWithRetry(`access_grants?user_id=eq.${user.id}&select=is_active,expires_at,current_month_usage,monthly_limit,usage_reset_date`, session.access_token),
-          fetchWithRetry(`user_roles?user_id=eq.${user.id}&select=role`, session.access_token),
-          fetchWithRetry(`profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,avatar_url`, session.access_token),
-          fetchWithRetry(`user_settings?user_id=eq.${user.id}&select=has_accepted_terms`, session.access_token)
+          supabaseApi.getWithRetry<any[]>(`access_grants?user_id=eq.${user.id}&select=is_active,expires_at,current_month_usage,monthly_limit,usage_reset_date`, session.access_token),
+          supabaseApi.getWithRetry<any[]>(`user_roles?user_id=eq.${user.id}&select=role`, session.access_token),
+          supabaseApi.getWithRetry<any[]>(`profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,avatar_url`, session.access_token),
+          supabaseApi.getWithRetry<any[]>(`user_settings?user_id=eq.${user.id}&select=has_accepted_terms`, session.access_token)
         ]);
 
         if (!isMounted) return;

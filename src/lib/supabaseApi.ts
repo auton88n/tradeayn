@@ -69,6 +69,21 @@ export const supabaseApi = {
   },
 
   /**
+   * GET with retry logic - returns null on failure instead of throwing
+   */
+  async getWithRetry<T = unknown>(endpoint: string, token: string, retries = 2): Promise<T | null> {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await this.get<T>(endpoint, token);
+      } catch {
+        if (attempt === retries) return null;
+        await new Promise(r => setTimeout(r, 300));
+      }
+    }
+    return null;
+  },
+
+  /**
    * Core fetch method with timeout and error handling
    */
   async fetch<T = unknown>(endpoint: string, token: string, options: FetchOptions = {}): Promise<T> {
