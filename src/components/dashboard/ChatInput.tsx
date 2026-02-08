@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check, Volume2, VolumeX, Brain, Sparkles, Mic, MicOff, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useAYNEmotion } from '@/stores/emotionStore';
 import { useSoundStore } from '@/stores/soundStore';
 import { detectLanguage, DetectedLanguage } from '@/lib/languageDetection';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';

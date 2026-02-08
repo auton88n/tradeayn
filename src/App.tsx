@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { AYNEmotionProvider } from "@/contexts/AYNEmotionContext";
+// Emotion state now managed by Zustand store (src/stores/emotionStore.ts)
 // Sound state now managed by Zustand store (src/stores/soundStore.ts)
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 // Debug state now managed by Zustand store (src/stores/debugStore.ts)
@@ -119,7 +119,6 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <ThemeProvider defaultTheme="light" storageKey="ayn-theme">
-          <AYNEmotionProvider>
               <SubscriptionProvider>
                   <TooltipProvider>
                     <OfflineBanner />
@@ -135,7 +134,6 @@ const App = () => (
                     </BrowserRouter>
                   </TooltipProvider>
               </SubscriptionProvider>
-          </AYNEmotionProvider>
         </ThemeProvider>
       </LanguageProvider>
     </QueryClientProvider>

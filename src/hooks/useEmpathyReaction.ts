@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { analyzeUserEmotion, getEmpathyResponse, EmpathyResponse, UserEmotion } from '@/lib/userEmotionDetection';
-import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useAYNEmotion, AYNEmotion } from '@/stores/emotionStore';
 import { useEmotionOrchestrator } from '@/hooks/useEmotionOrchestrator';
 import { hapticFeedback, HapticType } from '@/lib/haptics';
 

@@ -1,4 +1,4 @@
-import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
+import type { AYNEmotion } from '@/stores/emotionStore';
 
 // Score-based emotion detection - analyzes response for all 11 emotions
 export const analyzeResponseEmotion = (response: string): AYNEmotion => {

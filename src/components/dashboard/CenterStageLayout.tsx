@@ -13,7 +13,7 @@ import { BetaBadge } from '@/components/ui/BetaBadge';
 
 import { BetaFeedbackModal } from './BetaFeedbackModal';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
-import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useAYNEmotion, AYNEmotion } from '@/stores/emotionStore';
 import { useSoundStore } from '@/stores/soundStore';
 import { getBubbleType } from '@/lib/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';

@@ -1,5 +1,5 @@
 import { useRef, useCallback, useState } from 'react';
-import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useAYNEmotion } from '@/stores/emotionStore';
 import { useSoundStore } from '@/stores/soundStore';
 import { hapticFeedback } from '@/lib/haptics';
 

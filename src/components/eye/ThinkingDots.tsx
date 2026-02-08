@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { memo } from 'react';
-import { EMOTION_CONFIGS } from '@/contexts/AYNEmotionContext';
+import { EMOTION_CONFIGS } from '@/stores/emotionStore';
 
 interface ThinkingDotsProps {
   isVisible: boolean;

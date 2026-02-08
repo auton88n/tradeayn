@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useAYNEmotion } from '@/stores/emotionStore';
 import { useSoundStore } from '@/stores/soundStore';
 import { useDebugStore } from '@/stores/debugStore';
 

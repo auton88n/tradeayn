@@ -22,7 +22,7 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 import { useMessages } from '@/hooks/useMessages';
 import { useTutorial } from '@/hooks/useTutorial';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
-import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useAYNEmotion } from '@/stores/emotionStore';
 import { analyzeResponseEmotion } from '@/lib/emotionMapping';
 import { hapticFeedback } from '@/lib/haptics';
 

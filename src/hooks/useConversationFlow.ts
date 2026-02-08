@@ -2,7 +2,7 @@
 // Tracks momentum, intent, and creates anticipation states
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { AYNEmotion } from '@/contexts/AYNEmotionContext';
+import { AYNEmotion } from '@/stores/emotionStore';
 
 interface ConversationFlowState {
   momentum: 'starting' | 'active' | 'slowing' | 'idle';

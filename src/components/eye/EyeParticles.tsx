@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { memo, useMemo, useState, useEffect, useRef } from 'react';
-import type { AYNEmotion, ActivityLevel } from '@/contexts/AYNEmotionContext';
+import type { AYNEmotion, ActivityLevel } from '@/stores/emotionStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 type ParticleType = 'sparkle' | 'orbit' | 'energy';
