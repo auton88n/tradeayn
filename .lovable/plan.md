@@ -1,70 +1,97 @@
 
 
-# Add Production Error Logging to Supabase
+# Lazy Load All Remaining Three.js 3D Components
 
-## Overview
-Enhance the ErrorBoundary to report caught errors to a new `error_logs` Supabase table, giving you visibility into production crashes. Also add a global unhandled promise rejection listener.
+## Problem
 
-## Step 1: Database Migration -- Create `error_logs` Table
+While `EngineeringWorkspace.tsx` already lazy-loads its 3D visualizations, three other files directly import 3D components, pulling the ~300KB Three.js bundle into their parent chunks and slowing initial load.
 
-Run a migration to create the table with RLS policies:
+## Files That Need Changes
 
-```sql
-CREATE TABLE IF NOT EXISTS error_logs (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  error_message TEXT NOT NULL,
-  error_stack TEXT,
-  component_stack TEXT,
-  url TEXT,
-  user_id UUID REFERENCES auth.users(id),
-  user_agent TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+### 1. `src/components/engineering/CalculationResults.tsx` (lines 22-27)
 
-ALTER TABLE error_logs ENABLE ROW LEVEL SECURITY;
+Currently has 6 direct imports of 3D components. Replace all with `lazy()` imports and wrap their JSX usage in `<Suspense>` with a skeleton fallback.
 
--- Anyone (even anonymous) can insert errors
-CREATE POLICY "Anyone can insert errors"
-  ON error_logs FOR INSERT WITH CHECK (true);
+```
+// Before (direct imports)
+import { BeamVisualization3D } from './BeamVisualization3D';
+import { FoundationVisualization3D } from './FoundationVisualization3D';
+import ColumnVisualization3D from './ColumnVisualization3D';
+import SlabVisualization3D from './SlabVisualization3D';
+import RetainingWallVisualization3D from './RetainingWallVisualization3D';
+import { ParkingVisualization3D } from './ParkingVisualization3D';
 
--- Only admins can read error logs
-CREATE POLICY "Admins can read all errors"
-  ON error_logs FOR SELECT USING (
-    public.has_role(auth.uid(), 'admin')
-  );
-
--- Index for cleanup queries
-CREATE INDEX idx_error_logs_created_at ON error_logs(created_at);
+// After (lazy imports)
+const BeamVisualization3D = lazy(() => import('./BeamVisualization3D').then(m => ({ default: m.BeamVisualization3D })));
+const FoundationVisualization3D = lazy(() => import('./FoundationVisualization3D').then(m => ({ default: m.FoundationVisualization3D })));
+const ColumnVisualization3D = lazy(() => import('./ColumnVisualization3D'));
+const SlabVisualization3D = lazy(() => import('./SlabVisualization3D'));
+const RetainingWallVisualization3D = lazy(() => import('./RetainingWallVisualization3D'));
+const ParkingVisualization3D = lazy(() => import('./ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
 ```
 
-This uses the existing `user_roles` table and `has_role()` function for admin-only read access. The `has_role` function already exists as a `SECURITY DEFINER` function (confirmed from the schema).
+Add `lazy, Suspense` to the React import. Wrap each 3D component usage in `<Suspense>` with a placeholder fallback:
+```tsx
+<Suspense fallback={<div className="h-[300px] bg-muted rounded-lg animate-pulse" />}>
+  <BeamVisualization3D ... />
+</Suspense>
+```
 
-## Step 2: Update `src/components/shared/ErrorBoundary.tsx`
+### 2. `src/components/engineering/ColumnCalculator.tsx` (line 10)
 
-Add a private `reportError` method that dynamically imports the Supabase client and inserts an error log row. Call it from `componentDidCatch` in a non-blocking way (fire-and-forget with `.catch(() => {})`).
+Replace the direct import with lazy:
+```
+// Before
+import ColumnVisualization3D from './ColumnVisualization3D';
 
-Key details:
-- Dynamic import of supabase client avoids circular dependencies in this low-level component
-- All string fields are truncated (message: 1000 chars, stacks: 5000 chars)
-- Wrapped in try/catch so error reporting never breaks the app
-- The existing auto-reload logic remains unchanged
+// After
+const ColumnVisualization3D = lazy(() => import('./ColumnVisualization3D'));
+```
 
-## Step 3: Update `src/main.tsx`
+Add `lazy, Suspense` to React import. Wrap usage in `<Suspense>`.
 
-Add a global `unhandledrejection` listener before `createRoot()` that logs unhandled promise rejections to the console. This provides visibility in browser DevTools for errors that escape React's error boundary.
+### 3. `src/components/engineering/ParkingDesigner.tsx` (line 23)
 
-## Files Changed
+Replace the direct import with lazy:
+```
+// Before
+import { ParkingVisualization3D } from './ParkingVisualization3D';
 
-| File | Change |
-|------|--------|
-| Database migration | New `error_logs` table with RLS |
-| `src/components/shared/ErrorBoundary.tsx` | Add `reportError` method, call from `componentDidCatch` |
-| `src/main.tsx` | Add `window.addEventListener('unhandledrejection', ...)` |
+// After
+const ParkingVisualization3D = lazy(() => import('./ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
+```
 
-## Technical Notes
+Add `lazy, Suspense` to React import. Wrap usage in `<Suspense>`.
 
-- The INSERT policy uses `WITH CHECK (true)` so both authenticated and anonymous users can report errors
-- No SELECT policy for regular users -- error logs are admin-only
-- The Supabase types file will auto-update after migration to include the `error_logs` table
-- Error reporting is fully non-blocking and failure-safe
+### 4. `src/pages/AIGradingDesigner.tsx` (line 10)
+
+Replace the direct import with lazy:
+```
+// Before
+import { TerrainVisualization3D } from '@/components/engineering/TerrainVisualization3D';
+
+// After
+const TerrainVisualization3D = lazy(() => import('@/components/engineering/TerrainVisualization3D').then(m => ({ default: m.TerrainVisualization3D })));
+```
+
+Add `lazy, Suspense` to React import. Wrap usage in `<Suspense>`.
+
+## No Changes Needed
+
+- `EmotionalEye` -- does NOT use Three.js (pure CSS/canvas), no change needed
+- `EngineeringWorkspace.tsx` -- already uses `lazy()` for all 3D components
+- `ParkingCar3D.tsx` -- only imported by ParkingVisualization3D (internal), not a parent-level concern
+
+## Suspense Fallback
+
+All fallbacks will use a consistent skeleton:
+```tsx
+<div className="h-[300px] bg-muted rounded-lg animate-pulse" />
+```
+
+This matches the typical 3D visualization container height and prevents layout shift.
+
+## Impact
+
+After this change, the Three.js vendor chunk (`vendor-3d`) will only load when a user actually opens an engineering calculator or visualization -- not on initial page load. This saves ~300KB on first load, especially beneficial for mobile users on slower networks.
 
