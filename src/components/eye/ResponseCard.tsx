@@ -364,9 +364,79 @@ const ResponseCardComponent = ({
 
           {/* Content area */}
           {transcriptOpen ? (
-            /* History mode - placeholder for future rebuild */
-            <div className="flex-1 min-h-0 flex items-center justify-center p-8">
-              <p className="text-sm text-muted-foreground">History view coming soon</p>
+            /* History mode */
+            <div className="flex-1 min-h-0 flex flex-col">
+              {/* Scroll wrapper */}
+              <div className="relative flex-1 min-h-0">
+                <div
+                  ref={historyScrollRef}
+                  onScroll={handleHistoryScroll}
+                  className="absolute inset-0 overflow-y-auto overscroll-contain px-3 py-3 space-y-3 [-webkit-overflow-scrolling:touch]"
+                >
+                  {sortedMessages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-sm text-muted-foreground">No messages yet</p>
+                    </div>
+                  ) : (
+                    sortedMessages.map((msg) => {
+                      const isNew = !seenMessageIdsRef.current.has(msg.id);
+                      if (isNew) seenMessageIdsRef.current.add(msg.id);
+                      const ts = msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp);
+                      return (
+                        <TranscriptMessage
+                          key={msg.id}
+                          content={msg.content}
+                          sender={msg.sender === 'user' ? 'user' : 'ayn'}
+                          timestamp={ts}
+                          shouldAnimate={isNew}
+                        />
+                      );
+                    })
+                  )}
+
+                  {/* Typing indicator */}
+                  {historyTyping && (
+                    <div className="flex items-start gap-2 justify-start">
+                      <div className="p-1 rounded-lg bg-muted flex-shrink-0">
+                        <Brain className="w-3 h-3 text-foreground" />
+                      </div>
+                      <div className="px-3 py-2 rounded-2xl bg-muted/70 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:0ms]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:150ms]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:300ms]" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Scroll-to-bottom button */}
+                <AnimatePresence>
+                  {showHistoryScrollDown && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.15 }}
+                      onClick={scrollHistoryToBottom}
+                      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 p-2 rounded-full bg-foreground text-background shadow-lg hover:bg-foreground/90 transition-colors"
+                      aria-label="Scroll to bottom"
+                    >
+                      <ChevronDown size={16} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Reply footer */}
+              <div className="flex-shrink-0 flex items-center justify-center px-3 py-2 border-t border-border/40">
+                <button
+                  onClick={onHistoryClose}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <CornerDownLeft size={14} />
+                  <span>Reply</span>
+                </button>
+              </div>
             </div>
           ) : (
             /* Normal response content */
