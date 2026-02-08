@@ -1,20 +1,22 @@
 
-# Fix: Eliminate History Panel Open/Close Delay
+
+# Stop All Eye Animations When History Toggles
 
 ## Problem
-The `scaleY` animation causes a visible two-step effect: the card container appears first (borders, background), then the text content pops in. This looks laggy and broken.
+The eye still animates (fades out, moves) when the history panel opens/closes, causing a visible "jump." The user wants the eye to stay completely still -- the history card will simply cover it naturally.
 
 ## Solution
-Replace the `scaleY` animation with a simple, instant `opacity` fade. No height or scale animation at all -- the panel just appears and disappears cleanly. This eliminates the "card first, then text" staggered look.
+Remove ALL `transcriptOpen`-related logic from the eye's `motion.div`. The eye stays at its current position/opacity/scale regardless of history state. The history panel renders on top and covers the eye visually.
 
-## Changes (ChatInput.tsx only)
+## Changes (CenterStageLayout.tsx only)
 
-### Remove scaleY, use opacity only
-In the history panel's `motion.div` (around line 436-448):
-- Remove `scaleY: 0` from `initial` and `exit`
-- Remove `scaleY: 1` from `animate`
-- Keep only `opacity: 0 -> 1 -> 0` with a fast 0.1s duration
-- Remove `origin-bottom` and `will-change-transform` classes since there's no scale transform
-- Add `will-change-opacity` if needed
+### 1. Remove `transcriptOpen` from animate block (lines 742-753)
+- Remove the `opacity: transcriptOpen ? 0 : 1` line -- eye always stays at opacity 1
+- Remove `!transcriptOpen &&` guards from `scale`, `marginBottom`, and `y` -- these should only depend on `hasVisibleResponses` / `isTransitioningToChat`
+- Remove the separate `opacity` transition config since opacity won't animate
 
-The panel will simply fade in/out instantly with no geometric distortion, so the card and text appear together at the same time.
+### 2. Remove `transcriptOpen` from pointerEvents (line 740)
+- Remove `style={{ pointerEvents: transcriptOpen ? 'none' : 'auto' }}` -- the history card covers the eye so clicks won't reach it anyway
+
+The eye will simply sit in place. When history opens, the card renders over it. When history closes, the eye is already there -- no fade, no jump, no animation.
+
