@@ -901,9 +901,15 @@ export function calculateRetainingWall(inputs: RetainingWallInputs, buildingCode
 
   const FOS_bearing = allowableBearingPressure / Math.max(qToe, qHeel);
 
-  const Mu_stem = Pa_soil * H / 3 + Pa_surcharge * H / 2;
+  // Code-specific resistance factors for reinforcement design
+  const phiFlex = codeParams.resistanceFactors.flexure;
+  const phiSteel = codeParams.resistanceFactors.steel;
+  const effectivePhi = buildingCode === 'CSA' ? phiFlex * phiSteel : 0.87;
+
+  // Factored moments for structural design (earth pressure treated as live load)
+  const Mu_stem = codeParams.loadFactors.live * (Pa_soil * H / 3 + Pa_surcharge * H / 2);
   const dStem = (tBottom * 1000) - 50 - 8;
-  const Ast_stem = (Mu_stem * 1e6) / (0.87 * fy * 0.9 * dStem);
+  const Ast_stem = (Mu_stem * 1e6) / (effectivePhi * fy * 0.9 * dStem);
 
   const barDia = 16;
   const areaPerBar = Math.PI * barDia * barDia / 4;
@@ -915,17 +921,17 @@ export function calculateRetainingWall(inputs: RetainingWallInputs, buildingCode
 
   const avgBearing = (qToe + qHeel) / 2;
   const heelLoad = gamma * H + q - avgBearing;
-  const Mu_heel = 0.5 * Math.abs(heelLoad) * heel * heel;
+  const Mu_heel = codeParams.loadFactors.live * 0.5 * Math.abs(heelLoad) * heel * heel;
 
   const dHeel = (D * 1000) - 50 - 8;
-  const Ast_heel = Math.max((Mu_heel * 1e6) / (0.87 * fy * 0.9 * dHeel), 0.0018 * 1000 * D * 1000);
+  const Ast_heel = Math.max((Mu_heel * 1e6) / (effectivePhi * fy * 0.9 * dHeel), codeParams.minRho * 1000 * D * 1000);
   const heelSpacing = Math.min(Math.floor((1000 * areaPerBar) / Ast_heel / 25) * 25, 200);
 
   const toeLoad = qToe - gammaConcrete * D;
-  const Mu_toe = 0.5 * toeLoad * toe * toe;
+  const Mu_toe = codeParams.loadFactors.live * 0.5 * toeLoad * toe * toe;
 
   const dToe = (D * 1000) - 50 - 8;
-  const Ast_toe = Math.max((Mu_toe * 1e6) / (0.87 * fy * 0.9 * dToe), 0.0018 * 1000 * D * 1000);
+  const Ast_toe = Math.max((Mu_toe * 1e6) / (effectivePhi * fy * 0.9 * dToe), codeParams.minRho * 1000 * D * 1000);
   const toeSpacing = Math.min(Math.floor((1000 * areaPerBar) / Ast_toe / 25) * 25, 200);
 
   const stemVolume = ((tTop + tBottom) / 2) * H * 1;
@@ -999,6 +1005,8 @@ export function calculateRetainingWall(inputs: RetainingWallInputs, buildingCode
     fck,
     fy,
     status: 'OK',
-    designCode: 'Rankine Theory / ACI 318',
+    designCode: `Rankine Theory / ${codeParams.name}`,
+    buildingCode: codeParams.name,
+    loadFactorsUsed: `${codeParams.loadFactors.dead}D + ${codeParams.loadFactors.live}L`,
   };
 }
