@@ -1,24 +1,26 @@
 
-# Fix: Lock Chat Input to Fixed Height (No Expansion)
+# Hide Eye Behind History Panel
 
 ## Problem
-Even with the 100px cap, the textarea still expands from 44px to 100px as you type long text, which pushes the entire card taller and shifts the eye downward.
+When the history panel opens, the eye shrinks and repositions awkwardly, making the app feel laggy. The eye serves no purpose while history is open.
 
 ## Solution
-Remove auto-resize entirely. Keep the textarea at a fixed height (44px, single line) and let `overflow-y: auto` handle scrolling for long text. The input never grows, so the card and eye never move.
+Instead of scaling/repositioning the eye, simply hide it (opacity 0, pointer-events none) when the history panel is open. When the user closes history, the eye fades back in at full size. No more resize jitter.
 
-## Changes (ChatInput.tsx only)
+## Changes (CenterStageLayout.tsx only)
 
-### 1. Remove dynamic height setting from `handleTextareaChange`
-Delete the `requestAnimationFrame` block that sets `textarea.style.height`. The textarea stays at its CSS height always.
+### 1. Replace scale/position animation with opacity
+On the eye's `motion.div` (line ~733-751), change the animate block:
+- Remove `scale`, `marginBottom`, and `y` shifts when `transcriptOpen` is true
+- Instead, animate `opacity` to 0 and add `pointer-events: none` when history is open
+- Keep the existing behavior for `hasVisibleResponses` (response cards still need the eye visible but smaller)
 
-### 2. Remove dynamic height from prefill resize (line ~290)
-Delete the height recalculation after prefilling voice transcript.
+The logic becomes:
+- **History open**: eye fades out (opacity 0), no interaction
+- **Response card visible (no history)**: eye shrinks as before
+- **Idle**: eye at full size, normal position
 
-### 3. Remove dynamic height from `handleInputChange` (line ~310)
-Delete the auto-resize block in the voice transcript effect.
+### 2. Simplify the conditional classes
+Remove `transcriptOpen` from the scale/position/padding conditions since the eye will simply be hidden in that state.
 
-### 4. Update Textarea CSS class
-Change `max-h-[100px]` to just use the fixed `min-h-[44px]` with no max-height growth. The textarea stays 44px tall and scrolls internally.
-
-This means no matter how much text you type, the input box stays the same size and scrolls. The card never expands and the eye never moves.
+This eliminates the jarring shrink animation when toggling history and gives a cleaner, snappier feel.
