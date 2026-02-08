@@ -12,6 +12,7 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { DebugProvider } from "@/components/debug/DebugProvider";
 
 import { PageLoader } from "@/components/ui/page-loader";
+import { LandingPageSkeleton, SettingsSkeleton, EngineeringSkeleton, ServicePageSkeleton } from "@/components/ui/skeleton-layouts";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { OfflineBanner } from "@/components/shared/OfflineBanner";
 import { AnimatePresence } from 'framer-motion';
@@ -70,27 +71,27 @@ const AnimatedRoutes = () => {
   
   const routes = (
     <Routes location={location} key={isFastRoute ? 'fast' : location.pathname}>
-      <Route path="/" element={<PageTransition><Index /></PageTransition>} />
+      <Route path="/" element={<Suspense fallback={<LandingPageSkeleton />}><PageTransition><Index /></PageTransition></Suspense>} />
       {/* Fast routes - no animation wrapper */}
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/settings" element={<Suspense fallback={<SettingsSkeleton />}><Settings /></Suspense>} />
+      <Route path="/pricing" element={<Suspense fallback={<SettingsSkeleton />}><Pricing /></Suspense>} />
       
       <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
       
-      <Route path="/services/ai-employee" element={<PageTransition><AIEmployee /></PageTransition>} />
-      <Route path="/services/ai-employee/apply" element={<PageTransition><AIEmployeeApply /></PageTransition>} />
-      <Route path="/services/content-creator-sites" element={<PageTransition><InfluencerSites /></PageTransition>} />
-      <Route path="/services/content-creator-sites/apply" element={<PageTransition><InfluencerSitesApply /></PageTransition>} />
-      <Route path="/services/ai-agents" element={<PageTransition><AIAgents /></PageTransition>} />
-      <Route path="/services/ai-agents/apply" element={<PageTransition><AIAgentsApply /></PageTransition>} />
-      <Route path="/services/automation" element={<PageTransition><Automation /></PageTransition>} />
-      <Route path="/services/automation/apply" element={<PageTransition><AutomationApply /></PageTransition>} />
-      <Route path="/services/ticketing" element={<PageTransition><Ticketing /></PageTransition>} />
-      <Route path="/services/ticketing/apply" element={<PageTransition><TicketingApply /></PageTransition>} />
+      <Route path="/services/ai-employee" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><AIEmployee /></PageTransition></Suspense>} />
+      <Route path="/services/ai-employee/apply" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><AIEmployeeApply /></PageTransition></Suspense>} />
+      <Route path="/services/content-creator-sites" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><InfluencerSites /></PageTransition></Suspense>} />
+      <Route path="/services/content-creator-sites/apply" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><InfluencerSitesApply /></PageTransition></Suspense>} />
+      <Route path="/services/ai-agents" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><AIAgents /></PageTransition></Suspense>} />
+      <Route path="/services/ai-agents/apply" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><AIAgentsApply /></PageTransition></Suspense>} />
+      <Route path="/services/automation" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><Automation /></PageTransition></Suspense>} />
+      <Route path="/services/automation/apply" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><AutomationApply /></PageTransition></Suspense>} />
+      <Route path="/services/ticketing" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><Ticketing /></PageTransition></Suspense>} />
+      <Route path="/services/ticketing/apply" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><TicketingApply /></PageTransition></Suspense>} />
       <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
-      <Route path="/engineering" element={<PageTransition><Engineering /></PageTransition>} />
-      <Route path="/engineering/grading" element={<PageTransition><AIGradingDesigner /></PageTransition>} />
-      <Route path="/services/civil-engineering" element={<PageTransition><CivilEngineering /></PageTransition>} />
+      <Route path="/engineering" element={<Suspense fallback={<EngineeringSkeleton />}><PageTransition><Engineering /></PageTransition></Suspense>} />
+      <Route path="/engineering/grading" element={<Suspense fallback={<EngineeringSkeleton />}><PageTransition><AIGradingDesigner /></PageTransition></Suspense>} />
+      <Route path="/services/civil-engineering" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><CivilEngineering /></PageTransition></Suspense>} />
       <Route path="/approval-result" element={<PageTransition><ApprovalResult /></PageTransition>} />
       <Route path="/subscription-success" element={<PageTransition><SubscriptionSuccess /></PageTransition>} />
       <Route path="/subscription-canceled" element={<PageTransition><SubscriptionCanceled /></PageTransition>} />
