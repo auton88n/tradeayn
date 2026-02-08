@@ -1,10 +1,9 @@
-import { useMemo, useEffect, useRef, useCallback, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, X, Clock } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { TranscriptMessage } from '@/components/transcript/TranscriptMessage';
-import { cn } from '@/lib/utils';
+import { useMemo, useEffect, useRef, useCallback, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Brain, X, Clock, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TranscriptMessage } from "@/components/transcript/TranscriptMessage";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,8 +13,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import type { Message } from '@/types/dashboard.types';
+} from "@/components/ui/alert-dialog";
+import type { Message } from "@/types/dashboard.types";
 
 interface ChatHistoryCollapsibleProps {
   messages: Message[];
@@ -24,19 +23,15 @@ interface ChatHistoryCollapsibleProps {
   onClear?: () => void;
 }
 
-export const ChatHistoryCollapsible = ({
-  messages,
-  isOpen,
-  onToggle,
-  onClear,
-}: ChatHistoryCollapsibleProps) => {
+export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear }: ChatHistoryCollapsibleProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevMessageCountRef = useRef(messages.length);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
 
   // Track which messages are "new" (arrived after initial render)
   const newMessageStartIndex = prevMessageCountRef.current;
-  
+
   // Update the ref after render
   useEffect(() => {
     prevMessageCountRef.current = messages.length;
@@ -52,15 +47,39 @@ export const ChatHistoryCollapsible = ({
     return sorted.slice(-20);
   }, [messages]);
 
+  // Scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    }
+  }, []);
+
+  // Track scroll position to show/hide scroll-to-bottom button
+  const handleScroll = useCallback(() => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setShowScrollDown(!isNearBottom);
+    }
+  }, []);
+
   // Auto-scroll to bottom when messages change or panel opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && scrollRef.current) {
       requestAnimationFrame(() => {
-        const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-        if (viewport) viewport.scrollTop = viewport.scrollHeight;
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
       });
     }
   }, [messages.length, isOpen]);
+
+  // Check scroll on open
+  useEffect(() => {
+    if (isOpen) {
+      requestAnimationFrame(() => handleScroll());
+    }
+  }, [isOpen, handleScroll]);
 
   // Handle clear with confirmation
   const handleClearClick = useCallback(() => {
@@ -86,17 +105,23 @@ export const ChatHistoryCollapsible = ({
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="overflow-hidden"
             >
-              <div className="rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg overflow-hidden" style={{ willChange: 'transform', contain: 'content' }}>
-                {/* Header - styled like Engineering AI Panel */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+              <div
+                className="rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg overflow-hidden flex flex-col"
+                style={{ maxHeight: "70vh", willChange: "transform", contain: "content" }}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30 flex-shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="p-1.5 rounded-lg bg-foreground/10">
                       <Brain className="h-4 w-4 text-foreground/70" />
                     </div>
-                    <span className="font-medium text-sm">AYN Engineering</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">AYN</span>
+                      <span className="text-xs text-muted-foreground">{messages.length} messages</span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-1">
                     {onClear && (
@@ -109,20 +134,20 @@ export const ChatHistoryCollapsible = ({
                         Clear
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onToggle}
-                      className="h-7 w-7"
-                    >
+                    <Button variant="ghost" size="icon" onClick={onToggle} className="h-7 w-7">
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
 
-                {/* Messages Area */}
-                <ScrollArea className="h-72" ref={scrollRef}>
-                  <div className="py-1 space-y-0">
+                {/* Messages Area — scrolls internally, hard max-height */}
+                <div className="relative flex-1 min-h-0">
+                  <div
+                    ref={scrollRef}
+                    onScroll={handleScroll}
+                    className="overflow-y-auto overscroll-contain py-1 space-y-0"
+                    style={{ maxHeight: "55vh" }}
+                  >
                     {sortedMessages.map((msg, index) => (
                       <TranscriptMessage
                         key={msg.id}
@@ -134,8 +159,27 @@ export const ChatHistoryCollapsible = ({
                         shouldAnimate={index >= newMessageStartIndex}
                       />
                     ))}
+                    {/* Bottom padding so last message isn't clipped */}
+                    <div className="h-6" />
                   </div>
-                </ScrollArea>
+
+                  {/* Scroll-to-bottom button */}
+                  <AnimatePresence>
+                    {showScrollDown && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.15 }}
+                        onClick={scrollToBottom}
+                        className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 p-2 rounded-full bg-foreground text-background shadow-lg hover:bg-foreground/90 transition-colors"
+                        aria-label="Scroll to bottom"
+                      >
+                        <ChevronDown size={16} />
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </motion.div>
           )}
@@ -154,7 +198,7 @@ export const ChatHistoryCollapsible = ({
                 "border border-border bg-card/80 backdrop-blur-sm",
                 "text-sm text-muted-foreground shadow-sm",
                 "hover:bg-muted/50 hover:text-foreground hover:shadow-md",
-                "active:scale-95 transition-all cursor-pointer"
+                "active:scale-95 transition-all cursor-pointer",
               )}
             >
               <Clock className="h-4 w-4" />
@@ -176,8 +220,8 @@ export const ChatHistoryCollapsible = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleClearConfirm} 
+            <AlertDialogAction
+              onClick={handleClearConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Clear
