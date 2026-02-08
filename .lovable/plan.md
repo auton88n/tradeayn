@@ -1,28 +1,65 @@
 
-# Fix: Remove Page-Level Scrolling from Dashboard
+
+# Fix: Eye Behavior During History Mode
 
 ## Problem
-The `CenterStageLayout` container has `overflow-y-auto` (line 693), allowing the entire center stage to scroll as a page. The dashboard should be a fixed app frame where only the message history scrolls internally.
+When the history card is open and the user sends a message, the eye skips several important visual reactions that normally happen during live chat:
 
-## Changes
+- No blink on message send
+- No absorption pulse animation
+- No "message-absorb" sound effect  
+- No absorption visual (the eye just goes straight to "thinking")
 
-### File: `src/components/dashboard/CenterStageLayout.tsx`
+This makes the experience feel flat compared to the normal chat flow.
 
-**1. Lock the outer container (line 693)**
-- Change `overflow-y-auto overscroll-contain` to `overflow-hidden`
-- Remove the scrollbar styling classes (no longer needed since the container won't scroll)
-- Remove `[-webkit-overflow-scrolling:touch]`
-- Keep `min-h-0` (important for flex children to shrink properly)
+## What Already Works
+- Eye gaze tracking (follows mouse) -- works in history mode
+- Idle blinking -- works in history mode
+- Emotion changes (thinking, calm, happy, etc.) -- works in history mode
+- Eye shrink/grow -- works in history mode
+- Response emotion and keyword excitement detection -- works in history mode
 
-This single change ensures the center stage never scrolls as a whole page. The eye, response card, and input all stay within `100dvh`. The ResponseCard/history already has its own `overflow-y-auto` for internal scrolling of messages.
+## Fix
 
-### File: `src/components/Dashboard.tsx`
+### File: `src/components/dashboard/CenterStageLayout.tsx` (lines 448-456)
 
-**2. Lock the outermost dashboard wrapper (line 167)**
-- Change `min-h-screen` to `h-dvh overflow-hidden` on the root `<div>` so the page itself cannot scroll under any circumstances.
+Currently, when `transcriptOpen` is true, the send handler skips all eye animation effects:
 
-## What stays the same
-- Eye shrink/grow behavior is untouched
-- ResponseCard and history card internal scrolling (`overflow-y-auto`) remains
-- Chat input stays fixed at the bottom (already `fixed bottom-0`)
-- Footer height padding logic is preserved
+```text
+// Current code (simplified):
+if (transcriptOpen) {
+  onRemoveFile();
+  clearResponseBubbles();
+  clearSuggestions();
+  setIsResponding(true);
+  requestAnimationFrame(() => orchestrateEmotionChange('thinking'));
+  return;  // <-- skips blink, absorption, sound
+}
+```
+
+Add the missing eye reactions so the eye behaves identically to live chat mode -- only the flying bubble animation is skipped (which makes sense since there's no visual bubble to fly):
+
+```text
+// Fixed code:
+if (transcriptOpen) {
+  onRemoveFile();
+  clearResponseBubbles();
+  clearSuggestions();
+  triggerBlink();
+  triggerAbsorption();
+  playSound?.('message-absorb');
+  setIsResponding(true);
+  setIsAbsorbPulsing(true);
+  setTimeout(() => setIsAbsorbPulsing(false), 300);
+  completeAbsorption();
+  requestAnimationFrame(() => orchestrateEmotionChange('thinking'));
+  return;
+}
+```
+
+## Summary
+- **1 file modified**: `src/components/dashboard/CenterStageLayout.tsx`
+- Adds `triggerBlink()`, `triggerAbsorption()`, `playSound()`, absorption pulse, and `completeAbsorption()` to the history-mode send path
+- The only thing that remains skipped is the flying bubble animation (intentionally, since it's a visual-only effect for the non-history view)
+- Eye will now blink, pulse, play sound, and animate identically whether history is open or closed
+
