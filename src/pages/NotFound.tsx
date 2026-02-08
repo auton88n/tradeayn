@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Brain, Home, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { SEO } from "@/components/shared/SEO";
 
 const NotFound = () => {
   const location = useLocation();
@@ -18,6 +19,7 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
+      <SEO title="Page Not Found - AYN" description="The page you're looking for doesn't exist." noIndex={true} />
       <Card className="glass text-center p-12 max-w-lg bg-neutral-900/90 backdrop-blur-xl border border-white/20">
         <div className="w-24 h-24 rounded-full bg-gradient-primary mx-auto mb-6 flex items-center justify-center animate-pulse-glow">
           <Brain className="w-12 h-12 text-white" />
