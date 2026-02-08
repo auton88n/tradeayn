@@ -13,6 +13,8 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 // Translation data
+const currentYear = new Date().getFullYear();
+
 const translations = {
   en: {
     // Navigation
@@ -49,7 +51,7 @@ const translations = {
     'testimonials.emma.quote': 'AYN\'s trend predictions helped us pivot our strategy at the perfect time.',
     
     // Footer
-    'footer.copyright': '© 2024 AYN AI Business Consulting. All rights reserved.',
+    'footer.copyright': `© ${currentYear} AYN AI Business Consulting. All rights reserved.`,
     
     // Mode names
     'modes.general': 'General',
@@ -804,7 +806,7 @@ const translations = {
     'testimonials.emma.quote': 'ساعدتنا توقعات اتجاهات AYN في تغيير استراتيجيتنا في الوقت المثالي.',
     
     // Footer
-    'footer.copyright': '© 2024 AYN للاستشارات التجارية بالذكاء الاصطناعي. جميع الحقوق محفوظة.',
+    'footer.copyright': `© ${currentYear} AYN للاستشارات التجارية بالذكاء الاصطناعي. جميع الحقوق محفوظة.`,
     
     // Mode names in Modern Standard Arabic
     'modes.general': 'عام',
@@ -1484,7 +1486,7 @@ const translations = {
     'testimonials.emma.quote': 'Les prédictions de tendances d\'AYN nous ont aidés à pivoter au moment parfait.',
     
     // Footer
-    'footer.copyright': '© 2024 AYN AI Business Consulting. Tous droits réservés.',
+    'footer.copyright': `© ${currentYear} AYN AI Business Consulting. Tous droits réservés.`,
     
     // Mode names
     'modes.general': 'Général',
