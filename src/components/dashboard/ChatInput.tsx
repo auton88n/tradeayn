@@ -381,10 +381,10 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       onFileSelect(file);
     }
   }, [onFileSelect]);
-  return <div className={cn("relative w-full transition-[padding] duration-300 px-4 pb-3")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
+  return <div className={cn("relative w-full transition-[padding] duration-300 px-2 sm:px-4 pb-3")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
 
       {/* Main container */}
-      <div className={cn("relative mx-auto max-w-3xl bg-background/95 border border-border/50 rounded-2xl shadow-lg overflow-hidden transition-[border-color,box-shadow] duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border ring-1 ring-accent/30 shadow-xl")}>
+      <div className={cn("relative mx-auto max-w-4xl bg-background/95 border border-border/50 rounded-2xl shadow-lg overflow-hidden transition-[border-color,box-shadow] duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border ring-1 ring-accent/30 shadow-xl")}>
         
         
         
@@ -616,7 +616,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       </div>
 
       {/* AI Disclaimer */}
-      <p className="text-xs text-muted-foreground/60 text-center mt-2 max-w-3xl mx-auto">
+      <p className="text-xs text-muted-foreground/60 text-center mt-2 max-w-4xl mx-auto">
         AYN is AI and can make mistakes. Always verify critical details.
       </p>
 
