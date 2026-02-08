@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { chatRateLimiter } from '@/lib/rateLimiter';
+import { offlineQueue } from '@/lib/offlineQueue';
 import { detectLanguage } from '@/lib/languageDetection';
 import type { 
   Message, 
@@ -746,8 +747,24 @@ export const useMessages = (
       setDocumentType(null);
 
       const isTimeout = error instanceof Error && error.name === 'AbortError';
+      const isNetworkError = !navigator.onLine || (error instanceof TypeError);
+
+      // Network error → queue for retry instead of showing fake AI response
+      if (isNetworkError && !isTimeout) {
+        offlineQueue.add(content, attachment);
+        // Mark the user's message as queued
+        setMessages(prev => prev.map(m => 
+          m.content === content && m.sender === 'user' && m.status === 'sending'
+            ? { ...m, status: 'queued' as const }
+            : m
+        ));
+        toast({
+          description: "Message queued — will send when you're back online ⏳",
+        });
+        return;
+      }
       
-      // Friendly messages that don't blame the system
+      // Non-network errors: keep existing friendly response behavior
       const friendlyResponses = isTimeout ? [
         "I'm taking a bit longer to think this through. Want to try asking in a simpler way? I'd love to help! ✨",
         "That's a deep question! Let me catch up - could you try sending it again? 💫"
@@ -764,12 +781,10 @@ export const useMessages = (
         content: randomMessage,
         sender: 'ayn',
         timestamp: new Date(),
-        status: 'sent' // Use 'sent' not 'error' - looks normal to user
+        status: 'sent'
       };
 
       setMessages(prev => [...prev, errorMessage]);
-      
-      // No toast notification - keep it seamless
     }
   }, [
     userId, 
