@@ -230,10 +230,37 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     };
   }, [checkSubscription]);
 
-  // Auto-refresh every 60 seconds
+  // Realtime listener for subscription changes
   useEffect(() => {
-    const interval = setInterval(checkSubscription, 60000);
-    return () => clearInterval(interval);
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
+
+      channel = supabase
+        .channel(`sub-${session.user.id.slice(0, 8)}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_subscriptions',
+            filter: `user_id=eq.${session.user.id}`
+          },
+          () => {
+            sessionStorage.removeItem('subscription_cache');
+            checkSubscription();
+          }
+        )
+        .subscribe();
+    };
+
+    setupRealtime();
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [checkSubscription]);
 
   return (
