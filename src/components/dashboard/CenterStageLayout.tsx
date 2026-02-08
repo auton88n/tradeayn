@@ -701,7 +701,7 @@ export const CenterStageLayout = ({
       <div 
         ref={eyeStageRef} 
         className={cn(
-          "flex-1 flex flex-col relative w-full",
+          "flex-1 flex flex-col relative w-full min-h-0 overflow-y-auto",
           "items-center",
           (hasVisibleResponses || transcriptOpen) ? "justify-start pt-4" : "justify-center",
           "transition-all duration-300 ease-out"
