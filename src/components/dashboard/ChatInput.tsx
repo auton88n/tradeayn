@@ -443,9 +443,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           opacity: 0,
           scaleY: 0
         }} transition={{
-          duration: 0.2,
-          ease: [0.4, 0, 0.2, 1]
-        }} className="overflow-hidden origin-bottom">
+          duration: 0.15,
+          ease: 'easeOut'
+        }} className="overflow-hidden origin-bottom will-change-transform">
               {/* History Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                 <div className="flex items-center gap-3">
