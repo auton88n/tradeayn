@@ -1,63 +1,37 @@
 
-
-# Unify Building Code Parameters: Single Source of Truth
+# Remove Dead Engineering Edge Functions
 
 ## Overview
 
-Replace the local `getCodeParameters()` function in `engineeringCalculations.ts` with a new `getCodeDesignParameters()` wrapper exported from `src/lib/buildingCodes/calculator.ts`, so all calculators pull from the comprehensive code configs.
+Delete 5 unused edge function directories and clean up all references to them in the frontend code.
 
-## Changes
+## Deletions
 
-### File 1: `src/lib/buildingCodes/calculator.ts`
+### Edge Function Directories (10 files total)
 
-Add a new exported function at the end of the file that maps the comprehensive `BuildingCodeConfig` to the simplified shape used by the calculators:
+Delete these 5 directories entirely:
 
-```typescript
-export function getCodeDesignParameters(codeId: BuildingCodeId) {
-  const config = getBuildingCode(codeId);
-  return {
-    loadFactors: { dead: config.loadFactors.dead, live: config.loadFactors.live },
-    resistanceFactors: {
-      flexure: config.resistanceFactors.flexure,
-      shear: config.resistanceFactors.shear,
-      steel: config.resistanceFactors.steel,
-    },
-    minRho: config.reinforcement.minFlexural,
-    name: config.name,
-  };
-}
-```
+- `supabase/functions/calculate-beam/` (index.ts + index.test.ts)
+- `supabase/functions/calculate-column/` (index.ts + index.test.ts)
+- `supabase/functions/calculate-slab/` (index.ts + index.test.ts)
+- `supabase/functions/calculate-foundation/` (index.ts + index.test.ts)
+- `supabase/functions/calculate-retaining-wall/` (index.ts + index.test.ts)
 
-Property mapping notes (from the comprehensive configs):
-- `resistanceFactors.flexure` -- exists directly (0.90 ACI, 0.65 CSA)
-- `resistanceFactors.steel` -- exists directly (1.0 ACI, 0.85 CSA)
-- `reinforcement.minFlexural` -- the correct property name (not `minRatio`)
+Also delete these 5 deployed edge functions from Supabase using the delete tool.
 
-### File 2: `src/lib/buildingCodes/index.ts`
+### Reference Cleanup
 
-Add `getCodeDesignParameters` to the exports from `./calculator`:
+**`src/constants/apiEndpoints.ts`** (lines 20-24) -- Remove these 5 entries from `API_ENDPOINTS`:
+- `CALCULATE_BEAM`
+- `CALCULATE_COLUMN`
+- `CALCULATE_FOUNDATION`
+- `CALCULATE_SLAB`
+- `CALCULATE_RETAINING_WALL`
 
-```typescript
-export {
-  // ... existing exports ...
-  getCodeDesignParameters,
-} from './calculator';
-```
+**`src/components/admin/TestResultsDashboard.tsx`** (line 385) -- Update the bug hunter endpoints array to remove the dead calculator references, keeping only `'support-bot'` (or other valid endpoints).
 
-### File 3: `src/lib/engineeringCalculations.ts`
+## What is NOT changed
 
-1. **Remove** the local `CodeParameters` interface (lines 9-14) and `getCodeParameters()` function (lines 16-32)
-2. **Update** the import on line 6 to:
-   ```typescript
-   import type { BuildingCodeId } from '@/lib/buildingCodes';
-   import { getCodeDesignParameters } from '@/lib/buildingCodes';
-   ```
-3. **Replace** all occurrences of `getCodeParameters(buildingCode)` with `getCodeDesignParameters(buildingCode)` -- there are 5 calls (one per calculator function)
-
-## What does NOT change
-
-- The comprehensive config files (`aci-318-25.ts`, `csa-a23-3-24.ts`)
-- No existing exports removed from `buildingCodes/index.ts`
-- No calculator logic changes -- only the parameter source changes
-- The returned values are identical (same numbers), so no calculator output changes
-
+- `src/lib/engineeringCalculations.ts` (the real client-side calculator code)
+- `src/lib/buildingCodes/` directory
+- Other engineering edge functions (`engineering-ai-chat`, `engineering-ai-agent`, etc.)
