@@ -3,9 +3,6 @@ project_id = "dfkoxuokfkttjhfjcecx"
 [functions.send-usage-alert]
 verify_jwt = false
 
-[functions.ayn-webhook]
-verify_jwt = true
-
 [functions.file-upload]
 verify_jwt = true
 
@@ -72,19 +69,11 @@ verify_jwt = false
 [functions.ai-caption-generator]
 verify_jwt = false
 
-[functions.calculate-beam]
-verify_jwt = false
-
-[functions.calculate-foundation]
-verify_jwt = false
 
 [functions.generate-dxf]
 verify_jwt = false
 
 [functions.engineering-ai-analysis]
-verify_jwt = false
-
-[functions.calculate-column]
 verify_jwt = false
 
 [functions.parse-survey-file]
