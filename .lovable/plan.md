@@ -1,33 +1,45 @@
 
-# Scale Up History Chat to Match Real Messaging App Feel
+# Fix User Message Bubble Width in History
 
-## What's Wrong
+## Problem
+In the screenshot, the user's "hello" message stretches across the entire card width. This is because compact mode forces `block` display on all bubbles (line 105 of TranscriptMessage.tsx), making them fill 95% of the container regardless of content length.
 
-Looking at the screenshots, the compact (history) mode feels cramped compared to a proper chat app. The differences:
-- Text is 13px instead of 14px (text-sm)
-- Avatars are 24px (w-6) instead of 32px (w-8)
-- Padding and gaps are noticeably tighter
-- Name/timestamp labels are too small
+AI messages benefit from this because they tend to have longer text, but user messages (often short) look unnaturally wide.
 
-## Changes
+## Solution
 
 ### `src/components/transcript/TranscriptMessage.tsx`
 
-Scale compact mode values up to nearly match non-compact mode:
+**Line 105**: Change the compact bubble display from always `block` to `inline-block` for all messages, matching the non-compact behavior. This lets bubbles shrink-wrap to their content.
 
-| Element | Current (compact) | New (compact) |
-|---------|-------------------|---------------|
-| Row padding/gap | py-1.5 px-2 gap-2.5 | py-2 px-3 gap-3 |
-| Avatar size | w-6 h-6 (24px) | w-7 h-7 (28px) |
-| Avatar icon | w-3 h-3 | w-3.5 h-3.5 |
-| Name label | text-xs (12px) | text-sm (14px) |
-| Timestamp | text-[11px] | text-xs (12px) |
-| Bubble padding | px-3 py-2 | px-4 py-2.5 |
-| Message text | text-[13px] | text-sm (14px) |
-| Name margin | mb-0.5 | mb-1 |
+```
+BEFORE:
+compact ? "block rounded-[16px] text-start relative px-4 py-2.5" : "inline-block rounded-[20px] text-start relative",
 
-This makes the compact mode almost identical to the non-compact sizing, with only the width constraint (95% vs 80%) and block vs inline-block layout being the differentiator.
+AFTER:
+"inline-block rounded-[16px] text-start relative px-4 py-2.5",
+compact ? "" : "rounded-[20px]",
+```
 
-### `src/components/eye/ResponseCard.tsx`
+Simplified: just always use `inline-block` with the compact rounding, and apply `rounded-[20px]` override for non-compact.
 
-Increase message spacing from `space-y-2` to `space-y-3` for more breathing room between messages, matching the feel of the larger screenshots.
+**Line 80-83**: Remove `flex-1` from the content wrapper so `inline-block` bubbles don't stretch. Instead, use a simple max-width container. Also add `text-right` for user messages in compact mode so the inline-block bubble aligns right.
+
+```
+BEFORE:
+"min-w-0 flex-1",
+compact ? "max-w-[95%]" : "max-w-[80%]",
+!compact && (isUser ? "text-right" : "text-left")
+
+AFTER:
+"min-w-0 flex-1",
+compact ? "max-w-[95%]" : "max-w-[80%]",
+isUser ? "text-right" : "text-left"
+```
+
+This ensures `text-right` applies in compact mode too, so the `inline-block` bubble floats to the right side for user messages.
+
+## Result
+- Short user messages like "hello" will have a small, snug bubble
+- Long AI responses will still expand naturally up to the max-width
+- Both bubble types shrink-wrap to their content like a real chat app
