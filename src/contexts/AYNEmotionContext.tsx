@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useMemo, useEffect } from 'react';
 import { hapticFeedback } from '@/lib/haptics';
 
 export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious' | 'sad' | 'mad' | 'bored' | 'comfort' | 'supportive';
@@ -210,6 +210,17 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const surpriseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pulseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const winkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup all timeout refs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (activityDecayRef.current) clearTimeout(activityDecayRef.current);
+      if (blinkTimeoutRef.current) clearTimeout(blinkTimeoutRef.current);
+      if (surpriseTimeoutRef.current) clearTimeout(surpriseTimeoutRef.current);
+      if (pulseTimeoutRef.current) clearTimeout(pulseTimeoutRef.current);
+      if (winkTimeoutRef.current) clearTimeout(winkTimeoutRef.current);
+    };
+  }, []);
 
   // Bump activity when messages sent/received or typing
   const bumpActivity = useCallback(() => {
