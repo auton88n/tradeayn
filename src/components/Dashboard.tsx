@@ -192,7 +192,7 @@ export default function Dashboard({ user, session }: DashboardProps) {
   }
 
   return (
-    <div dir="ltr" className="relative min-h-screen flex flex-col">
+    <div dir="ltr" className="relative h-dvh overflow-hidden flex flex-col">
       {/* Terms Modal - shows when terms not accepted (only after auth loading completes) */}
       <TermsModal
         open={!auth.isAuthLoading && !auth.hasAcceptedTerms}

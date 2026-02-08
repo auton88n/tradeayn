@@ -690,13 +690,7 @@ export const CenterStageLayout = ({
       dir="ltr"
       className={cn(
         "relative flex-1 flex flex-col items-center",
-        "min-h-0 overflow-y-auto overscroll-contain",
-        // Premium thin scrollbar
-        "[&::-webkit-scrollbar]:w-1.5",
-        "[&::-webkit-scrollbar-track]:bg-transparent",
-        "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/50",
-        "[&::-webkit-scrollbar-thumb]:rounded-full",
-        "[-webkit-overflow-scrolling:touch]"
+        "min-h-0 overflow-hidden"
       )}
       style={{ paddingBottom: footerHeight }}
     >
