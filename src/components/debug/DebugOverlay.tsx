@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { useDebugContext } from '@/contexts/DebugContext';
+import { useEffect, useRef } from 'react';
+import { useDebugStore } from '@/stores/debugStore';
 import { X, Activity, Layers, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 
 export const DebugOverlay = () => {
@@ -15,7 +15,7 @@ export const DebugOverlay = () => {
     isSlowConnection,
     resetRenderCounts,
     clearIntersectionTriggers
-  } = useDebugContext();
+  } = useDebugStore();
 
   const frameCountRef = useRef(0);
   const lastTimeRef = useRef(performance.now());

@@ -25,7 +25,7 @@ import AIEmployeeMockup from './services/AIEmployeeMockup';
 import EngineeringMockup from './services/EngineeringMockup';
 import TicketingMockup from './services/TicketingMockup';
 import { SEO, organizationSchema, websiteSchema, softwareApplicationSchema, createFAQSchema } from '@/components/shared/SEO';
-import { useDebugContextOptional } from '@/contexts/DebugContext';
+import { useDebugStore } from '@/stores/debugStore';
 
 // ScrollReveal component - defined outside to prevent recreation on re-renders
 const ScrollReveal = ({
@@ -50,7 +50,7 @@ const ScrollReveal = ({
 };
 const LandingPage = memo(() => {
   // Use ref to avoid re-renders from debug context updates
-  const debugRef = useRef(useDebugContextOptional());
+  const debugRef = useRef(useDebugStore.getState());
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string>('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
