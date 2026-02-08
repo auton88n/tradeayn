@@ -94,6 +94,8 @@ export const DebugContextProvider = ({ children }: DebugProviderProps) => {
 
   // Keyboard toggle for debug mode (D key)
   useEffect(() => {
+    if (import.meta.env.PROD) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only trigger on 'D' key, not when typing in inputs
       // Guard against undefined e.key (can happen with some special keys)
