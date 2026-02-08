@@ -4,7 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LandingChatInput } from '@/components/landing/LandingChatInput';
-import { useDebugContextOptional } from '@/contexts/DebugContext';
+import { useDebugStore } from '@/stores/debugStore';
 
 interface HeroProps {
   onGetStarted: (prefillMessage?: string) => void;
@@ -13,7 +13,7 @@ interface HeroProps {
 export const Hero = memo(({ onGetStarted }: HeroProps) => {
   const { language } = useLanguage();
   const isMobile = useIsMobile();
-  const debugRef = useRef(useDebugContextOptional());
+  const debugRef = useRef(useDebugStore.getState());
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);

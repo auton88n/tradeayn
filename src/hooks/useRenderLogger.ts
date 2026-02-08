@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useDebugContextOptional } from '@/contexts/DebugContext';
+import { useDebugStore } from '@/stores/debugStore';
 
 interface UseRenderLoggerOptions {
   componentName: string;
@@ -12,15 +12,16 @@ export const useRenderLogger = ({
   props, 
   logProps = false 
 }: UseRenderLoggerOptions) => {
-  const debug = useDebugContextOptional();
+  const isDebugMode = useDebugStore((s) => s.isDebugMode);
+  const incrementRenderCount = useDebugStore((s) => s.incrementRenderCount);
   const renderCountRef = useRef(0);
   const prevPropsRef = useRef<Record<string, any> | undefined>(props);
   
   useEffect(() => {
-    if (!debug?.isDebugMode) return;
+    if (!isDebugMode) return;
     
     renderCountRef.current += 1;
-    debug.incrementRenderCount(componentName);
+    incrementRenderCount(componentName);
     
     // Log render (only in debug mode which is already gated)
     if (import.meta.env.DEV) {
@@ -53,6 +54,6 @@ export const useRenderLogger = ({
   
   return {
     renderCount: renderCountRef.current,
-    isDebugMode: debug?.isDebugMode ?? false
+    isDebugMode
   };
 };

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useDebugContextOptional } from '@/contexts/DebugContext';
+import { useDebugStore } from '@/stores/debugStore';
 
 interface UseScrollAnimationOptions {
   threshold?: number;
@@ -18,8 +18,8 @@ export const useScrollAnimation = (options: UseScrollAnimationOptions = {}) => {
 
   const ref = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  // Store debug ref to avoid re-renders from context changes
-  const debugRef = useRef(useDebugContextOptional());
+  // Use getState() to avoid subscribing to store changes
+  const debugRef = useRef(useDebugStore.getState());
 
   useEffect(() => {
     const element = ref.current;

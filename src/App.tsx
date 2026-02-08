@@ -9,7 +9,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AYNEmotionProvider } from "@/contexts/AYNEmotionContext";
 import { SoundProvider } from "@/contexts/SoundContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
-import { DebugProvider } from "@/components/debug/DebugProvider";
+// Debug state now managed by Zustand store (src/stores/debugStore.ts)
 
 import { PageLoader } from "@/components/ui/page-loader";
 import { LandingPageSkeleton, SettingsSkeleton, EngineeringSkeleton, ServicePageSkeleton } from "@/components/ui/skeleton-layouts";
@@ -122,7 +122,6 @@ const App = () => (
           <AYNEmotionProvider>
             <SoundProvider>
               <SubscriptionProvider>
-                <DebugProvider>
                   <TooltipProvider>
                     <OfflineBanner />
                     <Toaster />
@@ -136,7 +135,6 @@ const App = () => (
                       </ErrorBoundary>
                     </BrowserRouter>
                   </TooltipProvider>
-                </DebugProvider>
               </SubscriptionProvider>
             </SoundProvider>
           </AYNEmotionProvider>

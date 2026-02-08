@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
-import { useDebugContextOptional } from '@/contexts/DebugContext';
+import { useDebugStore } from '@/stores/debugStore';
 
 import { useIdleDetection } from '@/hooks/useIdleDetection';
 import { useEyeGestures } from '@/hooks/useEyeGestures';
@@ -54,7 +54,7 @@ const EmotionalEyeComponent = ({
     activityLevel,
   } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
-  const debug = useDebugContextOptional();
+  const debugIsEnabled = useDebugStore((s) => s.isDebugMode);
   const [isHovered, setIsHovered] = useState(false);
   const lastBlinkRef = useRef(Date.now());
   const idleBlinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -65,8 +65,8 @@ const EmotionalEyeComponent = ({
   const isMobile = useIsMobile();
   
   // Debug render logging - only count, don't trigger re-renders
-  if (debug?.isDebugMode) {
-    debug.incrementRenderCount('EmotionalEye');
+  if (debugIsEnabled) {
+    useDebugStore.getState().incrementRenderCount('EmotionalEye');
   }
   
   // Performance optimizations - centralized config

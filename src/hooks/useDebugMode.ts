@@ -1,15 +1,17 @@
-import { useDebugContext, useDebugContextOptional } from '@/contexts/DebugContext';
+import { useDebugStore } from '@/stores/debugStore';
 
-// Re-export for convenience
-export const useDebugMode = useDebugContext;
-export const useDebugModeOptional = useDebugContextOptional;
+// Full store (use sparingly — prefer selectors)
+export const useDebugMode = () => useDebugStore();
+
+// Same as useDebugMode but semantically "optional" — always returns a value with Zustand
+export const useDebugModeOptional = () => useDebugStore();
 
 // Helper hook for components that want to log renders
 // Note: This is called during render, so incrementRenderCount must NOT trigger re-renders
 export const useDebugRender = (componentName: string) => {
-  const debug = useDebugContextOptional();
-  
-  if (debug?.isDebugMode) {
-    debug.incrementRenderCount(componentName);
+  const isDebugMode = useDebugStore((s) => s.isDebugMode);
+
+  if (isDebugMode) {
+    useDebugStore.getState().incrementRenderCount(componentName);
   }
 };

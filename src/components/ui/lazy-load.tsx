@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, ReactNode, memo } from 'react';
-import { useDebugContextOptional } from '@/contexts/DebugContext';
+import { useDebugStore } from '@/stores/debugStore';
 
 interface LazyLoadProps {
   children: ReactNode;
@@ -34,8 +34,7 @@ export const LazyLoad = memo(({
 }: LazyLoadProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  // Store debug ref to avoid re-renders from context changes
-  const debugRef = useRef(useDebugContextOptional());
+  const debugRef = useRef(useDebugStore.getState());
 
   useEffect(() => {
     const element = ref.current;
