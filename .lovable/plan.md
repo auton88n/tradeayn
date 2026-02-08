@@ -1,49 +1,70 @@
 
 
-# Add Client-Side Rate Limiter for AI Messages
+# Add Production Error Logging to Supabase
 
-## Problem
+## Overview
+Enhance the ErrorBoundary to report caught errors to a new `error_logs` Supabase table, giving you visibility into production crashes. Also add a global unhandled promise rejection listener.
 
-There is no client-side throttle on message sending. A user (or bot) can spam the send button and trigger hundreds of edge function calls in seconds, running up AI costs before server-side rate limiting kicks in.
+## Step 1: Database Migration -- Create `error_logs` Table
 
-## Solution
+Run a migration to create the table with RLS policies:
 
-Two changes:
+```sql
+CREATE TABLE IF NOT EXISTS error_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  error_message TEXT NOT NULL,
+  error_stack TEXT,
+  component_stack TEXT,
+  url TEXT,
+  user_id UUID REFERENCES auth.users(id),
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-### 1. New file: `src/lib/rateLimiter.ts`
+ALTER TABLE error_logs ENABLE ROW LEVEL SECURITY;
 
-A simple sliding-window rate limiter class with three shared instances:
-- **chatRateLimiter**: 5 messages per 10 seconds
-- **engineeringRateLimiter**: 3 calculations per 15 seconds
-- **fileUploadRateLimiter**: 3 uploads per 30 seconds
+-- Anyone (even anonymous) can insert errors
+CREATE POLICY "Anyone can insert errors"
+  ON error_logs FOR INSERT WITH CHECK (true);
 
-The class exposes:
-- `canProceed()` -- checks the window, returns true/false, and records the timestamp if allowed
-- `getTimeUntilNext()` -- returns milliseconds until the next request would be allowed
-- `reset()` -- clears all timestamps
+-- Only admins can read error logs
+CREATE POLICY "Admins can read all errors"
+  ON error_logs FOR SELECT USING (
+    public.has_role(auth.uid(), 'admin')
+  );
 
-### 2. Update: `src/hooks/useMessages.ts`
-
-Import `chatRateLimiter` and add a check at the very top of `sendMessage` (line ~199, before `setIsTyping(true)`), so rate-limited requests never even show the typing indicator:
-
-```typescript
-if (!chatRateLimiter.canProceed()) {
-  const waitTime = Math.ceil(chatRateLimiter.getTimeUntilNext() / 1000);
-  toast({
-    title: 'Slow down',
-    description: `Please wait ${waitTime} seconds before sending another message.`,
-    variant: 'destructive',
-  });
-  return;
-}
+-- Index for cleanup queries
+CREATE INDEX idx_error_logs_created_at ON error_logs(created_at);
 ```
 
-This is purely a UX safeguard -- server-side rate limiting (already in place via `check_api_rate_limit`) remains the security boundary.
+This uses the existing `user_roles` table and `has_role()` function for admin-only read access. The `has_role` function already exists as a `SECURITY DEFINER` function (confirmed from the schema).
 
-## Files changed
+## Step 2: Update `src/components/shared/ErrorBoundary.tsx`
+
+Add a private `reportError` method that dynamically imports the Supabase client and inserts an error log row. Call it from `componentDidCatch` in a non-blocking way (fire-and-forget with `.catch(() => {})`).
+
+Key details:
+- Dynamic import of supabase client avoids circular dependencies in this low-level component
+- All string fields are truncated (message: 1000 chars, stacks: 5000 chars)
+- Wrapped in try/catch so error reporting never breaks the app
+- The existing auto-reload logic remains unchanged
+
+## Step 3: Update `src/main.tsx`
+
+Add a global `unhandledrejection` listener before `createRoot()` that logs unhandled promise rejections to the console. This provides visibility in browser DevTools for errors that escape React's error boundary.
+
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/lib/rateLimiter.ts` | New file -- `RateLimiter` class + 3 shared instances |
-| `src/hooks/useMessages.ts` | Import `chatRateLimiter`, add early-return check before line 200 |
+| Database migration | New `error_logs` table with RLS |
+| `src/components/shared/ErrorBoundary.tsx` | Add `reportError` method, call from `componentDidCatch` |
+| `src/main.tsx` | Add `window.addEventListener('unhandledrejection', ...)` |
+
+## Technical Notes
+
+- The INSERT policy uses `WITH CHECK (true)` so both authenticated and anonymous users can report errors
+- No SELECT policy for regular users -- error logs are admin-only
+- The Supabase types file will auto-update after migration to include the `error_logs` table
+- Error reporting is fully non-blocking and failure-safe
 
