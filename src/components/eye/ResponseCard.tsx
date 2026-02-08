@@ -370,7 +370,7 @@ const ResponseCardComponent = ({
               <div
                 ref={historyScrollRef}
                 onScroll={handleHistoryScroll}
-                className="max-h-[60vh] overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]"
+                className="max-h-[60vh] overflow-y-auto overflow-x-hidden overscroll-contain [-webkit-overflow-scrolling:touch]"
               >
                 <div className="p-3 pb-6 space-y-1 [overflow-wrap:anywhere]">
                   {sortedMessages.map((msg, idx) => {
@@ -419,7 +419,7 @@ const ResponseCardComponent = ({
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.8, y: 10 }}
                     onClick={scrollHistoryToBottom}
-                    className="absolute bottom-14 left-1/2 -translate-x-1/2 z-10 h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xl hover:bg-primary/90 transition-colors"
+                    className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
                     aria-label="Scroll to bottom"
                   >
                     <ChevronDown className="h-5 w-5" />
