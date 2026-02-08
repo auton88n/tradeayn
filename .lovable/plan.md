@@ -1,16 +1,15 @@
 
-
-# Fix Slab Calculator Code-Specific Resistance Factors
+# Fix Retaining Wall Calculator Code-Specific Resistance Factors
 
 ## Problem
 
-The `calculateSlab()` function in `src/lib/engineeringCalculations.ts` already fetches code-specific parameters via `getCodeParameters(buildingCode)` but then ignores them for reinforcement calculations, hardcoding ACI values instead.
+The `calculateRetainingWall()` function in `src/lib/engineeringCalculations.ts` fetches `codeParams` via `getCodeParameters(buildingCode)` but ignores them for reinforcement design -- hardcoding ACI resistance factors (`0.87`) and minimum rho (`0.0018`), and using unfactored moments for structural design.
 
 ## Changes (single file: `src/lib/engineeringCalculations.ts`)
 
-### Fix 1: Use code-specific resistance factors for all Ast calculations
+### Fix 1: Add code-specific resistance factors (after line 903, before reinforcement section)
 
-Add this block once, right after `const d = thickness - cover - barDia / 2;` (after line 232):
+Insert:
 
 ```typescript
 const phiFlex = codeParams.resistanceFactors.flexure;
@@ -18,42 +17,51 @@ const phiSteel = codeParams.resistanceFactors.steel;
 const effectivePhi = buildingCode === 'CSA' ? phiFlex * phiSteel : 0.87;
 ```
 
-Then replace `0.87` with `effectivePhi` in all 6 reinforcement area calculations:
+### Fix 2: Factor the structural moments for stem, heel, and toe (lines 904, 918, 925)
+
+Replace the 3 unfactored moment lines with factored versions for reinforcement design:
 
 | Line | Current | Fixed |
 |------|---------|-------|
-| 248 (AstPos, one-way) | `0.87 * fy * 0.9 * d` | `effectivePhi * fy * 0.9 * d` |
-| 249 (AstNeg, one-way) | `0.87 * fy * 0.9 * d` | `effectivePhi * fy * 0.9 * d` |
-| 311 (AstXPos, two-way) | `0.87 * fy * 0.9 * d` | `effectivePhi * fy * 0.9 * d` |
-| 312 (AstXNeg, two-way) | `0.87 * fy * 0.9 * d` | `effectivePhi * fy * 0.9 * d` |
-| 313 (AstYPos, two-way) | `0.87 * fy * 0.9 * (d - barDia)` | `effectivePhi * fy * 0.9 * (d - barDia)` |
-| 314 (AstYNeg, two-way) | `0.87 * fy * 0.9 * (d - barDia)` | `effectivePhi * fy * 0.9 * (d - barDia)` |
+| 904 | `Mu_stem = Pa_soil * H / 3 + Pa_surcharge * H / 2` | `Mu_stem = codeParams.loadFactors.live * (Pa_soil * H / 3 + Pa_surcharge * H / 2)` |
+| 918 | `Mu_heel = 0.5 * Math.abs(heelLoad) * heel * heel` | `Mu_heel = codeParams.loadFactors.live * 0.5 * Math.abs(heelLoad) * heel * heel` |
+| 925 | `Mu_toe = 0.5 * toeLoad * toe * toe` | `Mu_toe = codeParams.loadFactors.live * 0.5 * toeLoad * toe * toe` |
 
-For CSA, `effectivePhi = 0.65 * 0.85 = 0.5525`, which is lower than ACI's 0.87 -- resulting in more reinforcement as expected (~58% more).
+Earth pressure is treated as a live load per ACI/CSA for structural member design. The factored moments are used for reinforcement sizing only; stability analysis remains at service level.
 
-### Fix 2: Use code-specific minimum reinforcement ratio
-
-Replace the hardcoded `rhoMin` in both places:
+### Fix 3: Replace hardcoded `0.87` with `effectivePhi` (lines 906, 921, 928)
 
 | Line | Current | Fixed |
 |------|---------|-------|
-| 251 (one-way section) | `const rhoMin = 0.0018;` | `const rhoMin = codeParams.minRho;` |
-| 316 (two-way section) | `const rhoMin = 0.0018;` | `const rhoMin = codeParams.minRho;` |
+| 906 | `(0.87 * fy * 0.9 * dStem)` | `(effectivePhi * fy * 0.9 * dStem)` |
+| 921 | `(0.87 * fy * 0.9 * dHeel)` | `(effectivePhi * fy * 0.9 * dHeel)` |
+| 928 | `(0.87 * fy * 0.9 * dToe)` | `(effectivePhi * fy * 0.9 * dToe)` |
 
-This uses 0.0018 for ACI and 0.002 for CSA, matching the values already defined in `getCodeParameters()`.
-
-### Fix 3: Fix designCode output string
+### Fix 4: Replace hardcoded `0.0018` with `codeParams.minRho` (lines 921, 928)
 
 | Line | Current | Fixed |
 |------|---------|-------|
-| 434 | `designCode: 'ACI 318 / Eurocode 2',` | `designCode: codeParams.name,` |
+| 921 | `0.0018 * 1000 * D * 1000` | `codeParams.minRho * 1000 * D * 1000` |
+| 928 | `0.0018 * 1000 * D * 1000` | `codeParams.minRho * 1000 * D * 1000` |
 
-This will output "ACI 318-25" or "CSA A23.3-24" based on the selected code.
+### Fix 5: Update output metadata (line 1002)
+
+Replace:
+```typescript
+designCode: 'Rankine Theory / ACI 318',
+```
+
+With:
+```typescript
+designCode: `Rankine Theory / ${codeParams.name}`,
+buildingCode: codeParams.name,
+loadFactorsUsed: `${codeParams.loadFactors.dead}D + ${codeParams.loadFactors.live}L`,
+```
 
 ## What is NOT changed
 
-- Load factor logic (already correct, uses `codeParams.loadFactors`)
-- Serviceability checks (deflection, crack width)
-- Moment distribution coefficients
-- Any other calculator function (beam, column, foundation, retaining wall)
-
+- Stability analysis (overturning, sliding, bearing) -- correctly uses service loads
+- Earth pressure coefficients (Ka, Kp)
+- Weight calculations
+- FOS thresholds (2.0, 1.5, 3.0)
+- Distribution steel calculation (line 912)
