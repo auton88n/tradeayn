@@ -463,7 +463,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
               {/* Messages Area */}
               <div className="relative pb-3">
-                <div className="max-h-[440px] overflow-y-auto" ref={historyScrollRef} onScroll={handleHistoryScroll}>
+                <div className="max-h-[60vh] overflow-y-auto" ref={historyScrollRef} onScroll={handleHistoryScroll}>
                   <div className="p-3 space-y-1 flex flex-col justify-end min-h-full">
                     {sortedTranscriptMessages.map((msg, idx) => {
                       const isLastAyn = msg.sender === 'ayn' && idx === sortedTranscriptMessages.length - 1;
