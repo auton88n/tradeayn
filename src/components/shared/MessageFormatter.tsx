@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github-dark.min.css';
 import { cn } from '@/lib/utils';
 import { sanitizeUserInput, isValidUserInput } from '@/lib/security';
 import { Copy, Check, AlertCircle, Loader2 } from 'lucide-react';
@@ -249,8 +251,8 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
 
   return (
     <>
-      <div 
-        className={cn("space-y-4 leading-relaxed break-words", className)}
+       <div 
+        className={cn("space-y-4 leading-relaxed break-words max-w-none", className)}
         dir={isRTL ? 'rtl' : 'ltr'}
         style={{ 
           fontFamily: isRTL ? "'Noto Sans Arabic', 'Segoe UI', system-ui, sans-serif" : undefined,
@@ -259,6 +261,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
       >
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeHighlight]}
           components={{
             // Bold text
             strong: ({ children }) => (

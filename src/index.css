@@ -1500,3 +1500,19 @@ button, a, input, textarea, select {
       min-width: 32px;
     }
   }
+
+/* Blinking cursor for streaming */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink-cursor {
+  animation: blink-cursor 1s step-end infinite;
+}
+
+/* Syntax highlighting overrides for theme integration */
+.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}

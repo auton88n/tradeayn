@@ -16,7 +16,7 @@ import {
   ChevronDown,
   Palette,
   Maximize2,
-  
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -97,6 +97,7 @@ const ResponseCardComponent = ({
   const [showHistoryScrollDown, setShowHistoryScrollDown] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
 
   const visibleResponses = responses.filter((r) => r.isVisible);
   const currentResponseId = visibleResponses[0]?.id;
@@ -529,22 +530,64 @@ const ResponseCardComponent = ({
 
               {/* Action bar */}
               <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-t border-border/40">
-                <button
-                  onClick={copyContent}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {copied ? (
-                    <>
-                      <Check size={14} className="text-green-600" />
-                      <span className="text-green-600">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={copyContent}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {copied ? (
+                      <>
+                        <Check size={14} className="text-green-600" />
+                        <span className="text-green-600">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Download size={14} />
+                      <span>Download</span>
+                    </button>
+                    {showDownloadMenu && (
+                      <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
+                        <button
+                          onClick={() => {
+                            const blob = new Blob([combinedContent], { type: "text/markdown" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url; a.download = "ayn-response.md"; a.click();
+                            URL.revokeObjectURL(url);
+                            setShowDownloadMenu(false);
+                          }}
+                          className="w-full px-3 py-1.5 text-xs text-left hover:bg-muted transition-colors"
+                        >
+                          Markdown (.md)
+                        </button>
+                        <button
+                          onClick={() => {
+                            const plain = markdownToPlainText(combinedContent);
+                            const blob = new Blob([plain], { type: "text/plain" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url; a.download = "ayn-response.txt"; a.click();
+                            URL.revokeObjectURL(url);
+                            setShowDownloadMenu(false);
+                          }}
+                          className="w-full px-3 py-1.5 text-xs text-left hover:bg-muted transition-colors"
+                        >
+                          Plain Text (.txt)
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleFeedback("up")}
