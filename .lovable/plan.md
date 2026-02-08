@@ -1,59 +1,77 @@
 
 
-# OptimizedImage Component + Image Optimization
+# Dynamic Import of Heavy Libraries
 
-## Assessment
+## Summary
 
-After reviewing the entire codebase, the situation is different from what was expected:
+Convert top-level imports of `react-to-pdf` and `recharts` to dynamic imports so they only load when actually needed. Two libraries mentioned in the request (`html2canvas` and `react-day-picker`) are not imported anywhere in the codebase, so no changes are needed for those.
 
-- **Landing page (Hero.tsx)**: No images at all -- pure CSS, SVG, and Lucide icons
-- **Service pages (AI Agents, Automation, Civil Engineering, AI Employee)**: No `<img>` tags -- all mockups are CSS/SVG-based
-- **InfluencerSites.tsx**: Imports `influencer-woman-bg.jpg` but delegates rendering to `MobileMockup.tsx`
-- **MobileMockup.tsx**: Uses the JPG as a CSS `backgroundImage` at 40% opacity -- the only static image on any public page
+## Current State
 
-The remaining `<img>` tags exist in:
-- `SavedImagesGallery.tsx` (user-uploaded images in dashboard)
-- `MessageFormatter.tsx` (AI-generated images in chat)
-- `PortfolioCard.tsx` (user portfolio thumbnails)
-- `VisualTestResults.tsx` (admin test screenshots)
+| Library | Files with top-level import | Already dynamic? |
+|---------|---------------------------|-------------------|
+| `react-to-pdf` | `GradingResults.tsx`, `ParkingDesigner.tsx`, `EngineeringWorkspace.tsx`, `TestReportPDF.tsx` | `CalculationResults.tsx` already does it correctly |
+| `recharts` | `ElevationProfile.tsx`, `InteractionDiagram.tsx` | No |
+| `html2canvas` | None | N/A |
+| `react-day-picker` | None | N/A |
 
-These are all dynamic/user-generated content, not static marketing images.
+## Changes
 
-## Proposed Changes
+### 1. Dynamic import `react-to-pdf` in 4 files
 
-### 1. New file: `src/components/shared/OptimizedImage.tsx`
+These files all use `generatePDF` inside an async click handler, making dynamic import straightforward. Follow the pattern already established in `CalculationResults.tsx`:
 
-A reusable component with:
-- **Native lazy loading** via `loading="lazy"` (skipped when `priority=true` for above-the-fold images)
-- **Fade-in transition** on load to avoid content flash
-- **Skeleton placeholder** while loading
-- **`decoding="async"`** to avoid blocking the main thread
-- **Optional `width`/`height`** to prevent layout shift (CLS)
+```typescript
+// Replace top-level: import generatePDF, { Margin } from 'react-to-pdf';
+// With dynamic import inside the handler:
+const handleExportPDF = async () => {
+  const generatePDF = (await import('react-to-pdf')).default;
+  const { Margin } = await import('react-to-pdf');
+  // ... rest of existing logic unchanged
+};
+```
 
-### 2. Update: `src/components/services/MobileMockup.tsx`
+**Files:**
+- `src/components/engineering/GradingResults.tsx` -- remove line 11 import, add dynamic import inside `handleExportPDF`
+- `src/components/engineering/ParkingDesigner.tsx` -- remove line 31 import, add dynamic import inside the PDF export handler
+- `src/components/engineering/workspace/EngineeringWorkspace.tsx` -- remove line 19 import, add dynamic import inside the PDF handler
+- `src/components/admin/test-results/TestReportPDF.tsx` -- remove line 5 import, add dynamic import inside `handleGeneratePDF`
 
-Replace the inline `backgroundImage` style with a proper `<img>` tag using `OptimizedImage` with `loading="lazy"` and absolute positioning. This gives the browser the ability to natively lazy-load the image instead of eagerly fetching a CSS background.
+### 2. Lazy load recharts components via their parents
 
-### 3. Update: `src/components/shared/index.ts`
+`ElevationProfile` and `InteractionDiagram` both use recharts at the top level. Rather than restructuring how recharts is imported within those components, lazy-load the components themselves from their parent files:
 
-Add `OptimizedImage` to barrel exports for easy reuse across the project.
+**`src/components/engineering/GradingResults.tsx`** -- already imports `ElevationProfile` directly. Replace with:
+```typescript
+const ElevationProfile = lazy(() => import('./ElevationProfile').then(m => ({ default: m.ElevationProfile })));
+```
+Wrap its usage in `<Suspense>` with a chart-height skeleton fallback.
 
-### 4. Apply to dynamic images (low effort, high impact)
+**`src/components/engineering/results/ColumnResultsSection.tsx`** -- imports `InteractionDiagram` directly. Replace with:
+```typescript
+const InteractionDiagram = lazy(() => import('./InteractionDiagram').then(m => ({ default: m.InteractionDiagram })));
+```
+Wrap its usage in `<Suspense>` with a skeleton fallback.
 
-Update `SavedImagesGallery.tsx` and `PortfolioCard.tsx` to use `OptimizedImage` for their thumbnails. These benefit from the fade-in transition and lazy loading since they render in scrollable lists.
+### 3. No changes needed
 
-## What this does NOT do
+- `CalculationResults.tsx` -- already dynamically imports `react-to-pdf`
+- `html2canvas` -- not imported anywhere in the codebase
+- `react-day-picker` -- not imported anywhere in the codebase
+- `GradingPDFReport.tsx` -- has its own SVG-based `ElevationProfileSVG` (no recharts dependency)
 
-- No responsive `srcset` or size variants -- the project serves images from Supabase Storage URLs which don't support on-the-fly resizing. Adding a CDN image transform layer is a separate infrastructure task.
-- No changes to `MessageFormatter.tsx` -- its image rendering has lightbox integration that needs to stay custom.
-
-## Files changed
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/shared/OptimizedImage.tsx` | New component |
-| `src/components/shared/index.ts` | Add export |
-| `src/components/services/MobileMockup.tsx` | Replace CSS backgroundImage with OptimizedImage |
-| `src/components/dashboard/SavedImagesGallery.tsx` | Use OptimizedImage for thumbnails |
-| `src/components/engineering/PortfolioCard.tsx` | Use OptimizedImage for thumbnails |
+| `src/components/engineering/GradingResults.tsx` | Dynamic import `react-to-pdf`; lazy load `ElevationProfile` |
+| `src/components/engineering/ParkingDesigner.tsx` | Dynamic import `react-to-pdf` |
+| `src/components/engineering/workspace/EngineeringWorkspace.tsx` | Dynamic import `react-to-pdf` |
+| `src/components/admin/test-results/TestReportPDF.tsx` | Dynamic import `react-to-pdf` |
+| `src/components/engineering/results/ColumnResultsSection.tsx` | Lazy load `InteractionDiagram` |
 
+## Impact
+
+- `react-to-pdf` (~50KB) only loads when a user clicks an export/PDF button
+- `recharts` (~200KB) only loads when a user views an elevation profile chart or interaction diagram
+- No behavioral changes -- same functionality, just loaded on demand
