@@ -1,68 +1,76 @@
 
 
-# Replace Custom HTML Sanitizer with DOMPurify
+# Reduce Subscription Polling and Add Realtime Listener
 
 ## Problem
 
-The current `src/lib/security.ts` uses regex-based sanitization (`sanitizeUserInput`, `escapeHtml`) which is bypassable. Regex cannot reliably parse HTML, so edge cases (nested tags, encoding tricks, etc.) can slip through.
+The `SubscriptionContext` polls `check-subscription` every 60 seconds via `setInterval`, which is excessive and generates unnecessary Stripe API calls. The sessionStorage cache (5-min TTL) already mitigates most of this, but the interval itself is wasteful.
 
 ## Solution
 
-Replace the custom implementation with DOMPurify, a battle-tested sanitization library.
+1. **Remove the 60-second polling `useEffect`** (lines 175-178) entirely -- no more `setInterval`.
+2. **Add a Supabase Realtime listener** on the `user_subscriptions` table filtered to the current user's row. When the row changes (e.g., after a webhook updates their tier), invalidate the sessionStorage cache and call `checkSubscription()`.
+3. **Keep the sessionStorage cache** with its existing 5-minute TTL -- no changes there.
+4. The `onAuthStateChange` listener (lines 166-173) stays as-is for login/logout triggers.
 
-### Step 1: Install DOMPurify
+## Technical Details
 
-Add `dompurify` and `@types/dompurify` as dependencies.
+### File: `src/contexts/SubscriptionContext.tsx`
 
-### Step 2: Rewrite `src/lib/security.ts`
-
-Replace the entire file contents:
-
+**Remove** the auto-refresh `useEffect` (lines 175-178):
 ```typescript
-import DOMPurify from 'dompurify';
-
-/**
- * Sanitizes user input using DOMPurify to prevent XSS attacks.
- * Strips all HTML tags and dangerous content by default.
- */
-export function sanitizeUserInput(input: string): string {
-  return DOMPurify.sanitize(input, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
-}
-
-/**
- * Sanitizes HTML content, allowing safe markup (bold, italic, links, etc.)
- * but removing dangerous elements like script tags and event handlers.
- */
-export function sanitizeHtml(input: string): string {
-  return DOMPurify.sanitize(input);
-}
-
-/**
- * Validates that text doesn't contain malicious patterns.
- * Uses DOMPurify to check if sanitization would change the input.
- */
-export function isValidUserInput(input: string): boolean {
-  return DOMPurify.sanitize(input) === input;
-}
+// DELETE THIS BLOCK
+useEffect(() => {
+  const interval = setInterval(checkSubscription, 60000);
+  return () => clearInterval(interval);
+}, [checkSubscription]);
 ```
 
-- `sanitizeUserInput` strips ALL HTML (plain text output) -- same intent as before, but robust
-- `sanitizeHtml` is a new helper that allows safe markup (useful for rich content)
-- `isValidUserInput` returns true only if DOMPurify finds nothing to strip
-- `escapeHtml` is removed (DOMPurify handles this internally)
+**Replace with** a Realtime subscription `useEffect`:
+```typescript
+useEffect(() => {
+  let channel: ReturnType<typeof supabase.channel> | null = null;
 
-### Step 3: Update `src/components/shared/MessageFormatter.tsx`
+  const setupRealtime = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
 
-No import changes needed -- it already imports `sanitizeUserInput` and `isValidUserInput` from `@/lib/security`, and those function signatures remain the same.
+    channel = supabase
+      .channel(`sub-${session.user.id.slice(0, 8)}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_subscriptions',
+          filter: `user_id=eq.${session.user.id}`
+        },
+        () => {
+          // Invalidate cache and re-check
+          sessionStorage.removeItem('subscription_cache');
+          checkSubscription();
+        }
+      )
+      .subscribe();
+  };
 
-The only behavioral change: sanitization is now handled by DOMPurify instead of regex, making it more reliable.
+  setupRealtime();
 
-### Files changed
+  return () => {
+    if (channel) supabase.removeChannel(channel);
+  };
+}, [checkSubscription]);
+```
 
-| File | Change |
-|------|--------|
-| `package.json` | Add `dompurify` and `@types/dompurify` |
-| `src/lib/security.ts` | Replace regex functions with DOMPurify-based implementations |
+### What changes
 
-`MessageFormatter.tsx` requires **no changes** -- the imports and function signatures are unchanged.
+| Aspect | Before | After |
+|--------|--------|-------|
+| Polling | Every 60s via `setInterval` | None |
+| Realtime | None | Listens to `user_subscriptions` row changes |
+| Cache | 5-min sessionStorage TTL | Unchanged (but invalidated on realtime event) |
+| Auth change trigger | `onAuthStateChange` calls `checkSubscription` | Unchanged |
+
+### Files affected
+- `src/contexts/SubscriptionContext.tsx` -- remove polling useEffect, add Realtime useEffect
 
