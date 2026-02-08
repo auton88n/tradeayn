@@ -1,34 +1,47 @@
 
 
-# Fix: History Card Fitting (for real this time)
+# Fix: History Card Overflow (Root Cause Found)
 
-## Root Cause
+## The Real Problem
 
-The previous fix used `max-h-[50vh]` on the outer card + `flex-1 min-h-0` on inner containers. This doesn't work reliably because `max-height` alone doesn't give flex children a definite reference height to resolve `flex-1` against -- the content still expands unconstrained.
+There are **two competing height constraints** that don't work together:
 
-## Fix
+1. **Parent wrapper** (CenterStageLayout line 758): `maxHeight: calc(100vh - footerHeight - 240px)` -- this correctly caps the overall space available for the ResponseCard.
+2. **Inner scroll div** (ResponseCard line 373): `max-h-[calc(50vh-5rem)]` -- this is a separate, independent constraint on the scroll area.
+
+But the **ResponseCard's outer `motion.div`** (line 298-310) has NO height constraint itself (the previous edit replaced it with `false`). Without a height constraint on the card, and without `h-full` / `max-h-full` to inherit from the parent wrapper, the card ignores the parent's `maxHeight` and grows with content.
+
+The fix: Make the ResponseCard's outer div inherit the parent constraint using `max-h-full`, and let the scroll area fill available space with `flex-1 min-h-0` (which NOW works because the parent has a definite height). Remove the hardcoded `calc` on the scroll div.
+
+## Changes
 
 ### File: `src/components/eye/ResponseCard.tsx`
 
-**1. Scroll container -- direct height constraint instead of flex-1 chain**
+**1. Outer card div (line 310)**: Replace `false` with `"max-h-full"` so it inherits the parent wrapper's `maxHeight`.
 
-Replace the `flex-1 min-h-0` approach on the scroll container (line 373) with an explicit `max-h-[calc(50vh-5rem)]` (subtracting ~80px for header + footer). This guarantees the scroll area is bounded regardless of content size.
+**2. History wrapper (line 369)**: Change from `relative flex flex-col` to `relative flex-1 min-h-0 flex flex-col` so it fills available space and passes height constraint down.
 
-Change line 369 (history wrapper):
-- From: `relative flex-1 min-h-0 flex flex-col`
-- To: `relative flex flex-col`
+**3. Scroll container (line 373)**: Change from `max-h-[calc(50vh-5rem)] sm:max-h-[calc(60vh-5rem)]` back to `flex-1 min-h-0` -- now that the parent chain has a definite height, `flex-1` correctly resolves to the remaining space after header and footer.
 
-Change line 373 (scroll div):
-- From: `flex-1 min-h-0 overflow-y-auto overflow-x-hidden`
-- To: `max-h-[calc(50vh-5rem)] sm:max-h-[calc(60vh-5rem)] overflow-y-auto overflow-x-hidden`
+### File: `src/components/dashboard/CenterStageLayout.tsx`
 
-Remove `max-h-[50vh] sm:max-h-[60vh]` from the outer motion.div (line 310) since the constraint is now directly on the scroll area.
+**4. Parent wrapper (line 756)**: Add `overflow-hidden` to the wrapper div so `max-h-full` on the child correctly clips. Change class to `"w-full flex justify-center mt-2 overflow-hidden"`.
 
-**2. Scroll-to-bottom button -- account for Reply footer**
+## Why This Works
 
-Move the button's bottom offset from `bottom-3` to `bottom-14` so it sits above the Reply footer instead of overlapping it.
+```text
+CenterStageLayout wrapper (maxHeight: calc(100vh - footer - 240px), overflow-hidden)
+  --> ResponseCard outer div (max-h-full, flex col, overflow-hidden)
+    --> Header (flex-shrink-0, ~40px)
+    --> History wrapper (flex-1 min-h-0)
+      --> Scroll div (flex-1 min-h-0, overflow-y-auto)  <-- scrolls here
+      --> Reply footer (flex-shrink-0, ~40px)
+```
+
+Each layer passes a definite height to the next, so `flex-1` resolves correctly and scrolling kicks in.
 
 ## Summary
-- 1 file modified: `src/components/eye/ResponseCard.tsx`
-- Direct height cap on scroll container instead of unreliable flex-1 chain
-- Scroll button repositioned above Reply footer
+- 2 files modified
+- `ResponseCard.tsx`: Fix outer card to inherit parent height, restore flex-based inner layout
+- `CenterStageLayout.tsx`: Add `overflow-hidden` to parent wrapper
+
