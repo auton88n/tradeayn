@@ -1,51 +1,25 @@
-/**
- * Security utilities for input validation and sanitization
- */
-
-// HTML entities to prevent XSS attacks
-const HTML_ENTITIES: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#x27;',
-  '/': '&#x2F;',
-};
+import DOMPurify from 'dompurify';
 
 /**
- * Escapes HTML entities to prevent XSS attacks
- */
-export function escapeHtml(text: string): string {
-  return text.replace(/[&<>"'/]/g, (match) => HTML_ENTITIES[match] || match);
-}
-
-/**
- * Sanitizes user input by removing potentially dangerous content
+ * Sanitizes user input using DOMPurify to prevent XSS attacks.
+ * Strips all HTML tags and dangerous content by default.
  */
 export function sanitizeUserInput(input: string): string {
-  // Remove script tags and event handlers
-  let sanitized = input
-    .replace(/<script[^>]*>.*?<\/script>/gi, '')
-    .replace(/on\w+\s*=\s*"[^"]*"/gi, '')
-    .replace(/on\w+\s*=\s*'[^']*'/gi, '')
-    .replace(/javascript:/gi, '');
-
-  // Escape remaining HTML
-  return escapeHtml(sanitized);
+  return DOMPurify.sanitize(input, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
 }
 
 /**
- * Validates that text doesn't contain malicious patterns
+ * Sanitizes HTML content, allowing safe markup (bold, italic, links, etc.)
+ * but removing dangerous elements like script tags and event handlers.
+ */
+export function sanitizeHtml(input: string): string {
+  return DOMPurify.sanitize(input);
+}
+
+/**
+ * Validates that text doesn't contain malicious patterns.
+ * Uses DOMPurify to check if sanitization would change the input.
  */
 export function isValidUserInput(input: string): boolean {
-  const dangerousPatterns = [
-    /<script/i,
-    /javascript:/i,
-    /on\w+\s*=/i,
-    /eval\(/i,
-    /document\./i,
-    /window\./i,
-  ];
-
-  return !dangerousPatterns.some(pattern => pattern.test(input));
+  return DOMPurify.sanitize(input) === input;
 }
