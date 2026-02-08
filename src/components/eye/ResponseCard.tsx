@@ -365,7 +365,7 @@ const ResponseCardComponent = ({
                 onScroll={handleHistoryScroll}
                 className="max-h-[50vh] sm:max-h-[60vh] min-h-[200px] overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]"
               >
-                <div className="p-3 pb-6 space-y-1 flex flex-col justify-end min-h-full [overflow-wrap:anywhere]">
+                <div className="p-3 pb-6 space-y-1 [overflow-wrap:anywhere]">
                   {sortedMessages.map((msg, idx) => {
                     const isLastAyn = msg.sender === 'ayn' && idx === sortedMessages.length - 1;
                     const isNew = !seenMessageIdsRef.current.has(msg.id);
