@@ -1,70 +1,53 @@
 
+# Add Disclaimer Field to All Calculators
 
-# Fix Column Calculator Code-Specific Resistance Factors
+## Overview
 
-## Problem
+Add a legal disclaimer string to every calculator's return object and display it as an amber warning banner in the results panel.
 
-The `calculateColumn()` function uses Eurocode 2 material partial safety factors (gamma_c=1.5, gamma_s=1.15) regardless of the selected building code. The `codeParams` is fetched (line 465) but never used for capacity calculations.
+## Part 1: Add `disclaimer` field to 5 return objects in `src/lib/engineeringCalculations.ts`
 
-## Changes (single file: `src/lib/engineeringCalculations.ts`)
+Add this field to each function's return object:
 
-### Fix 1: Replace EC2 material factors with code-specific approach (lines 470-473)
+```typescript
+disclaimer: 'Preliminary estimate for initial sizing only. All structural designs must be reviewed and verified by a licensed Professional Engineer (P.Eng / PE) using approved design software before construction or permit submission.',
+```
 
-Remove the hardcoded gamma factors and compute `fcd`/`fyd` based on building code:
+**Locations:**
+- `calculateBeam()` return (around line 160)
+- `calculateSlab()` return (around line 414)
+- `calculateColumn()` return (around line 577)
+- `calculateFoundation()` return (around line 815)
+- `calculateRetainingWall()` return (around line 989)
 
-- **CSA**: Resistance factors applied directly to material strengths (phi_c x 0.85 x f'c and phi_s x fy)
-- **ACI**: Use nominal strengths (0.85 x f'c and fy); phi applied to capacity later
+## Part 2: Display disclaimer banner in `DetailedResultsPanel.tsx`
 
-### Fix 2: Replace capacity formula (line 547)
+Since all five calculators render through the single `DetailedResultsPanel` component, the banner only needs to be added once -- replacing the existing plain-text disclaimer at line 180.
 
-Update `NRd` to use code-specific capacity equations:
+**Current (line 179-182):**
+```tsx
+{/* Disclaimer */}
+<p className="text-xs text-muted-foreground mt-4 text-center">
+  Results require verification by a licensed Professional Engineer (PE/P.Eng)
+</p>
+```
 
-- **CSA**: `Pr = fcd x (Ag - As) + fyd x As` (factors already in fcd/fyd)
-- **ACI**: `phi_Pn_max = 0.80 x 0.65 x [0.85f'c(Ag-Ast) + fy x Ast]` (phi and 0.80 reduction for tied columns)
+**Replaced with:**
+```tsx
+{/* Disclaimer */}
+{outputs.disclaimer && (
+  <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-3 mt-4">
+    <p className="text-amber-200/80 text-xs flex items-start gap-2">
+      <span className="text-amber-400 mt-0.5">⚠️</span>
+      {outputs.disclaimer}
+    </p>
+  </div>
+)}
+```
 
-### Fix 3: Update slenderness check (line 486)
+This upgrades the existing subtle text into a visible amber warning banner with a warning icon, positioned at the bottom of the results section (same location, better visibility).
 
-Replace the EC2 slenderness formula `20 x sqrt(fck) / sqrt(N/Ac)` with the ACI/CSA threshold of `kLu/r > 22` for braced frames.
+## Files Modified
 
-### Fix 4: Update minimum reinforcement (line 520)
-
-Change `AsMin` from 0.2% (EC2 value) to 1% (both ACI 318 Section 10.6.1.1 and CSA A23.3 Cl. 10.9.1 require 1% minimum).
-
-### Fix 5: Update `generateInteractionCurve()` (lines 603-700)
-
-Add `buildingCode` parameter so the function can compute code-specific:
-
-- **P0** (pure compression): CSA uses factored values directly; ACI applies 0.80 x 0.65 reduction
-- **Concrete compression force** (`Cc`): uses the appropriate `fcd` (already passed in)
-- **Pure bending point** (`M0`): consistent with the passed `fcd`/`fyd`
-
-### Fix 6: Update adequacy check (line 550)
-
-Change minimum reinforcement ratio check from 0.2% to 1% to match the updated `AsMin`.
-
-### Fix 7: Add metadata to return object
-
-Add `buildingCode: codeParams.name` to the return object.
-
-## Technical Details
-
-### Lines to modify
-
-| Area | Lines | Description |
-|------|-------|-------------|
-| Material factors | 470-473 | Replace gammaC/gammaS with code-specific fcd/fyd |
-| Slenderness | 486-487 | Replace EC2 formula with kLu/r > 22 |
-| AsMin | 520 | Change 0.002 to 0.01 |
-| NRd capacity | 547 | Code-specific capacity equation |
-| Adequacy check | 550 | Change 0.2 threshold to 1.0 |
-| Interaction curve call | 553 | Pass buildingCode to generateInteractionCurve |
-| Return object | 559-598 | Add buildingCode field |
-| generateInteractionCurve | 603-610, 623, 666, 692-693 | Add buildingCode param, update P0 and Cc |
-
-### Impact
-
-- CSA designs will produce more conservative results (lower capacity) due to resistance factors applied to material strengths
-- ACI designs will show the 0.80 x phi reduction for tied columns per ACI 318
-- Both codes now correctly use 1% minimum reinforcement ratio
-- Slenderness classification uses the standard 22 threshold instead of the EC2 variable formula
-
+- `src/lib/engineeringCalculations.ts` -- add `disclaimer` field to 5 return objects
+- `src/components/engineering/results/DetailedResultsPanel.tsx` -- replace plain text disclaimer with amber banner
