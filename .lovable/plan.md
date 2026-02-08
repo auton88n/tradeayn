@@ -1,22 +1,36 @@
 
 
-# Fix: Eye Moving Up + Reduce History Card Height
+# Show History in ResponseCard Area (No Eye Fade)
 
-## Problem
-1. The eye has a default `y: -40` offset, causing it to shift upward visually even when idle. This makes it look like it "jumps" when the history card opens.
-2. The history card at `max-h-[60vh]` is too tall.
+## What Changes
+When you tap "History", the chat history will appear in the center of the screen (where the ResponseCard normally shows), styled the same way. The eye stays completely normal -- no fading, no moving. The history card simply appears below it, just like AI responses do.
 
-## Changes
+## Technical Changes
 
-### 1. CenterStageLayout.tsx -- Remove the upward offset
-On line 744, the eye's default `y` value is `-40`, which pushes it up unnecessarily. Change it to `0` so the eye stays in its natural position and doesn't appear to move when the history card opens over it.
+### 1. Remove eye opacity fade (`CenterStageLayout.tsx`)
+- Remove `opacity: transcriptOpen ? 0 : 1` from the eye's animate prop (line 745)
+- Remove the `opacity` transition config (line 751)
+- The eye stays fully visible at all times
 
-- Before: `y: (hasVisibleResponses || isTransitioningToChat) ? -20 : -40`
-- After: `y: (hasVisibleResponses || isTransitioningToChat) ? -20 : 0`
+### 2. Add HistoryCard rendering in center stage (`CenterStageLayout.tsx`)
+- After the ResponseCard `AnimatePresence` block (line 791), add a new block that renders a `HistoryCard` component when `transcriptOpen` is true
+- Pass: `transcriptMessages`, `isTyping`, `onClose` (calls `onTranscriptToggle`), `onClear` (calls `onTranscriptClear`)
+- Uses the same wrapper pattern as ResponseCard (centered, with max-height constraint)
 
-### 2. ChatInput.tsx -- Reduce history card height
-On line 466, reduce the max height from `max-h-[60vh]` to `max-h-[340px]` to make the history card shorter and more compact.
+### 3. Remove history panel from ChatInput (`ChatInput.tsx`)
+- Remove the entire history panel section (lines 434-528): the `AnimatePresence` with the motion.div containing the header, messages area, typing indicator, and scroll button
+- Remove related state/refs: `historyScrollRef`, `showScrollDown`, `handleHistoryScroll`, `scrollHistoryToBottom`, `seenMessageIdsRef`
+- Keep the "History" toggle button -- it still triggers `onTranscriptToggle`
 
-- Before: `max-h-[60vh]`
-- After: `max-h-[340px]`
+### 4. New component: `src/components/eye/HistoryCard.tsx`
+- Styled identically to ResponseCard: same border, shadow, rounded corners, header with Brain icon
+- Header shows "AYN" label with Clear and Close buttons
+- Scrollable message area (`max-h-[50vh]`) rendering `TranscriptMessage` components
+- Typing indicator (three bouncing dots) when AI is processing
+- Scroll-to-bottom button when not at bottom
+- No entry/exit animations -- just renders/unmounts instantly for zero lag
+
+### 5. Stop clearing ResponseCard on history open (`CenterStageLayout.tsx`)
+- Remove the `useEffect` that calls `clearResponseBubbles()` and `clearSuggestions()` when `transcriptOpen` changes (lines 676-682)
+- The ResponseCard will naturally be hidden since it won't emit new bubbles while history is open (line 639 already handles this), but existing ones can stay
 
