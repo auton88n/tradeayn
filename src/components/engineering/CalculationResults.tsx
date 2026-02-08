@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Download, 
@@ -19,12 +19,17 @@ import {
 } from 'lucide-react';
 import { ForceDiagrams } from './ForceDiagrams';
 import { Button } from '@/components/ui/button';
-import { BeamVisualization3D } from './BeamVisualization3D';
-import { FoundationVisualization3D } from './FoundationVisualization3D';
-import ColumnVisualization3D from './ColumnVisualization3D';
-import SlabVisualization3D from './SlabVisualization3D';
-import RetainingWallVisualization3D from './RetainingWallVisualization3D';
-import { ParkingVisualization3D } from './ParkingVisualization3D';
+
+const BeamVisualization3D = lazy(() => import('./BeamVisualization3D').then(m => ({ default: m.BeamVisualization3D })));
+const FoundationVisualization3D = lazy(() => import('./FoundationVisualization3D').then(m => ({ default: m.FoundationVisualization3D })));
+const ColumnVisualization3D = lazy(() => import('./ColumnVisualization3D'));
+const SlabVisualization3D = lazy(() => import('./SlabVisualization3D'));
+const RetainingWallVisualization3D = lazy(() => import('./RetainingWallVisualization3D'));
+const ParkingVisualization3D = lazy(() => import('./ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
+
+const Visualization3DFallback = () => (
+  <div className="h-[300px] bg-muted rounded-lg animate-pulse" />
+);
 import { ParkingLayout2D } from './ParkingLayout2D';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -385,35 +390,45 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
           </div>
           <div className="aspect-square bg-muted/30 rounded-xl overflow-hidden flex flex-col">
             {result.type === 'beam' ? (
-              <BeamVisualization3D outputs={outputs} />
+              <Suspense fallback={<Visualization3DFallback />}>
+                <BeamVisualization3D outputs={outputs} />
+              </Suspense>
             ) : result.type === 'foundation' ? (
-              <FoundationVisualization3D outputs={outputs} />
+              <Suspense fallback={<Visualization3DFallback />}>
+                <FoundationVisualization3D outputs={outputs} />
+              </Suspense>
             ) : result.type === 'column' ? (
-              <ColumnVisualization3D
-                width={(outputs.width || result.inputs.width || 400) as number}
-                depth={(outputs.depth || result.inputs.depth || 400) as number}
-                height={(outputs.height || result.inputs.height || 3000) as number}
-                cover={(result.inputs.cover || 40) as number}
-                columnType={(result.inputs.columnType || 'tied') as string}
-              />
+              <Suspense fallback={<Visualization3DFallback />}>
+                <ColumnVisualization3D
+                  width={(outputs.width || result.inputs.width || 400) as number}
+                  depth={(outputs.depth || result.inputs.depth || 400) as number}
+                  height={(outputs.height || result.inputs.height || 3000) as number}
+                  cover={(result.inputs.cover || 40) as number}
+                  columnType={(result.inputs.columnType || 'tied') as string}
+                />
+              </Suspense>
             ) : result.type === 'slab' ? (
-              <SlabVisualization3D
-                length={(outputs.length || (Number(result.inputs.longSpan) || 6) * 1000) as number}
-                width={(outputs.width || (Number(result.inputs.shortSpan) || 4) * 1000) as number}
-                thickness={(outputs.thickness || 150) as number}
-                topBarSpacing={(outputs.topBarSpacing || 200) as number}
-                bottomBarSpacing={(outputs.bottomBarSpacing || 150) as number}
-                slabType={(result.inputs.slabType || 'two_way') as string}
-              />
+              <Suspense fallback={<Visualization3DFallback />}>
+                <SlabVisualization3D
+                  length={(outputs.length || (Number(result.inputs.longSpan) || 6) * 1000) as number}
+                  width={(outputs.width || (Number(result.inputs.shortSpan) || 4) * 1000) as number}
+                  thickness={(outputs.thickness || 150) as number}
+                  topBarSpacing={(outputs.topBarSpacing || 200) as number}
+                  bottomBarSpacing={(outputs.bottomBarSpacing || 150) as number}
+                  slabType={(result.inputs.slabType || 'two_way') as string}
+                />
+              </Suspense>
             ) : result.type === 'retaining_wall' ? (
-              <RetainingWallVisualization3D
-                wallHeight={(outputs.wallHeight || result.inputs.wallHeight || 4000) as number}
-                stemThicknessTop={(outputs.stemThicknessTop || 300) as number}
-                stemThicknessBottom={(outputs.stemThicknessBottom || 400) as number}
-                baseWidth={(outputs.baseWidth || 2500) as number}
-                baseThickness={(outputs.baseThickness || 400) as number}
-                toeWidth={(outputs.toeWidth || outputs.toeLength || 600) as number}
-              />
+              <Suspense fallback={<Visualization3DFallback />}>
+                <RetainingWallVisualization3D
+                  wallHeight={(outputs.wallHeight || result.inputs.wallHeight || 4000) as number}
+                  stemThicknessTop={(outputs.stemThicknessTop || 300) as number}
+                  stemThicknessBottom={(outputs.stemThicknessBottom || 400) as number}
+                  baseWidth={(outputs.baseWidth || 2500) as number}
+                  baseThickness={(outputs.baseThickness || 400) as number}
+                  toeWidth={(outputs.toeWidth || outputs.toeLength || 600) as number}
+                />
+              </Suspense>
             ) : result.type === 'parking' && parkingLayout?.spaces ? (
               <div className="w-full flex-1 flex flex-col min-h-0">
                 {/* 2D/3D Toggle */}
@@ -443,14 +458,16 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                 </div>
                 {/* Visualization */}
                 <div className="flex-1 min-h-0 relative">
-                  {parkingViewMode === '3d' ? (
-                    <ParkingVisualization3D
-                      layout={parkingLayout as any}
-                      siteLength={Number(result.inputs.siteLength) || 50}
-                      siteWidth={Number(result.inputs.siteWidth) || 30}
-                      parkingType={String(result.inputs.parkingType || 'surface')}
-                      floors={Number(result.inputs.floors) || 1}
-                    />
+                {parkingViewMode === '3d' ? (
+                    <Suspense fallback={<Visualization3DFallback />}>
+                      <ParkingVisualization3D
+                        layout={parkingLayout as any}
+                        siteLength={Number(result.inputs.siteLength) || 50}
+                        siteWidth={Number(result.inputs.siteWidth) || 30}
+                        parkingType={String(result.inputs.parkingType || 'surface')}
+                        floors={Number(result.inputs.floors) || 1}
+                      />
+                    </Suspense>
                   ) : (
                     <ParkingLayout2D
                       layout={parkingLayout as any}

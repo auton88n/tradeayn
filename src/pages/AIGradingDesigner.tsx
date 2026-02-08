@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Mountain, Sparkles, PlusCircle, FileSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { SurveyUploader } from '@/components/engineering/SurveyUploader';
 import { GradingRequirements } from '@/components/engineering/GradingRequirements';
-import { TerrainVisualization3D } from '@/components/engineering/TerrainVisualization3D';
+
+const TerrainVisualization3D = lazy(() => import('@/components/engineering/TerrainVisualization3D').then(m => ({ default: m.TerrainVisualization3D })));
 import { GradingResults } from '@/components/engineering/GradingResults';
 import { GradingComplianceDisplay } from '@/components/engineering/GradingComplianceDisplay';
 import { DesignReviewMode } from '@/components/engineering/DesignReviewMode';
@@ -227,7 +228,9 @@ const AIGradingDesigner: React.FC = () => {
                 </div>
                 <div className="space-y-6">
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                    <TerrainVisualization3D points={fglPoints.length > 0 ? fglPoints : points} showFGL={fglPoints.length > 0} />
+                    <Suspense fallback={<div className="h-[400px] bg-muted rounded-lg animate-pulse" />}>
+                      <TerrainVisualization3D points={fglPoints.length > 0 ? fglPoints : points} showFGL={fglPoints.length > 0} />
+                    </Suspense>
                   </motion.div>
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="space-y-4">
                     <GradingResults design={design} costBreakdown={costBreakdown} totalCost={totalCost} fglPoints={fglPoints} projectName={projectName} />

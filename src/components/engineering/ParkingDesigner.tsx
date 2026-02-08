@@ -20,7 +20,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ParkingLayout2D } from './ParkingLayout2D';
-import { ParkingVisualization3D } from './ParkingVisualization3D';
+
+const ParkingVisualization3D = React.lazy(() => import('./ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
 import { ParkingSiteProvider, useParkingSite } from './parking/context/ParkingSiteContext';
 import { InputSection } from './ui';
 import { AnglePicker, ParkingStatsBar } from './parking/components';

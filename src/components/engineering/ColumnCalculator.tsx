@@ -1,4 +1,4 @@
-import React, { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calculator, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import ColumnVisualization3D from './ColumnVisualization3D';
+
+const ColumnVisualization3D = lazy(() => import('./ColumnVisualization3D'));
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateColumn } from '@/lib/engineeringCalculations';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -393,13 +394,15 @@ const ColumnCalculator = forwardRef<ColumnCalculatorRef, ColumnCalculatorProps>(
             <CardTitle className="text-sm">Column Cross-Section Preview</CardTitle>
           </CardHeader>
           <CardContent>
-            <ColumnVisualization3D
-              width={inputs.columnWidth}
-              depth={inputs.columnDepth}
-              height={inputs.columnHeight}
-              cover={inputs.coverThickness}
-              columnType={inputs.columnType}
-            />
+            <Suspense fallback={<div className="h-[300px] bg-muted rounded-lg animate-pulse" />}>
+              <ColumnVisualization3D
+                width={inputs.columnWidth}
+                depth={inputs.columnDepth}
+                height={inputs.columnHeight}
+                cover={inputs.coverThickness}
+                columnType={inputs.columnType}
+              />
+            </Suspense>
           </CardContent>
         </Card>
       </div>
