@@ -1,18 +1,24 @@
 
-## Fix Paste Cursor Position in Dashboard ChatInput
+## Fix Textarea Auto-Scroll to Cursor
 
-**Problem**: When pasting text into the dashboard chat input, the cursor jumps to the beginning instead of staying at the end of the pasted content. The existing `onPaste` handler tries to fix this with `setTimeout(..., 0)`, but React's re-render from `setInputMessage` happens after the timeout, resetting the cursor.
+**Problem**: The chat input textarea has a fixed height of 44px. When you type or paste text that exceeds the visible area, the textarea doesn't scroll down to keep the cursor visible -- you have to scroll manually.
 
-**Fix**: Use a `useEffect` to reposition the cursor after React has re-rendered with the new value.
+**Root Cause**: The `handleTextareaChange` function has an empty block where auto-resize logic was supposed to be. The textarea never grows, and no `scrollTop` adjustment is made to follow the cursor.
 
 ---
 
-### Changes
+### Fix
 
 **`src/components/dashboard/ChatInput.tsx`**
 
-1. Add a `pendingCursorRef` (useRef) to store the desired cursor position after a paste
-2. In the `onPaste` handler, set this ref to `start + text.length` instead of using `setTimeout`
-3. Add a `useEffect` that watches `inputMessage` -- when it changes and `pendingCursorRef` has a value, set `selectionStart`/`selectionEnd` to that position and clear the ref
+Two improvements:
 
-This ensures the cursor is repositioned after React finishes rendering the updated text, not before.
+1. **Auto-grow the textarea** up to a max height (e.g., 150px), so short messages show fully without scrolling:
+   - In `handleTextareaChange`, reset `textarea.style.height = 'auto'`, then set it to `Math.min(textarea.scrollHeight, 150) + 'px'`
+   - This makes the input grow as you type and shrink when you delete
+
+2. **Auto-scroll to cursor after paste**: In the `useEffect` that repositions the cursor (the `pendingCursorRef` effect), also call `textarea.scrollTop = textarea.scrollHeight` to ensure the view follows the cursor after a paste
+
+3. **Reset height on send**: When a message is sent, reset the textarea height back to the default 44px
+
+This ensures the cursor is always visible whether you're typing line by line or pasting a large block of text.
