@@ -1,31 +1,57 @@
 
 
-# Remove Fabricated aggregateRating from JSON-LD
+# Fix Terms Acceptance: Database as Source of Truth
 
 ## Problem
 
-The `SoftwareApplication` JSON-LD in `index.html` contains a fabricated `aggregateRating` block claiming 30,000 ratings at 4.8 stars. Google can issue a manual action penalty for fake structured data, removing rich snippets or demoting the site.
+When the database returns `has_accepted_terms = false`, the current code falls through to check localStorage, allowing users to bypass the terms modal by manually setting a localStorage key via DevTools. This is a legal compliance risk.
 
 ## Change
 
-**File: `index.html`** -- Remove the `aggregateRating` block (lines ~92-96) from the first JSON-LD script. Everything else in the JSON-LD stays unchanged.
+**File: `src/hooks/useAuth.ts`** -- Replace the terms processing block inside `runQueries` (approximately lines 149-163).
+
+**Current logic:**
+- DB says accepted -> trust it, sync to localStorage
+- DB says not accepted -> check localStorage as override (BUG)
+- DB query failed -> check localStorage
+
+**New logic:**
+- DB says accepted -> trust it, sync to localStorage
+- DB says not accepted -> trust DB, clear localStorage
+- DB query failed (null result) -> use localStorage as temporary fallback only
 
 **Before:**
-```json
-"offers": { ... },
-"aggregateRating": {
-  "@type": "AggregateRating",
-  "ratingValue": "4.8",
-  "ratingCount": "30000"
-},
-"inLanguage": ["en", "ar", "fr"],
+```typescript
+if (settingsData) {
+  const dbTermsAccepted = settingsData?.[0]?.has_accepted_terms ?? false;
+  if (dbTermsAccepted) {
+    setHasAcceptedTerms(true);
+    localStorage.setItem(`terms_accepted_${user.id}`, 'true');
+  } else {
+    const localTermsAccepted = localStorage.getItem(`terms_accepted_${user.id}`) === 'true';
+    setHasAcceptedTerms(localTermsAccepted);
+  }
+} else {
+  const localTermsAccepted = localStorage.getItem(`terms_accepted_${user.id}`) === 'true';
+  setHasAcceptedTerms(localTermsAccepted);
+}
 ```
 
 **After:**
-```json
-"offers": { ... },
-"inLanguage": ["en", "ar", "fr"],
+```typescript
+if (settingsData) {
+  const dbTermsAccepted = settingsData?.[0]?.has_accepted_terms ?? false;
+  setHasAcceptedTerms(dbTermsAccepted);
+  if (dbTermsAccepted) {
+    localStorage.setItem(`terms_accepted_${user.id}`, 'true');
+  } else {
+    localStorage.removeItem(`terms_accepted_${user.id}`);
+  }
+} else {
+  const localTermsAccepted = localStorage.getItem(`terms_accepted_${user.id}`) === 'true';
+  setHasAcceptedTerms(localTermsAccepted);
+}
 ```
 
-One file, one deletion. The rating can be re-added later with verified review data.
+One file, one block replacement. No other changes needed.
 
