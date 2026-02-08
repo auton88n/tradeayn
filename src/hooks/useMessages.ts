@@ -16,7 +16,7 @@ import type {
   LABResponse
 } from '@/types/dashboard.types';
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config'; // SUPABASE_URL needed for edge function URLs, SUPABASE_ANON_KEY for inline REST calls
 
 // Maximum messages allowed per chat session
 const MAX_MESSAGES_PER_CHAT = 100;
@@ -40,26 +40,7 @@ const fetchWithRetry = async (
   throw new Error('Request failed after retries');
 };
 
-// Helper for direct REST API calls (bypasses deadlocking Supabase client)
-const fetchFromSupabase = async (
-  endpoint: string,
-  token: string
-): Promise<any> => {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
-  }
-
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
-};
+import { supabaseApi } from '@/lib/supabaseApi';
 
 // Parse SSE stream and call onChunk for each token
 const parseSSEStream = async (
@@ -147,7 +128,7 @@ export const useMessages = (
     setIsLoadingFromHistory(true);
     
     try {
-      const data = await fetchFromSupabase(
+      const data = await supabaseApi.get<any[]>(
         `messages?user_id=eq.${userId}&session_id=eq.${sessionId}&select=id,content,created_at,sender,attachment_url,attachment_name,attachment_type&order=created_at.asc`,
         session.access_token
       );
@@ -706,7 +687,7 @@ export const useMessages = (
 
       // Check usage and show in-app warning if approaching limit
       try {
-        const usageData = await fetchFromSupabase(
+        const usageData = await supabaseApi.get<any[]>(
           `access_grants?user_id=eq.${userId}&select=current_month_usage,monthly_limit`,
           session.access_token
         );
