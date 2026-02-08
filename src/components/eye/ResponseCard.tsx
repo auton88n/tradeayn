@@ -333,7 +333,7 @@ const ResponseCardComponent = ({
           key={transcriptOpen ? "history" : visibleResponses[0]?.id || "empty"}
           layout={false}
           className={cn(
-            "relative flex flex-col max-h-full",
+            "relative flex flex-col",
             "w-full sm:w-[90%] md:max-w-[600px] lg:max-w-[680px]",
             "mx-2 sm:mx-auto",
             "bg-background",
@@ -401,72 +401,69 @@ const ResponseCardComponent = ({
             /* ============================================
                HISTORY MODE — simple hard maxHeight, no flex chains
                ============================================ */
-            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              {/* Scroll container */}
-              <div className="relative flex-1 min-h-0">
-                <div
-                  ref={historyScrollRef}
-                  onScroll={handleHistoryScroll}
-                  className="absolute inset-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-3 scroll-pb-8 [-webkit-overflow-scrolling:touch]"
-                >
-                  {sortedMessages.length === 0 ? (
-                    <div className="flex items-center justify-center py-16">
-                      <p className="text-sm text-muted-foreground">No messages yet</p>
+            <div className="relative">
+              {/* Scroll container — single div, hard max-height, no flex/absolute */}
+              <div
+                ref={historyScrollRef}
+                onScroll={handleHistoryScroll}
+                className="max-h-[60vh] overflow-y-auto overscroll-contain px-2 py-2 space-y-3 [-webkit-overflow-scrolling:touch]"
+              >
+                {sortedMessages.length === 0 ? (
+                  <div className="flex items-center justify-center py-16">
+                    <p className="text-sm text-muted-foreground">No messages yet</p>
+                  </div>
+                ) : (
+                  sortedMessages.map((msg) => {
+                    const isNew = !seenMessageIdsRef.current.has(msg.id);
+                    if (isNew) seenMessageIdsRef.current.add(msg.id);
+                    const ts = msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp);
+                    return (
+                      <TranscriptMessage
+                        key={msg.id}
+                        content={msg.content}
+                        sender={msg.sender === "user" ? "user" : "ayn"}
+                        timestamp={ts}
+                        shouldAnimate={isNew}
+                        compact
+                      />
+                    );
+                  })
+                )}
+
+                {/* Typing indicator */}
+                {historyTyping && (
+                  <div className="flex items-start gap-1.5 px-2 py-1">
+                    <div className="w-5 h-5 rounded-full bg-foreground flex items-center justify-center flex-shrink-0">
+                      <Brain className="w-3 h-3 text-background" />
                     </div>
-                  ) : (
-                    sortedMessages.map((msg) => {
-                      const isNew = !seenMessageIdsRef.current.has(msg.id);
-                      if (isNew) seenMessageIdsRef.current.add(msg.id);
-                      const ts = msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp);
-                      return (
-                        <TranscriptMessage
-                          key={msg.id}
-                          content={msg.content}
-                          sender={msg.sender === "user" ? "user" : "ayn"}
-                          timestamp={ts}
-                          shouldAnimate={isNew}
-                          compact
-                        />
-                      );
-                    })
-                  )}
-
-                  {/* Typing indicator */}
-                  {historyTyping && (
-                    <div className="flex items-start gap-1.5 px-2 py-1">
-                      <div className="w-5 h-5 rounded-full bg-foreground flex items-center justify-center flex-shrink-0">
-                        <Brain className="w-3 h-3 text-background" />
-                      </div>
-                      <div className="px-3 py-1.5 rounded-2xl bg-muted/50 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:0ms]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:150ms]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:300ms]" />
-                      </div>
+                    <div className="px-3 py-1.5 rounded-2xl bg-muted/50 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:0ms]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:150ms]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:300ms]" />
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Bottom padding */}
-                  <div className="h-6 shrink-0" />
-                </div>
-
-                {/* Scroll-to-bottom button */}
-                <AnimatePresence>
-                  {showHistoryScrollDown && (
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ duration: 0.15 }}
-                      onClick={scrollHistoryToBottom}
-                      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 p-1.5 rounded-full bg-foreground text-background shadow-lg hover:bg-foreground/90 transition-colors"
-                      aria-label="Scroll to bottom"
-                    >
-                      <ChevronDown size={14} />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
+                {/* Bottom padding */}
+                <div className="h-6 shrink-0" />
               </div>
 
+              {/* Scroll-to-bottom button */}
+              <AnimatePresence>
+                {showHistoryScrollDown && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={scrollHistoryToBottom}
+                    className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 p-1.5 rounded-full bg-foreground text-background shadow-lg hover:bg-foreground/90 transition-colors"
+                    aria-label="Scroll to bottom"
+                  >
+                    <ChevronDown size={14} />
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             /* ============================================
