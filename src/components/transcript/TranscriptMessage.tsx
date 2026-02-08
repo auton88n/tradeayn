@@ -80,7 +80,7 @@ export const TranscriptMessage = ({
       <div className={cn(
         "min-w-0 flex-1",
         compact ? "max-w-[95%]" : "max-w-[80%]",
-        !compact && (isUser ? "text-right" : "text-left")
+        isUser ? "text-right" : "text-left"
       )}>
         <div className={cn(
           "flex items-center gap-1.5",
@@ -102,8 +102,8 @@ export const TranscriptMessage = ({
         </div>
         
         <div className={cn(
-          compact ? "block rounded-[16px] text-start relative px-4 py-2.5" : "inline-block rounded-[20px] text-start relative",
-          compact ? "" : "px-4 py-2.5",
+          "inline-block text-start relative px-4 py-2.5",
+          compact ? "rounded-[16px]" : "rounded-[20px]",
           isUser 
             ? "bg-muted/70 text-foreground rounded-br-sm" 
             : "bg-muted/50 text-foreground rounded-bl-sm shadow-sm"
