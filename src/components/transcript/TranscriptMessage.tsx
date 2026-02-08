@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Copy, Check, User, Brain, Clock, CornerDownLeft, Download, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Copy, Check, User, Brain, Clock, CornerDownLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -48,8 +48,6 @@ export const TranscriptMessage = ({
 }: TranscriptMessageProps) => {
   const isUser = sender === "user";
   const [copied, setCopied] = useState(false);
-  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
-  const [showDownload, setShowDownload] = useState(false);
 
   const handleCopy = async () => {
     const plainText = markdownToPlainText(content);
@@ -58,35 +56,6 @@ export const TranscriptMessage = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleFeedback = async (type: "up" | "down") => {
-    const newFeedback = feedback === type ? null : type;
-    setFeedback(newFeedback);
-    if (newFeedback) {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        await supabase.from("message_ratings").insert({
-          user_id: user?.id || null,
-          message_preview: content.slice(0, 200),
-          rating: type === "up" ? "positive" : "negative",
-        });
-      } catch (err) {
-        console.error("Failed to save feedback:", err);
-      }
-    }
-  };
-
-  const handleDownload = (format: "md" | "txt") => {
-    const text = format === "txt" ? markdownToPlainText(content) : content;
-    const ext = format === "txt" ? "txt" : "md";
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ayn-response.${ext}`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setShowDownload(false);
-  };
 
   return (
     <motion.div
@@ -184,43 +153,6 @@ export const TranscriptMessage = ({
               <Copy className="w-3.5 h-3.5 text-muted-foreground" />
             )}
           </button>
-          {!isUser && (
-            <>
-              <button
-                onClick={() => handleFeedback("up")}
-                className={cn("p-1 rounded-md transition-all", feedback === "up" ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
-                title="Good response"
-              >
-                <ThumbsUp className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => handleFeedback("down")}
-                className={cn("p-1 rounded-md transition-all", feedback === "down" ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
-                title="Bad response"
-              >
-                <ThumbsDown className="w-3.5 h-3.5" />
-              </button>
-              <div className="relative">
-                <button
-                  onClick={() => setShowDownload(!showDownload)}
-                  className="p-1 rounded-md hover:bg-muted/50 transition-all text-muted-foreground hover:text-foreground"
-                  title="Download"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </button>
-                {showDownload && (
-                  <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 min-w-[140px]">
-                    <button onClick={() => handleDownload("md")} className="w-full px-3 py-1.5 text-xs text-left hover:bg-muted transition-colors">
-                      Markdown (.md)
-                    </button>
-                    <button onClick={() => handleDownload("txt")} className="w-full px-3 py-1.5 text-xs text-left hover:bg-muted transition-colors">
-                      Plain Text (.txt)
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
           {onReply && (
             <button onClick={() => onReply(content)} className="p-1 rounded-md hover:bg-muted/50 transition-all" title="Reply">
               <CornerDownLeft className="w-3.5 h-3.5 text-muted-foreground" />
