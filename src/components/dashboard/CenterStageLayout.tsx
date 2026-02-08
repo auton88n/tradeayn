@@ -713,36 +713,35 @@ export const CenterStageLayout = ({
       <div 
         ref={eyeStageRef} 
         className={cn(
-          "flex-1 flex flex-col relative w-full overflow-y-auto overflow-x-hidden",
+          "flex-1 flex flex-col relative w-full",
           "items-center",
-          (hasVisibleResponses || transcriptOpen) ? "justify-start" : "justify-center",
-          "transition-[justify-content] duration-300 ease-out",
-          // Thin scrollbar
-          "[&::-webkit-scrollbar]:w-1.5",
-          "[&::-webkit-scrollbar-track]:bg-transparent",
-          "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/50",
-          "[&::-webkit-scrollbar-thumb]:rounded-full",
-          "[-webkit-overflow-scrolling:touch]"
+          (hasVisibleResponses || transcriptOpen) ? "justify-start pt-4" : "justify-center",
+          "transition-all duration-300 ease-out"
         )}
       >
-        {/* Sticky Eye container - stays pinned at top when content scrolls */}
-        <div 
+        {/* Unified layout - Eye and ResponseCard in same flex column */}
+        <motion.div 
           className={cn(
-            "sticky top-0 z-40 w-full flex justify-center bg-background",
-            (hasVisibleResponses || transcriptOpen) && "pt-4 pb-2"
+            "flex flex-col items-center w-full px-4",
+            // Dynamic max-width based on sidebar states
+            sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-42rem)]",
+            sidebarOpen && !transcriptOpen && "lg:max-w-[calc(100vw-22rem)]",
+            !sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-22rem)]"
           )}
         >
+          {/* Eye container - shrinks when response visible */}
           <motion.div 
             ref={eyeRef} 
             className={cn(
-              "relative overflow-visible",
+              "relative overflow-visible z-40",
+              (hasVisibleResponses || transcriptOpen || isTransitioningToChat) && "pb-4",
               isAbsorbPulsing && "scale-105 transition-transform duration-300"
             )}
             data-tutorial="eye"
             animate={{
               scale: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? (isMobile ? 0.55 : 0.5) : 1,
               marginBottom: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? -20 : 0,
-              y: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? 0 : -40,
+              y: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? 20 : -40,
             }}
             transition={{
               type: 'tween',
@@ -761,20 +760,18 @@ export const CenterStageLayout = ({
               />
               {betaMode && <BetaBadge className={isMobile ? "scale-90" : ""} />}
             </div>
-          </motion.div>
-        </div>
 
-        {/* ResponseCard - scrolls independently below the sticky eye */}
-        <div className={cn(
-          "w-full px-4 flex justify-center",
-          sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-42rem)]",
-          sidebarOpen && !transcriptOpen && "lg:max-w-[calc(100vw-22rem)]",
-          !sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-22rem)]"
-        )}>
+            {/* Thinking bubble removed per UX request */}
+          </motion.div>
+
+          {/* ResponseCard - flows directly below Eye in same column */}
           <AnimatePresence>
             {responseBubbles.length > 0 && (
               <motion.div
-                className="w-full flex justify-center"
+                className="w-full flex justify-center mt-2"
+                style={{ 
+                  maxHeight: `calc(100vh - ${footerHeight + 240}px)`,
+                }}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
@@ -791,7 +788,8 @@ export const CenterStageLayout = ({
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+          
+        </motion.div>
       </div>
 
       {/* Flying user message bubble */}
