@@ -99,7 +99,7 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
             ? { ...prev, status: 'absorbing' }
             : prev
         );
-      }, 400);
+      }, 300);
     },
     []
   );

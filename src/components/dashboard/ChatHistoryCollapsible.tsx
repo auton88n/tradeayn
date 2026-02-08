@@ -31,7 +31,16 @@ export const ChatHistoryCollapsible = ({
   onClear,
 }: ChatHistoryCollapsibleProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(messages.length);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  // Track which messages are "new" (arrived after initial render)
+  const newMessageStartIndex = prevMessageCountRef.current;
+  
+  // Update the ref after render
+  useEffect(() => {
+    prevMessageCountRef.current = messages.length;
+  }, [messages.length]);
 
   // Sort messages chronologically (oldest first), limit to last 20 for performance
   const sortedMessages = useMemo(() => {
@@ -114,7 +123,7 @@ export const ChatHistoryCollapsible = ({
                 {/* Messages Area */}
                 <ScrollArea className="h-72" ref={scrollRef}>
                   <div className="py-1 space-y-0">
-                    {sortedMessages.map((msg) => (
+                    {sortedMessages.map((msg, index) => (
                       <TranscriptMessage
                         key={msg.id}
                         content={msg.content}
@@ -122,6 +131,7 @@ export const ChatHistoryCollapsible = ({
                         timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
                         status={msg.status}
                         compact
+                        shouldAnimate={index >= newMessageStartIndex}
                       />
                     ))}
                   </div>

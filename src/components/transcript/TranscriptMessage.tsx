@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Copy, Check, User, Brain, CornerDownLeft, Clock } from 'lucide-react';
 import { useState } from 'react';
@@ -11,6 +12,7 @@ interface TranscriptMessageProps {
   compact?: boolean;
   status?: 'sending' | 'sent' | 'error' | 'queued';
   onReply?: (content: string) => void;
+  shouldAnimate?: boolean;
 }
 
 // Helper to strip markdown for clipboard
@@ -34,6 +36,7 @@ export const TranscriptMessage = ({
   compact = false,
   status,
   onReply,
+  shouldAnimate = true,
 }: TranscriptMessageProps) => {
   const isUser = sender === 'user';
   const [copied, setCopied] = useState(false);
@@ -46,11 +49,15 @@ export const TranscriptMessage = ({
   };
 
   return (
-    <div className={cn(
-      "group flex gap-2 transition-colors",
-      compact ? "py-1 px-2" : "p-3 gap-3",
-      isUser ? "flex-row-reverse" : "flex-row"
-    )}>
+    <motion.div
+      initial={shouldAnimate ? { opacity: 0, y: 6 } : false}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className={cn(
+        "group flex gap-2 transition-colors",
+        compact ? "py-1 px-2" : "p-3 gap-3",
+        isUser ? "flex-row-reverse" : "flex-row"
+      )}>
       {/* Avatar */}
       <div className={cn(
         "rounded-full flex items-center justify-center shrink-0",
@@ -143,6 +150,6 @@ export const TranscriptMessage = ({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
