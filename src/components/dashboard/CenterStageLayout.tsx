@@ -445,6 +445,16 @@ export const CenterStageLayout = ({
       // This prevents the 350ms delay from causing lost messages
       onSendMessage(content, file);
 
+      // When history panel is open, skip all flying bubble animations for instant ChatGPT-like feel
+      if (transcriptOpen) {
+        onRemoveFile();
+        clearResponseBubbles();
+        clearSuggestions();
+        setIsResponding(true);
+        requestAnimationFrame(() => orchestrateEmotionChange('thinking'));
+        return;
+      }
+
       // Small delay on mobile to let keyboard dismiss and layout settle
       const animationDelay = isMobile ? 60 : 0;
 
@@ -723,21 +733,20 @@ export const CenterStageLayout = ({
           <motion.div 
             ref={eyeRef} 
             className={cn(
-              "relative overflow-visible z-40 transition-transform duration-300",
+              "relative overflow-visible z-40",
               (hasVisibleResponses || transcriptOpen || isTransitioningToChat) && "pb-4",
-              isAbsorbPulsing && "scale-105"
+              isAbsorbPulsing && "scale-105 transition-transform duration-300"
             )}
             data-tutorial="eye"
-            style={{ willChange: 'transform' }}
             animate={{
               scale: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? (isMobile ? 0.55 : 0.5) : 1,
               marginBottom: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? -20 : 0,
               y: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? 20 : -15,
             }}
             transition={{
-              type: 'spring',
-              duration: 0.35,
-              bounce: 0.05,
+              type: 'tween',
+              duration: 0.3,
+              ease: [0.4, 0, 0.2, 1],
             }}
           >
             <div className="relative inline-block">
@@ -833,6 +842,7 @@ export const CenterStageLayout = ({
           suggestions={suggestionBubbles}
           onSuggestionClick={handleSuggestionClick}
           isDisabled={isDisabled || isTyping || maintenanceConfig?.enabled || creditsExhausted}
+          isTyping={isTyping}
           selectedMode={selectedMode}
           selectedFile={selectedFile}
           isUploading={isUploading}
