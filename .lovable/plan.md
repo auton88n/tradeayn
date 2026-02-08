@@ -1,97 +1,59 @@
 
 
-# Lazy Load All Remaining Three.js 3D Components
+# OptimizedImage Component + Image Optimization
 
-## Problem
+## Assessment
 
-While `EngineeringWorkspace.tsx` already lazy-loads its 3D visualizations, three other files directly import 3D components, pulling the ~300KB Three.js bundle into their parent chunks and slowing initial load.
+After reviewing the entire codebase, the situation is different from what was expected:
 
-## Files That Need Changes
+- **Landing page (Hero.tsx)**: No images at all -- pure CSS, SVG, and Lucide icons
+- **Service pages (AI Agents, Automation, Civil Engineering, AI Employee)**: No `<img>` tags -- all mockups are CSS/SVG-based
+- **InfluencerSites.tsx**: Imports `influencer-woman-bg.jpg` but delegates rendering to `MobileMockup.tsx`
+- **MobileMockup.tsx**: Uses the JPG as a CSS `backgroundImage` at 40% opacity -- the only static image on any public page
 
-### 1. `src/components/engineering/CalculationResults.tsx` (lines 22-27)
+The remaining `<img>` tags exist in:
+- `SavedImagesGallery.tsx` (user-uploaded images in dashboard)
+- `MessageFormatter.tsx` (AI-generated images in chat)
+- `PortfolioCard.tsx` (user portfolio thumbnails)
+- `VisualTestResults.tsx` (admin test screenshots)
 
-Currently has 6 direct imports of 3D components. Replace all with `lazy()` imports and wrap their JSX usage in `<Suspense>` with a skeleton fallback.
+These are all dynamic/user-generated content, not static marketing images.
 
-```
-// Before (direct imports)
-import { BeamVisualization3D } from './BeamVisualization3D';
-import { FoundationVisualization3D } from './FoundationVisualization3D';
-import ColumnVisualization3D from './ColumnVisualization3D';
-import SlabVisualization3D from './SlabVisualization3D';
-import RetainingWallVisualization3D from './RetainingWallVisualization3D';
-import { ParkingVisualization3D } from './ParkingVisualization3D';
+## Proposed Changes
 
-// After (lazy imports)
-const BeamVisualization3D = lazy(() => import('./BeamVisualization3D').then(m => ({ default: m.BeamVisualization3D })));
-const FoundationVisualization3D = lazy(() => import('./FoundationVisualization3D').then(m => ({ default: m.FoundationVisualization3D })));
-const ColumnVisualization3D = lazy(() => import('./ColumnVisualization3D'));
-const SlabVisualization3D = lazy(() => import('./SlabVisualization3D'));
-const RetainingWallVisualization3D = lazy(() => import('./RetainingWallVisualization3D'));
-const ParkingVisualization3D = lazy(() => import('./ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
-```
+### 1. New file: `src/components/shared/OptimizedImage.tsx`
 
-Add `lazy, Suspense` to the React import. Wrap each 3D component usage in `<Suspense>` with a placeholder fallback:
-```tsx
-<Suspense fallback={<div className="h-[300px] bg-muted rounded-lg animate-pulse" />}>
-  <BeamVisualization3D ... />
-</Suspense>
-```
+A reusable component with:
+- **Native lazy loading** via `loading="lazy"` (skipped when `priority=true` for above-the-fold images)
+- **Fade-in transition** on load to avoid content flash
+- **Skeleton placeholder** while loading
+- **`decoding="async"`** to avoid blocking the main thread
+- **Optional `width`/`height`** to prevent layout shift (CLS)
 
-### 2. `src/components/engineering/ColumnCalculator.tsx` (line 10)
+### 2. Update: `src/components/services/MobileMockup.tsx`
 
-Replace the direct import with lazy:
-```
-// Before
-import ColumnVisualization3D from './ColumnVisualization3D';
+Replace the inline `backgroundImage` style with a proper `<img>` tag using `OptimizedImage` with `loading="lazy"` and absolute positioning. This gives the browser the ability to natively lazy-load the image instead of eagerly fetching a CSS background.
 
-// After
-const ColumnVisualization3D = lazy(() => import('./ColumnVisualization3D'));
-```
+### 3. Update: `src/components/shared/index.ts`
 
-Add `lazy, Suspense` to React import. Wrap usage in `<Suspense>`.
+Add `OptimizedImage` to barrel exports for easy reuse across the project.
 
-### 3. `src/components/engineering/ParkingDesigner.tsx` (line 23)
+### 4. Apply to dynamic images (low effort, high impact)
 
-Replace the direct import with lazy:
-```
-// Before
-import { ParkingVisualization3D } from './ParkingVisualization3D';
+Update `SavedImagesGallery.tsx` and `PortfolioCard.tsx` to use `OptimizedImage` for their thumbnails. These benefit from the fade-in transition and lazy loading since they render in scrollable lists.
 
-// After
-const ParkingVisualization3D = lazy(() => import('./ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
-```
+## What this does NOT do
 
-Add `lazy, Suspense` to React import. Wrap usage in `<Suspense>`.
+- No responsive `srcset` or size variants -- the project serves images from Supabase Storage URLs which don't support on-the-fly resizing. Adding a CDN image transform layer is a separate infrastructure task.
+- No changes to `MessageFormatter.tsx` -- its image rendering has lightbox integration that needs to stay custom.
 
-### 4. `src/pages/AIGradingDesigner.tsx` (line 10)
+## Files changed
 
-Replace the direct import with lazy:
-```
-// Before
-import { TerrainVisualization3D } from '@/components/engineering/TerrainVisualization3D';
-
-// After
-const TerrainVisualization3D = lazy(() => import('@/components/engineering/TerrainVisualization3D').then(m => ({ default: m.TerrainVisualization3D })));
-```
-
-Add `lazy, Suspense` to React import. Wrap usage in `<Suspense>`.
-
-## No Changes Needed
-
-- `EmotionalEye` -- does NOT use Three.js (pure CSS/canvas), no change needed
-- `EngineeringWorkspace.tsx` -- already uses `lazy()` for all 3D components
-- `ParkingCar3D.tsx` -- only imported by ParkingVisualization3D (internal), not a parent-level concern
-
-## Suspense Fallback
-
-All fallbacks will use a consistent skeleton:
-```tsx
-<div className="h-[300px] bg-muted rounded-lg animate-pulse" />
-```
-
-This matches the typical 3D visualization container height and prevents layout shift.
-
-## Impact
-
-After this change, the Three.js vendor chunk (`vendor-3d`) will only load when a user actually opens an engineering calculator or visualization -- not on initial page load. This saves ~300KB on first load, especially beneficial for mobile users on slower networks.
+| File | Change |
+|------|--------|
+| `src/components/shared/OptimizedImage.tsx` | New component |
+| `src/components/shared/index.ts` | Add export |
+| `src/components/services/MobileMockup.tsx` | Replace CSS backgroundImage with OptimizedImage |
+| `src/components/dashboard/SavedImagesGallery.tsx` | Use OptimizedImage for thumbnails |
+| `src/components/engineering/PortfolioCard.tsx` | Use OptimizedImage for thumbnails |
 
