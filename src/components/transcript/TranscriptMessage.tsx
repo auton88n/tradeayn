@@ -58,13 +58,13 @@ export const TranscriptMessage = ({
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className={cn(
         "group flex transition-colors",
-        compact ? "py-0.5 px-1 gap-1.5" : "p-3 gap-3",
+        compact ? "py-1.5 px-2 gap-2.5" : "p-3 gap-3",
         isUser ? "flex-row-reverse" : "flex-row"
       )}>
       {/* Avatar */}
       <div className={cn(
         "rounded-full flex items-center justify-center shrink-0",
-        compact ? "w-5 h-5" : "w-8 h-8",
+        compact ? "w-6 h-6" : "w-8 h-8",
         isUser 
           ? "bg-primary text-primary-foreground" 
           : "bg-foreground text-background"
@@ -88,21 +88,21 @@ export const TranscriptMessage = ({
         )}>
           <span className={cn(
             "font-medium text-foreground",
-            compact ? "text-[11px]" : "text-sm"
+            compact ? "text-xs" : "text-sm"
           )}>
             {isUser ? 'You' : 'AYN'}
           </span>
           <span className={cn(
             "text-muted-foreground",
-            compact ? "text-[10px]" : "text-xs"
+            compact ? "text-[11px]" : "text-xs"
           )}>
             {format(timestamp, 'h:mm a')}
           </span>
         </div>
         
         <div className={cn(
-          compact ? "block rounded-[16px] text-start relative" : "inline-block rounded-[20px] text-start relative",
-          compact ? "px-2.5 py-1" : "px-4 py-2.5",
+          compact ? "block rounded-[16px] text-start relative px-3 py-2" : "inline-block rounded-[20px] text-start relative",
+          compact ? "" : "px-4 py-2.5",
           isUser 
             ? "bg-muted/70 text-foreground rounded-br-sm" 
             : "bg-muted/50 text-foreground rounded-bl-sm shadow-sm"
@@ -111,7 +111,7 @@ export const TranscriptMessage = ({
             "leading-relaxed break-words [&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:pb-0 [&_li]:pl-3 [&_li]:before:text-sm",
             "[&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3",
             "[&_code]:text-sm [&_table]:text-sm [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground/30 [&_blockquote]:pl-3",
-            compact ? "text-xs" : "text-sm",
+            compact ? "text-[13px]" : "text-sm",
             compact ? "" : "max-h-[40vh] overflow-y-auto overscroll-contain"
           )}>
             {isStreaming ? (
