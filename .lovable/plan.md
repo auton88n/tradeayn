@@ -1,97 +1,62 @@
 
 
-# Core Web Vitals Reporting (with Sampling)
+# Skeleton Loading States for Key Pages
 
 ## Overview
 
-Add client-side performance monitoring that captures real navigation timing metrics and reports them to a new lightweight edge function. Includes a 10% session sampling rate to keep database writes manageable at scale.
+Replace the generic `PageLoader` spinner with route-specific skeleton screens that mirror each page's layout. This eliminates perceived loading time by showing a content-shaped placeholder instead of a centered spinner.
 
-## Sampling Math
+## Current State
 
-At 30,000 users with ~1 page load each:
-- Without sampling: 90,000 rows/day (3 metrics per load)
-- With 10% sampling: ~9,000 rows/day -- statistically meaningful, far fewer writes
+- All lazy-loaded routes share a single `<Suspense fallback={<PageLoader />}>` in `App.tsx` -- a centered animated eye with "Loading..." text
+- The `Skeleton` component already exists with a shimmer animation
+- The `Index` page already uses `<DashboardLoader />` for its authenticated view
+- Engineering workspace already uses inline `<LoadingFallback />` skeletons
 
 ## Changes
 
-### 1. New file: `src/lib/performanceMonitor.ts`
+### 1. New file: `src/components/ui/skeleton-layouts.tsx`
 
-Client-side module that:
-- Exits early in dev mode (`import.meta.env.DEV`)
-- **Exits early 90% of the time** (`if (Math.random() > 0.1) return`)
-- Waits for `window.load` + 3s delay for accurate final metrics
-- Collects TTFB, DCL, full load time, page path, connection type via Navigation Timing API
-- Sends via `navigator.sendBeacon` (non-blocking, fire-and-forget)
-- Uses `SUPABASE_URL` from `src/config.ts`
-- All errors silently caught
+Four skeleton layouts matching actual page structures:
 
-```typescript
-export function initPerformanceMonitoring() {
-  if (import.meta.env.DEV) return;
-  if (Math.random() > 0.1) return; // 10% sampling
+- **`LandingPageSkeleton`** -- Hero section shape: large title block, subtitle, CTA buttons, service cards grid
+- **`SettingsSkeleton`** -- Sidebar + form fields: navigation pills on left, labeled input blocks on right
+- **`EngineeringSkeleton`** -- Toolbar + split panel: calculator selector strip, input fields on left, 3D preview area on right
+- **`ServicePageSkeleton`** -- Generic service page: hero banner, feature cards, CTA section
 
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      try {
-        const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-        if (!nav) return;
-        const metrics = {
-          ttfb: Math.round(nav.responseStart - nav.requestStart),
-          dcl: Math.round(nav.domContentLoadedEventEnd - nav.startTime),
-          load: Math.round(nav.loadEventEnd - nav.startTime),
-          url: window.location.pathname,
-          connection: (navigator as any).connection?.effectiveType || 'unknown',
-        };
-        navigator.sendBeacon?.(
-          `${SUPABASE_URL}/functions/v1/report-vitals`,
-          JSON.stringify(metrics)
-        );
-      } catch { /* silent */ }
-    }, 3000);
-  });
-}
+All built from the existing `Skeleton` component with appropriate sizing and spacing.
+
+### 2. Update: `src/App.tsx`
+
+Wrap groups of routes in nested `<Suspense>` boundaries with matching skeleton fallbacks:
+
+```text
+Routes layout:
+  /                    -> LandingPageSkeleton (or DashboardLoader if auth check pending)
+  /settings            -> SettingsSkeleton
+  /pricing             -> SettingsSkeleton (similar form layout)
+  /engineering/*       -> EngineeringSkeleton
+  /services/*          -> ServicePageSkeleton
+  everything else      -> PageLoader (current default, kept as outer fallback)
 ```
 
-### 2. New edge function: `supabase/functions/report-vitals/index.ts`
+The outer `<Suspense fallback={<PageLoader />}>` remains as a catch-all. Per-route Suspense boundaries are added inside individual `<Route>` elements so each page gets its own skeleton while loading.
 
-Minimal function that:
-- Accepts POST with JSON body (`ttfb`, `dcl`, `load`, `url`, `connection`)
-- Validates payload, rejects malformed data
-- Inserts 3 rows into existing `performance_metrics` table (one per metric type)
-- Returns 204 No Content
-- Handles CORS preflight
+### 3. No changes to existing component-level Suspense
 
-### 3. Update: `src/main.tsx`
+The engineering workspace, calculation results, and 3D visualizations already have their own granular Suspense fallbacks. Those stay as-is.
 
-Add import and call after `createRoot`:
-```typescript
-import { initPerformanceMonitoring } from '@/lib/performanceMonitor';
-initPerformanceMonitoring();
-```
+## Technical Details
 
-### 4. Update: `supabase/config.toml`
-
-```toml
-[functions.report-vitals]
-verify_jwt = false
-```
-
-## Data stored in `performance_metrics`
-
-Each sampled page load inserts 3 rows:
-
-| metric_type | metric_value | details |
-|------------|-------------|---------|
-| `web_vital_ttfb` | 120 | `{"url": "/", "connection": "4g"}` |
-| `web_vital_dcl` | 450 | `{"url": "/", "connection": "4g"}` |
-| `web_vital_load` | 1200 | `{"url": "/", "connection": "4g"}` |
+- Each skeleton uses `min-h-screen` to prevent layout shift
+- Skeletons include `bg-background` to match the app theme
+- The shimmer animation from the existing `Skeleton` component provides visual feedback
+- Import is kept lightweight -- just the `Skeleton` component, no additional dependencies
 
 ## Files changed
 
 | File | Change |
 |------|--------|
-| `src/lib/performanceMonitor.ts` | New -- client metrics with 10% sampling |
-| `supabase/functions/report-vitals/index.ts` | New -- stores vitals in DB |
-| `src/main.tsx` | Call `initPerformanceMonitoring()` |
-| `supabase/config.toml` | Add `report-vitals` config |
+| `src/components/ui/skeleton-layouts.tsx` | New -- 4 skeleton layout components |
+| `src/App.tsx` | Add per-route Suspense boundaries with matching skeletons |
 
