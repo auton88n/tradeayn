@@ -88,10 +88,10 @@ export const TranscriptMessage = ({
             isUser ? "justify-end" : "justify-start",
           )}
         >
-          <span className={cn("font-medium text-foreground", compact ? "text-sm" : "text-sm")}>
+          <span className={cn("font-medium text-foreground text-sm")}>
             {isUser ? "You" : "AYN"}
           </span>
-          <span className={cn("text-muted-foreground", compact ? "text-xs" : "text-xs")}>
+          <span className={cn("text-muted-foreground text-xs")}>
             {format(timestamp, "h:mm a")}
           </span>
         </div>
@@ -112,9 +112,9 @@ export const TranscriptMessage = ({
               "[&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:pb-0 [&_li]:pl-3 [&_li]:before:text-sm",
               "[&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3",
               "[&_code]:text-sm [&_table]:text-sm [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground/30 [&_blockquote]:pl-3",
-              compact ? "text-sm" : "text-sm",
+              "text-sm",
               compact
-                ? "max-h-[30vh] overflow-y-auto overscroll-contain"
+                ? ""
                 : "max-h-[40vh] overflow-y-auto overscroll-contain",
             )}
           >
