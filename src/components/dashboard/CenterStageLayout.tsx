@@ -734,20 +734,22 @@ export const CenterStageLayout = ({
             ref={eyeRef} 
             className={cn(
               "relative overflow-visible z-40",
-              (hasVisibleResponses || transcriptOpen || isTransitioningToChat) && "pb-4",
+              (hasVisibleResponses || isTransitioningToChat) && "pb-4",
               isAbsorbPulsing && "scale-105 transition-transform duration-300"
             )}
+            style={{ pointerEvents: transcriptOpen ? 'none' : 'auto' }}
             data-tutorial="eye"
             animate={{
-              scale: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? (isMobile ? 0.55 : 0.5) : 1,
-              marginBottom: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? -20 : 0,
-              y: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? -20 : -40,
+              opacity: transcriptOpen ? 0 : 1,
+              scale: (!transcriptOpen && (hasVisibleResponses || isTransitioningToChat)) ? (isMobile ? 0.55 : 0.5) : 1,
+              marginBottom: (!transcriptOpen && (hasVisibleResponses || isTransitioningToChat)) ? -20 : 0,
+              y: (!transcriptOpen && (hasVisibleResponses || isTransitioningToChat)) ? -20 : -40,
             }}
             transition={{
               type: 'tween',
               duration: 0.3,
               ease: [0.4, 0, 0.2, 1],
-              delay: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? 0.05 : 0,
+              delay: (!transcriptOpen && (hasVisibleResponses || isTransitioningToChat)) ? 0.05 : 0,
             }}
           >
             <div className="relative inline-block">
