@@ -5,6 +5,7 @@ import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
 
 import { ResponseCard } from '@/components/eye/ResponseCard';
+import { HistoryCard } from '@/components/eye/HistoryCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 
 import { ChatInput } from './ChatInput';
@@ -673,13 +674,7 @@ export const CenterStageLayout = ({
     transcriptOpen,
   ]);
 
-  // Clear ResponseCard and suggestions when history opens
-  useEffect(() => {
-    if (transcriptOpen) {
-      clearResponseBubbles();
-      clearSuggestions();
-    }
-  }, [transcriptOpen, clearResponseBubbles, clearSuggestions]);
+  // ResponseCard naturally hidden when history is open (line 639 skips emission)
 
   // Update emotion when typing - only set thinking if not recently set from a response
   useEffect(() => {
@@ -742,13 +737,11 @@ export const CenterStageLayout = ({
               scale: (hasVisibleResponses || isTransitioningToChat) ? (isMobile ? 0.55 : 0.5) : 1,
               marginBottom: (hasVisibleResponses || isTransitioningToChat) ? -20 : 0,
               y: (hasVisibleResponses || isTransitioningToChat) ? -20 : 0,
-              opacity: transcriptOpen ? 0 : 1,
             }}
             transition={{
               scale: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },
               marginBottom: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },
               y: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },
-              opacity: { type: 'tween', duration: 0.25, ease: [0.4, 0, 0.2, 1] },
             }}
           >
             <div className="relative inline-block">
@@ -789,6 +782,24 @@ export const CenterStageLayout = ({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* History Card - shows when transcript is open */}
+          {transcriptOpen && (
+            <div
+              className="w-full flex justify-center mt-2"
+              style={{ maxHeight: `calc(100vh - ${footerHeight + 240}px)` }}
+            >
+              <HistoryCard
+                messages={messages}
+                isTyping={showThinking}
+                onClose={() => onTranscriptToggle?.()}
+                onClear={() => onTranscriptClear?.()}
+                onReply={(text) => {
+                  // Focus chat input with reply text - handled via prefill
+                }}
+              />
+            </div>
+          )}
           
         </motion.div>
       </div>
