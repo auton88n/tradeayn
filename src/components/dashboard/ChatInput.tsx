@@ -219,6 +219,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     if (pendingCursorRef.current !== null && textareaRef.current) {
       textareaRef.current.selectionStart = pendingCursorRef.current;
       textareaRef.current.selectionEnd = pendingCursorRef.current;
+      textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
       pendingCursorRef.current = null;
     }
   }, [inputMessage]);
@@ -373,9 +374,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setInputMessage(value);
     setShowPlaceholder(!value);
 
-    // Defer auto-resize to next frame to avoid synchronous layout thrashing
+    // Auto-resize textarea up to max height
     const textarea = textareaRef.current;
     if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
     }
   }, []);
   const handleFileClick = useCallback(() => {
