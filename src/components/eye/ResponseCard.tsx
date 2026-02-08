@@ -372,7 +372,7 @@ const ResponseCardComponent = ({
                 <div
                   ref={historyScrollRef}
                   onScroll={handleHistoryScroll}
-                  className="absolute inset-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-2 scroll-pb-8 [-webkit-overflow-scrolling:touch]"
+                  className="absolute inset-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-3 scroll-pb-8 [-webkit-overflow-scrolling:touch]"
                 >
                   {sortedMessages.length === 0 ? (
                     <div className="flex items-center justify-center h-full">

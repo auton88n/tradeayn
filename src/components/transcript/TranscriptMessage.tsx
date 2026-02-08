@@ -58,21 +58,21 @@ export const TranscriptMessage = ({
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className={cn(
         "group flex transition-colors",
-        compact ? "py-1.5 px-2 gap-2.5" : "p-3 gap-3",
+        compact ? "py-2 px-3 gap-3" : "p-3 gap-3",
         isUser ? "flex-row-reverse" : "flex-row"
       )}>
       {/* Avatar */}
       <div className={cn(
         "rounded-full flex items-center justify-center shrink-0",
-        compact ? "w-6 h-6" : "w-8 h-8",
+        compact ? "w-7 h-7" : "w-8 h-8",
         isUser 
           ? "bg-primary text-primary-foreground" 
           : "bg-foreground text-background"
       )}>
         {isUser ? (
-          <User className={compact ? "w-3 h-3" : "w-4 h-4"} />
+          <User className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
         ) : (
-          <Brain className={compact ? "w-3 h-3" : "w-4 h-4"} />
+          <Brain className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
         )}
       </div>
 
@@ -83,25 +83,26 @@ export const TranscriptMessage = ({
         !compact && (isUser ? "text-right" : "text-left")
       )}>
         <div className={cn(
-          "flex items-center gap-1.5 mb-0.5",
+          "flex items-center gap-1.5",
+          compact ? "mb-1" : "mb-0.5",
           isUser ? "justify-end" : "justify-start"
         )}>
           <span className={cn(
             "font-medium text-foreground",
-            compact ? "text-xs" : "text-sm"
+            compact ? "text-sm" : "text-sm"
           )}>
             {isUser ? 'You' : 'AYN'}
           </span>
           <span className={cn(
             "text-muted-foreground",
-            compact ? "text-[11px]" : "text-xs"
+            compact ? "text-xs" : "text-xs"
           )}>
             {format(timestamp, 'h:mm a')}
           </span>
         </div>
         
         <div className={cn(
-          compact ? "block rounded-[16px] text-start relative px-3 py-2" : "inline-block rounded-[20px] text-start relative",
+          compact ? "block rounded-[16px] text-start relative px-4 py-2.5" : "inline-block rounded-[20px] text-start relative",
           compact ? "" : "px-4 py-2.5",
           isUser 
             ? "bg-muted/70 text-foreground rounded-br-sm" 
@@ -111,7 +112,7 @@ export const TranscriptMessage = ({
             "leading-relaxed break-words [&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:pb-0 [&_li]:pl-3 [&_li]:before:text-sm",
             "[&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3",
             "[&_code]:text-sm [&_table]:text-sm [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground/30 [&_blockquote]:pl-3",
-            compact ? "text-[13px]" : "text-sm",
+            compact ? "text-sm" : "text-sm",
             compact ? "" : "max-h-[40vh] overflow-y-auto overscroll-contain"
           )}>
             {isStreaming ? (
