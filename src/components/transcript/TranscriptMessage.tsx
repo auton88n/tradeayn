@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Copy, Check, User, Brain, CornerDownLeft, Clock } from "lucide-react";
+import { Copy, Check, User, Brain, Clock } from "lucide-react";
 import { useState } from "react";
 import { MessageFormatter } from "@/components/shared/MessageFormatter";
 import { StreamingMarkdown } from "@/components/eye/StreamingMarkdown";
@@ -12,7 +12,6 @@ interface TranscriptMessageProps {
   timestamp: Date;
   compact?: boolean;
   status?: "sending" | "sent" | "error" | "queued";
-  onReply?: (content: string) => void;
   shouldAnimate?: boolean;
   isStreaming?: boolean;
 }
@@ -37,7 +36,6 @@ export const TranscriptMessage = ({
   timestamp,
   compact = false,
   status,
-  onReply,
   shouldAnimate = true,
   isStreaming = false,
 }: TranscriptMessageProps) => {
@@ -142,15 +140,6 @@ export const TranscriptMessage = ({
                 <Copy className="w-3.5 h-3.5 text-muted-foreground" />
               )}
             </button>
-            {onReply && (
-              <button
-                onClick={() => onReply(content)}
-                className="p-1 rounded-md hover:bg-muted/50 transition-all"
-                title="Reply"
-              >
-                <CornerDownLeft className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-            )}
           </div>
         )}
       </div>
