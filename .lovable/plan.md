@@ -1,24 +1,40 @@
 
-## Fix Textarea Auto-Scroll to Cursor
+## Fix History Chat Scroll Starting from Bottom
 
-**Problem**: The chat input textarea has a fixed height of 44px. When you type or paste text that exceeds the visible area, the textarea doesn't scroll down to keep the cursor visible -- you have to scroll manually.
+**Problem**: When opening the chat history, it starts scrolled to the top (oldest messages) instead of the bottom (newest messages). The auto-scroll code exists but fires before the browser has finished laying out the content.
 
-**Root Cause**: The `handleTextareaChange` function has an empty block where auto-resize logic was supposed to be. The textarea never grows, and no `scrollTop` adjustment is made to follow the cursor.
+**Root Cause**: A single `requestAnimationFrame` isn't always sufficient -- the DOM content may not be fully rendered when the scroll command runs, especially with animated entry (`AnimatePresence`).
 
 ---
 
 ### Fix
 
-**`src/components/dashboard/ChatInput.tsx`**
+**`src/components/dashboard/ChatHistoryCollapsible.tsx`**
 
-Two improvements:
+- Double the `requestAnimationFrame` call (nested rAF) so the scroll happens after both the DOM update and the paint
+- Add a fallback `setTimeout(…, 100)` to catch cases where framer-motion's animation delays the layout
 
-1. **Auto-grow the textarea** up to a max height (e.g., 150px), so short messages show fully without scrolling:
-   - In `handleTextareaChange`, reset `textarea.style.height = 'auto'`, then set it to `Math.min(textarea.scrollHeight, 150) + 'px'`
-   - This makes the input grow as you type and shrink when you delete
+Change the auto-scroll effect from:
+```tsx
+requestAnimationFrame(() => {
+  scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+});
+```
+To:
+```tsx
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  });
+});
+// Fallback for animation delays
+setTimeout(() => {
+  if (scrollRef.current) {
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }
+}, 150);
+```
 
-2. **Auto-scroll to cursor after paste**: In the `useEffect` that repositions the cursor (the `pendingCursorRef` effect), also call `textarea.scrollTop = textarea.scrollHeight` to ensure the view follows the cursor after a paste
-
-3. **Reset height on send**: When a message is sent, reset the textarea height back to the default 44px
-
-This ensures the cursor is always visible whether you're typing line by line or pasting a large block of text.
+This ensures the scroll-to-bottom fires after the content is fully rendered and the framer-motion entry animation has started.
