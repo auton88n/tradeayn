@@ -6,7 +6,7 @@ import { StreamingMarkdown } from '@/components/eye/StreamingMarkdown';
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import { TranscriptMessage } from '@/components/transcript/TranscriptMessage';
 import { hapticFeedback } from '@/lib/haptics';
-import { Copy, Check, ThumbsUp, ThumbsDown, Brain, X, ChevronDown, Palette, Maximize2 } from 'lucide-react';
+import { Copy, Check, ThumbsUp, ThumbsDown, Brain, X, ChevronDown, Palette, Maximize2, CornerDownLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -306,7 +306,8 @@ const ResponseCardComponent = ({
             "border border-border/40",
             "shadow-md shadow-black/5 backdrop-blur-sm",
             variant === 'sheet' ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
-            "overflow-hidden"
+            "overflow-hidden",
+            transcriptOpen && "max-h-[50vh] sm:max-h-[60vh]"
           )}
           style={{
             willChange: 'transform, opacity',
@@ -365,11 +366,11 @@ const ResponseCardComponent = ({
           {/* Content area */}
           {transcriptOpen ? (
             /* History mode content */
-            <div className="relative max-h-[50vh] sm:max-h-[60vh] min-h-[200px]">
+            <div className="relative flex-1 min-h-0 flex flex-col">
               <div
                 ref={historyScrollRef}
                 onScroll={handleHistoryScroll}
-                className="h-full overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]"
+                className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]"
               >
                 <div className="p-3 pb-6 space-y-1 [overflow-wrap:anywhere]">
                   {sortedMessages.map((msg, idx) => {
@@ -425,6 +426,17 @@ const ResponseCardComponent = ({
                   </motion.button>
                 )}
               </AnimatePresence>
+
+              {/* Reply footer */}
+              <div className="flex-shrink-0 px-3 py-2 border-t border-border/40 flex items-center justify-end">
+                <button
+                  onClick={onHistoryClose}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <CornerDownLeft size={13} />
+                  Reply
+                </button>
+              </div>
             </div>
           ) : (
             /* Normal response content */

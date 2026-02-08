@@ -367,8 +367,11 @@ export const CenterStageLayout = ({
 
   // Get eye position for bubble animations - uses actual eye element ref for precise targeting
   const getEyePosition = useCallback(() => {
-    // Use actual eye element for precise targeting
-    if (eyeRef.current) {
+    // When eye is shrunken (response card or history visible), use stable stage center
+    // to avoid mid-transition position reads from the animated eyeRef
+    const eyeIsTransformed = hasVisibleResponses || transcriptOpen;
+    
+    if (!eyeIsTransformed && eyeRef.current) {
       const eyeRect = eyeRef.current.getBoundingClientRect();
       return {
         x: eyeRect.left + eyeRect.width / 2,
@@ -376,7 +379,7 @@ export const CenterStageLayout = ({
       };
     }
     
-    // Fallback to stage center
+    // Use stable stage parent for consistent targeting
     if (eyeStageRef.current) {
       const stageRect = eyeStageRef.current.getBoundingClientRect();
       return {
@@ -386,7 +389,7 @@ export const CenterStageLayout = ({
     }
     
     return { x: window.innerWidth / 2, y: window.innerHeight / 3 };
-  }, []);
+  }, [hasVisibleResponses, transcriptOpen]);
 
   // Get input position for bubble start
   const getInputPosition = useCallback(() => {
