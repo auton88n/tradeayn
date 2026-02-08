@@ -53,6 +53,7 @@ interface CenterStageLayoutProps {
   transcriptOpen?: boolean;
   onTranscriptToggle?: () => void;
   onTranscriptClear?: () => void;
+  onReply?: (content: string) => void;
   modes: AIModeConfig[];
   onModeChange: (mode: AIMode) => void;
   prefillValue?: string;
@@ -112,6 +113,7 @@ export const CenterStageLayout = ({
   transcriptOpen,
   onTranscriptToggle,
   onTranscriptClear,
+  onReply,
   modes,
   onModeChange,
   prefillValue,
@@ -672,6 +674,7 @@ export const CenterStageLayout = ({
                   isTyping={showThinking}
                   onHistoryClose={() => onTranscriptToggle?.()}
                   onHistoryClear={() => onTranscriptClear?.()}
+                  onReply={onReply}
                 />
               </motion.div>
             )}

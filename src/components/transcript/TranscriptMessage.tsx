@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Copy, Check, User, Brain, Clock } from "lucide-react";
+import { Copy, Check, User, Brain, Clock, CornerDownLeft } from "lucide-react";
 import { useState } from "react";
 import { MessageFormatter } from "@/components/shared/MessageFormatter";
 import { StreamingMarkdown } from "@/components/eye/StreamingMarkdown";
@@ -14,6 +14,7 @@ interface TranscriptMessageProps {
   status?: "sending" | "sent" | "error" | "queued";
   shouldAnimate?: boolean;
   isStreaming?: boolean;
+  onReply?: (content: string) => void;
 }
 
 // Helper to strip markdown for clipboard
@@ -38,6 +39,7 @@ export const TranscriptMessage = ({
   status,
   shouldAnimate = true,
   isStreaming = false,
+  onReply,
 }: TranscriptMessageProps) => {
   const isUser = sender === "user";
   const [copied, setCopied] = useState(false);
@@ -124,24 +126,27 @@ export const TranscriptMessage = ({
           </div>
         )}
 
-        {/* Action buttons - only in non-compact mode */}
-        {!compact && (
-          <div
-            className={cn(
-              "flex items-center gap-0.5 mt-1",
-              "opacity-0 group-hover:opacity-100 transition-all",
-              isUser ? "justify-end" : "justify-start",
+        {/* Action buttons */}
+        <div
+          className={cn(
+            "flex items-center gap-0.5 mt-1",
+            "opacity-0 group-hover:opacity-100 transition-all",
+            isUser ? "justify-end" : "justify-start",
+          )}
+        >
+          <button onClick={handleCopy} className="p-1 rounded-md hover:bg-muted/50 transition-all" title="Copy">
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-green-500" />
+            ) : (
+              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
             )}
-          >
-            <button onClick={handleCopy} className="p-1 rounded-md hover:bg-muted/50 transition-all" title="Copy">
-              {copied ? (
-                <Check className="w-3.5 h-3.5 text-green-500" />
-              ) : (
-                <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-              )}
+          </button>
+          {onReply && (
+            <button onClick={() => onReply(content)} className="p-1 rounded-md hover:bg-muted/50 transition-all" title="Reply">
+              <CornerDownLeft className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </motion.div>
   );

@@ -61,6 +61,7 @@ interface ResponseCardProps {
   isTyping?: boolean;
   onHistoryClose?: () => void;
   onHistoryClear?: () => void;
+  onReply?: (content: string) => void;
 }
 
 const ResponseCardComponent = ({
@@ -75,6 +76,7 @@ const ResponseCardComponent = ({
   isTyping: historyTyping = false,
   onHistoryClose,
   onHistoryClear,
+  onReply,
 }: ResponseCardProps) => {
   const navigate = useNavigate();
 
@@ -426,6 +428,7 @@ const ResponseCardComponent = ({
                         timestamp={ts}
                         shouldAnimate={isNew}
                         compact
+                        onReply={onReply ? (content) => onReply(`> ${content.slice(0, 100)}\n`) : undefined}
                       />
                     );
                   })
