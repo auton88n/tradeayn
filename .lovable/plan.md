@@ -1,65 +1,36 @@
 
-
-# Fix: Eye Behavior During History Mode
+# Fix: Close History Card on Message Send
 
 ## Problem
-When the history card is open and the user sends a message, the eye skips several important visual reactions that normally happen during live chat:
+When the user sends a message while the history card is open, the history card stays visible. It should close automatically so the normal response card flow takes over -- just like how it works when history is closed (eye reacts, response card appears with the AI reply).
 
-- No blink on message send
-- No absorption pulse animation
-- No "message-absorb" sound effect  
-- No absorption visual (the eye just goes straight to "thinking")
+## Change
 
-This makes the experience feel flat compared to the normal chat flow.
+### File: `src/components/dashboard/CenterStageLayout.tsx` (line 449)
 
-## What Already Works
-- Eye gaze tracking (follows mouse) -- works in history mode
-- Idle blinking -- works in history mode
-- Emotion changes (thinking, calm, happy, etc.) -- works in history mode
-- Eye shrink/grow -- works in history mode
-- Response emotion and keyword excitement detection -- works in history mode
+Add `onTranscriptToggle?.()` at the start of the `if (transcriptOpen)` block. This closes the history panel immediately when the user sends a message, so the response flows through the normal ResponseCard emission path.
 
-## Fix
+Then **remove the early `return`** on line 461, so the code falls through to the normal flying bubble + response card animation path (since the history is now closed).
 
-### File: `src/components/dashboard/CenterStageLayout.tsx` (lines 448-456)
-
-Currently, when `transcriptOpen` is true, the send handler skips all eye animation effects:
+The updated block becomes:
 
 ```text
-// Current code (simplified):
 if (transcriptOpen) {
-  onRemoveFile();
-  clearResponseBubbles();
-  clearSuggestions();
-  setIsResponding(true);
-  requestAnimationFrame(() => orchestrateEmotionChange('thinking'));
-  return;  // <-- skips blink, absorption, sound
+  onTranscriptToggle?.();   // Close history card
+  // Fall through to normal send flow below (flying bubble, response card, etc.)
 }
 ```
 
-Add the missing eye reactions so the eye behaves identically to live chat mode -- only the flying bubble animation is skipped (which makes sense since there's no visual bubble to fly):
+The eye reactions (`triggerBlink`, `triggerAbsorption`, `playSound`, etc.) that were added in the previous fix are no longer needed in this block since the normal flow already handles them.
 
-```text
-// Fixed code:
-if (transcriptOpen) {
-  onRemoveFile();
-  clearResponseBubbles();
-  clearSuggestions();
-  triggerBlink();
-  triggerAbsorption();
-  playSound?.('message-absorb');
-  setIsResponding(true);
-  setIsAbsorbPulsing(true);
-  setTimeout(() => setIsAbsorbPulsing(false), 300);
-  completeAbsorption();
-  requestAnimationFrame(() => orchestrateEmotionChange('thinking'));
-  return;
-}
-```
+## Result
+- User sends message while history is open
+- History card closes instantly
+- Eye reacts normally (blink, absorb, pulse, sound)
+- Flying bubble animation plays
+- Response card appears with AI reply
+- Identical behavior to sending without history open
 
 ## Summary
 - **1 file modified**: `src/components/dashboard/CenterStageLayout.tsx`
-- Adds `triggerBlink()`, `triggerAbsorption()`, `playSound()`, absorption pulse, and `completeAbsorption()` to the history-mode send path
-- The only thing that remains skipped is the flying bubble animation (intentionally, since it's a visual-only effect for the non-history view)
-- Eye will now blink, pulse, play sound, and animate identically whether history is open or closed
-
+- Replace the history-mode send block with a simple close + fall-through to the normal send path
