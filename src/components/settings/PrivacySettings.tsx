@@ -141,26 +141,6 @@ export const PrivacySettings = ({ userId, session }: PrivacySettingsProps) => {
       <MemoryManagement userId={userId} />
 
       <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
-        <h2 className="text-xl font-semibold mb-6">{t('settings.dataPersonalization')}</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>{t('settings.storeChatHistory')}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.storeChatHistoryDesc')}
-              </p>
-            </div>
-            <Switch
-              checked={settings.store_chat_history}
-              onCheckedChange={(checked) => updateSettings({ store_chat_history: checked })}
-              disabled={updating}
-            />
-          </div>
-
-        </div>
-      </Card>
-
-      <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
         <h2 className="text-xl font-semibold mb-6">{t('settings.dataManagement')}</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
