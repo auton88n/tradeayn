@@ -1,25 +1,18 @@
 
+## Fix Paste Cursor Position in Dashboard ChatInput
 
-## Fix Message Bubble Flight Centering
+**Problem**: When pasting text into the dashboard chat input, the cursor jumps to the beginning instead of staying at the end of the pasted content. The existing `onPaste` handler tries to fix this with `setTimeout(..., 0)`, but React's re-render from `setInputMessage` happens after the timeout, resetting the cursor.
 
-**Problem**: When you send a message, the bubble flies toward the eye but doesn't land centered on it. This happens because the CSS `translate(-50%, -50%)` (meant to center the bubble on the target point) gets overridden by framer-motion's transform system. The bubble lands offset by half its own width and height.
-
-**Fix**: Adjust the end position coordinates in `getEyePosition()` and `getInputPosition()` to account for the bubble's dimensions, OR use framer-motion's built-in centering approach.
+**Fix**: Use a `useEffect` to reposition the cursor after React has re-rendered with the new value.
 
 ---
 
 ### Changes
 
-**`src/components/eye/UserMessageBubble.tsx`**
+**`src/components/dashboard/ChatInput.tsx`**
 
-- Remove the CSS `transform: 'translate(-50%, -50%)'` since framer-motion overrides it anyway
-- Instead, use a wrapper ref to measure the bubble's dimensions, then offset `x`/`y` by half-width and half-height in the animation values
-- This ensures the bubble visually centers on the eye across all screen sizes (desktop, tablet, mobile)
+1. Add a `pendingCursorRef` (useRef) to store the desired cursor position after a paste
+2. In the `onPaste` handler, set this ref to `start + text.length` instead of using `setTimeout`
+3. Add a `useEffect` that watches `inputMessage` -- when it changes and `pendingCursorRef` has a value, set `selectionStart`/`selectionEnd` to that position and clear the ref
 
-Specifically:
-1. Add a ref to the bubble container and measure its width/height after mount
-2. Subtract half the bubble's width from `endPosition.x` and half its height from `endPosition.y` in both `flyingAnimation` and `absorbingAnimation`
-3. Do the same offset for `startPosition` in the `initial` prop so the bubble starts centered on the input area too
-
-This is a single-file fix in `UserMessageBubble.tsx` -- no changes needed to `CenterStageLayout.tsx` since `getEyePosition()` already correctly returns the visual center of the eye element.
-
+This ensures the cursor is repositioned after React finishes rendering the updated text, not before.
