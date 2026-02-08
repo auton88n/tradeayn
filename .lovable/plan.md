@@ -1,26 +1,20 @@
 
-# Hide Eye Behind History Panel
+# Fix: Eliminate History Panel Open/Close Delay
 
 ## Problem
-When the history panel opens, the eye shrinks and repositions awkwardly, making the app feel laggy. The eye serves no purpose while history is open.
+The `scaleY` animation causes a visible two-step effect: the card container appears first (borders, background), then the text content pops in. This looks laggy and broken.
 
 ## Solution
-Instead of scaling/repositioning the eye, simply hide it (opacity 0, pointer-events none) when the history panel is open. When the user closes history, the eye fades back in at full size. No more resize jitter.
+Replace the `scaleY` animation with a simple, instant `opacity` fade. No height or scale animation at all -- the panel just appears and disappears cleanly. This eliminates the "card first, then text" staggered look.
 
-## Changes (CenterStageLayout.tsx only)
+## Changes (ChatInput.tsx only)
 
-### 1. Replace scale/position animation with opacity
-On the eye's `motion.div` (line ~733-751), change the animate block:
-- Remove `scale`, `marginBottom`, and `y` shifts when `transcriptOpen` is true
-- Instead, animate `opacity` to 0 and add `pointer-events: none` when history is open
-- Keep the existing behavior for `hasVisibleResponses` (response cards still need the eye visible but smaller)
+### Remove scaleY, use opacity only
+In the history panel's `motion.div` (around line 436-448):
+- Remove `scaleY: 0` from `initial` and `exit`
+- Remove `scaleY: 1` from `animate`
+- Keep only `opacity: 0 -> 1 -> 0` with a fast 0.1s duration
+- Remove `origin-bottom` and `will-change-transform` classes since there's no scale transform
+- Add `will-change-opacity` if needed
 
-The logic becomes:
-- **History open**: eye fades out (opacity 0), no interaction
-- **Response card visible (no history)**: eye shrinks as before
-- **Idle**: eye at full size, normal position
-
-### 2. Simplify the conditional classes
-Remove `transcriptOpen` from the scale/position/padding conditions since the eye will simply be hidden in that state.
-
-This eliminates the jarring shrink animation when toggling history and gives a cleaner, snappier feel.
+The panel will simply fade in/out instantly with no geometric distortion, so the card and text appear together at the same time.
