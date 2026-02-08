@@ -56,7 +56,6 @@ interface ResponseCardProps {
   variant?: "inline" | "sheet";
   showPointer?: boolean;
   sessionId?: string;
-  // History mode props
   transcriptOpen?: boolean;
   transcriptMessages?: Message[];
   isTyping?: boolean;
@@ -93,7 +92,6 @@ const ResponseCardComponent = ({
   const [dialogScrollable, setDialogScrollable] = useState(false);
   const [dialogAtBottom, setDialogAtBottom] = useState(true);
   const dialogShouldAutoScrollRef = useRef(true);
-  // History mode state
   const [showHistoryScrollDown, setShowHistoryScrollDown] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
@@ -125,7 +123,6 @@ const ResponseCardComponent = ({
     return isDocument ? { url, name, type } : null;
   }, [visibleResponses]);
 
-  // Sorted transcript messages for history mode
   const sortedMessages = useMemo(
     () =>
       [...transcriptMessages].sort((a, b) => {
@@ -265,7 +262,7 @@ const ResponseCardComponent = ({
     historyScrollRef.current?.scrollTo({ top: historyScrollRef.current.scrollHeight, behavior: "smooth" });
   }, []);
 
-  // Auto-scroll history to bottom on new messages & check scroll indicator
+  // Auto-scroll history to bottom on new messages
   useEffect(() => {
     if (!transcriptOpen) return;
     if (historyScrollRef.current) {
@@ -273,7 +270,6 @@ const ResponseCardComponent = ({
         const el = historyScrollRef.current;
         if (el) {
           el.scrollTop = el.scrollHeight;
-          // Delayed check to handle race condition with layout
           setTimeout(() => {
             if (el) {
               setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 50);
@@ -284,7 +280,7 @@ const ResponseCardComponent = ({
     }
   }, [transcriptMessages.length, transcriptOpen]);
 
-  // ResizeObserver to track history content overflow for scroll arrow
+  // ResizeObserver for history scroll arrow
   useEffect(() => {
     if (!transcriptOpen) return;
     const el = historyScrollRef.current;
@@ -345,13 +341,11 @@ const ResponseCardComponent = ({
             "shadow-md shadow-black/5 backdrop-blur-sm",
             variant === "sheet" ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
             "overflow-hidden",
-            transcriptOpen && "h-full",
           )}
           style={{
             willChange: "transform, opacity",
             transform: "translateZ(0)",
             ...(variant === "sheet" ? { maxHeight: "min(50vh, 100%)" } : {}),
-            ...(transcriptOpen ? { maxHeight: "70vh" } : {}),
           }}
           initial={{ opacity: 0, y: 20, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -404,17 +398,20 @@ const ResponseCardComponent = ({
 
           {/* Content area */}
           {transcriptOpen ? (
-            /* History mode */
-            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-              {/* Scroll wrapper */}
-              <div className="relative flex-1 min-h-0 overflow-hidden">
+            /* ============================================
+               HISTORY MODE — simple hard maxHeight, no flex chains
+               ============================================ */
+            <div className="flex flex-col overflow-hidden">
+              {/* Scroll container — hard inline maxHeight */}
+              <div className="relative overflow-hidden">
                 <div
                   ref={historyScrollRef}
                   onScroll={handleHistoryScroll}
-                  className="absolute inset-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-3 scroll-pb-8 [-webkit-overflow-scrolling:touch]"
+                  style={{ maxHeight: "55vh", overflowY: "auto" }}
+                  className="overscroll-contain px-2 py-2 space-y-3 scroll-pb-8 [-webkit-overflow-scrolling:touch]"
                 >
                   {sortedMessages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full">
+                    <div className="flex items-center justify-center py-16">
                       <p className="text-sm text-muted-foreground">No messages yet</p>
                     </div>
                   ) : (
@@ -448,7 +445,9 @@ const ResponseCardComponent = ({
                       </div>
                     </div>
                   )}
-                  <div className="h-2 shrink-0" />
+
+                  {/* Bottom padding */}
+                  <div className="h-6 shrink-0" />
                 </div>
 
                 {/* Scroll-to-bottom button */}
@@ -481,7 +480,9 @@ const ResponseCardComponent = ({
               </div>
             </div>
           ) : (
-            /* Normal response content */
+            /* ============================================
+               NORMAL RESPONSE MODE — unchanged
+               ============================================ */
             <>
               <div
                 ref={contentRef}
@@ -536,7 +537,7 @@ const ResponseCardComponent = ({
                 />
               )}
 
-              {/* Action bar - only in response mode */}
+              {/* Action bar */}
               <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-t border-border/40">
                 <button
                   onClick={copyContent}
