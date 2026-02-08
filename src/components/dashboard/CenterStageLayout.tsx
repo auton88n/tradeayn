@@ -728,14 +728,14 @@ export const CenterStageLayout = ({
             ref={eyeRef} 
             className={cn(
               "relative overflow-visible z-0",
-              (hasVisibleResponses || isTransitioningToChat) && "pb-4",
+              (hasVisibleResponses || isTransitioningToChat || transcriptOpen) && "pb-4",
               isAbsorbPulsing && "scale-105 transition-transform duration-300"
             )}
             data-tutorial="eye"
             animate={{
-              scale: (hasVisibleResponses || isTransitioningToChat) ? (isMobile ? 0.55 : 0.5) : 1,
-              marginBottom: (hasVisibleResponses || isTransitioningToChat) ? -20 : 0,
-              y: (hasVisibleResponses || isTransitioningToChat) ? -20 : 0,
+              scale: (hasVisibleResponses || isTransitioningToChat || transcriptOpen) ? (isMobile ? 0.55 : 0.5) : 1,
+              marginBottom: (hasVisibleResponses || isTransitioningToChat || transcriptOpen) ? -20 : 0,
+              y: (hasVisibleResponses || isTransitioningToChat || transcriptOpen) ? -20 : 0,
             }}
             transition={{
               scale: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },

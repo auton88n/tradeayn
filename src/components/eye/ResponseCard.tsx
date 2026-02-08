@@ -226,7 +226,7 @@ const ResponseCardComponent = ({
   // History scroll tracking
   const handleHistoryScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
-    setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 100);
+    setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 50);
   }, []);
 
   const scrollHistoryToBottom = useCallback(() => {
@@ -343,7 +343,7 @@ const ResponseCardComponent = ({
               <div
                 ref={historyScrollRef}
                 onScroll={handleHistoryScroll}
-                className="max-h-[50vh] overflow-y-auto [-webkit-overflow-scrolling:touch]"
+                className="max-h-[40vh] sm:max-h-[50vh] min-h-[200px] overflow-y-auto [-webkit-overflow-scrolling:touch]"
               >
                 <div className="p-3 space-y-1 flex flex-col justify-end min-h-full">
                   {sortedMessages.map((msg, idx) => {
