@@ -105,16 +105,12 @@ export const TranscriptMessage = ({
               : "bg-muted/50 text-foreground rounded-bl-sm shadow-sm",
           )}
         >
-          {/* MESSAGE CONTENT — max-height applies in BOTH compact and non-compact */}
+          {/* MESSAGE CONTENT */}
           <div
             className={cn(
-              "leading-relaxed break-words",
-              "[&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:pb-0 [&_li]:pl-3 [&_li]:before:text-sm",
-              "[&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3",
-              "[&_code]:text-sm [&_table]:text-sm [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground/30 [&_blockquote]:pl-3",
-              "text-sm",
+              "leading-relaxed break-words text-sm",
               compact
-                ? ""
+                ? "[&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1.5 [&_ol]:my-1.5"
                 : "max-h-[40vh] overflow-y-auto overscroll-contain",
             )}
           >
