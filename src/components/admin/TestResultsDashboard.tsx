@@ -382,7 +382,7 @@ const TestResultsDashboard: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          endpoints: ['calculate-beam', 'calculate-column', 'calculate-foundation', 'support-bot'],
+          endpoints: ['support-bot'],
           model: 'claude'
         }),
       });
