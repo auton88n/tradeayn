@@ -234,13 +234,19 @@ const ResponseCardComponent = ({
   }, []);
 
   // Auto-scroll history to bottom on new messages & check scroll indicator
-  useEffect(() => {
+   useEffect(() => {
     if (!transcriptOpen) return;
     if (historyScrollRef.current) {
       requestAnimationFrame(() => {
         const el = historyScrollRef.current;
         if (el) {
           el.scrollTop = el.scrollHeight;
+          // Delayed check to handle race condition with layout
+          setTimeout(() => {
+            if (el) {
+              setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 100);
+            }
+          }, 100);
         }
       });
     }
@@ -252,7 +258,7 @@ const ResponseCardComponent = ({
     const el = historyScrollRef.current;
     if (!el) return;
     const checkScroll = () => {
-      setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 50);
+      setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 100);
     };
     checkScroll();
     el.addEventListener('scroll', checkScroll, { passive: true });
@@ -359,11 +365,11 @@ const ResponseCardComponent = ({
           {/* Content area */}
           {transcriptOpen ? (
             /* History mode content */
-            <div className="relative">
+            <div className="relative max-h-[50vh] sm:max-h-[60vh] min-h-[200px]">
               <div
                 ref={historyScrollRef}
                 onScroll={handleHistoryScroll}
-                className="max-h-[50vh] sm:max-h-[60vh] min-h-[200px] overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]"
+                className="h-full overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]"
               >
                 <div className="p-3 pb-6 space-y-1 [overflow-wrap:anywhere]">
                   {sortedMessages.map((msg, idx) => {
@@ -408,14 +414,14 @@ const ResponseCardComponent = ({
               <AnimatePresence>
                 {showHistoryScrollDown && (
                   <motion.button
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
+                    initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, y: 10 }}
                     onClick={scrollHistoryToBottom}
-                    className="absolute bottom-4 right-4 z-10 h-9 w-9 rounded-full bg-foreground/90 text-background flex items-center justify-center shadow-lg hover:bg-foreground transition-colors"
+                    className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xl hover:bg-primary/90 transition-colors"
                     aria-label="Scroll to bottom"
                   >
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-5 w-5" />
                   </motion.button>
                 )}
               </AnimatePresence>
