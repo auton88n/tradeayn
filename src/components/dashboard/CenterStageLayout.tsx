@@ -78,6 +78,8 @@ interface CenterStageLayoutProps {
   isLoadingFromHistory?: boolean;
   // Current session ID for clearing visual state on chat switch
   currentSessionId?: string;
+  // Flag to trigger eye shrink before messages load
+  isTransitioningToChat?: boolean;
   // Maintenance config
   maintenanceConfig?: {
     enabled?: boolean;
@@ -140,6 +142,7 @@ export const CenterStageLayout = ({
   usageResetDate,
   isLoadingFromHistory,
   currentSessionId,
+  isTransitioningToChat,
   maintenanceConfig,
   betaMode,
   betaFeedbackReward,
@@ -732,15 +735,16 @@ export const CenterStageLayout = ({
             ref={eyeRef} 
             className="relative overflow-visible z-40"
             data-tutorial="eye"
+            style={{ willChange: 'transform' }}
             animate={{
-              scale: (hasVisibleResponses || transcriptOpen) ? (isMobile ? 0.55 : 0.5) : 1,
-              marginBottom: (hasVisibleResponses || transcriptOpen) ? -20 : 0,
-              y: (hasVisibleResponses || transcriptOpen) ? 20 : -15,
+              scale: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? (isMobile ? 0.55 : 0.5) : 1,
+              marginBottom: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? -20 : 0,
+              y: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? 20 : -15,
             }}
             transition={{
               type: 'spring',
-              duration: 0.5,
-              bounce: 0.1,
+              duration: 0.35,
+              bounce: 0.05,
             }}
           >
             <div className="relative inline-block">

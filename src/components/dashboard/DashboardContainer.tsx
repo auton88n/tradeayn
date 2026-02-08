@@ -65,6 +65,8 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
   // State
   const [selectedMode, setSelectedMode] = React.useState<AIMode>('General');
   const [allowPersonalization, setAllowPersonalization] = React.useState(false);
+  const [isTransitioningToChat, setIsTransitioningToChat] = React.useState(false);
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Messages hook - depends on other state, pass session for direct REST API calls
   const messagesHook = useMessages(
     chatSession.currentSessionId,
@@ -159,10 +161,18 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
     handleCopyMessage(message.content);
   }, [handleCopyMessage]);
 
-  // Handle load chat - use setMessagesFromHistory to prevent auto-showing ResponseCard
+  // Handle load chat - decouple eye animation from data rendering
   const handleLoadChat = useCallback((chat: ChatHistory) => {
     const loadedMessages = chatSession.loadChat(chat);
-    messagesHook.setMessagesFromHistory(loadedMessages);
+    // Trigger eye shrink immediately, before messages render
+    setIsTransitioningToChat(true);
+    // Clear any pending timer
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    // Delay message rendering to let the eye animation run on its own frame budget
+    transitionTimerRef.current = setTimeout(() => {
+      messagesHook.setMessagesFromHistory(loadedMessages);
+      setIsTransitioningToChat(false);
+    }, 250);
   }, [chatSession, messagesHook]);
 
   // Handle new chat
@@ -217,6 +227,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
       usageTracking={usageTracking}
       maintenanceConfig={maintenanceConfig}
       betaConfig={betaConfig}
+      isTransitioningToChat={isTransitioningToChat}
     />
   );
 };
@@ -245,6 +256,7 @@ const DashboardContent = ({
   usageTracking,
   maintenanceConfig,
   betaConfig,
+  isTransitioningToChat,
 }: {
   user: User;
   session: Session;
@@ -268,6 +280,7 @@ const DashboardContent = ({
   usageTracking: ReturnType<typeof useUsageTracking>;
   maintenanceConfig?: MaintenanceConfig;
   betaConfig?: BetaConfig;
+  isTransitioningToChat?: boolean;
 }) => {
   const { open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
@@ -570,6 +583,7 @@ const DashboardContent = ({
           usageResetDate={usageTracking.resetDate}
           isLoadingFromHistory={messagesHook.isLoadingFromHistory}
           currentSessionId={chatSession.currentSessionId}
+          isTransitioningToChat={isTransitioningToChat}
           maintenanceConfig={maintenanceConfig}
           betaMode={betaConfig?.enabled}
           betaFeedbackReward={betaConfig?.feedbackReward}
