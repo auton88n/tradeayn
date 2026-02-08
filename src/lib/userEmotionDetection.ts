@@ -6,7 +6,7 @@
 export type UserEmotion = 'happy' | 'sad' | 'frustrated' | 'excited' | 'anxious' | 'neutral' | 'confused' | 'angry' | 'grieving' | 'overwhelmed';
 
 // Import AYNEmotion from context for consistency
-import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
+import type { AYNEmotion } from '@/stores/emotionStore';
 export type { AYNEmotion };
 
 export type AYNBehavior = 'supportive' | 'celebratory' | 'patient' | 'reassuring' | 'attentive' | 'playful';

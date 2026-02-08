@@ -1,6 +1,6 @@
 // Unified emotion orchestration - coordinates eye visuals, sounds, and haptics in sync
 import { useCallback, useRef } from 'react';
-import { AYNEmotion, useAYNEmotion, EMOTION_CONFIGS } from '@/contexts/AYNEmotionContext';
+import { AYNEmotion, useAYNEmotion, EMOTION_CONFIGS } from '@/stores/emotionStore';
 import { useSoundStore } from '@/stores/soundStore';
 import { hapticFeedback } from '@/lib/haptics';
 
