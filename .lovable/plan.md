@@ -1,53 +1,63 @@
 
 
-# Fix: Message Send Animation Lag + Response Bubble Entrance
+# Fix: Batch State Updates + Replace Particle Burst with CSS Pulse
 
-## Issue 1: Flying Bubble Animation Lag
+## Problem
 
-**Root cause**: The `UserMessageBubble` uses `useLayoutEffect` to measure its own dimensions via `getBoundingClientRect()` on every render, causing a forced synchronous layout recalculation. Additionally, `onSendMessage` (which triggers the edge function call) fires before the animation starts, competing for main thread time.
+In `CenterStageLayout.tsx`, the absorption timeout (lines 459-476 and 519-541) fires 6+ separate state updates in one tick, each causing a re-render. The `ParticleBurst` component also creates/destroys 21+ DOM elements during the animation frame, adding expensive DOM churn.
 
-**Fix in `UserMessageBubble.tsx`**:
-- Remove the `useLayoutEffect` + `getBoundingClientRect()` measurement entirely -- this forces a synchronous layout pass that blocks the animation
-- Instead, estimate centering with a fixed offset (e.g., 150px width / 20px height) or use `transform: translate(-50%, -50%)` with `left/top` set to the target coordinates -- zero layout cost
-- Reduce flying duration from 0.4s to 0.3s for snappier feel
-- Remove the `rotate` property from the animation (saves a composite calculation)
+## Changes
 
-**Fix in `useBubbleAnimation.ts`**:
-- Reduce the flying-to-absorbing timeout from 400ms to 300ms to match the shorter flight duration
+### 1. Replace ParticleBurst with CSS absorb pulse (CenterStageLayout.tsx)
 
-**Fix in `CenterStageLayout.tsx`**:
-- In `handleSendWithAnimation`, reduce the inner setTimeout (line 476) from 400ms to 300ms to match
+Remove the `ParticleBurst` component and its state (`showParticleBurst`, `burstPosition`, `setBurstPosition`) entirely. Replace with a simple CSS scale pulse on the eye container:
 
-## Issue 2: Response Bubble Appears Abruptly
+- Add an `isAbsorbPulsing` boolean state (single state, no position object needed)
+- When absorption fires, set `isAbsorbPulsing = true`, reset after 300ms
+- On the eye `motion.div`, apply a CSS transform pulse via a conditional class: `transition-transform duration-300` with `scale-105` when pulsing
+- This is pure GPU composite work -- zero DOM creation/destruction
 
-**Current state**: The `ResponseCard` wrapper at line 768-789 already has `AnimatePresence` with `initial={{ opacity: 0, y: 10 }}` -- so the card itself fades in. However, transcript messages in `ChatHistoryCollapsible` and `TranscriptSidebar` have no entrance animation.
+### 2. Batch state updates in absorption timeout (CenterStageLayout.tsx)
 
-**Fix in `TranscriptMessage.tsx`**:
-- Wrap the outer `<div>` in a `motion.div` with `initial={{ opacity: 0, y: 6 }}` and `animate={{ opacity: 1, y: 0 }}` with a 200ms duration
-- Add a prop `animate` (default `true`) -- set to `false` when loading from history so only new live messages get the entrance animation
+In both the message send (line 459) and suggestion click (line 520) timeouts:
 
-**Fix in `ChatHistoryCollapsible.tsx`**:
-- Track previous message count with a ref, and pass `animate={false}` to messages that existed before the latest render (i.e., only animate the last N new messages)
+- Use `ReactDOM.flushSync` is not needed -- instead, combine into fewer updates:
+  - Call `triggerBlink()` (already fast, single set)
+  - Call `triggerAbsorption()` (single set)
+  - Defer `orchestrateEmotionChange('thinking')` into a `requestAnimationFrame()` so it runs on the next frame, not competing with the absorption visuals
+  - Group `setIsResponding(true)` and `setIsAbsorbPulsing(true)` together (React 18 auto-batches these in timeouts)
+- Remove `setBurstPosition` and `setShowParticleBurst` calls entirely (replaced by the CSS pulse)
+
+### 3. Remove ParticleBurst import and render (CenterStageLayout.tsx)
+
+- Remove the `ParticleBurst` import
+- Remove the `<ParticleBurst>` JSX block (lines 818-823)
+- Remove `burstPosition` and `showParticleBurst` state declarations (lines 212-213)
+- Clean up dependency arrays
+
+## Technical Detail
+
+```text
+Before (6+ state updates, 21+ DOM elements created):
+  triggerBlink()              -> re-render
+  triggerAbsorption()         -> re-render
+  orchestrateEmotionChange()  -> re-render + emotion store update
+  setIsResponding(true)       -> re-render
+  setBurstPosition(pos)       -> re-render
+  setShowParticleBurst(true)  -> re-render + 21 motion.divs mount
+
+After (3 updates, auto-batched, zero DOM churn):
+  triggerBlink()              |
+  triggerAbsorption()         | auto-batched by React 18
+  setIsResponding(true)       |
+  setIsAbsorbPulsing(true)    |
+  requestAnimationFrame(() => orchestrateEmotionChange('thinking'))  -> next frame
+```
 
 ## Files to Change
 
 | File | Change |
 |------|--------|
-| `UserMessageBubble.tsx` | Remove useLayoutEffect measurement; use CSS centering; reduce duration to 0.3s; drop rotate |
-| `useBubbleAnimation.ts` | Reduce flying timeout from 400ms to 300ms |
-| `CenterStageLayout.tsx` | Reduce inner setTimeout from 400ms to 300ms |
-| `TranscriptMessage.tsx` | Add optional entrance animation (fade+slide, 200ms) |
-| `ChatHistoryCollapsible.tsx` | Track message count to only animate new messages |
+| `CenterStageLayout.tsx` | Remove ParticleBurst; add CSS absorb pulse; defer orchestrateEmotionChange to rAF; remove burst state |
 
-## Technical Details
-
-### UserMessageBubble centering approach
-```text
-Before: useLayoutEffect -> getBoundingClientRect() -> setState(dimensions) -> re-render -> animate
-After:  CSS left: startPos.x, top: startPos.y, transform: translate(-50%, -50%) -> animate directly
-```
-This eliminates one full render cycle and a forced layout pass.
-
-### TranscriptMessage animation guard
-A new optional `shouldAnimate` prop (default `true`) controls whether the entrance animation plays. When loading history, all messages get `shouldAnimate={false}` to avoid a cascade of animations on bulk render.
-
+`ParticleBurst.tsx` can be kept in the codebase (unused) or deleted -- no functional impact either way.
