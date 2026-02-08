@@ -1,92 +1,75 @@
 
 
-# ChatGPT-Style Chat Mode + Smooth Eye Transition
+# Fix History Panel Lag -- Final Performance Pass
 
-## Overview
+## What You'll Notice
 
-When the history panel is open, switch to a fast, ChatGPT-like chat experience: no flying bubble, instant message delivery, typing dots while waiting, and streaming text for responses. Also fix the eye's jerky spring animation.
+- Opening the history panel: instant, no stutter
+- Old messages: appear immediately, no fade-in animations
+- Eye scaling: smooth single curve, no bounce/jerk
+- Typing and sending: snappy, like a normal chat app
+- The three-dot typing indicator and streaming text are already working from the previous change
 
 ## Changes
 
-### 1. Skip flying bubble when history is open (CenterStageLayout.tsx)
+### 1. Stop old messages from animating (ChatInput.tsx)
 
-In `handleSendWithAnimation`, add an early branch when `transcriptOpen` is true:
-- Call `onSendMessage(content, file)` immediately
-- Set `setIsResponding(true)` and defer `orchestrateEmotionChange('thinking')` via `requestAnimationFrame`
-- Call `onRemoveFile()`, `clearResponseBubbles()`, `clearSuggestions()`
-- Skip `startMessageAnimation()`, skip the absorption timeout entirely
-- This removes all animation overhead from the send path
+Currently every `TranscriptMessage` plays a fade+slide animation when the panel opens. For 10+ messages, that's 10 simultaneous Framer Motion calculations.
 
-### 2. Fix eye transition (CenterStageLayout.tsx)
+Fix: Pass `shouldAnimate={false}` to all messages except truly new ones (messages that arrive while the panel is already open). Use a ref to track which messages existed when the panel opened.
 
-Replace the eye container's spring animation config:
-- Change from `type: 'spring', duration: 0.35, bounce: 0.05` to `type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1]`
-- Remove the conflicting `transition-transform duration-300` CSS class (Framer Motion handles the transform)
-- Remove `will-change: transform` from the inline style (Framer Motion adds this automatically during animation)
+### 2. Replace maxHeight animation with transform-based approach (ChatInput.tsx)
 
-### 3. Add typing indicator in history panel (ChatInput.tsx)
+The history panel currently animates `maxHeight: 0 -> 500`. This triggers layout recalculation on every single frame (the browser reflows everything below it).
 
-- Accept a new `isTyping` prop
-- When `isTyping` is true and `transcriptOpen` is true, render a typing indicator at the bottom of the message list
-- The indicator uses a CSS-only three-dot bounce animation (no Framer Motion)
-- Styled like an AYN message bubble with the Brain icon and "AYN" label
-- Auto-removed when the real response message arrives
+Fix: Switch to `opacity` + `scaleY` with `transform-origin: bottom`. These are GPU-composited properties -- zero layout cost. Keep `overflow-hidden` for clipping.
 
-### 4. Stream AYN responses in history (TranscriptMessage.tsx)
+### 3. Remove expensive backdrop-blur (ChatInput.tsx)
 
-- Add an `isStreaming` prop (default `false`)
-- When `isStreaming` is true, render content with `StreamingMarkdown` instead of `MessageFormatter`
-- This gives the word-by-word text reveal effect
+The main container uses `backdrop-blur-xl` which forces GPU recompositing on every overlapping animation frame. Since the background is already 95% opaque (`bg-background/95`), the blur is barely visible.
 
-### 5. Wire isStreaming to the last AYN message (ChatInput.tsx)
+Fix: Remove `backdrop-blur-xl` entirely, or reduce to `backdrop-blur-sm`.
 
-- In the history message list, detect the last AYN message
-- If `isTyping` is false and that message just arrived (not loaded from history), pass `isStreaming={true}`
-- Use a ref to track which message IDs have already been rendered, so only truly new messages stream
+### 4. Replace transition-all with specific properties (ChatInput.tsx)
 
-### 6. Pass isTyping from CenterStageLayout to ChatInput
+The outer wrapper and main container both use `transition-all duration-300`, which animates every CSS property on every change (padding, borders, shadows, height, everything).
 
-- Thread the `isTyping` value (already available from `useMessages`) down to `ChatInput` as a new prop
+Fix: Only transition the specific properties that actually change:
+- Outer div: `transition-[padding]`
+- Main container: `transition-[border-color,box-shadow]`
+
+### 5. Stagger eye transition (CenterStageLayout.tsx)
+
+The eye scales from 1 to 0.5 at the same time the panel expands -- both compete for GPU time.
+
+Fix: Add a 50ms delay to the eye's tween transition so the panel opens first, then the eye adjusts.
 
 ## Files to Change
 
 | File | Change |
 |------|--------|
-| CenterStageLayout.tsx | Skip animation when `transcriptOpen`; fix eye tween transition; pass `isTyping` to ChatInput |
-| ChatInput.tsx | Accept `isTyping` prop; render CSS typing dots; pass `isStreaming` to last AYN TranscriptMessage |
-| TranscriptMessage.tsx | Accept `isStreaming` prop; conditionally use `StreamingMarkdown` |
+| ChatInput.tsx | shouldAnimate=false for old messages; scaleY panel transition; remove backdrop-blur-xl; specific CSS transitions |
+| CenterStageLayout.tsx | Add 50ms delay to eye transition when transcriptOpen changes |
 
-## Technical Details
-
-### Send path comparison
+## Technical Detail
 
 ```text
-History CLOSED (current behavior):
-  blur input -> delay 0-60ms -> measure positions -> startMessageAnimation()
-  -> 300ms timeout -> batch state updates -> rAF emotion change
-  Total: ~360-420ms before AI call starts (but message sends immediately)
+Before (opening history panel):
+  Frame 1-18:
+    maxHeight 0->500px       (layout recalc every frame)
+    + eye scale 1->0.5       (compositor)
+    + 10x message fade+slide (10 Framer Motion instances)
+    + backdrop-blur-xl       (GPU recomposite)
+    + transition-all          (animating ~8 properties)
+  Result: ~15-20ms per frame, drops to 30-40fps
 
-History OPEN (new behavior):
-  onSendMessage() immediately
-  setIsResponding(true)
-  rAF -> orchestrateEmotionChange('thinking')
-  Total: ~1ms, single render cycle
+After:
+  Frame 1-5:
+    scaleY 0->1 + opacity    (compositor only)
+    messages appear instantly (no animation)
+    no backdrop-blur
+  Frame 5-12:
+    eye scale 1->0.5         (compositor, starts 50ms later)
+  Result: ~3-4ms per frame, solid 60fps
 ```
-
-### Eye transition comparison
-
-```text
-Before: spring with bounce -> oscillates, fights CSS transition-transform
-After:  tween with cubic-bezier -> single smooth curve, no CSS conflict
-```
-
-### Typing indicator (CSS-only)
-
-Three dots with staggered `animation-delay` using `@keyframes bounce`:
-- Dot 1: 0ms delay
-- Dot 2: 150ms delay
-- Dot 3: 300ms delay
-- Each dot: `translateY(0) -> translateY(-4px) -> translateY(0)` over 600ms, infinite
-
-No React state changes, no Framer Motion, no DOM churn.
 
