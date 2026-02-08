@@ -1,42 +1,103 @@
 
 
-# Fix acceptTerms: Don't Mark Accepted on DB Failure
+# Fix SSE Stream Parser for Reliable Token Delivery
 
 ## Problem
 
-The `acceptTerms` function in `src/hooks/useAuth.ts` (lines 98-106) catches database errors and still sets `hasAcceptedTerms = true` and writes to localStorage. This means if the DB write fails, the server never records acceptance -- the user sees the modal again on a different device or after clearing storage. This is a compliance gap.
+The `parseSSEStream` function in `src/hooks/useMessages.ts` (lines 46-99) parses each `data:` line immediately as it encounters a newline. If a TCP packet splits a JSON payload across two chunks, `JSON.parse` fails and the catch block treats the partial JSON as raw text, injecting garbled content into the AI response. This is especially problematic on unstable mobile connections.
 
 ## Change
 
-**File: `src/hooks/useAuth.ts`** -- Update the `catch` block in `acceptTerms` (lines 98-107) to show an error toast instead of silently accepting.
+**File: `src/hooks/useMessages.ts`** -- Replace the `parseSSEStream` function (lines 46-99).
 
-**Before (lines 98-107):**
+The core fix introduces a `currentData` accumulator that collects `data:` lines and only processes them when a blank line signals the SSE event boundary is complete.
+
+**Before (lines 54-95):**
 ```typescript
-} catch {
-  // Even if DB fails, save to localStorage so modal doesn't show again
-  localStorage.setItem(`terms_accepted_${user.id}`, 'true');
-  setHasAcceptedTerms(true);
-  
-  toast({
-    title: 'Welcome to AYN',
-    description: 'Your AI companion is ready to assist you.'
-  });
+let buffer = '';
+
+try {
+  while (true) {
+    // ... read chunk into buffer ...
+    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+      const line = buffer.slice(0, newlineIndex).trim();
+      buffer = buffer.slice(newlineIndex + 1);
+
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);  // fails on partial JSON
+          // ...
+        } catch {
+          // treats broken JSON as raw text — garbled output
+          fullContent += data;
+          onChunk(data);
+        }
+      }
+    }
+  }
 }
 ```
 
 **After:**
 ```typescript
-} catch (error) {
-  if (import.meta.env.DEV) {
-    console.error('Failed to save terms acceptance:', error);
+let buffer = '';
+let currentData = '';
+
+try {
+  while (true) {
+    // ... read chunk into buffer ...
+    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+      const line = buffer.slice(0, newlineIndex).trim();
+      buffer = buffer.slice(newlineIndex + 1);
+
+      if (line.startsWith('data: ')) {
+        currentData += line.slice(6);
+      } else if (line === '' && currentData) {
+        // Blank line = event boundary, now safe to parse
+        if (currentData === '[DONE]') {
+          currentData = '';
+          continue;
+        }
+        try {
+          const parsed = JSON.parse(currentData);
+          const content = parsed.choices?.[0]?.delta?.content
+            || parsed.content || parsed.text;
+          if (content) {
+            fullContent += content;
+            onChunk(content);
+          }
+        } catch {
+          if (import.meta.env.DEV) {
+            console.warn('[SSE] Failed to parse event:',
+              currentData.slice(0, 100));
+          }
+        }
+        currentData = '';
+      }
+    }
   }
-  toast({
-    title: 'Error',
-    description: 'Could not save your acceptance. Please try again.',
-    variant: 'destructive',
-  });
+
+  // Handle any remaining accumulated data after stream ends
+  if (currentData) {
+    try {
+      const parsed = JSON.parse(currentData);
+      const content = parsed.choices?.[0]?.delta?.content
+        || parsed.content || parsed.text;
+      if (content) {
+        fullContent += content;
+        onChunk(content);
+      }
+    } catch { /* final chunk incomplete */ }
+  }
 }
 ```
 
-The happy path (lines 90-97) remains unchanged -- it already correctly sets state only after a successful DB write. The only change is making the catch block stop lying about success.
+Key improvements:
+- Accumulates `data:` lines in `currentData` instead of parsing immediately
+- Only parses when a blank line confirms the SSE event is complete
+- Removes the fallback that injected raw broken JSON as text
+- Handles remaining data after stream ends
+- Keeps existing `reader.releaseLock()` in the `finally` block
 
