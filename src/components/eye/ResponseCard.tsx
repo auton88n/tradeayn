@@ -429,6 +429,7 @@ const ResponseCardComponent = ({
                         timestamp={ts}
                         shouldAnimate={isNew}
                         compact
+                        attachment={msg.attachment}
                         onReply={onReply ? (content) => onReply(`> ${content.slice(0, 100)}\n`) : undefined}
                       />
                     );
