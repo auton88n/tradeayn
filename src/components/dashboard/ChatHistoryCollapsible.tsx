@@ -67,10 +67,19 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear }: 
   useEffect(() => {
     if (isOpen && scrollRef.current) {
       requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          }
+        });
+      });
+      // Fallback for framer-motion animation delays
+      const fallback = setTimeout(() => {
         if (scrollRef.current) {
           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-      });
+      }, 150);
+      return () => clearTimeout(fallback);
     }
   }, [messages.length, isOpen]);
 
