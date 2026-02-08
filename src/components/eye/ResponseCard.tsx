@@ -333,7 +333,7 @@ const ResponseCardComponent = ({
           key={transcriptOpen ? "history" : visibleResponses[0]?.id || "empty"}
           layout={false}
           className={cn(
-            "relative flex flex-col",
+            "relative flex flex-col max-h-full",
             "w-full sm:w-[90%] md:max-w-[600px] lg:max-w-[680px]",
             "mx-2 sm:mx-auto",
             "bg-background",
@@ -401,13 +401,13 @@ const ResponseCardComponent = ({
             /* ============================================
                HISTORY MODE — simple hard maxHeight, no flex chains
                ============================================ */
-            <div className="flex flex-col overflow-hidden">
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
               {/* Scroll container */}
-              <div className="relative">
+              <div className="relative flex-1 min-h-0">
                 <div
                   ref={historyScrollRef}
                   onScroll={handleHistoryScroll}
-                  className="max-h-[65vh] overflow-y-auto overscroll-contain px-2 py-2 space-y-3 scroll-pb-8 [-webkit-overflow-scrolling:touch]"
+                  className="absolute inset-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-3 scroll-pb-8 [-webkit-overflow-scrolling:touch]"
                 >
                   {sortedMessages.length === 0 ? (
                     <div className="flex items-center justify-center py-16">
