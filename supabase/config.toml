@@ -186,3 +186,6 @@ verify_jwt = false
 
 [functions.report-vitals]
 verify_jwt = false
+
+[functions.analyze-floor-plan]
+verify_jwt = true

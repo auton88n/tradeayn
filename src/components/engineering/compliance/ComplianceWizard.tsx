@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Play, ClipboardCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useComplianceProject } from './hooks/useComplianceProject';
 import { useComplianceCheck } from './hooks/useComplianceCheck';
+import { useFloorPlanAnalysis } from './hooks/useFloorPlanAnalysis';
 import { ProjectSetupStep } from './steps/ProjectSetupStep';
 import { RoomEntryStep } from './steps/RoomEntryStep';
 import { WindowEntryStep } from './steps/WindowEntryStep';
@@ -13,6 +14,7 @@ import { DoorsHallwaysStep } from './steps/DoorsHallwaysStep';
 import { FireSafetyStep } from './steps/FireSafetyStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { ResultsStep } from './steps/ResultsStep';
+import { DesignUploadStep } from './steps/DesignUploadStep';
 import type { ComplianceInput } from './utils/complianceEngine';
 
 interface Props {
@@ -22,7 +24,9 @@ interface Props {
 const ComplianceWizard: React.FC<Props> = ({ userId }) => {
   const { project, updateProject } = useComplianceProject(userId);
   const { results, loading, runCheck, passed, failed, warnings } = useComplianceCheck();
-  
+  const floorPlan = useFloorPlanAnalysis();
+
+  const [mode, setMode] = useState<'ai' | 'manual'>('ai');
   const [step, setStep] = useState(0);
   const [rooms, setRooms] = useState<ComplianceInput[]>([]);
   const [windows, setWindows] = useState<ComplianceInput[]>([]);
@@ -38,20 +42,21 @@ const ComplianceWizard: React.FC<Props> = ({ userId }) => {
   const hasStairs = project.num_storeys > 1 || project.has_basement;
   const isCanada = project.location_country === 'CA';
 
-  // Build step list (stairs conditional)
-  const steps = [
+  // Steps differ by mode
+  const aiSteps = ['Project Setup', 'Upload Design', 'Results'];
+  const manualSteps = [
     'Project Setup', 'Rooms', 'Windows',
     ...(hasStairs ? ['Stairs'] : []),
     'Doors & Hallways', 'Fire Safety', 'Review', 'Results',
   ];
+  const steps = mode === 'ai' ? aiSteps : manualSteps;
 
-  const handleRunCheck = async () => {
-    const allInputs: ComplianceInput[] = [
+  const handleRunCheck = async (inputs?: ComplianceInput[]) => {
+    const allInputs: ComplianceInput[] = inputs || [
       ...rooms,
       ...windows,
       ...(hasStairs ? [stair] : []),
       ...doors,
-      // Convert fire safety booleans to alarm inputs
       { input_type: 'alarm' as const, unit_system: unitSystem, room_name: 'Building' },
     ];
 
@@ -64,7 +69,17 @@ const ComplianceWizard: React.FC<Props> = ({ userId }) => {
       building_type: project.building_type,
     });
 
-    setStep(steps.length - 1); // Go to results
+    setStep(steps.length - 1);
+  };
+
+  const handleAIConfirm = () => {
+    const inputs = floorPlan.getComplianceInputs();
+    handleRunCheck(inputs);
+  };
+
+  const switchToManual = () => {
+    setMode('manual');
+    setStep(1); // skip to first manual input step
   };
 
   const renderStep = () => {
@@ -72,6 +87,24 @@ const ComplianceWizard: React.FC<Props> = ({ userId }) => {
     switch (stepName) {
       case 'Project Setup':
         return <ProjectSetupStep project={project} onUpdate={updateProject} />;
+      case 'Upload Design':
+        return (
+          <DesignUploadStep
+            phase={floorPlan.phase}
+            extractedInputs={floorPlan.extractedInputs}
+            notes={floorPlan.notes}
+            error={floorPlan.error}
+            fileName={floorPlan.fileName}
+            onFileSelected={(file) => floorPlan.analyzeFile(file, unitSystem, project.code_system)}
+            onUpdateInput={floorPlan.updateInput}
+            onRemoveInput={floorPlan.removeInput}
+            onAddInput={floorPlan.addInput}
+            onConfirm={handleAIConfirm}
+            onReUpload={floorPlan.reset}
+            onSwitchToManual={switchToManual}
+            unitSystem={unitSystem}
+          />
+        );
       case 'Rooms':
         return <RoomEntryStep rooms={rooms} onUpdate={setRooms} unitSystem={unitSystem} />;
       case 'Windows':
@@ -85,14 +118,18 @@ const ComplianceWizard: React.FC<Props> = ({ userId }) => {
       case 'Review':
         return <ReviewStep project={project} rooms={rooms} windows={windows} stair={stair} doors={doors} hasStairs={hasStairs} />;
       case 'Results':
-        return <ResultsStep results={results} passed={passed} failed={failed} warnings={warnings} codeSystem={project.code_system} onStartNew={() => setStep(0)} />;
+        return <ResultsStep results={results} passed={passed} failed={failed} warnings={warnings} codeSystem={project.code_system} onStartNew={() => { setStep(0); setMode('ai'); floorPlan.reset(); }} />;
       default:
         return null;
     }
   };
 
-  const isLastInputStep = steps[step] === 'Review';
+  const isLastInputStep = (mode === 'manual' && steps[step] === 'Review');
+  const isUploadStep = steps[step] === 'Upload Design';
   const isResults = steps[step] === 'Results';
+
+  // In AI mode, hide nav buttons on Upload Design step (it has its own Confirm button)
+  const showNav = !isResults && !(isUploadStep && floorPlan.phase === 'done');
 
   return (
     <div className="space-y-6">
@@ -131,7 +168,7 @@ const ComplianceWizard: React.FC<Props> = ({ userId }) => {
 
       {/* Step Content */}
       <motion.div
-        key={step}
+        key={`${mode}-${step}`}
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.2 }}
@@ -140,11 +177,18 @@ const ComplianceWizard: React.FC<Props> = ({ userId }) => {
       </motion.div>
 
       {/* Navigation */}
-      {!isResults && (
+      {showNav && (
         <div className="flex items-center justify-between pt-4 border-t border-border/50">
           <Button
             variant="outline"
-            onClick={() => setStep(s => Math.max(0, s - 1))}
+            onClick={() => {
+              if (mode === 'manual' && step === 1) {
+                setMode('ai');
+                setStep(1); // back to Upload Design
+              } else {
+                setStep(s => Math.max(0, s - 1));
+              }
+            }}
             disabled={step === 0}
             className="gap-1"
           >
@@ -153,7 +197,7 @@ const ComplianceWizard: React.FC<Props> = ({ userId }) => {
 
           {isLastInputStep ? (
             <Button
-              onClick={handleRunCheck}
+              onClick={() => handleRunCheck()}
               disabled={loading}
               className="gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white"
             >
