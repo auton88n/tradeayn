@@ -72,6 +72,8 @@ interface ChatInputProps {
   maintenanceActive?: boolean;
   // Credits exhausted - blocks sending
   creditsExhausted?: boolean;
+  // AYN is generating a response
+  isTyping?: boolean;
 }
 // Default modes - only used as fallback
 const defaultModes = [{
@@ -190,12 +192,14 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   uploadFailed = false,
   onRetryUpload,
   maintenanceActive = false,
-  creditsExhausted = false
+  creditsExhausted = false,
+  isTyping = false
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const historyScrollRef = useRef<HTMLDivElement>(null);
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
   const visibleSuggestions = suggestions.filter(s => s.isVisible);
 
   // Sort messages chronologically (oldest first)
@@ -475,10 +479,41 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               <div className="relative pb-3">
                 <div className="max-h-[340px] overflow-y-auto" ref={historyScrollRef} onScroll={handleHistoryScroll}>
                   <div className="p-3 space-y-1 flex flex-col justify-end min-h-full">
-                    {sortedTranscriptMessages.map(msg => <TranscriptMessage key={msg.id} content={msg.content} sender={msg.sender} timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)} status={msg.status} onReply={text => {
-                  setInputMessage(`> ${text.split('\n')[0]}\n`);
-                  textareaRef.current?.focus();
-                }} />)}
+                    {sortedTranscriptMessages.map((msg, idx) => {
+                      const isLastAyn = msg.sender === 'ayn' && idx === sortedTranscriptMessages.length - 1;
+                      const isNew = !seenMessageIdsRef.current.has(msg.id);
+                      if (!isNew) {
+                        // Already seen
+                      } else if (!isLastAyn || isTyping) {
+                        // Mark as seen immediately if not the latest AYN or still typing
+                        seenMessageIdsRef.current.add(msg.id);
+                      }
+                      const shouldStream = isLastAyn && isNew && !isTyping && msg.sender === 'ayn';
+                      if (shouldStream) {
+                        // Mark seen after streaming starts
+                        seenMessageIdsRef.current.add(msg.id);
+                      }
+                      return <TranscriptMessage key={msg.id} content={msg.content} sender={msg.sender} timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)} status={msg.status} isStreaming={shouldStream} onReply={text => {
+                        setInputMessage(`> ${text.split('\n')[0]}\n`);
+                        textareaRef.current?.focus();
+                      }} />;
+                    })}
+                    {/* Typing indicator - CSS-only three dots */}
+                    {isTyping && transcriptOpen && (
+                      <div className="flex gap-2 p-3">
+                        <div className="rounded-full w-8 h-8 bg-foreground text-background flex items-center justify-center shrink-0">
+                          <Brain className="w-4 h-4" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-foreground mb-0.5">AYN</span>
+                          <div className="inline-flex items-center gap-1 px-4 py-2.5 rounded-[20px] rounded-bl-sm bg-muted/50 shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '300ms' }} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

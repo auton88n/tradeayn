@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Copy, Check, User, Brain, CornerDownLeft, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
+import { StreamingMarkdown } from '@/components/eye/StreamingMarkdown';
 
 interface TranscriptMessageProps {
   content: string;
@@ -13,6 +14,7 @@ interface TranscriptMessageProps {
   status?: 'sending' | 'sent' | 'error' | 'queued';
   onReply?: (content: string) => void;
   shouldAnimate?: boolean;
+  isStreaming?: boolean;
 }
 
 // Helper to strip markdown for clipboard
@@ -37,6 +39,7 @@ export const TranscriptMessage = ({
   status,
   onReply,
   shouldAnimate = true,
+  isStreaming = false,
 }: TranscriptMessageProps) => {
   const isUser = sender === 'user';
   const [copied, setCopied] = useState(false);
@@ -108,7 +111,11 @@ export const TranscriptMessage = ({
             "leading-relaxed break-words [&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:pb-0 [&_li]:pl-3 [&_li]:before:text-sm",
             compact ? "text-xs" : "text-sm"
           )}>
-            <MessageFormatter content={content} />
+            {isStreaming ? (
+              <StreamingMarkdown content={content} speed={15} />
+            ) : (
+              <MessageFormatter content={content} />
+            )}
           </div>
         </div>
 
