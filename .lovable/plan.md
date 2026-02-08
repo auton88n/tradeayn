@@ -1,57 +1,44 @@
 
 
-# Fix Terms Acceptance: Database as Source of Truth
+# Remove Duplicate soundGenerator.setEnabled() in toggleEnabled
 
 ## Problem
 
-When the database returns `has_accepted_terms = false`, the current code falls through to check localStorage, allowing users to bypass the terms modal by manually setting a localStorage key via DevTools. This is a legal compliance risk.
+In `src/contexts/SoundContext.tsx`, the `toggleEnabled` function manually calls `soundGenerator.setEnabled(newValue)` inside the state updater. A separate `useEffect` already syncs the `enabled` state to `soundGenerator` whenever it changes. This results in the sound generator being called twice per toggle, which can cause audio glitches.
 
 ## Change
 
-**File: `src/hooks/useAuth.ts`** -- Replace the terms processing block inside `runQueries` (approximately lines 149-163).
-
-**Current logic:**
-- DB says accepted -> trust it, sync to localStorage
-- DB says not accepted -> check localStorage as override (BUG)
-- DB query failed -> check localStorage
-
-**New logic:**
-- DB says accepted -> trust it, sync to localStorage
-- DB says not accepted -> trust DB, clear localStorage
-- DB query failed (null result) -> use localStorage as temporary fallback only
+**File: `src/contexts/SoundContext.tsx`** -- Remove the `soundGenerator.setEnabled(newValue)` line from `toggleEnabled`, and remove `soundGenerator` from its dependency array since it's no longer referenced.
 
 **Before:**
 ```typescript
-if (settingsData) {
-  const dbTermsAccepted = settingsData?.[0]?.has_accepted_terms ?? false;
-  if (dbTermsAccepted) {
-    setHasAcceptedTerms(true);
-    localStorage.setItem(`terms_accepted_${user.id}`, 'true');
-  } else {
-    const localTermsAccepted = localStorage.getItem(`terms_accepted_${user.id}`) === 'true';
-    setHasAcceptedTerms(localTermsAccepted);
-  }
-} else {
-  const localTermsAccepted = localStorage.getItem(`terms_accepted_${user.id}`) === 'true';
-  setHasAcceptedTerms(localTermsAccepted);
-}
+const toggleEnabled = useCallback(() => {
+  setEnabledState(prev => {
+    const newValue = !prev;
+    // Sync to sound generator immediately
+    soundGenerator.setEnabled(newValue);
+    // Sync to database if logged in
+    if (userId && accessToken) {
+      ...
+    }
+    return newValue;
+  });
+}, [soundGenerator, userId, accessToken]);
 ```
 
 **After:**
 ```typescript
-if (settingsData) {
-  const dbTermsAccepted = settingsData?.[0]?.has_accepted_terms ?? false;
-  setHasAcceptedTerms(dbTermsAccepted);
-  if (dbTermsAccepted) {
-    localStorage.setItem(`terms_accepted_${user.id}`, 'true');
-  } else {
-    localStorage.removeItem(`terms_accepted_${user.id}`);
-  }
-} else {
-  const localTermsAccepted = localStorage.getItem(`terms_accepted_${user.id}`) === 'true';
-  setHasAcceptedTerms(localTermsAccepted);
-}
+const toggleEnabled = useCallback(() => {
+  setEnabledState(prev => {
+    const newValue = !prev;
+    // Sync to database if logged in
+    if (userId && accessToken) {
+      ...
+    }
+    return newValue;
+  });
+}, [userId, accessToken]);
 ```
 
-One file, one block replacement. No other changes needed.
+One file, two small removals (one line + one dependency).
 
