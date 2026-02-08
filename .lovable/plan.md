@@ -1,41 +1,46 @@
 
 
-# Fix Copyright Year + Drop Dead Tables
+# Remove Business Context Encryption
 
-## 1. Copyright Year (LanguageContext.tsx)
+## Problem
+The `business_context` field uses database-level encryption via RPC functions (`update_profile_business_context` / `get_profile_business_context`) that require a Vault encryption key. This key is not configured, causing every profile save to fail with "Encryption key not configured."
 
-Replace the hardcoded "2024" in all 3 language blocks with a dynamic expression. Since these are static translation strings (not JSX), the approach is to use a template or helper:
+## What Changes
 
-- Line 52 (English): Change `'© 2024 AYN AI Business Consulting. All rights reserved.'` to use `new Date().getFullYear()`
-- Line 807 (Arabic): Same pattern for the Arabic string
-- Line 1487 (French): Same pattern for the French string
-
-Since the translations object is built once at module level, we will compute `const currentYear = new Date().getFullYear()` at the top and interpolate it into the 3 strings.
-
-## 2. Drop Dead Database Tables
-
-No code references `webhook_health_metrics` or `webhook_rate_limits` anywhere in the frontend or edge functions. These were used by the deleted n8n webhook system.
-
-Action: Run SQL to drop both tables. Keep `ai_mode_configs` for now (low risk, may be referenced by admin queries).
+### 1. Database Migration (SQL)
+- Add a new `business_context` column (plain `text`) to the `profiles` table
+- The existing `business_context_encrypted` (bytea) column stays for now -- it contains no usable data since encryption was never configured
 
 ```sql
-DROP TABLE IF EXISTS webhook_health_metrics;
-DROP TABLE IF EXISTS webhook_rate_limits;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS business_context text;
 ```
 
-## 3. Mode System -- No Changes Needed
+### 2. AccountPreferences.tsx -- Simplify Load and Save
 
-The mode system is already simplified:
-- `getModes()` returns only `[{ name: 'General', ... }]` -- one mode
-- `ayn-unified` auto-detects intent from the message content
-- The `AIMode` type in `dashboard.types.ts` still lists 7 modes but nothing in the UI exposes them
+**Loading (lines 62-108):**
+- Add `business_context` to the initial SELECT query alongside `contact_person`, `company_name`, etc.
+- Remove the separate async RPC call to `get_profile_business_context` entirely (the whole try/catch block at lines 100-108)
 
-No action needed here. Cleaning the type union would touch 9+ files for zero user benefit.
+**Saving (lines 143-186):**
+- Add `business_context` to the direct `.update()` call alongside the other fields
+- Remove the separate RPC call to `update_profile_business_context` (lines 160-165) and its error handling
+- Show the actual Supabase error message in the failure toast instead of a generic string
 
-## Summary of file changes
+### 3. Also Fix: History Panel Lag (from approved plan)
+
+In `ChatInput.tsx`:
+- Limit rendered transcript messages to the most recent 20
+- Add GPU acceleration hints (`will-change`, `contain`) to the panel container
+
+## Files to Change
 
 | File | Change |
 |------|--------|
-| `src/contexts/LanguageContext.tsx` | Replace 3 hardcoded "2024" with dynamic year |
-| Supabase SQL | DROP `webhook_health_metrics` and `webhook_rate_limits` |
+| Database migration | `ALTER TABLE profiles ADD COLUMN business_context text` |
+| `AccountPreferences.tsx` | Remove both RPC calls; read/write `business_context` as plain column |
+| `ChatInput.tsx` | Limit messages to 20 + GPU hints for smooth animation |
 
+## What Stays Untouched
+- The `business_context_encrypted` column remains (can be dropped later in a cleanup pass)
+- The RPC functions stay in the database (harmless, nothing calls them after this change)
+- The `ai_mode_configs` table stays as previously agreed
