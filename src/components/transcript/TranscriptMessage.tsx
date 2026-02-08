@@ -57,8 +57,8 @@ export const TranscriptMessage = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className={cn(
-        "group flex gap-2 transition-colors",
-        compact ? "py-1 px-2" : "p-3 gap-3",
+        "group flex transition-colors",
+        compact ? "py-0.5 px-1 gap-1.5" : "p-3 gap-3",
         isUser ? "flex-row-reverse" : "flex-row"
       )}>
       {/* Avatar */}
@@ -79,7 +79,7 @@ export const TranscriptMessage = ({
       {/* Content */}
       <div className={cn(
         "min-w-0",
-        compact ? "max-w-[85%]" : "flex-1 max-w-[80%]",
+        compact ? "flex-1 max-w-[92%]" : "flex-1 max-w-[80%]",
         isUser ? "text-right" : "text-left"
       )}>
         <div className={cn(
