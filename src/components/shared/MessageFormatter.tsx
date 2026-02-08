@@ -18,10 +18,22 @@ interface MessageFormatterProps {
   className?: string;
 }
 
-// Detect if content contains Arabic/RTL text
+// Detect if content is predominantly Arabic/RTL text
 const hasArabicText = (text: string): boolean => {
-  // Arabic Unicode ranges
-  return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+  // Strip markdown syntax, URLs, code blocks for cleaner detection
+  const cleaned = text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`[^`]+`/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/[^a-zA-Z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g, '');
+  
+  const arabicChars = (cleaned.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
+  const latinChars = (cleaned.match(/[a-zA-Z]/g) || []).length;
+  
+  // Only RTL if Arabic characters are the majority (>60%)
+  const total = arabicChars + latinChars;
+  return total > 0 && (arabicChars / total) > 0.6;
 };
 
 // Remove outer code fence wrapping if entire content is a single code block
