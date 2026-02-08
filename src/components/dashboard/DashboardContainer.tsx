@@ -563,6 +563,7 @@ const DashboardContent = ({
           transcriptOpen={transcriptOpen}
           onTranscriptToggle={() => handleToggleTranscript()}
           onTranscriptClear={handleClearTranscript}
+          onReply={handleReply}
           modes={modes}
           onModeChange={setSelectedMode}
           prefillValue={replyPrefill}
