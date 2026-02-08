@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { sanitizeUserPrompt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -56,12 +57,12 @@ Examples for general/explanatory topics:
 - "What are the risks?" ⚠️
 - "How to implement?" 🛠️
 
-Return ONLY a JSON array with exactly 3 objects, each with "content" (string) and "emoji" (single emoji string).`;
+Return ONLY a JSON array with exactly 3 objects, each with "content" (string) and "emoji" (single emoji string).` + INJECTION_GUARD;
 
     // Increase context window to 1000 chars for better relevance
     const responseContext = lastAynResponse?.substring(0, 1000) || 'No response yet';
     
-    const userPrompt = `User asked: "${lastUserMessage}"
+    const userPrompt = `User asked: "${sanitizeUserPrompt(lastUserMessage || '')}"
 
 AYN responded: "${responseContext}"
 

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -295,10 +296,19 @@ serve(async (req) => {
       }
     }
 
+    // Prompt injection defense
+    const sanitizedQuestion = sanitizeUserPrompt(question);
+    if (detectInjectionAttempt(question)) {
+      console.warn('[engineering-ai-agent] Prompt injection attempt detected');
+    }
+
     const conversationMessages = [
-      { role: "system", content: getSystemPrompt(calculatorType, currentInputs, currentOutputs, allCalculatorStates, recentActions, sessionInfo, userMemories, buildingCode) },
-      ...messages.slice(-10),
-      { role: "user", content: question }
+      { role: "system", content: getSystemPrompt(calculatorType, currentInputs, currentOutputs, allCalculatorStates, recentActions, sessionInfo, userMemories, buildingCode) + INJECTION_GUARD },
+      ...messages.slice(-10).map((msg: { role: string; content: string }) => ({
+        ...msg,
+        content: msg.role === 'user' ? sanitizeUserPrompt(msg.content) : msg.content
+      })),
+      { role: "user", content: sanitizedQuestion }
     ];
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

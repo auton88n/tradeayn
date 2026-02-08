@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { detectResponseEmotion, detectLanguage } from "./emotionDetector.ts";
 import { detectIntent } from "./intentDetector.ts";
 import { buildSystemPrompt } from "./systemPrompts.ts";
+import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -510,6 +511,20 @@ serve(async (req) => {
     const intent = forcedIntent || detectIntent(lastMessage);
     console.log(`Detected intent: ${intent}`);
 
+    // === PROMPT INJECTION DEFENSE ===
+    if (detectInjectionAttempt(lastMessage)) {
+      supabase
+        .from('security_logs')
+        .insert({
+          action: 'prompt_injection_attempt',
+          user_id: userId === 'internal-evaluator' ? null : userId,
+          details: { input_preview: lastMessage.slice(0, 200), function: 'ayn-unified' },
+          severity: 'high'
+        })
+        .then(() => {})
+        .catch(() => {});
+    }
+
     // === SERVER-SIDE CHAT LIMIT ENFORCEMENT ===
     // Enforce 100 messages per chat session to prevent abuse and manage context
     const MAX_MESSAGES_PER_CHAT = 100;
@@ -564,7 +579,7 @@ serve(async (req) => {
     }
 
     // Build system prompt with user message for language detection AND user memories
-    const systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext);
+    const systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + INJECTION_GUARD;
 
     // Handle image generation intent (LAB mode)
     if (intent === 'image') {
@@ -799,15 +814,23 @@ serve(async (req) => {
       }
     }
 
+    // Sanitize user messages before passing to LLM
+    const sanitizedMessages = messages.map((msg: { role: string; content: any }) => ({
+      ...msg,
+      content: msg.role === 'user' && typeof msg.content === 'string' 
+        ? sanitizeUserPrompt(msg.content) 
+        : msg.content
+    }));
+
     // If search intent, perform search first
-    let enrichedMessages = [...messages];
+    let enrichedMessages = [...sanitizedMessages];
     if (intent === 'search') {
       const searchResults = await performWebSearch(lastMessage);
       enrichedMessages = [
-        ...messages.slice(0, -1),
+        ...sanitizedMessages.slice(0, -1),
         {
           role: 'user',
-          content: `${lastMessage}\n\n[Search Results]\n${searchResults}`
+          content: `${sanitizeUserPrompt(lastMessage)}\n\n[Search Results]\n${searchResults}`
         }
       ];
     }

@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -268,16 +269,22 @@ Format your response as JSON with this structure:
 }
 
 If the question is simple, you can omit the optional fields. Always include "answer" and "quickReplies".
-`;
+` + INJECTION_GUARD;
+
+    // Prompt injection defense
+    const sanitizedQuestion = sanitizeUserPrompt(question);
+    if (detectInjectionAttempt(question)) {
+      console.warn('[engineering-ai-assistant] Prompt injection attempt detected');
+    }
 
     // Build messages array with conversation history
     const messages = [
       { role: 'system', content: systemPrompt },
       ...conversationHistory.map((msg: { role: string; content: string }) => ({
         role: msg.role,
-        content: msg.content
+        content: msg.role === 'user' ? sanitizeUserPrompt(msg.content) : msg.content
       })),
-      { role: 'user', content: question }
+      { role: 'user', content: sanitizedQuestion }
     ];
 
     console.log(`Engineering AI Assistant - Calculator: ${calculatorType}, Code: ${buildingCode}, Question: ${question.substring(0, 100)}...`);

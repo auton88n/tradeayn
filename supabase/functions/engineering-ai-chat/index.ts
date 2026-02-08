@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -305,7 +306,7 @@ ${currentOutputs ? JSON.stringify(currentOutputs, null, 2) : 'No calculation per
 \`\`\`
 
 Remember: Cite specific code sections, show calculations with real numbers, warn about any failures.
-`;
+` + INJECTION_GUARD;
 
     let messages: Array<{ role: string; content: string }>;
     
@@ -314,7 +315,7 @@ Remember: Cite specific code sections, show calculations with real numbers, warn
         { role: 'system', content: systemPrompt },
         ...userMessages.map((msg: { role: string; content: string }) => ({
           role: msg.role,
-          content: msg.content
+          content: msg.role === 'user' ? sanitizeUserPrompt(msg.content) : msg.content
         }))
       ];
     } else if (question) {
@@ -322,15 +323,18 @@ Remember: Cite specific code sections, show calculations with real numbers, warn
         { role: 'system', content: systemPrompt },
         ...conversationHistory.map((msg: { role: string; content: string }) => ({
           role: msg.role,
-          content: msg.content
+          content: msg.role === 'user' ? sanitizeUserPrompt(msg.content) : msg.content
         })),
-        { role: 'user', content: question }
+        { role: 'user', content: sanitizeUserPrompt(question) }
       ];
     } else {
       throw new Error('No question or messages provided');
     }
 
     const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content || '';
+    if (detectInjectionAttempt(lastUserMessage)) {
+      console.warn('[engineering-ai-chat] Prompt injection attempt detected');
+    }
     console.log(`Engineering AI - Code: ${buildingCode?.id || 'ACI'}, Calculator: ${calculatorType || 'unknown'}`);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

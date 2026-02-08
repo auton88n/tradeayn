@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+import { sanitizeUserPrompt } from "../_shared/sanitizePrompt.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -399,7 +400,17 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const body: DocumentRequest = await req.json();
+    const rawBody = await req.json();
+    // Sanitize user-provided text fields
+    const body: DocumentRequest = {
+      ...rawBody,
+      title: sanitizeUserPrompt(rawBody.title || ''),
+      sections: (rawBody.sections || []).map((s: any) => ({
+        ...s,
+        heading: sanitizeUserPrompt(s.heading || ''),
+        content: s.content ? sanitizeUserPrompt(s.content) : undefined,
+      })),
+    };
     
     // Validate request
     if (!body.type || !body.title || !body.sections) {

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -330,9 +331,24 @@ serve(async (req) => {
     // Calculate overall system health
     const systemHealth = calculateHealthScore(contextData);
 
+    // Prompt injection defense
+    const sanitizedMessage = sanitizeUserPrompt(message);
+    if (detectInjectionAttempt(message)) {
+      supabase
+        .from('security_logs')
+        .insert({
+          action: 'prompt_injection_attempt',
+          user_id: user.id,
+          details: { input_preview: message.slice(0, 200), function: 'admin-ai-assistant' },
+          severity: 'high'
+        })
+        .then(() => {})
+        .catch(() => {});
+    }
+
     // Build messages for AI
     const messages = [
-      { role: 'system', content: ADMIN_SYSTEM_PROMPT },
+      { role: 'system', content: ADMIN_SYSTEM_PROMPT + INJECTION_GUARD },
       { 
         role: 'user', 
         content: `Current System Context (last 24 hours):
@@ -340,7 +356,7 @@ ${JSON.stringify(contextData, null, 2)}
 
 System Health Score: ${systemHealth}%
 
-Admin question: ${message}` 
+Admin question: ${sanitizedMessage}` 
       }
     ];
 
