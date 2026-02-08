@@ -95,14 +95,14 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         title: 'Welcome to AYN',
         description: 'Your AI companion is ready to assist you.'
       });
-    } catch {
-      // Even if DB fails, save to localStorage so modal doesn't show again
-      localStorage.setItem(`terms_accepted_${user.id}`, 'true');
-      setHasAcceptedTerms(true);
-      
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error('Failed to save terms acceptance:', error);
+      }
       toast({
-        title: 'Welcome to AYN',
-        description: 'Your AI companion is ready to assist you.'
+        title: 'Error',
+        description: 'Could not save your acceptance. Please try again.',
+        variant: 'destructive',
       });
     }
   }, [user.id, session.access_token, toast]);
