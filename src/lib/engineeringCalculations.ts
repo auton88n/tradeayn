@@ -467,10 +467,17 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
   const fck = parseInt(concreteGrade.replace('C', ''));
   const fy = parseInt(steelGrade);
 
-  const gammaC = 1.5;
-  const gammaS = 1.15;
-  const fcd = 0.85 * fck / gammaC;
-  const fyd = fy / gammaS;
+  // Code-specific material design strengths
+  let fcd: number, fyd: number;
+  if (buildingCode === 'CSA') {
+    // CSA A23.3: resistance factors applied directly to material strengths
+    fcd = codeParams.resistanceFactors.flexure * 0.85 * fck; // φc × α1 × f'c
+    fyd = codeParams.resistanceFactors.steel * fy;             // φs × fy
+  } else {
+    // ACI 318: nominal strengths, φ applied to capacity later
+    fcd = 0.85 * fck;
+    fyd = fy;
+  }
 
   const b = columnWidth;
   const h = columnDepth;
@@ -483,7 +490,8 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
   const Le = columnHeight;
   const i = Math.min(b, h) / Math.sqrt(12);
   const lambda = Le / i;
-  const lambdaLim = 20 * Math.sqrt(fck) / Math.sqrt(axialLoad * 1000 / Ac);
+  // ACI 318 Cl. 6.2.5 / CSA A23.3 Cl. 10.13: slenderness limit for braced frames
+  const lambdaLim = 22;
   const isSlender = lambda > lambdaLim;
 
   const e0 = Math.max(h / 30, 20);
@@ -517,7 +525,8 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
 
   let AsRequired = omega * Ac * fcd / fyd;
 
-  const AsMin = Math.max(0.002 * Ac, 0.1 * axialLoad * 1000 / fyd);
+  // ACI 318 §10.6.1.1 / CSA A23.3 Cl. 10.9.1: minimum 1% Ag
+  const AsMin = Math.max(0.01 * Ac, 0.1 * axialLoad * 1000 / fyd);
   const AsMax = 0.04 * Ac;
 
   AsRequired = Math.max(AsRequired, AsMin);
@@ -544,13 +553,22 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
   const tieDia = Math.max(6, Math.ceil(selectedBarDia / 4));
   const tieSpacing = Math.min(12 * selectedBarDia, Math.min(b, h), 300);
 
-  const NRd = 0.8 * (Ac * fcd + AsProvided * fyd) / 1000;
+  // Code-specific axial capacity
+  let NRd: number;
+  if (buildingCode === 'CSA') {
+    // CSA: Pr = fcd*(Ag-As) + fyd*As (factors already in fcd/fyd)
+    NRd = (fcd * (Ac - AsProvided) + fyd * AsProvided) / 1000;
+  } else {
+    // ACI: φPn,max = 0.80 × φ × [0.85f'c(Ag-Ast) + fy×Ast], φ=0.65 for tied
+    const phiColumn = 0.65;
+    NRd = 0.80 * phiColumn * (fcd * (Ac - AsProvided) + fyd * AsProvided) / 1000;
+  }
   const utilizationRatio = (axialLoad / NRd) * 100;
 
-  const isAdequate = utilizationRatio <= 100 && reinforcementRatio <= 4 && reinforcementRatio >= 0.2;
+  const isAdequate = utilizationRatio <= 100 && reinforcementRatio <= 4 && reinforcementRatio >= 1.0;
 
   // Generate M-N interaction curve for visualization
-  const interactionCurve = generateInteractionCurve(b, h, AsProvided, fcd, fyd, cover);
+  const interactionCurve = generateInteractionCurve(b, h, AsProvided, fcd, fyd, cover, buildingCode);
   
   // Calculate applied moment for interaction diagram
   const appliedP = axialLoad;
@@ -586,6 +604,7 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
     designConcreteStrength: fcd.toFixed(1),
     designSteelStrength: fyd.toFixed(1),
     isAdequate,
+    buildingCode: codeParams.name,
     designStatus: isAdequate ? 'ADEQUATE' : 'INADEQUATE',
     // Interaction diagram data
     interactionCurve,
@@ -601,12 +620,13 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
 
 // Helper function to generate M-N interaction curve points
 function generateInteractionCurve(
-  b: number,      // Width (mm)
-  h: number,      // Depth (mm)
-  As: number,     // Total steel area (mm²)
-  fcd: number,    // Design concrete strength (MPa)
-  fyd: number,    // Design steel strength (MPa)
-  cover: number   // Cover (mm)
+  b: number,
+  h: number,
+  As: number,
+  fcd: number,
+  fyd: number,
+  cover: number,
+  buildingCode: string
 ): Array<{ P: number; M: number; type: string }> {
   const points: Array<{ P: number; M: number; type: string }> = [];
   
@@ -620,7 +640,15 @@ function generateInteractionCurve(
   const AsHalf = As / 2;
   
   // Pure compression point (c → ∞, all concrete and steel in compression)
-  const P0 = 0.8 * (0.85 * fcd * b * h + As * fyd) / 1000;
+  // Pure compression point - code-specific
+  let P0: number;
+  if (buildingCode === 'CSA') {
+    // CSA: factors already in fcd/fyd
+    P0 = (fcd * (b * h - As) + fyd * As) / 1000;
+  } else {
+    // ACI: apply 0.80 and φ=0.65 for tied columns
+    P0 = 0.80 * 0.65 * (fcd * (b * h - As) + fyd * As) / 1000;
+  }
   points.push({ P: P0, M: 0, type: 'compression' });
   
   // Calculate balanced neutral axis depth
@@ -663,7 +691,7 @@ function generateInteractionCurve(
     const aEffective = Math.min(a, h);
     
     // Forces
-    const Cc = 0.85 * fcd * b * aEffective;  // Concrete compression
+    const Cc = fcd * b * aEffective;  // Concrete compression (fcd already includes 0.85 factor)
     const Cs = AsHalf * (epsilon_sPrime > 0 ? fsPrime : 0); // Compression steel
     const Ts = AsHalf * (epsilon_s > 0 ? fs : 0);           // Tension steel force
     
@@ -689,7 +717,7 @@ function generateInteractionCurve(
   
   // Pure bending point (P ≈ 0)
   // Simplified: at very small c, moment approaches pure bending capacity
-  const aMin = AsHalf * fyd / (0.85 * fcd * b);
+  const aMin = AsHalf * fyd / (fcd * b);
   const M0 = AsHalf * fyd * (d - aMin / 2) / 1e6;
   points.push({ P: 0, M: parseFloat(M0.toFixed(1)), type: 'tension' });
   
