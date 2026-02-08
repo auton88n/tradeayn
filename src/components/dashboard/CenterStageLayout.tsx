@@ -742,11 +742,13 @@ export const CenterStageLayout = ({
               scale: (hasVisibleResponses || isTransitioningToChat) ? (isMobile ? 0.55 : 0.5) : 1,
               marginBottom: (hasVisibleResponses || isTransitioningToChat) ? -20 : 0,
               y: (hasVisibleResponses || isTransitioningToChat) ? -20 : 0,
+              opacity: transcriptOpen ? 0 : 1,
             }}
             transition={{
               scale: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },
               marginBottom: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },
               y: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+              opacity: { type: 'tween', duration: 0.25, ease: [0.4, 0, 0.2, 1] },
             }}
           >
             <div className="relative inline-block">
