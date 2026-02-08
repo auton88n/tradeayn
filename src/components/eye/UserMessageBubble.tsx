@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { FileText } from 'lucide-react';
@@ -19,24 +20,37 @@ export const UserMessageBubble = ({
   endPosition,
   onComplete,
 }: UserMessageBubbleProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    if (ref.current) {
+      setOffset({
+        w: ref.current.offsetWidth / 2,
+        h: ref.current.offsetHeight / 2,
+      });
+    }
+  }, [content]);
+
   if (status === 'done') return null;
 
   const flyingAnimation = {
-    x: endPosition.x,
-    y: endPosition.y,
+    x: endPosition.x - offset.w,
+    y: endPosition.y - offset.h,
     scale: 0.25,
     opacity: 0.85,
   };
 
   const absorbingAnimation = {
-    x: endPosition.x,
-    y: endPosition.y,
+    x: endPosition.x - offset.w,
+    y: endPosition.y - offset.h,
     scale: 0,
     opacity: 0,
   };
 
   return (
     <motion.div
+      ref={ref}
       className={cn(
         "fixed z-50 max-w-[300px] px-4 py-3 rounded-2xl",
         "bg-primary text-primary-foreground",
@@ -46,12 +60,11 @@ export const UserMessageBubble = ({
       style={{
         left: 0,
         top: 0,
-        transform: 'translate(-50%, -50%)',
         willChange: 'transform, opacity',
       }}
       initial={{
-        x: startPosition.x,
-        y: startPosition.y,
+        x: startPosition.x - offset.w,
+        y: startPosition.y - offset.h,
         scale: 1,
         opacity: 1,
       }}
