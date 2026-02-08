@@ -742,15 +742,19 @@ export function calculateFoundation(inputs: FoundationInputs, buildingCode: Buil
 
   const cover = 75;
   const barDia = 16;
-  const Pu = columnLoad * 1.4;
+  const avgFactor = (codeParams.loadFactors.dead + codeParams.loadFactors.live) / 2;
+  const Pu = columnLoad * avgFactor;
 
   const d_trial = 350;
   const b0 = 2 * (columnWidth + d_trial) + 2 * (columnDepth + d_trial);
-  const Vc_punch = 0.33 * Math.sqrt(fck) * b0 * d_trial / 1000;
+  const punchingCoeff = buildingCode === 'CSA'
+    ? 0.38 * codeParams.resistanceFactors.flexure
+    : 0.33 * codeParams.resistanceFactors.shear;
+  const Vc_punch = punchingCoeff * Math.sqrt(fck) * b0 * d_trial / 1000;
 
   let depth = d_trial;
-  if (Pu > Vc_punch * 0.75) {
-    depth = Math.ceil((Pu * 1000) / (0.33 * Math.sqrt(fck) * b0 * 0.75) / 25) * 25;
+  if (Pu > Vc_punch) {
+    depth = Math.ceil((Pu * 1000) / (punchingCoeff * Math.sqrt(fck) * b0) / 25) * 25;
   }
   depth = Math.max(depth, 300);
 
@@ -762,9 +766,12 @@ export function calculateFoundation(inputs: FoundationInputs, buildingCode: Buil
   const Mu = qu * width * cantilever * cantilever / 2 / 1e6;
 
   const d = roundedDepth - cover - barDia / 2;
-  const Ast = Mu * 1e6 / (0.87 * fy * 0.9 * d);
+  const phiFlex = codeParams.resistanceFactors.flexure;
+  const phiSteel = codeParams.resistanceFactors.steel;
+  const effectivePhi = buildingCode === 'CSA' ? phiFlex * phiSteel : 0.87;
+  const Ast = Mu * 1e6 / (effectivePhi * fy * 0.9 * d);
 
-  const AstMin = 0.0012 * width * 1000 * d;
+  const AstMin = codeParams.minRho * 0.6 * width * 1000 * d;
   const AstRequired = Math.max(Ast, AstMin);
 
   const barArea = Math.PI * barDia * barDia / 4;
@@ -795,6 +802,9 @@ export function calculateFoundation(inputs: FoundationInputs, buildingCode: Buil
     steelWeight: Math.round(totalSteelWeight * 10) / 10,
     fck,
     fy,
+    designCode: codeParams.name,
+    buildingCode: codeParams.name,
+    loadFactorsUsed: `${codeParams.loadFactors.dead}D + ${codeParams.loadFactors.live}L`,
   };
 }
 
