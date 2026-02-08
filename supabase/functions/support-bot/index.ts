@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -269,16 +270,31 @@ Response format:
 - If you reference an FAQ, mention it
 - If the user needs human support, acknowledge it clearly
 - Always maintain a professional yet warm tone
-`;
+` + INJECTION_GUARD;
+
+    // Prompt injection defense
+    const sanitizedMessage = sanitizeUserPrompt(message);
+    if (detectInjectionAttempt(message)) {
+      supabase
+        .from('security_logs')
+        .insert({
+          action: 'prompt_injection_attempt',
+          user_id: userId === GUEST_UUID ? null : userId,
+          details: { input_preview: message.slice(0, 200), function: 'support-bot' },
+          severity: 'high'
+        })
+        .then(() => {})
+        .catch(() => {});
+    }
 
     // Build messages array for OpenAI
     const messages = [
       { role: 'system', content: systemPrompt },
       ...conversationHistory.map((msg: { role: string; content: string }) => ({
         role: msg.role,
-        content: msg.content
+        content: msg.role === 'user' ? sanitizeUserPrompt(msg.content) : msg.content
       })),
-      { role: 'user', content: message }
+      { role: 'user', content: sanitizedMessage }
     ];
 
     console.log('Calling OpenAI with message:', message.substring(0, 50));
