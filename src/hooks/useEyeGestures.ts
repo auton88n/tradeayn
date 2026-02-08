@@ -1,6 +1,6 @@
 import { useRef, useCallback, useState } from 'react';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
-import { useSoundContextOptional } from '@/contexts/SoundContext';
+import { useSoundStore } from '@/stores/soundStore';
 import { hapticFeedback } from '@/lib/haptics';
 
 interface UseEyeGesturesOptions {
@@ -12,7 +12,7 @@ interface UseEyeGesturesOptions {
 export const useEyeGestures = (options: UseEyeGesturesOptions = {}) => {
   const { rapidClickThreshold = 5 } = options;
   const { triggerSurprise, triggerBlink, triggerWink } = useAYNEmotion();
-  const soundContext = useSoundContextOptional();
+  const soundContext = useSoundStore();
   
   const [isSquished, setIsSquished] = useState(false);
   const [clickCount, setClickCount] = useState(0);

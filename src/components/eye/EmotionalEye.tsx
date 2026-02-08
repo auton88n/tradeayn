@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
-import { useSoundContextOptional } from '@/contexts/SoundContext';
+import { useSoundStore } from '@/stores/soundStore';
 import { useDebugStore } from '@/stores/debugStore';
 
 import { useIdleDetection } from '@/hooks/useIdleDetection';
@@ -53,7 +53,7 @@ const EmotionalEyeComponent = ({
     isWinking,
     activityLevel,
   } = useAYNEmotion();
-  const soundContext = useSoundContextOptional();
+  const soundContext = useSoundStore();
   const debugIsEnabled = useDebugStore((s) => s.isDebugMode);
   const [isHovered, setIsHovered] = useState(false);
   const lastBlinkRef = useRef(Date.now());
