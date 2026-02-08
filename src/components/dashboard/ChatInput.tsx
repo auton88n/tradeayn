@@ -437,26 +437,26 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       onFileSelect(file);
     }
   }, [onFileSelect]);
-  return <div className={cn("relative w-full transition-all duration-300 px-0 pb-3")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
+  return <div className={cn("relative w-full transition-[padding] duration-300 px-0 pb-3")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
 
       {/* Main container */}
-      <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-t-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
+      <div className={cn("relative bg-background/95 border border-border rounded-t-2xl shadow-lg overflow-hidden transition-[border-color,box-shadow] duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
         
         {/* Chat History Section - inside the card at the top */}
         <AnimatePresence>
         {transcriptOpen && sortedTranscriptMessages.length > 0 && <motion.div initial={{
           opacity: 0,
-          maxHeight: 0
+          scaleY: 0
         }} animate={{
           opacity: 1,
-          maxHeight: 500
+          scaleY: 1
         }} exit={{
           opacity: 0,
-          maxHeight: 0
+          scaleY: 0
         }} transition={{
-          duration: 0.25,
+          duration: 0.2,
           ease: [0.4, 0, 0.2, 1]
-        }} className="overflow-hidden">
+        }} className="overflow-hidden origin-bottom">
               {/* History Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                 <div className="flex items-center gap-3">
@@ -493,7 +493,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                         // Mark seen after streaming starts
                         seenMessageIdsRef.current.add(msg.id);
                       }
-                      return <TranscriptMessage key={msg.id} content={msg.content} sender={msg.sender} timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)} status={msg.status} isStreaming={shouldStream} onReply={text => {
+                      // Only animate messages that arrived AFTER the panel was already open
+                      const shouldAnimate = isNew;
+                      return <TranscriptMessage key={msg.id} content={msg.content} sender={msg.sender} timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)} status={msg.status} isStreaming={shouldStream} shouldAnimate={shouldAnimate} onReply={text => {
                         setInputMessage(`> ${text.split('\n')[0]}\n`);
                         textareaRef.current?.focus();
                       }} />;
