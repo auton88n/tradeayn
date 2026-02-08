@@ -33,15 +33,15 @@ export const ChatHistoryCollapsible = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Sort messages chronologically (oldest first)
-  const sortedMessages = useMemo(() => 
-    [...messages].sort((a, b) => {
+  // Sort messages chronologically (oldest first), limit to last 20 for performance
+  const sortedMessages = useMemo(() => {
+    const sorted = [...messages].sort((a, b) => {
       const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
       const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
       return timeA - timeB;
-    }),
-    [messages]
-  );
+    });
+    return sorted.slice(-20);
+  }, [messages]);
 
   // Auto-scroll to bottom when messages change or panel opens
   useEffect(() => {
@@ -80,7 +80,7 @@ export const ChatHistoryCollapsible = ({
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="overflow-hidden"
             >
-              <div className="rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg overflow-hidden">
+              <div className="rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg overflow-hidden" style={{ willChange: 'transform', contain: 'content' }}>
                 {/* Header - styled like Engineering AI Panel */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                   <div className="flex items-center gap-3">

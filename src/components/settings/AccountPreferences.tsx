@@ -61,7 +61,7 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
       const [profileResult, usageResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('contact_person, company_name, business_type, avatar_url')
+          .select('contact_person, company_name, business_type, business_context, avatar_url')
           .eq('user_id', userId)
           .single(),
         supabase
@@ -71,13 +71,13 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
           .maybeSingle()
       ]);
 
-      // Process profile immediately - don't wait for RPC
+      // Process profile
       if (profileResult.data) {
         const profileData = {
           contact_person: profileResult.data.contact_person || '',
           company_name: profileResult.data.company_name || '',
           business_type: profileResult.data.business_type || '',
-          business_context: '', // Will be loaded async
+          business_context: (profileResult.data as any).business_context || '',
           avatar_url: profileResult.data.avatar_url || '',
         };
         setProfile(profileData);
@@ -95,21 +95,6 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
       }
 
       setLoading(false);
-
-      // Non-blocking: load encrypted business context after UI is ready
-      try {
-        const { data: businessContext } = await supabase
-          .rpc('get_profile_business_context', { _user_id: userId });
-        if (businessContext) {
-          setProfile(prev => {
-            const updated = { ...prev, business_context: businessContext };
-            setOriginalProfile(updated);
-            return updated;
-          });
-        }
-      } catch {
-        // Silent failure - encryption key might not be configured
-      }
     };
 
     loadAllData();
@@ -145,26 +130,17 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
     
     setSaving(true);
     try {
-      // Update non-encrypted fields directly
       const { error } = await supabase
         .from('profiles')
         .update({
           contact_person: profile.contact_person,
           company_name: profile.company_name,
           business_type: profile.business_type,
-        })
+          business_context: profile.business_context,
+        } as any)
         .eq('user_id', userId);
 
       if (error) throw error;
-
-      // Update encrypted business_context via secure RPC function
-      const { error: contextError } = await supabase
-        .rpc('update_profile_business_context', {
-          _user_id: userId,
-          _business_context: profile.business_context,
-        });
-
-      if (contextError) throw contextError;
 
       setOriginalProfile(profile);
       registerFormChange('account', false);
@@ -177,7 +153,7 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
       console.error('Error saving profile:', error);
       toast({
         title: "Couldn't Update Profile",
-        description: "Your changes weren't saved. Please try again.",
+        description: error instanceof Error ? error.message : "Your changes weren't saved. Please try again.",
         variant: 'destructive',
       });
     } finally {

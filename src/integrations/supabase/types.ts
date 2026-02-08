@@ -1329,6 +1329,7 @@ export type Database = {
         Row: {
           account_status: string | null
           avatar_url: string | null
+          business_context: string | null
           business_context_encrypted: string | null
           business_type: string | null
           company_name: string | null
@@ -1343,6 +1344,7 @@ export type Database = {
         Insert: {
           account_status?: string | null
           avatar_url?: string | null
+          business_context?: string | null
           business_context_encrypted?: string | null
           business_type?: string | null
           company_name?: string | null
@@ -1357,6 +1359,7 @@ export type Database = {
         Update: {
           account_status?: string | null
           avatar_url?: string | null
+          business_context?: string | null
           business_context_encrypted?: string | null
           business_type?: string | null
           company_name?: string | null
