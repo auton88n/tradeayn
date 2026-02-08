@@ -1,47 +1,32 @@
 
 
-# Fix: History Card Overflow (Root Cause Found)
+# Fix: History Card Overflow — Simple Hard Max-Height Approach
 
-## The Real Problem
-
-There are **two competing height constraints** that don't work together:
-
-1. **Parent wrapper** (CenterStageLayout line 758): `maxHeight: calc(100vh - footerHeight - 240px)` -- this correctly caps the overall space available for the ResponseCard.
-2. **Inner scroll div** (ResponseCard line 373): `max-h-[calc(50vh-5rem)]` -- this is a separate, independent constraint on the scroll area.
-
-But the **ResponseCard's outer `motion.div`** (line 298-310) has NO height constraint itself (the previous edit replaced it with `false`). Without a height constraint on the card, and without `h-full` / `max-h-full` to inherit from the parent wrapper, the card ignores the parent's `maxHeight` and grows with content.
-
-The fix: Make the ResponseCard's outer div inherit the parent constraint using `max-h-full`, and let the scroll area fill available space with `flex-1 min-h-0` (which NOW works because the parent has a definite height). Remove the hardcoded `calc` on the scroll div.
+## Problem
+The flex-1/min-h-0 inheritance chain keeps failing because the parent height resolution is unreliable. Time to use a simple, guaranteed approach: hard vh-based max-heights.
 
 ## Changes
 
-### File: `src/components/eye/ResponseCard.tsx`
+### 1. ResponseCard.tsx — Outer card wrapper (line 310)
+Replace `"max-h-full"` with `"max-h-[75vh]"` so the card itself never exceeds 75% of the viewport.
 
-**1. Outer card div (line 310)**: Replace `false` with `"max-h-full"` so it inherits the parent wrapper's `maxHeight`.
+### 2. ResponseCard.tsx — History wrapper (line 369)
+Change `"relative flex-1 min-h-0 flex flex-col"` to `"relative flex flex-col"` — remove flex-1/min-h-0.
 
-**2. History wrapper (line 369)**: Change from `relative flex flex-col` to `relative flex-1 min-h-0 flex flex-col` so it fills available space and passes height constraint down.
+### 3. ResponseCard.tsx — Scroll container (line 373)
+Change `"flex-1 min-h-0 overflow-y-auto overflow-x-hidden ..."` to `"max-h-[60vh] overflow-y-auto overflow-x-hidden ..."` — hard 60vh cap, no flex tricks.
 
-**3. Scroll container (line 373)**: Change from `max-h-[calc(50vh-5rem)] sm:max-h-[calc(60vh-5rem)]` back to `flex-1 min-h-0` -- now that the parent chain has a definite height, `flex-1` correctly resolves to the remaining space after header and footer.
+### 4. CenterStageLayout.tsx
+Already has `overflow-hidden` from the last edit. No changes needed.
 
-### File: `src/components/dashboard/CenterStageLayout.tsx`
-
-**4. Parent wrapper (line 756)**: Add `overflow-hidden` to the wrapper div so `max-h-full` on the child correctly clips. Change class to `"w-full flex justify-center mt-2 overflow-hidden"`.
-
-## Why This Works
-
+### Resulting structure:
 ```text
-CenterStageLayout wrapper (maxHeight: calc(100vh - footer - 240px), overflow-hidden)
-  --> ResponseCard outer div (max-h-full, flex col, overflow-hidden)
-    --> Header (flex-shrink-0, ~40px)
-    --> History wrapper (flex-1 min-h-0)
-      --> Scroll div (flex-1 min-h-0, overflow-y-auto)  <-- scrolls here
-      --> Reply footer (flex-shrink-0, ~40px)
+Outer card (max-h-[75vh], overflow-hidden, flex flex-col)
+  Header (flex-shrink-0)
+  Scroll area (max-h-[60vh], overflow-y-auto)  <-- messages scroll here
+  Footer/Reply (flex-shrink-0)
 ```
 
-Each layer passes a definite height to the next, so `flex-1` resolves correctly and scrolling kicks in.
-
 ## Summary
-- 2 files modified
-- `ResponseCard.tsx`: Fix outer card to inherit parent height, restore flex-based inner layout
-- `CenterStageLayout.tsx`: Add `overflow-hidden` to parent wrapper
-
+- 1 file modified: `src/components/eye/ResponseCard.tsx` (3 small class changes)
+- No flex-1/min-h-0 chains — just hard viewport-based max-heights
