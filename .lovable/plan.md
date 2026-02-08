@@ -1,67 +1,53 @@
 
 
-# Fix: Further Optimize Eye Transition + Move Thinking Label Up
+# Fix: Message Send Animation Lag + Response Bubble Entrance
 
-## Remaining Lag Issue
+## Issue 1: Flying Bubble Animation Lag
 
-The current fix delays message *rendering* by 250ms, but `chatSession.loadChat(chat)` (which parses all messages from the database result) still runs **synchronously before** `setIsTransitioningToChat(true)`. This blocks the main thread and delays the animation start.
+**Root cause**: The `UserMessageBubble` uses `useLayoutEffect` to measure its own dimensions via `getBoundingClientRect()` on every render, causing a forced synchronous layout recalculation. Additionally, `onSendMessage` (which triggers the edge function call) fires before the animation starts, competing for main thread time.
 
-**Fix**: Flip the order -- trigger the animation flag FIRST, then defer the entire load+render into the timeout.
+**Fix in `UserMessageBubble.tsx`**:
+- Remove the `useLayoutEffect` + `getBoundingClientRect()` measurement entirely -- this forces a synchronous layout pass that blocks the animation
+- Instead, estimate centering with a fixed offset (e.g., 150px width / 20px height) or use `transform: translate(-50%, -50%)` with `left/top` set to the target coordinates -- zero layout cost
+- Reduce flying duration from 0.4s to 0.3s for snappier feel
+- Remove the `rotate` property from the animation (saves a composite calculation)
 
-## Thinking/Emotion Label Position
+**Fix in `useBubbleAnimation.ts`**:
+- Reduce the flying-to-absorbing timeout from 400ms to 300ms to match the shorter flight duration
 
-The "Thinking" emotion label at the bottom of the eye uses `absolute -bottom-8`, which places it too far below the eye, especially when scaled to 0.5x. Moving it to `-bottom-6` brings it closer and keeps it visually contained.
+**Fix in `CenterStageLayout.tsx`**:
+- In `handleSendWithAnimation`, reduce the inner setTimeout (line 476) from 400ms to 300ms to match
 
----
+## Issue 2: Response Bubble Appears Abruptly
 
-## Changes
+**Current state**: The `ResponseCard` wrapper at line 768-789 already has `AnimatePresence` with `initial={{ opacity: 0, y: 10 }}` -- so the card itself fades in. However, transcript messages in `ChatHistoryCollapsible` and `TranscriptSidebar` have no entrance animation.
 
-### 1. DashboardContainer.tsx -- Defer loadChat into timeout
+**Fix in `TranscriptMessage.tsx`**:
+- Wrap the outer `<div>` in a `motion.div` with `initial={{ opacity: 0, y: 6 }}` and `animate={{ opacity: 1, y: 0 }}` with a 200ms duration
+- Add a prop `animate` (default `true`) -- set to `false` when loading from history so only new live messages get the entrance animation
 
-Move `chatSession.loadChat(chat)` inside the setTimeout so the animation flag fires instantly without any blocking work:
-
-```
-const handleLoadChat = useCallback((chat: ChatHistory) => {
-  setIsTransitioningToChat(true);
-  if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-  transitionTimerRef.current = setTimeout(() => {
-    const loadedMessages = chatSession.loadChat(chat);
-    messagesHook.setMessagesFromHistory(loadedMessages);
-    setIsTransitioningToChat(false);
-  }, 280);
-}, [chatSession, messagesHook]);
-```
-
-This ensures zero main-thread work happens between the click and the animation start.
-
-### 2. EmotionalEye.tsx -- Move emotion label up
-
-Change the emotion label positioning from `-bottom-8` to `-bottom-6` (line 583):
-
-```
-// Before
-className="absolute -bottom-8 left-1/2 ..."
-
-// After
-className="absolute -bottom-6 left-1/2 ..."
-```
-
-### 3. CenterStageLayout.tsx -- Add padding for small-state label
-
-Add bottom padding to the eye container when in the small state so the label does not overlap content below:
-
-```
-className={cn(
-  "relative overflow-visible z-40",
-  (hasVisibleResponses || transcriptOpen || isTransitioningToChat) && "pb-4"
-)}
-```
+**Fix in `ChatHistoryCollapsible.tsx`**:
+- Track previous message count with a ref, and pass `animate={false}` to messages that existed before the latest render (i.e., only animate the last N new messages)
 
 ## Files to Change
 
 | File | Change |
 |------|--------|
-| DashboardContainer.tsx | Move `loadChat()` call inside the setTimeout |
-| EmotionalEye.tsx | Change `-bottom-8` to `-bottom-6` on emotion label |
-| CenterStageLayout.tsx | Add conditional `pb-4` to eye container in small state |
+| `UserMessageBubble.tsx` | Remove useLayoutEffect measurement; use CSS centering; reduce duration to 0.3s; drop rotate |
+| `useBubbleAnimation.ts` | Reduce flying timeout from 400ms to 300ms |
+| `CenterStageLayout.tsx` | Reduce inner setTimeout from 400ms to 300ms |
+| `TranscriptMessage.tsx` | Add optional entrance animation (fade+slide, 200ms) |
+| `ChatHistoryCollapsible.tsx` | Track message count to only animate new messages |
+
+## Technical Details
+
+### UserMessageBubble centering approach
+```text
+Before: useLayoutEffect -> getBoundingClientRect() -> setState(dimensions) -> re-render -> animate
+After:  CSS left: startPos.x, top: startPos.y, transform: translate(-50%, -50%) -> animate directly
+```
+This eliminates one full render cycle and a forced layout pass.
+
+### TranscriptMessage animation guard
+A new optional `shouldAnimate` prop (default `true`) controls whether the entrance animation plays. When loading history, all messages get `shouldAnimate={false}` to avoid a cascade of animations on bulk render.
 
