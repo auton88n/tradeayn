@@ -445,20 +445,9 @@ export const CenterStageLayout = ({
       // This prevents the 350ms delay from causing lost messages
       onSendMessage(content, file);
 
-      // When history panel is open, skip flying bubble animation but keep all eye reactions
+      // Close history card so normal send flow takes over
       if (transcriptOpen) {
-        onRemoveFile();
-        clearResponseBubbles();
-        clearSuggestions();
-        triggerBlink();
-        triggerAbsorption();
-        playSound?.('message-absorb');
-        setIsResponding(true);
-        setIsAbsorbPulsing(true);
-        setTimeout(() => setIsAbsorbPulsing(false), 300);
-        completeAbsorption();
-        requestAnimationFrame(() => orchestrateEmotionChange('thinking'));
-        return;
+        onTranscriptToggle?.();
       }
 
       // Small delay on mobile to let keyboard dismiss and layout settle
