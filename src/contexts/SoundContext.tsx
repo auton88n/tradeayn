@@ -134,8 +134,6 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
   const toggleEnabled = useCallback(() => {
     setEnabledState(prev => {
       const newValue = !prev;
-      // Sync to sound generator immediately
-      soundGenerator.setEnabled(newValue);
       // Sync to database if logged in
       if (userId && accessToken) {
         supabaseApi.patch(
@@ -146,7 +144,7 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
       }
       return newValue;
     });
-  }, [soundGenerator, userId, accessToken]);
+  }, [userId, accessToken]);
 
   const playSound = useCallback((soundType: SoundType) => {
     // soundGenerator internally checks enabled state
