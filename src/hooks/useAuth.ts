@@ -160,17 +160,14 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         // Process terms (with null check + localStorage fallback)
         if (settingsData) {
           const dbTermsAccepted = settingsData?.[0]?.has_accepted_terms ?? false;
+          setHasAcceptedTerms(dbTermsAccepted);
           if (dbTermsAccepted) {
-            setHasAcceptedTerms(true);
-            // Sync to localStorage as backup
             localStorage.setItem(`terms_accepted_${user.id}`, 'true');
           } else {
-            // Check localStorage as fallback if DB says not accepted
-            const localTermsAccepted = localStorage.getItem(`terms_accepted_${user.id}`) === 'true';
-            setHasAcceptedTerms(localTermsAccepted);
+            localStorage.removeItem(`terms_accepted_${user.id}`);
           }
         } else {
-          // DB query failed - use localStorage fallback
+          // DB query failed - use localStorage as temporary fallback
           const localTermsAccepted = localStorage.getItem(`terms_accepted_${user.id}`) === 'true';
           setHasAcceptedTerms(localTermsAccepted);
         }
