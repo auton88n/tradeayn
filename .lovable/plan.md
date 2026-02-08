@@ -1,58 +1,41 @@
 
-# Fix Cosmetic Settings Toggles
 
-## Overview
+# Fix Copyright Year + Drop Dead Tables
 
-Remove UI toggles that save to the database but are never read by any system. Keep the DB columns intact for future use. Add "Coming soon" labels to email toggles since an email system may be built later.
+## 1. Copyright Year (LanguageContext.tsx)
 
-## Changes
+Replace the hardcoded "2024" in all 3 language blocks with a dynamic expression. Since these are static translation strings (not JSX), the approach is to use a template or helper:
 
-### 1. NotificationSettings.tsx -- Add "Coming soon" to email toggles
+- Line 52 (English): Change `'© 2024 AYN AI Business Consulting. All rights reserved.'` to use `new Date().getFullYear()`
+- Line 807 (Arabic): Same pattern for the Arabic string
+- Line 1487 (French): Same pattern for the French string
 
-For all three email toggles (System Alerts, Usage Warnings, Marketing), disable them and add a subtle "Coming soon" badge next to each label. This is honest UI -- users see the toggles exist but know they aren't wired yet.
+Since the translations object is built once at module level, we will compute `const currentYear = new Date().getFullYear()` at the top and interpolate it into the 3 strings.
 
-- Set `disabled={true}` on all three email `Switch` components
-- Add a small `(Coming soon)` text span next to each Label
+## 2. Drop Dead Database Tables
 
-### 2. PrivacySettings.tsx -- Remove "Store Chat History" toggle
+No code references `webhook_health_metrics` or `webhook_rate_limits` anywhere in the frontend or edge functions. These were used by the deleted n8n webhook system.
 
-Remove the entire "Data & Personalization" card (lines 143-161) containing the `store_chat_history` toggle. No code in `useMessages.ts` or any edge function checks this value, so the toggle is misleading.
+Action: Run SQL to drop both tables. Keep `ai_mode_configs` for now (low risk, may be referenced by admin queries).
 
-The "Allow Personalization" toggle was already removed from the UI previously (confirmed -- not present in `PrivacySettings.tsx`). No action needed there.
-
-### 3. useUserSettings.ts -- Keep fields in interface
-
-Keep `store_chat_history`, `allow_personalization`, `email_*` fields in the `UserSettings` interface and fetch logic. The DB columns remain for future use. Only the UI toggles are removed/disabled.
-
-## What does NOT change
-
-- No DB schema changes (columns stay for future use)
-- `in_app_sounds` toggle stays (it works -- wired to `soundStore`)
-- `desktop_notifications` toggle stays (it works -- wired to browser Notification API)
-- Export Data, Delete Chat History, Delete Account buttons stay (they work)
-- Memory Management section stays
-- No edge function changes
-
-## Technical Details
-
-### NotificationSettings.tsx
-
-Replace each email toggle's `Switch` with disabled state and add "Coming soon" text:
-
-```tsx
-<div className="flex items-center justify-between opacity-60">
-  <div className="space-y-0.5">
-    <Label>{t('settings.systemAlerts')} <span className="text-xs text-muted-foreground ml-1">(Coming soon)</span></Label>
-    <p className="text-sm text-muted-foreground">
-      {t('settings.systemAlertsDesc')}
-    </p>
-  </div>
-  <Switch checked={false} disabled={true} />
-</div>
+```sql
+DROP TABLE IF EXISTS webhook_health_metrics;
+DROP TABLE IF EXISTS webhook_rate_limits;
 ```
 
-Same pattern for Usage Warnings and Marketing toggles. Remove the `settings.email_*` bindings from `onCheckedChange` since the toggles are now static/disabled.
+## 3. Mode System -- No Changes Needed
 
-### PrivacySettings.tsx
+The mode system is already simplified:
+- `getModes()` returns only `[{ name: 'General', ... }]` -- one mode
+- `ayn-unified` auto-detects intent from the message content
+- The `AIMode` type in `dashboard.types.ts` still lists 7 modes but nothing in the UI exposes them
 
-Remove lines 143-161 (the "Data & Personalization" card with the `store_chat_history` toggle).
+No action needed here. Cleaning the type union would touch 9+ files for zero user benefit.
+
+## Summary of file changes
+
+| File | Change |
+|------|--------|
+| `src/contexts/LanguageContext.tsx` | Replace 3 hardcoded "2024" with dynamic year |
+| Supabase SQL | DROP `webhook_health_metrics` and `webhook_rate_limits` |
+
