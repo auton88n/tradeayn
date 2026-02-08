@@ -1,32 +1,25 @@
 
 
-# Fix: History Card Overflow — Simple Hard Max-Height Approach
+# Fix: History Card Overflow — Final Tweaks
 
-## Problem
-The flex-1/min-h-0 inheritance chain keeps failing because the parent height resolution is unreliable. Time to use a simple, guaranteed approach: hard vh-based max-heights.
+The last edit got 90% of the way there. Two small remaining fixes in `src/components/eye/ResponseCard.tsx`:
 
 ## Changes
 
-### 1. ResponseCard.tsx — Outer card wrapper (line 310)
-Replace `"max-h-full"` with `"max-h-[75vh]"` so the card itself never exceeds 75% of the viewport.
+### 1. Scroll container — add `overscroll-contain` (line 373)
+Add `overscroll-contain` to the scroll container's classes to prevent scroll chaining (where scrolling inside the card accidentally scrolls the page).
 
-### 2. ResponseCard.tsx — History wrapper (line 369)
-Change `"relative flex-1 min-h-0 flex flex-col"` to `"relative flex flex-col"` — remove flex-1/min-h-0.
+Current: `max-h-[60vh] overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]`
+New: `max-h-[60vh] overflow-y-auto overflow-x-hidden overscroll-contain [-webkit-overflow-scrolling:touch]`
 
-### 3. ResponseCard.tsx — Scroll container (line 373)
-Change `"flex-1 min-h-0 overflow-y-auto overflow-x-hidden ..."` to `"max-h-[60vh] overflow-y-auto overflow-x-hidden ..."` — hard 60vh cap, no flex tricks.
+### 2. Scroll-to-bottom button — fix position (line 422)
+Move from `bottom-14` to `bottom-2` as specified. The button should float just above the bottom of the scroll area, not high up in the card. It uses `absolute` positioning within the history wrapper, so `bottom-2` places it correctly above the reply footer since it's inside the scroll area's sibling container.
 
-### 4. CenterStageLayout.tsx
-Already has `overflow-hidden` from the last edit. No changes needed.
+Current: `absolute bottom-14 left-1/2 ...`
+New: `absolute bottom-2 left-1/2 ...`
 
-### Resulting structure:
-```text
-Outer card (max-h-[75vh], overflow-hidden, flex flex-col)
-  Header (flex-shrink-0)
-  Scroll area (max-h-[60vh], overflow-y-auto)  <-- messages scroll here
-  Footer/Reply (flex-shrink-0)
-```
+Also reduce size to 36px (`h-9 w-9`) per the spec.
 
 ## Summary
-- 1 file modified: `src/components/eye/ResponseCard.tsx` (3 small class changes)
-- No flex-1/min-h-0 chains — just hard viewport-based max-heights
+- 1 file modified: `src/components/eye/ResponseCard.tsx`
+- 2 small class changes: add overscroll-contain, fix button position
