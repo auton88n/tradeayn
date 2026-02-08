@@ -306,8 +306,7 @@ const ResponseCardComponent = ({
             "border border-border/40",
             "shadow-md shadow-black/5 backdrop-blur-sm",
             variant === 'sheet' ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
-            "overflow-hidden",
-            "max-h-[75vh]"
+            "overflow-hidden"
           )}
           style={{
             willChange: 'transform, opacity',
@@ -366,13 +365,13 @@ const ResponseCardComponent = ({
           {/* Content area */}
           {transcriptOpen ? (
             /* History mode content */
-             <div className="flex flex-col min-h-0">
+             <div className="flex flex-col flex-1 min-h-0">
               {/* Scroll area with floating button */}
-              <div className="relative min-h-0">
+              <div className="relative flex-1 min-h-0">
                 <div
                   ref={historyScrollRef}
                   onScroll={handleHistoryScroll}
-                  className="max-h-[55vh] overflow-y-auto overflow-x-hidden overscroll-contain [-webkit-overflow-scrolling:touch]"
+                  className="absolute inset-0 overflow-y-auto overflow-x-hidden overscroll-contain [-webkit-overflow-scrolling:touch]"
                 >
                   <div className="p-3 pb-6 space-y-1 [overflow-wrap:anywhere]">
                     {sortedMessages.map((msg, idx) => {
