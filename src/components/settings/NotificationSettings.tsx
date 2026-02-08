@@ -54,41 +54,6 @@ export const NotificationSettings = ({ userId, accessToken }: NotificationSettin
   return (
     <div className="space-y-6">
       <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
-        <h2 className="text-xl font-semibold mb-6">{t('settings.emailNotifications')}</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between opacity-60">
-            <div className="space-y-0.5">
-              <Label>{t('settings.systemAlerts')} <span className="text-xs text-muted-foreground ml-1">(Coming soon)</span></Label>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.systemAlertsDesc')}
-              </p>
-            </div>
-            <Switch checked={false} disabled={true} />
-          </div>
-
-          <div className="flex items-center justify-between opacity-60">
-            <div className="space-y-0.5">
-              <Label>{t('settings.usageWarnings')} <span className="text-xs text-muted-foreground ml-1">(Coming soon)</span></Label>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.usageWarningsEmailDesc') || 'Get notified by email when you reach 75% or 90% of your monthly message limit'}
-              </p>
-            </div>
-            <Switch checked={false} disabled={true} />
-          </div>
-
-          <div className="flex items-center justify-between opacity-60">
-            <div className="space-y-0.5">
-              <Label>{t('settings.marketing')} <span className="text-xs text-muted-foreground ml-1">(Coming soon)</span></Label>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.marketingDesc')}
-              </p>
-            </div>
-            <Switch checked={false} disabled={true} />
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
         <h2 className="text-xl font-semibold mb-6">{t('settings.inAppNotifications')}</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
