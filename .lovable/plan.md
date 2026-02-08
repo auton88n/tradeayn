@@ -1,77 +1,97 @@
 
 
-# Dynamic Import of Heavy Libraries
+# Core Web Vitals Reporting (with Sampling)
 
-## Summary
+## Overview
 
-Convert top-level imports of `react-to-pdf` and `recharts` to dynamic imports so they only load when actually needed. Two libraries mentioned in the request (`html2canvas` and `react-day-picker`) are not imported anywhere in the codebase, so no changes are needed for those.
+Add client-side performance monitoring that captures real navigation timing metrics and reports them to a new lightweight edge function. Includes a 10% session sampling rate to keep database writes manageable at scale.
 
-## Current State
+## Sampling Math
 
-| Library | Files with top-level import | Already dynamic? |
-|---------|---------------------------|-------------------|
-| `react-to-pdf` | `GradingResults.tsx`, `ParkingDesigner.tsx`, `EngineeringWorkspace.tsx`, `TestReportPDF.tsx` | `CalculationResults.tsx` already does it correctly |
-| `recharts` | `ElevationProfile.tsx`, `InteractionDiagram.tsx` | No |
-| `html2canvas` | None | N/A |
-| `react-day-picker` | None | N/A |
+At 30,000 users with ~1 page load each:
+- Without sampling: 90,000 rows/day (3 metrics per load)
+- With 10% sampling: ~9,000 rows/day -- statistically meaningful, far fewer writes
 
 ## Changes
 
-### 1. Dynamic import `react-to-pdf` in 4 files
+### 1. New file: `src/lib/performanceMonitor.ts`
 
-These files all use `generatePDF` inside an async click handler, making dynamic import straightforward. Follow the pattern already established in `CalculationResults.tsx`:
+Client-side module that:
+- Exits early in dev mode (`import.meta.env.DEV`)
+- **Exits early 90% of the time** (`if (Math.random() > 0.1) return`)
+- Waits for `window.load` + 3s delay for accurate final metrics
+- Collects TTFB, DCL, full load time, page path, connection type via Navigation Timing API
+- Sends via `navigator.sendBeacon` (non-blocking, fire-and-forget)
+- Uses `SUPABASE_URL` from `src/config.ts`
+- All errors silently caught
 
 ```typescript
-// Replace top-level: import generatePDF, { Margin } from 'react-to-pdf';
-// With dynamic import inside the handler:
-const handleExportPDF = async () => {
-  const generatePDF = (await import('react-to-pdf')).default;
-  const { Margin } = await import('react-to-pdf');
-  // ... rest of existing logic unchanged
-};
+export function initPerformanceMonitoring() {
+  if (import.meta.env.DEV) return;
+  if (Math.random() > 0.1) return; // 10% sampling
+
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      try {
+        const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        if (!nav) return;
+        const metrics = {
+          ttfb: Math.round(nav.responseStart - nav.requestStart),
+          dcl: Math.round(nav.domContentLoadedEventEnd - nav.startTime),
+          load: Math.round(nav.loadEventEnd - nav.startTime),
+          url: window.location.pathname,
+          connection: (navigator as any).connection?.effectiveType || 'unknown',
+        };
+        navigator.sendBeacon?.(
+          `${SUPABASE_URL}/functions/v1/report-vitals`,
+          JSON.stringify(metrics)
+        );
+      } catch { /* silent */ }
+    }, 3000);
+  });
+}
 ```
 
-**Files:**
-- `src/components/engineering/GradingResults.tsx` -- remove line 11 import, add dynamic import inside `handleExportPDF`
-- `src/components/engineering/ParkingDesigner.tsx` -- remove line 31 import, add dynamic import inside the PDF export handler
-- `src/components/engineering/workspace/EngineeringWorkspace.tsx` -- remove line 19 import, add dynamic import inside the PDF handler
-- `src/components/admin/test-results/TestReportPDF.tsx` -- remove line 5 import, add dynamic import inside `handleGeneratePDF`
+### 2. New edge function: `supabase/functions/report-vitals/index.ts`
 
-### 2. Lazy load recharts components via their parents
+Minimal function that:
+- Accepts POST with JSON body (`ttfb`, `dcl`, `load`, `url`, `connection`)
+- Validates payload, rejects malformed data
+- Inserts 3 rows into existing `performance_metrics` table (one per metric type)
+- Returns 204 No Content
+- Handles CORS preflight
 
-`ElevationProfile` and `InteractionDiagram` both use recharts at the top level. Rather than restructuring how recharts is imported within those components, lazy-load the components themselves from their parent files:
+### 3. Update: `src/main.tsx`
 
-**`src/components/engineering/GradingResults.tsx`** -- already imports `ElevationProfile` directly. Replace with:
+Add import and call after `createRoot`:
 ```typescript
-const ElevationProfile = lazy(() => import('./ElevationProfile').then(m => ({ default: m.ElevationProfile })));
+import { initPerformanceMonitoring } from '@/lib/performanceMonitor';
+initPerformanceMonitoring();
 ```
-Wrap its usage in `<Suspense>` with a chart-height skeleton fallback.
 
-**`src/components/engineering/results/ColumnResultsSection.tsx`** -- imports `InteractionDiagram` directly. Replace with:
-```typescript
-const InteractionDiagram = lazy(() => import('./InteractionDiagram').then(m => ({ default: m.InteractionDiagram })));
+### 4. Update: `supabase/config.toml`
+
+```toml
+[functions.report-vitals]
+verify_jwt = false
 ```
-Wrap its usage in `<Suspense>` with a skeleton fallback.
 
-### 3. No changes needed
+## Data stored in `performance_metrics`
 
-- `CalculationResults.tsx` -- already dynamically imports `react-to-pdf`
-- `html2canvas` -- not imported anywhere in the codebase
-- `react-day-picker` -- not imported anywhere in the codebase
-- `GradingPDFReport.tsx` -- has its own SVG-based `ElevationProfileSVG` (no recharts dependency)
+Each sampled page load inserts 3 rows:
 
-## Files Changed
+| metric_type | metric_value | details |
+|------------|-------------|---------|
+| `web_vital_ttfb` | 120 | `{"url": "/", "connection": "4g"}` |
+| `web_vital_dcl` | 450 | `{"url": "/", "connection": "4g"}` |
+| `web_vital_load` | 1200 | `{"url": "/", "connection": "4g"}` |
+
+## Files changed
 
 | File | Change |
 |------|--------|
-| `src/components/engineering/GradingResults.tsx` | Dynamic import `react-to-pdf`; lazy load `ElevationProfile` |
-| `src/components/engineering/ParkingDesigner.tsx` | Dynamic import `react-to-pdf` |
-| `src/components/engineering/workspace/EngineeringWorkspace.tsx` | Dynamic import `react-to-pdf` |
-| `src/components/admin/test-results/TestReportPDF.tsx` | Dynamic import `react-to-pdf` |
-| `src/components/engineering/results/ColumnResultsSection.tsx` | Lazy load `InteractionDiagram` |
+| `src/lib/performanceMonitor.ts` | New -- client metrics with 10% sampling |
+| `supabase/functions/report-vitals/index.ts` | New -- stores vitals in DB |
+| `src/main.tsx` | Call `initPerformanceMonitoring()` |
+| `supabase/config.toml` | Add `report-vitals` config |
 
-## Impact
-
-- `react-to-pdf` (~50KB) only loads when a user clicks an export/PDF button
-- `recharts` (~200KB) only loads when a user views an elevation profile chart or interaction diagram
-- No behavioral changes -- same functionality, just loaded on demand
