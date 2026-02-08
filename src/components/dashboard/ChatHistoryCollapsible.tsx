@@ -140,12 +140,12 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear }: 
                   </div>
                 </div>
 
-                {/* Messages Area — scrolls internally, hard max-height */}
-                <div className="relative flex-1 min-h-0 overflow-hidden">
+                {/* Messages Area */}
+                <div className="flex-1 min-h-0 relative">
                   <div
                     ref={scrollRef}
                     onScroll={handleScroll}
-                    className="absolute inset-0 overflow-y-auto overscroll-contain py-1 space-y-0"
+                    className="h-full overflow-y-auto overscroll-contain py-1"
                   >
                     {sortedMessages.map((msg, index) => (
                       <TranscriptMessage
@@ -158,8 +158,7 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear }: 
                         shouldAnimate={index >= newMessageStartIndex}
                       />
                     ))}
-                    {/* Bottom padding so last message isn't clipped */}
-                    <div className="h-12" />
+                    <div className="h-4" />
                   </div>
 
                   {/* Scroll-to-bottom button */}
