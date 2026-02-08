@@ -5,7 +5,6 @@ import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
 
 import { ResponseCard } from '@/components/eye/ResponseCard';
-import { HistoryCard } from '@/components/eye/HistoryCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 
 import { ChatInput } from './ChatInput';
@@ -760,7 +759,7 @@ export const CenterStageLayout = ({
 
           {/* ResponseCard - flows directly below Eye in same column */}
           <AnimatePresence>
-            {responseBubbles.length > 0 && (
+            {(responseBubbles.length > 0 || transcriptOpen) && (
               <motion.div
                 className="w-full flex justify-center mt-2"
                 style={{ 
@@ -778,28 +777,15 @@ export const CenterStageLayout = ({
                   variant="inline"
                   showPointer={false}
                   sessionId={currentSessionId}
+                  transcriptOpen={transcriptOpen}
+                  transcriptMessages={messages}
+                  isTyping={showThinking}
+                  onHistoryClose={() => onTranscriptToggle?.()}
+                  onHistoryClear={() => onTranscriptClear?.()}
                 />
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* History Card - shows when transcript is open */}
-          {transcriptOpen && (
-            <div
-              className="w-full flex justify-center mt-2"
-              style={{ maxHeight: `calc(100vh - ${footerHeight + 240}px)` }}
-            >
-              <HistoryCard
-                messages={messages}
-                isTyping={showThinking}
-                onClose={() => onTranscriptToggle?.()}
-                onClear={() => onTranscriptClear?.()}
-                onReply={(text) => {
-                  // Focus chat input with reply text - handled via prefill
-                }}
-              />
-            </div>
-          )}
           
         </motion.div>
       </div>
