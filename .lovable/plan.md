@@ -1,29 +1,31 @@
 
 
-# Move Test Dependencies and Rename Package
+# Remove Fabricated aggregateRating from JSON-LD
 
-## Changes to `package.json`
+## Problem
 
-### 1. Rename package
-Change `"name"` from `"vite_react_shadcn_ts"` to `"ayn-insight-forge"`.
+The `SoftwareApplication` JSON-LD in `index.html` contains a fabricated `aggregateRating` block claiming 30,000 ratings at 4.8 stars. Google can issue a manual action penalty for fake structured data, removing rich snippets or demoting the site.
 
-### 2. Move 6 packages from `dependencies` to `devDependencies`
+## Change
 
-These are test/dev-only packages that should not be in production dependencies:
+**File: `index.html`** -- Remove the `aggregateRating` block (lines ~92-96) from the first JSON-LD script. Everything else in the JSON-LD stays unchanged.
 
-| Package | Version |
-|---------|---------|
-| `@playwright/test` | `^1.57.0` |
-| `@testing-library/jest-dom` | `^6.9.1` |
-| `@testing-library/react` | `^16.3.0` |
-| `@vitest/ui` | `^4.0.14` |
-| `vitest` | `^4.0.14` |
-| `jsdom` | `^27.2.0` |
+**Before:**
+```json
+"offers": { ... },
+"aggregateRating": {
+  "@type": "AggregateRating",
+  "ratingValue": "4.8",
+  "ratingCount": "30000"
+},
+"inLanguage": ["en", "ar", "fr"],
+```
 
-These lines will be removed from `dependencies` and added into the existing `devDependencies` block, maintaining alphabetical order.
+**After:**
+```json
+"offers": { ... },
+"inLanguage": ["en", "ar", "fr"],
+```
 
-### File changed
+One file, one deletion. The rating can be re-added later with verified review data.
 
-| File | Change |
-|------|--------|
-| `package.json` | Rename package + move 6 test deps to devDependencies |
