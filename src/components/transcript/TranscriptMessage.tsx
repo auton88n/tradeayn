@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { MessageFormatter } from "@/components/shared/MessageFormatter";
 import { StreamingMarkdown } from "@/components/eye/StreamingMarkdown";
+import { AttachmentPreview } from "@/components/transcript/AttachmentPreview";
 
 interface TranscriptMessageProps {
   content: string;
@@ -16,6 +17,7 @@ interface TranscriptMessageProps {
   status?: "sending" | "sent" | "error" | "queued";
   shouldAnimate?: boolean;
   isStreaming?: boolean;
+  attachment?: { url: string; name: string; type: string };
   onReply?: (content: string) => void;
 }
 
@@ -41,6 +43,7 @@ export const TranscriptMessage = ({
   status,
   shouldAnimate = true,
   isStreaming = false,
+  attachment,
   onReply,
 }: TranscriptMessageProps) => {
   const isUser = sender === "user";
@@ -150,6 +153,11 @@ export const TranscriptMessage = ({
           >
             {isStreaming ? <StreamingMarkdown content={content} speed={15} /> : <MessageFormatter content={content} />}
           </div>
+
+          {/* File attachment preview */}
+          {attachment?.url && (
+            <AttachmentPreview url={attachment.url} name={attachment.name} type={attachment.type} />
+          )}
         </div>
 
         {/* Queued indicator */}
