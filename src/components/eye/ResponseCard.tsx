@@ -341,6 +341,7 @@ const ResponseCardComponent = ({
             "shadow-md shadow-black/5 backdrop-blur-sm",
             variant === "sheet" ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
             "overflow-hidden",
+            transcriptOpen && "h-full",
           )}
           style={{
             willChange: "transform, opacity",
@@ -401,12 +402,12 @@ const ResponseCardComponent = ({
             /* ============================================
                HISTORY MODE — simple hard maxHeight, no flex chains
                ============================================ */
-            <div className="relative">
-              {/* Scroll container — single div, hard max-height, no flex/absolute */}
+            <div className="flex-1 min-h-0 flex flex-col relative">
+              {/* Scroll container — fills all available card space */}
               <div
                 ref={historyScrollRef}
                 onScroll={handleHistoryScroll}
-                className="max-h-[60vh] overflow-y-auto overscroll-contain px-2 py-2 space-y-3 [-webkit-overflow-scrolling:touch]"
+                className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-3 [-webkit-overflow-scrolling:touch]"
               >
                 {sortedMessages.length === 0 ? (
                   <div className="flex items-center justify-center py-16">
