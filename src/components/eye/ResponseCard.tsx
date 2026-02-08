@@ -401,13 +401,13 @@ const ResponseCardComponent = ({
             /* ============================================
                HISTORY MODE — simple hard maxHeight, no flex chains
                ============================================ */
-            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="flex flex-col overflow-hidden">
               {/* Scroll container */}
-              <div className="relative flex-1 min-h-0 overflow-hidden">
+              <div className="relative">
                 <div
                   ref={historyScrollRef}
                   onScroll={handleHistoryScroll}
-                  className="absolute inset-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-3 scroll-pb-8 [-webkit-overflow-scrolling:touch]"
+                  className="max-h-[65vh] overflow-y-auto overscroll-contain px-2 py-2 space-y-3 scroll-pb-8 [-webkit-overflow-scrolling:touch]"
                 >
                   {sortedMessages.length === 0 ? (
                     <div className="flex items-center justify-center py-16">
