@@ -241,14 +241,25 @@ const ResponseCardComponent = ({
         const el = historyScrollRef.current;
         if (el) {
           el.scrollTop = el.scrollHeight;
-          // Check if still scrollable after scrolling
-          setTimeout(() => {
-            if (el) setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 50);
-          }, 100);
         }
       });
     }
   }, [transcriptMessages.length, transcriptOpen]);
+
+  // ResizeObserver to track history content overflow for scroll arrow
+  useEffect(() => {
+    if (!transcriptOpen) return;
+    const el = historyScrollRef.current;
+    if (!el) return;
+    const checkScroll = () => {
+      setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 50);
+    };
+    checkScroll();
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    const observer = new ResizeObserver(checkScroll);
+    observer.observe(el);
+    return () => { el.removeEventListener('scroll', checkScroll); observer.disconnect(); };
+  }, [transcriptOpen]);
 
   // Dialog scroll state
   useEffect(() => {
@@ -312,6 +323,9 @@ const ResponseCardComponent = ({
                 <Brain className="w-3.5 h-3.5 text-foreground" />
               </div>
               <span className="text-xs font-medium text-foreground">AYN</span>
+              {transcriptOpen && sortedMessages.length > 0 && (
+                <span className="text-[10px] text-muted-foreground">{sortedMessages.length} messages</span>
+              )}
             </div>
             {transcriptOpen ? (
               <div className="flex items-center gap-1">
@@ -349,9 +363,9 @@ const ResponseCardComponent = ({
               <div
                 ref={historyScrollRef}
                 onScroll={handleHistoryScroll}
-                className="max-h-[40vh] sm:max-h-[50vh] min-h-[200px] overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]"
+                className="max-h-[50vh] sm:max-h-[60vh] min-h-[200px] overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]"
               >
-                <div className="p-3 space-y-1 flex flex-col justify-end min-h-full [overflow-wrap:anywhere]">
+                <div className="p-3 pb-6 space-y-1 flex flex-col justify-end min-h-full [overflow-wrap:anywhere]">
                   {sortedMessages.map((msg, idx) => {
                     const isLastAyn = msg.sender === 'ayn' && idx === sortedMessages.length - 1;
                     const isNew = !seenMessageIdsRef.current.has(msg.id);
@@ -391,15 +405,20 @@ const ResponseCardComponent = ({
                 </div>
               </div>
 
-              {showHistoryScrollDown && (
-                <button
-                  onClick={scrollHistoryToBottom}
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 h-8 w-8 rounded-full bg-foreground/90 text-background flex items-center justify-center shadow-lg hover:bg-foreground transition-colors"
-                  aria-label="Scroll to bottom"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-              )}
+              <AnimatePresence>
+                {showHistoryScrollDown && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    onClick={scrollHistoryToBottom}
+                    className="absolute bottom-4 right-4 z-10 h-9 w-9 rounded-full bg-foreground/90 text-background flex items-center justify-center shadow-lg hover:bg-foreground transition-colors"
+                    aria-label="Scroll to bottom"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             /* Normal response content */
