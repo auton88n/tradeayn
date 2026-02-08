@@ -1,21 +1,24 @@
 
-# Fix: Cap Chat Input Height to Prevent Layout Shift
+# Fix: Lock Chat Input to Fixed Height (No Expansion)
 
 ## Problem
-The textarea auto-resizes up to 200px as you type long text, which pushes the card layout and shifts the eye position. The JavaScript in `handleTextareaChange` dynamically sets the height up to 200px.
+Even with the 100px cap, the textarea still expands from 44px to 100px as you type long text, which pushes the entire card taller and shifts the eye downward.
 
 ## Solution
-Cap the textarea at a smaller fixed max height (around 100px / ~4 lines) and rely on `overflow-y: auto` for scrolling beyond that. This keeps the input compact and the eye/card positions stable.
+Remove auto-resize entirely. Keep the textarea at a fixed height (44px, single line) and let `overflow-y: auto` handle scrolling for long text. The input never grows, so the card and eye never move.
 
 ## Changes (ChatInput.tsx only)
 
-### 1. Reduce max height in auto-resize logic
-In three places where `Math.min(scrollHeight, 200)` appears, change to `Math.min(scrollHeight, 100)`:
-- `handleTextareaChange` (line ~427)
-- Prefill resize (line ~295)
-- Manual `handleInputChange` (line ~313)
+### 1. Remove dynamic height setting from `handleTextareaChange`
+Delete the `requestAnimationFrame` block that sets `textarea.style.height`. The textarea stays at its CSS height always.
 
-### 2. Update Textarea CSS class
-Change `max-h-[200px]` to `max-h-[100px]` on the Textarea element (line ~602) to match the JS cap.
+### 2. Remove dynamic height from prefill resize (line ~290)
+Delete the height recalculation after prefilling voice transcript.
 
-This keeps the input area compact (max ~4 lines visible) with internal scrolling for longer text, so the eye and card never move.
+### 3. Remove dynamic height from `handleInputChange` (line ~310)
+Delete the auto-resize block in the voice transcript effect.
+
+### 4. Update Textarea CSS class
+Change `max-h-[100px]` to just use the fixed `min-h-[44px]` with no max-height growth. The textarea stays 44px tall and scrolls internally.
+
+This means no matter how much text you type, the input box stays the same size and scrolls. The card never expands and the eye never moves.
