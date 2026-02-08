@@ -163,16 +163,15 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
 
   // Handle load chat - decouple eye animation from data rendering
   const handleLoadChat = useCallback((chat: ChatHistory) => {
-    const loadedMessages = chatSession.loadChat(chat);
-    // Trigger eye shrink immediately, before messages render
+    // Trigger eye shrink IMMEDIATELY — zero main-thread work before this
     setIsTransitioningToChat(true);
-    // Clear any pending timer
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-    // Delay message rendering to let the eye animation run on its own frame budget
+    // Defer ALL heavy work (parsing + rendering) into the timeout
     transitionTimerRef.current = setTimeout(() => {
+      const loadedMessages = chatSession.loadChat(chat);
       messagesHook.setMessagesFromHistory(loadedMessages);
       setIsTransitioningToChat(false);
-    }, 250);
+    }, 280);
   }, [chatSession, messagesHook]);
 
   // Handle new chat

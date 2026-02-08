@@ -733,7 +733,10 @@ export const CenterStageLayout = ({
           {/* Eye container - shrinks when response visible */}
           <motion.div 
             ref={eyeRef} 
-            className="relative overflow-visible z-40"
+            className={cn(
+              "relative overflow-visible z-40",
+              (hasVisibleResponses || transcriptOpen || isTransitioningToChat) && "pb-4"
+            )}
             data-tutorial="eye"
             style={{ willChange: 'transform' }}
             animate={{
