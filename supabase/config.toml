@@ -194,3 +194,6 @@ verify_jwt = false
 
 [functions.auth-send-email]
 verify_jwt = false
+
+[functions.report-vitals]
+verify_jwt = false
