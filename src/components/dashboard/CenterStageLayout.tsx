@@ -747,6 +747,7 @@ export const CenterStageLayout = ({
               type: 'tween',
               duration: 0.3,
               ease: [0.4, 0, 0.2, 1],
+              delay: (hasVisibleResponses || transcriptOpen || isTransitioningToChat) ? 0.05 : 0,
             }}
           >
             <div className="relative inline-block">
