@@ -1,93 +1,56 @@
 
+# Fix: History Scroll Cutoff and User Bubble Sizing
 
-# Fix: History Card Sizing, Scroll, and Bubble Layout
+## Problems
 
-## Root Cause
+1. **Scroll not reaching top/bottom**: The `absolute inset-0` scroll container fills the wrapper correctly, but the `py-2` padding is inside the scrollable area, meaning the top/bottom messages get clipped behind the header and reply footer. Adding a scroll padding buffer at the end (via a spacer) and ensuring the container has no padding conflict will fix this.
 
-The history card's layout is broken because of **conflicting height constraints** in the parent chain:
-
-```text
-eyeStageRef (overflow-y-auto, flex-1)
-  motion.div wrapper (maxHeight: calc(100vh - footer - 240px), overflow-hidden)
-    ResponseCard motion.div (h-[50vh] max-h-[50vh])  <-- CONFLICT
-      flex-1 min-h-0 flex-col
-        relative flex-1 min-h-0
-          absolute inset-0 (scroll container)
-```
-
-The `h-[50vh]` on the ResponseCard fights with the parent's `maxHeight: calc(...)`. The card tries to be 50vh tall regardless of available space, and the parent clips it. Meanwhile the `absolute inset-0` scroll container depends on its grandparent having a resolved height — but the conflicting constraints mean the height sometimes resolves to 0 or collapses.
-
-## Fix Strategy
-
-Remove the hardcoded `h-[50vh]` from ResponseCard and instead make it fill its parent naturally. The parent wrapper in CenterStageLayout already provides the correct max-height constraint.
+2. **User bubble narrower than AI bubble**: The user message row uses `flex-row-reverse` which flips the layout, but the content div still has `text-right` and the bubble uses `inline-block`. Because the user bubble is `inline-block` it only shrinks to fit content width, while AI bubbles stretch wider due to longer text. The fix is to remove `inline-block` in compact mode so both bubble types fill the available width equally.
 
 ## Changes
 
-### 1. `src/components/eye/ResponseCard.tsx`
+### 1. `src/components/transcript/TranscriptMessage.tsx`
 
-**Line 310** -- Remove `h-[50vh] max-h-[50vh]` and replace with `flex-1` so the card fills its parent wrapper:
+**Make user bubbles match AI bubble width in compact mode:**
+
+- Line 82: Remove `max-w-[95%]` for compact -- both sender types should fill the container equally. The parent already constrains width.
+- Line 104: Change `inline-block` to `block` in compact mode so both user and AI bubbles stretch to fill available width instead of shrinking to content.
+- Line 83: Remove `text-right` / `text-left` on the content wrapper in compact mode -- all bubble text should be left-aligned internally (matching the memory note about internal left-alignment).
 
 ```tsx
-// BEFORE:
-transcriptOpen && "h-[50vh] max-h-[50vh]"
+// Line 80-84 BEFORE:
+"min-w-0",
+compact ? "flex-1 max-w-[95%]" : "flex-1 max-w-[80%]",
+isUser ? "text-right" : "text-left"
 
 // AFTER:
-transcriptOpen && "h-full"
+"min-w-0 flex-1",
+compact ? "max-w-[95%]" : "max-w-[80%]",
+!compact && (isUser ? "text-right" : "text-left")
 ```
 
-### 2. `src/components/dashboard/CenterStageLayout.tsx`
-
-**Lines 755-758** -- The parent wrapper needs a fixed height (not just maxHeight) when history is open, so the card and its `absolute inset-0` children can resolve their dimensions. Also remove `overflow-hidden` since the card handles its own overflow internally:
-
 ```tsx
-// BEFORE:
-<motion.div
-  className="w-full flex justify-center mt-2 overflow-hidden"
-  style={{
-    maxHeight: `calc(100vh - ${footerHeight + 240}px)`,
-  }}
+// Line 103-104 BEFORE:
+"inline-block rounded-[20px] text-start relative",
 
 // AFTER:
-<motion.div
-  className="w-full flex justify-center mt-2"
-  style={{
-    height: transcriptOpen
-      ? `calc(100vh - ${footerHeight + 240}px)`
-      : undefined,
-    maxHeight: `calc(100vh - ${footerHeight + 240}px)`,
-    overflow: transcriptOpen ? 'visible' : 'hidden',
-  }}
+compact ? "block rounded-[16px] text-start relative" : "inline-block rounded-[20px] text-start relative",
 ```
 
-This gives the wrapper a **resolved height** when history is open, so the entire chain (flex-1 -> relative -> absolute inset-0) can compute real pixel values.
+### 2. `src/components/eye/ResponseCard.tsx`
 
-### 3. `src/components/transcript/TranscriptMessage.tsx`
+**Fix scroll not reaching full top/bottom:**
 
-Remove the `max-w-[92%]` cap on compact bubbles. The bubbles should naturally fill the available width, with only their container padding limiting them:
+- Line 375: Add a small bottom spacer div after the last message inside the scroll container to ensure the final message isn't hidden behind the scroll-to-bottom button. Also add `scroll-padding-bottom` to the container so auto-scroll targets land above the button.
 
 ```tsx
-// BEFORE:
-compact ? "flex-1 max-w-[92%]" : "flex-1 max-w-[80%]"
-
-// AFTER:
-compact ? "flex-1 max-w-[95%]" : "flex-1 max-w-[80%]"
+// After the typing indicator (after line 411), add:
+<div className="h-2 shrink-0" /> {/* bottom breathing room */}
 ```
 
-### 4. `src/components/eye/ResponseCard.tsx` -- Scroll button threshold
+- Line 375: Add `scroll-pb-8` to the scroll container class so programmatic scrolls leave space.
 
-Lower the scroll-to-bottom visibility threshold from 100px to 50px so it appears sooner:
+## Summary
 
-```tsx
-// Lines 247, 261 -- change > 100 to > 50
-el.scrollHeight - el.scrollTop - el.clientHeight > 50
-```
-
-## Summary of Root Fix
-
-The core fix is giving the parent wrapper a **resolved `height`** (not just `maxHeight`) when history mode is active, so the chain of `flex-1 min-h-0` + `relative` + `absolute inset-0` can compute actual pixel dimensions. Without a resolved height, `absolute inset-0` collapses to zero.
-
-## Files Changed
-
-- `src/components/dashboard/CenterStageLayout.tsx` -- set explicit height for history wrapper
-- `src/components/eye/ResponseCard.tsx` -- use `h-full` instead of `h-[50vh]`, lower scroll threshold
-- `src/components/transcript/TranscriptMessage.tsx` -- widen compact bubble max-width to 95%
+- **User bubbles**: Switch from `inline-block` to `block` in compact mode so they stretch to match AI bubble width
+- **Scroll**: Add bottom spacer inside scroll area so last message isn't obscured
