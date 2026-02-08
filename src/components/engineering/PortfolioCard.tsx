@@ -59,7 +59,9 @@ const PortfolioCard = ({ item, index, onTogglePublic, onDelete }: PortfolioCardP
           <img 
             src={item.thumbnail_url} 
             alt={item.title}
-            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover transition-opacity duration-300"
           />
         ) : (
           <Icon className="w-16 h-16 text-white/80" />
