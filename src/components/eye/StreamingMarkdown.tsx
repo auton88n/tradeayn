@@ -145,7 +145,7 @@ export const StreamingMarkdown = memo(({
         {!isComplete && displayedWordCount > 0 && (
           <span 
             className={cn(
-              "inline-block w-0.5 h-4 align-middle bg-primary/60 animate-pulse",
+              "inline-block w-0.5 h-4 align-middle bg-primary/60 animate-blink-cursor",
               isRTL ? "mr-0.5" : "ml-0.5"
             )} 
           />
