@@ -1,19 +1,25 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { useRef, useState, useEffect, useCallback, memo, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { StreamingMarkdown } from '@/components/eye/StreamingMarkdown';
-import { MessageFormatter } from '@/components/shared/MessageFormatter';
-import { TranscriptMessage } from '@/components/transcript/TranscriptMessage';
-import { hapticFeedback } from '@/lib/haptics';
-import { Copy, Check, ThumbsUp, ThumbsDown, Brain, X, ChevronDown, Palette, Maximize2, CornerDownLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from "framer-motion";
+import { useRef, useState, useEffect, useCallback, memo, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { StreamingMarkdown } from "@/components/eye/StreamingMarkdown";
+import { MessageFormatter } from "@/components/shared/MessageFormatter";
+import { TranscriptMessage } from "@/components/transcript/TranscriptMessage";
+import { hapticFeedback } from "@/lib/haptics";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  Brain,
+  X,
+  ChevronDown,
+  Palette,
+  Maximize2,
+  CornerDownLeft,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,12 +29,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { persistDalleImage } from '@/hooks/useImagePersistence';
-import { supabase } from '@/integrations/supabase/client';
-import { DocumentDownloadButton } from './DocumentDownloadButton';
-import { toast } from 'sonner';
-import type { Message } from '@/types/dashboard.types';
+} from "@/components/ui/alert-dialog";
+import { persistDalleImage } from "@/hooks/useImagePersistence";
+import { supabase } from "@/integrations/supabase/client";
+import { DocumentDownloadButton } from "./DocumentDownloadButton";
+import { toast } from "sonner";
+import type { Message } from "@/types/dashboard.types";
 
 interface ResponseBubbleAttachment {
   url: string;
@@ -47,7 +53,7 @@ interface ResponseCardProps {
   responses: ResponseBubble[];
   isMobile?: boolean;
   onDismiss?: () => void;
-  variant?: 'inline' | 'sheet';
+  variant?: "inline" | "sheet";
   showPointer?: boolean;
   sessionId?: string;
   // History mode props
@@ -58,12 +64,21 @@ interface ResponseCardProps {
   onHistoryClear?: () => void;
 }
 
-const ResponseCardComponent = ({ 
-  responses, isMobile = false, onDismiss, variant = 'inline', showPointer = true, sessionId,
-  transcriptOpen = false, transcriptMessages = [], isTyping: historyTyping = false, onHistoryClose, onHistoryClear
+const ResponseCardComponent = ({
+  responses,
+  isMobile = false,
+  onDismiss,
+  variant = "inline",
+  showPointer = true,
+  sessionId,
+  transcriptOpen = false,
+  transcriptMessages = [],
+  isTyping: historyTyping = false,
+  onHistoryClose,
+  onHistoryClear,
 }: ResponseCardProps) => {
   const navigate = useNavigate();
-  
+
   const contentRef = useRef<HTMLDivElement>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const historyScrollRef = useRef<HTMLDivElement>(null);
@@ -71,7 +86,7 @@ const ResponseCardComponent = ({
   const [isAtBottom, setIsAtBottom] = useState(true);
   const shouldAutoScrollRef = useRef(true);
   const [copied, setCopied] = useState(false);
-  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
+  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [isStreaming, setIsStreaming] = useState(true);
   const [lastResponseId, setLastResponseId] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -83,12 +98,10 @@ const ResponseCardComponent = ({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
 
-  const visibleResponses = responses.filter(r => r.isVisible);
+  const visibleResponses = responses.filter((r) => r.isVisible);
   const currentResponseId = visibleResponses[0]?.id;
 
-  const combinedContent = visibleResponses
-    .map(r => r.content.replace(/^[!?\s]+/, '').trim())
-    .join('\n\n');
+  const combinedContent = visibleResponses.map((r) => r.content.replace(/^[!?\s]+/, "").trim()).join("\n\n");
 
   const detectedImageUrl = useMemo(() => {
     const markdownMatch = combinedContent.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/);
@@ -102,24 +115,30 @@ const ResponseCardComponent = ({
     const firstResponse = visibleResponses[0];
     if (!firstResponse?.attachment) return null;
     const { url, name, type } = firstResponse.attachment;
-    const isDocument = 
-      type === 'pdf' || type === 'excel' ||
-      type === 'application/pdf' || type?.includes('spreadsheet') ||
-      url?.startsWith('data:application/pdf') || url?.startsWith('data:application/vnd.openxmlformats');
+    const isDocument =
+      type === "pdf" ||
+      type === "excel" ||
+      type === "application/pdf" ||
+      type?.includes("spreadsheet") ||
+      url?.startsWith("data:application/pdf") ||
+      url?.startsWith("data:application/vnd.openxmlformats");
     return isDocument ? { url, name, type } : null;
   }, [visibleResponses]);
 
   // Sorted transcript messages for history mode
-  const sortedMessages = useMemo(() => 
-    [...transcriptMessages].sort((a, b) => {
-      const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-      const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
-      return timeA - timeB;
-    }), [transcriptMessages]);
+  const sortedMessages = useMemo(
+    () =>
+      [...transcriptMessages].sort((a, b) => {
+        const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+        const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+        return timeA - timeB;
+      }),
+    [transcriptMessages],
+  );
 
   const handleDesignThis = useCallback(async () => {
     if (detectedImageUrl) {
-      hapticFeedback('light');
+      hapticFeedback("light");
       try {
         const permanentUrl = await persistDalleImage(detectedImageUrl);
         navigate(`/design-lab?image=${encodeURIComponent(permanentUrl)}`);
@@ -138,24 +157,24 @@ const ResponseCardComponent = ({
 
   const handleStreamComplete = useCallback(() => {
     setIsStreaming(false);
-    hapticFeedback('light');
+    hapticFeedback("light");
   }, []);
 
   const markdownToPlainText = useCallback((markdown: string): string => {
     let text = markdown;
-    text = text.replace(/^#{1,6}\s+/gm, '');
-    text = text.replace(/\*\*(.+?)\*\*/g, '$1');
-    text = text.replace(/__(.+?)__/g, '$1');
-    text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '$1');
-    text = text.replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '$1');
-    text = text.replace(/`(.+?)`/g, '$1');
-    text = text.replace(/```[\w]*\n?([\s\S]*?)```/g, '$1');
-    text = text.replace(/^\s*[-*+]\s+/gm, '• ');
-    text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-    text = text.replace(/!\[([^\]]*)\]\([^)]+\)/g, '[Image: $1]');
-    text = text.replace(/^[-*_]{3,}$/gm, '');
-    text = text.replace(/^>\s+/gm, '');
-    text = text.replace(/\n{3,}/g, '\n\n');
+    text = text.replace(/^#{1,6}\s+/gm, "");
+    text = text.replace(/\*\*(.+?)\*\*/g, "$1");
+    text = text.replace(/__(.+?)__/g, "$1");
+    text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, "$1");
+    text = text.replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, "$1");
+    text = text.replace(/`(.+?)`/g, "$1");
+    text = text.replace(/```[\w]*\n?([\s\S]*?)```/g, "$1");
+    text = text.replace(/^\s*[-*+]\s+/gm, "• ");
+    text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+    text = text.replace(/!\[([^\]]*)\]\([^)]+\)/g, "[Image: $1]");
+    text = text.replace(/^[-*_]{3,}$/gm, "");
+    text = text.replace(/^>\s+/gm, "");
+    text = text.replace(/\n{3,}/g, "\n\n");
     return text.trim();
   }, []);
 
@@ -163,39 +182,47 @@ const ResponseCardComponent = ({
     try {
       const plainText = markdownToPlainText(combinedContent);
       await navigator.clipboard.writeText(plainText);
-      hapticFeedback('success');
+      hapticFeedback("success");
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      hapticFeedback('heavy');
+      hapticFeedback("heavy");
     }
   };
 
-  const handleFeedback = async (type: 'up' | 'down') => {
-    hapticFeedback('light');
+  const handleFeedback = async (type: "up" | "down") => {
+    hapticFeedback("light");
     const newFeedback = feedback === type ? null : type;
     setFeedback(newFeedback);
     if (newFeedback) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const rating = type === 'up' ? 'positive' : 'negative';
-        const preview = combinedContent.slice(0, 200) + (combinedContent.length > 200 ? '...' : '');
-        const { error } = await supabase.from('message_ratings').insert({
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const rating = type === "up" ? "positive" : "negative";
+        const preview = combinedContent.slice(0, 200) + (combinedContent.length > 200 ? "..." : "");
+        const { error } = await supabase.from("message_ratings").insert({
           user_id: user?.id || null,
           session_id: sessionId || null,
           message_preview: preview,
-          rating
+          rating,
         });
         if (error) throw error;
-        toast.success(type === 'up' ? 'Thanks for the feedback!' : 'We\'ll work on improving');
+        toast.success(type === "up" ? "Thanks for the feedback!" : "We'll work on improving");
       } catch (err) {
-        console.error('Failed to save feedback:', err);
+        console.error("Failed to save feedback:", err);
       }
     }
   };
 
-  const handleExpand = () => { hapticFeedback('light'); setIsExpanded(true); };
-  const handleDismiss = () => { hapticFeedback('light'); onDismiss?.(); };
+  const handleExpand = () => {
+    hapticFeedback("light");
+    setIsExpanded(true);
+  };
+  const handleDismiss = () => {
+    hapticFeedback("light");
+    onDismiss?.();
+  };
 
   // Response content scroll tracking
   useEffect(() => {
@@ -209,17 +236,22 @@ const ResponseCardComponent = ({
       shouldAutoScrollRef.current = atBottom;
     };
     checkScrollState();
-    el.addEventListener('scroll', checkScrollState, { passive: true });
+    el.addEventListener("scroll", checkScrollState, { passive: true });
     const resizeObserver = new ResizeObserver(checkScrollState);
     resizeObserver.observe(el);
-    return () => { el.removeEventListener('scroll', checkScrollState); resizeObserver.disconnect(); };
+    return () => {
+      el.removeEventListener("scroll", checkScrollState);
+      resizeObserver.disconnect();
+    };
   }, [combinedContent, transcriptOpen]);
 
   useEffect(() => {
     if (transcriptOpen) return;
     const el = contentRef.current;
     if (el && shouldAutoScrollRef.current) {
-      requestAnimationFrame(() => { if (contentRef.current) contentRef.current.scrollTop = contentRef.current.scrollHeight; });
+      requestAnimationFrame(() => {
+        if (contentRef.current) contentRef.current.scrollTop = contentRef.current.scrollHeight;
+      });
     }
   }, [combinedContent, transcriptOpen]);
 
@@ -230,11 +262,11 @@ const ResponseCardComponent = ({
   }, []);
 
   const scrollHistoryToBottom = useCallback(() => {
-    historyScrollRef.current?.scrollTo({ top: historyScrollRef.current.scrollHeight, behavior: 'smooth' });
+    historyScrollRef.current?.scrollTo({ top: historyScrollRef.current.scrollHeight, behavior: "smooth" });
   }, []);
 
   // Auto-scroll history to bottom on new messages & check scroll indicator
-   useEffect(() => {
+  useEffect(() => {
     if (!transcriptOpen) return;
     if (historyScrollRef.current) {
       requestAnimationFrame(() => {
@@ -261,10 +293,13 @@ const ResponseCardComponent = ({
       setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 50);
     };
     checkScroll();
-    el.addEventListener('scroll', checkScroll, { passive: true });
+    el.addEventListener("scroll", checkScroll, { passive: true });
     const observer = new ResizeObserver(checkScroll);
     observer.observe(el);
-    return () => { el.removeEventListener('scroll', checkScroll); observer.disconnect(); };
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      observer.disconnect();
+    };
   }, [transcriptOpen]);
 
   // Dialog scroll state
@@ -278,15 +313,18 @@ const ResponseCardComponent = ({
       dialogShouldAutoScrollRef.current = atBottom;
     };
     checkDialogScroll();
-    el.addEventListener('scroll', checkDialogScroll, { passive: true });
+    el.addEventListener("scroll", checkDialogScroll, { passive: true });
     const resizeObserver = new ResizeObserver(checkDialogScroll);
     resizeObserver.observe(el);
-    return () => { el.removeEventListener('scroll', checkDialogScroll); resizeObserver.disconnect(); };
+    return () => {
+      el.removeEventListener("scroll", checkDialogScroll);
+      resizeObserver.disconnect();
+    };
   }, [isExpanded, combinedContent]);
 
   const scrollDialogToBottom = () => {
     const el = dialogContentRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   };
 
   // Hide if no content to show (but always show in history mode)
@@ -296,7 +334,7 @@ const ResponseCardComponent = ({
     <>
       <AnimatePresence mode="wait">
         <motion.div
-          key={transcriptOpen ? 'history' : (visibleResponses[0]?.id || 'empty')}
+          key={transcriptOpen ? "history" : visibleResponses[0]?.id || "empty"}
           layout={false}
           className={cn(
             "relative flex flex-col",
@@ -305,21 +343,22 @@ const ResponseCardComponent = ({
             "bg-background",
             "border border-border/40",
             "shadow-md shadow-black/5 backdrop-blur-sm",
-            variant === 'sheet' ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
+            variant === "sheet" ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
             "overflow-hidden",
-            transcriptOpen && "h-full"
+            transcriptOpen && "h-full",
           )}
           style={{
-            willChange: 'transform, opacity',
-            transform: 'translateZ(0)',
-            ...(variant === 'sheet' ? { maxHeight: 'min(50vh, 100%)' } : {}),
+            willChange: "transform, opacity",
+            transform: "translateZ(0)",
+            ...(variant === "sheet" ? { maxHeight: "min(50vh, 100%)" } : {}),
+            ...(transcriptOpen ? { maxHeight: "70vh" } : {}),
           }}
           initial={{ opacity: 0, y: 20, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.98 }}
           transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
         >
-          {showPointer && variant !== 'sheet' && !transcriptOpen && (
+          {showPointer && variant !== "sheet" && !transcriptOpen && (
             <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background border-l border-t border-border/40" />
           )}
 
@@ -387,7 +426,7 @@ const ResponseCardComponent = ({
                         <TranscriptMessage
                           key={msg.id}
                           content={msg.content}
-                          sender={msg.sender === 'user' ? 'user' : 'ayn'}
+                          sender={msg.sender === "user" ? "user" : "ayn"}
                           timestamp={ts}
                           shouldAnimate={isNew}
                           compact
@@ -444,26 +483,26 @@ const ResponseCardComponent = ({
           ) : (
             /* Normal response content */
             <>
-              <div 
+              <div
                 ref={contentRef}
                 className={cn(
                   "flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
-                  variant === 'inline' && "max-h-[28vh] sm:max-h-[32vh]",
+                  variant === "inline" && "max-h-[28vh] sm:max-h-[32vh]",
                   "[&_img]:w-full [&_img]:max-h-[200px] [&_img]:object-cover [&_img]:rounded-lg",
                   "[&>div]:px-4 [&>div]:py-3",
-                  "[-webkit-overflow-scrolling:touch]"
+                  "[-webkit-overflow-scrolling:touch]",
                 )}
               >
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={currentResponseId || 'content'}
+                    key={currentResponseId || "content"}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
                     {isStreaming ? (
-                      <StreamingMarkdown 
+                      <StreamingMarkdown
                         content={combinedContent}
                         speed={20}
                         onComplete={handleStreamComplete}
@@ -471,9 +510,9 @@ const ResponseCardComponent = ({
                         className="text-sm text-foreground leading-relaxed [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3"
                       />
                     ) : (
-                      <MessageFormatter 
-                        content={combinedContent} 
-                        className="text-sm text-foreground leading-relaxed [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3" 
+                      <MessageFormatter
+                        content={combinedContent}
+                        className="text-sm text-foreground leading-relaxed [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3"
                       />
                     )}
                   </motion.div>
@@ -491,7 +530,7 @@ const ResponseCardComponent = ({
               </div>
 
               {isScrollable && !isAtBottom && (
-                <div 
+                <div
                   className="absolute bottom-14 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none"
                   aria-hidden="true"
                 />
@@ -504,18 +543,57 @@ const ResponseCardComponent = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {copied ? (
-                    <><Check size={14} className="text-green-600" /><span className="text-green-600">Copied</span></>
+                    <>
+                      <Check size={14} className="text-green-600" />
+                      <span className="text-green-600">Copied</span>
+                    </>
                   ) : (
-                    <><Copy size={14} /><span>Copy</span></>
+                    <>
+                      <Copy size={14} />
+                      <span>Copy</span>
+                    </>
                   )}
                 </button>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => handleFeedback('up')} className={cn("p-2 rounded-lg transition-colors", feedback === 'up' ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted")} aria-label="Helpful"><ThumbsUp size={16} /></button>
-                  <button onClick={() => handleFeedback('down')} className={cn("p-2 rounded-lg transition-colors", feedback === 'down' ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted")} aria-label="Not helpful"><ThumbsDown size={16} /></button>
-                  <button onClick={handleExpand} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Expand"><Maximize2 size={16} /></button>
+                  <button
+                    onClick={() => handleFeedback("up")}
+                    className={cn(
+                      "p-2 rounded-lg transition-colors",
+                      feedback === "up"
+                        ? "text-foreground bg-muted"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                    )}
+                    aria-label="Helpful"
+                  >
+                    <ThumbsUp size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleFeedback("down")}
+                    className={cn(
+                      "p-2 rounded-lg transition-colors",
+                      feedback === "down"
+                        ? "text-foreground bg-muted"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                    )}
+                    aria-label="Not helpful"
+                  >
+                    <ThumbsDown size={16} />
+                  </button>
+                  <button
+                    onClick={handleExpand}
+                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    aria-label="Expand"
+                  >
+                    <Maximize2 size={16} />
+                  </button>
                   {detectedImageUrl && (
-                    <button onClick={handleDesignThis} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="Edit in Design LAB">
-                      <Palette size={16} /><span>Design</span>
+                    <button
+                      onClick={handleDesignThis}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title="Edit in Design LAB"
+                    >
+                      <Palette size={16} />
+                      <span>Design</span>
                     </button>
                   )}
                 </div>
@@ -527,7 +605,7 @@ const ResponseCardComponent = ({
 
       {/* Reading Mode Dialog */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent 
+        <DialogContent
           className={cn(
             "flex flex-col p-0 gap-0",
             "w-screen h-[100dvh] max-w-none rounded-none",
@@ -535,19 +613,28 @@ const ResponseCardComponent = ({
             "bg-background",
             "border-0 sm:border sm:border-border",
             "sm:shadow-lg",
-            "overflow-hidden"
+            "overflow-hidden",
           )}
         >
           <DialogHeader className="flex-shrink-0 px-5 sm:px-6 py-4 border-b border-border bg-background pr-20">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-muted"><Brain className="w-5 h-5 text-foreground" /></div>
+              <div className="p-2 rounded-lg bg-muted">
+                <Brain className="w-5 h-5 text-foreground" />
+              </div>
               <DialogTitle className="text-base font-medium">AYN Response</DialogTitle>
             </div>
           </DialogHeader>
-          <div ref={dialogContentRef} className={cn("flex-1 overflow-y-auto overflow-x-hidden min-h-0", "px-5 sm:px-8 py-6", "[-webkit-overflow-scrolling:touch]")}>
+          <div
+            ref={dialogContentRef}
+            className={cn(
+              "flex-1 overflow-y-auto overflow-x-hidden min-h-0",
+              "px-5 sm:px-8 py-6",
+              "[-webkit-overflow-scrolling:touch]",
+            )}
+          >
             <div className="max-w-3xl mx-auto">
-              <MessageFormatter 
-                content={combinedContent} 
+              <MessageFormatter
+                content={combinedContent}
                 className={cn(
                   "text-base sm:text-[15px] leading-relaxed sm:leading-7",
                   "text-foreground",
@@ -558,16 +645,23 @@ const ResponseCardComponent = ({
                   "[&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg",
                   "[&_h1]:font-bold [&_h2]:font-semibold [&_h3]:font-medium",
                   "[&_h1]:mt-6 [&_h2]:mt-5 [&_h3]:mt-4",
-                  "[&_p]:mb-4"
+                  "[&_p]:mb-4",
                 )}
               />
             </div>
           </div>
           {dialogScrollable && !dialogAtBottom && (
             <>
-              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" aria-hidden="true" />
-              <button onClick={scrollDialogToBottom} className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground text-background text-sm font-medium shadow-lg animate-bounce">
-                <ChevronDown size={16} /><span>Scroll down</span>
+              <div
+                className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent"
+                aria-hidden="true"
+              />
+              <button
+                onClick={scrollDialogToBottom}
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground text-background text-sm font-medium shadow-lg animate-bounce"
+              >
+                <ChevronDown size={16} />
+                <span>Scroll down</span>
               </button>
             </>
           )}
@@ -583,7 +677,14 @@ const ResponseCardComponent = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { setShowClearConfirm(false); onHistoryClear?.(); }}>Clear</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                setShowClearConfirm(false);
+                onHistoryClear?.();
+              }}
+            >
+              Clear
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
