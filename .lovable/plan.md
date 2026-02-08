@@ -1,22 +1,13 @@
 
-
-# Stop All Eye Animations When History Toggles
+# Fix: Eye Behind History Card + Taller Panel
 
 ## Problem
-The eye still animates (fades out, moves) when the history panel opens/closes, causing a visible "jump." The user wants the eye to stay completely still -- the history card will simply cover it naturally.
+The eye sits at `z-40` which places it visually on top of the history card. The history card also isn't tall enough to fully cover the eye.
 
-## Solution
-Remove ALL `transcriptOpen`-related logic from the eye's `motion.div`. The eye stays at its current position/opacity/scale regardless of history state. The history panel renders on top and covers the eye visually.
+## Changes (2 files)
 
-## Changes (CenterStageLayout.tsx only)
+### 1. CenterStageLayout.tsx -- Lower eye z-index
+On line 736, change `z-40` to `z-10` on the eye container. This ensures the history card (which is in a later DOM element with default stacking) renders on top of the eye naturally.
 
-### 1. Remove `transcriptOpen` from animate block (lines 742-753)
-- Remove the `opacity: transcriptOpen ? 0 : 1` line -- eye always stays at opacity 1
-- Remove `!transcriptOpen &&` guards from `scale`, `marginBottom`, and `y` -- these should only depend on `hasVisibleResponses` / `isTransitioningToChat`
-- Remove the separate `opacity` transition config since opacity won't animate
-
-### 2. Remove `transcriptOpen` from pointerEvents (line 740)
-- Remove `style={{ pointerEvents: transcriptOpen ? 'none' : 'auto' }}` -- the history card covers the eye so clicks won't reach it anyway
-
-The eye will simply sit in place. When history opens, the card renders over it. When history closes, the eye is already there -- no fade, no jump, no animation.
-
+### 2. ChatInput.tsx -- Make history panel taller
+On line 466, increase the max height of the messages area from `max-h-[340px]` to `max-h-[440px]`. This gives the history card enough height to fully cover the eye behind it.
