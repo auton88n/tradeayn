@@ -1,85 +1,59 @@
 
 
-# Origin Validation for Sensitive Edge Functions
+# Fix Slab Calculator Code-Specific Resistance Factors
 
-## Overview
+## Problem
 
-Add an origin validation guard to sensitive state-changing edge functions as a defense-in-depth measure against CSRF. While the current risk is low (custom headers like `apikey` and `Authorization` are not auto-sent by browsers), locking down `Access-Control-Allow-Origin: *` on privileged endpoints is good practice.
+The `calculateSlab()` function in `src/lib/engineeringCalculations.ts` already fetches code-specific parameters via `getCodeParameters(buildingCode)` but then ignores them for reinforcement calculations, hardcoding ACI values instead.
 
-## Important: Which Functions to Protect
+## Changes (single file: `src/lib/engineeringCalculations.ts`)
 
-Not all listed functions should get origin validation:
+### Fix 1: Use code-specific resistance factors for all Ast calculations
 
-- **`approve-access`** and **`approve-pin-change`** are GET-based endpoints triggered by clicking email links. They authenticate via cryptographic tokens in the URL, not browser auth. Adding origin validation would **break** them. They are excluded.
-- **`stripe-webhook`** is called by Stripe servers, not browsers. Excluded.
-
-Functions that **will** get origin validation (all use POST + JWT auth):
-
-| Function | Operation |
-|---|---|
-| `delete-account` | Permanently deletes user and all data |
-| `set-admin-pin` | Changes admin PIN |
-| `verify-admin-pin` | Grants admin panel access |
-| `create-checkout` | Creates Stripe checkout session |
-
-## Changes
-
-### 1. New file: `supabase/functions/_shared/originGuard.ts`
-
-A small helper that validates the `Origin` or `Referer` header against a whitelist of allowed origins:
-
-```
-ALLOWED_ORIGINS:
-  - https://aynn.io
-  - https://www.aynn.io
-  - https://ayn-insight-forge.lovable.app  (published URL)
-  - http://localhost:5173  (dev)
-  - http://localhost:8080  (dev)
-```
-
-Also allows requests with **no** Origin header (e.g., server-to-server calls, Postman) since those are not browser CSRF. The guard specifically blocks requests where an Origin **is present** but does not match the whitelist -- which is the CSRF scenario.
-
-### 2. Update 4 edge functions
-
-Each gets two lines added after the CORS preflight check:
+Add this block once, right after `const d = thickness - cover - barDia / 2;` (after line 232):
 
 ```typescript
-import { validateOrigin } from '../_shared/originGuard.ts';
-
-// After OPTIONS check:
-if (!validateOrigin(req)) {
-  return new Response(
-    JSON.stringify({ error: 'Unauthorized origin' }),
-    { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
-}
+const phiFlex = codeParams.resistanceFactors.flexure;
+const phiSteel = codeParams.resistanceFactors.steel;
+const effectivePhi = buildingCode === 'CSA' ? phiFlex * phiSteel : 0.87;
 ```
 
-Functions updated:
-- `supabase/functions/delete-account/index.ts`
-- `supabase/functions/set-admin-pin/index.ts`
-- `supabase/functions/verify-admin-pin/index.ts`
-- `supabase/functions/create-checkout/index.ts`
+Then replace `0.87` with `effectivePhi` in all 6 reinforcement area calculations:
 
-### 3. Update CORS headers on these 4 functions
+| Line | Current | Fixed |
+|------|---------|-------|
+| 248 (AstPos, one-way) | `0.87 * fy * 0.9 * d` | `effectivePhi * fy * 0.9 * d` |
+| 249 (AstNeg, one-way) | `0.87 * fy * 0.9 * d` | `effectivePhi * fy * 0.9 * d` |
+| 311 (AstXPos, two-way) | `0.87 * fy * 0.9 * d` | `effectivePhi * fy * 0.9 * d` |
+| 312 (AstXNeg, two-way) | `0.87 * fy * 0.9 * d` | `effectivePhi * fy * 0.9 * d` |
+| 313 (AstYPos, two-way) | `0.87 * fy * 0.9 * (d - barDia)` | `effectivePhi * fy * 0.9 * (d - barDia)` |
+| 314 (AstYNeg, two-way) | `0.87 * fy * 0.9 * (d - barDia)` | `effectivePhi * fy * 0.9 * (d - barDia)` |
 
-Change `Access-Control-Allow-Origin` from `*` to the request's origin (if allowed), strengthening the browser-level CORS protection:
+For CSA, `effectivePhi = 0.65 * 0.85 = 0.5525`, which is lower than ACI's 0.87 -- resulting in more reinforcement as expected (~58% more).
 
-```typescript
-const origin = req.headers.get('Origin') || '';
-const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+### Fix 2: Use code-specific minimum reinforcement ratio
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': allowedOrigin,
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-```
+Replace the hardcoded `rhoMin` in both places:
+
+| Line | Current | Fixed |
+|------|---------|-------|
+| 251 (one-way section) | `const rhoMin = 0.0018;` | `const rhoMin = codeParams.minRho;` |
+| 316 (two-way section) | `const rhoMin = 0.0018;` | `const rhoMin = codeParams.minRho;` |
+
+This uses 0.0018 for ACI and 0.002 for CSA, matching the values already defined in `getCodeParameters()`.
+
+### Fix 3: Fix designCode output string
+
+| Line | Current | Fixed |
+|------|---------|-------|
+| 434 | `designCode: 'ACI 318 / Eurocode 2',` | `designCode: codeParams.name,` |
+
+This will output "ACI 318-25" or "CSA A23.3-24" based on the selected code.
 
 ## What is NOT changed
 
-- `approve-access` -- email link, token-based auth, no browser session involved
-- `approve-pin-change` -- same as above
-- `stripe-webhook` -- called by Stripe servers, validates webhook signature
-- AI edge functions -- already protected by required custom headers
-- No client-side changes needed (the browser already sends Origin automatically)
+- Load factor logic (already correct, uses `codeParams.loadFactors`)
+- Serviceability checks (deflection, crack width)
+- Moment distribution coefficients
+- Any other calculator function (beam, column, foundation, retaining wall)
 
