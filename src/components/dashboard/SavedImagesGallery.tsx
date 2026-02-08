@@ -238,8 +238,9 @@ export function SavedImagesGallery({ open, onOpenChange }: SavedImagesGalleryPro
                     <img
                       src={image.url}
                       alt={image.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-opacity duration-300"
                       loading="lazy"
+                      decoding="async"
                     />
                     
                     {/* Hover overlay */}
