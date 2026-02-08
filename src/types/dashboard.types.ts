@@ -7,7 +7,7 @@ export interface Message {
   content: string;
   sender: 'user' | 'ayn';
   timestamp: Date;
-  status?: 'sending' | 'sent' | 'error';
+  status?: 'sending' | 'sent' | 'error' | 'queued';
   isTyping?: boolean;
   attachment?: FileAttachment;
   labData?: LABResponse;

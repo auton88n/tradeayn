@@ -475,7 +475,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               <div className="relative pb-3">
                 <div className="max-h-[340px] overflow-y-auto" ref={historyScrollRef} onScroll={handleHistoryScroll}>
                   <div className="p-3 space-y-1 flex flex-col justify-end min-h-full">
-                    {sortedTranscriptMessages.map(msg => <TranscriptMessage key={msg.id} content={msg.content} sender={msg.sender} timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)} onReply={text => {
+                    {sortedTranscriptMessages.map(msg => <TranscriptMessage key={msg.id} content={msg.content} sender={msg.sender} timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)} status={msg.status} onReply={text => {
                   setInputMessage(`> ${text.split('\n')[0]}\n`);
                   textareaRef.current?.focus();
                 }} />)}

@@ -190,6 +190,7 @@ export const TranscriptSidebar = ({
                         content={msg.content}
                         sender={msg.sender}
                         timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
+                        status={msg.status}
                       />
                     ))
                   )}

@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Copy, Check, User, Brain, CornerDownLeft } from 'lucide-react';
+import { Copy, Check, User, Brain, CornerDownLeft, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
 
@@ -9,6 +9,7 @@ interface TranscriptMessageProps {
   sender: 'user' | 'ayn';
   timestamp: Date;
   compact?: boolean;
+  status?: 'sending' | 'sent' | 'error' | 'queued';
   onReply?: (content: string) => void;
 }
 
@@ -31,6 +32,7 @@ export const TranscriptMessage = ({
   sender,
   timestamp,
   compact = false,
+  status,
   onReply,
 }: TranscriptMessageProps) => {
   const isUser = sender === 'user';
@@ -102,6 +104,14 @@ export const TranscriptMessage = ({
             <MessageFormatter content={content} />
           </div>
         </div>
+
+        {/* Queued indicator */}
+        {status === 'queued' && isUser && (
+          <div className="flex items-center gap-1 mt-0.5 text-muted-foreground">
+            <Clock className="w-3 h-3" />
+            <span className="text-[10px]">Queued</span>
+          </div>
+        )}
 
         {/* Action buttons - only in non-compact mode */}
         {!compact && (

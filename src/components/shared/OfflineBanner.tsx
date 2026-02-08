@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { WifiOff, Wifi } from 'lucide-react';
+import { WifiOff, Wifi, Send } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
+import { offlineQueue } from '@/lib/offlineQueue';
 
 export const OfflineBanner = () => {
   const isOnline = useOnlineStatus();
@@ -13,14 +14,27 @@ export const OfflineBanner = () => {
       wasOffline.current = true;
     } else if (wasOffline.current) {
       wasOffline.current = false;
-      toast({
-        description: (
-          <div className="flex items-center gap-2">
-            <Wifi className="w-4 h-4 text-green-500" />
-            <span>Back online</span>
-          </div>
-        ),
-      });
+      const queuedCount = offlineQueue.length;
+      if (queuedCount > 0) {
+        toast({
+          description: (
+            <div className="flex items-center gap-2">
+              <Send className="w-4 h-4 text-primary" />
+              <span>Sending {queuedCount} queued message{queuedCount > 1 ? 's' : ''}...</span>
+            </div>
+          ),
+        });
+        offlineQueue.processQueue();
+      } else {
+        toast({
+          description: (
+            <div className="flex items-center gap-2">
+              <Wifi className="w-4 h-4 text-green-500" />
+              <span>Back online</span>
+            </div>
+          ),
+        });
+      }
     }
   }, [isOnline]);
 
