@@ -473,7 +473,7 @@ export const CenterStageLayout = ({
 
           // Clear file after animation completes
           onRemoveFile();
-        }, 400);
+        }, 300);
       }, animationDelay);
     },
     [

@@ -1,4 +1,3 @@
-import { useRef, useLayoutEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { FileText } from 'lucide-react';
@@ -20,43 +19,24 @@ export const UserMessageBubble = ({
   endPosition,
   onComplete,
 }: UserMessageBubbleProps) => {
-  const bubbleRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-
-  // Measure actual bubble dimensions after render
-  useLayoutEffect(() => {
-    if (bubbleRef.current) {
-      const rect = bubbleRef.current.getBoundingClientRect();
-      setDimensions({ width: rect.width, height: rect.height });
-    }
-  }, [content]);
-
   if (status === 'done') return null;
 
-  // Use measured dimensions for precise centering
-  const halfWidth = dimensions.width / 2;
-  const halfHeight = dimensions.height / 2;
-
-  // Simplified animation for smoother performance
   const flyingAnimation = {
-    x: endPosition.x - halfWidth,
-    y: endPosition.y - halfHeight,
+    x: endPosition.x,
+    y: endPosition.y,
     scale: 0.25,
     opacity: 0.85,
-    rotate: -10,
   };
 
   const absorbingAnimation = {
-    x: endPosition.x - halfWidth,
-    y: endPosition.y - halfHeight,
+    x: endPosition.x,
+    y: endPosition.y,
     scale: 0,
     opacity: 0,
-    rotate: -12,
   };
 
   return (
     <motion.div
-      ref={bubbleRef}
       className={cn(
         "fixed z-50 max-w-[300px] px-4 py-3 rounded-2xl",
         "bg-primary text-primary-foreground",
@@ -66,19 +46,18 @@ export const UserMessageBubble = ({
       style={{
         left: 0,
         top: 0,
-        transformOrigin: 'center center',
+        transform: 'translate(-50%, -50%)',
         willChange: 'transform, opacity',
       }}
       initial={{
-        x: startPosition.x - halfWidth,
-        y: startPosition.y - halfHeight,
+        x: startPosition.x,
+        y: startPosition.y,
         scale: 1,
         opacity: 1,
-        rotate: 0,
       }}
       animate={status === 'flying' ? flyingAnimation : absorbingAnimation}
       transition={{
-        duration: status === 'flying' ? 0.4 : 0.22,
+        duration: status === 'flying' ? 0.3 : 0.2,
         ease: [0.32, 0.72, 0, 1],
       }}
       onAnimationComplete={() => {
