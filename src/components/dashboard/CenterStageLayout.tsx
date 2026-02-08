@@ -14,7 +14,7 @@ import { BetaBadge } from '@/components/ui/BetaBadge';
 import { BetaFeedbackModal } from './BetaFeedbackModal';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
-import { useSoundContextOptional } from '@/contexts/SoundContext';
+import { useSoundStore } from '@/stores/soundStore';
 import { getBubbleType } from '@/lib/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -186,7 +186,7 @@ export const CenterStageLayout = ({
     return (currentUsage ?? 0) >= totalLimit;
   }, [isUnlimited, limit, bonusCredits, currentUsage]);
   const { setEmotion, setEmotionWithSource, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse, bumpActivity } = useAYNEmotion();
-  const soundContext = useSoundContextOptional();
+  const soundContext = useSoundStore();
   const playSound = soundContext?.playSound;
   const { orchestrateEmotionChange, resetToCalm } = useEmotionOrchestrator();
   const {

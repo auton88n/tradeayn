@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserSettings } from '@/hooks/useUserSettings';
-import { useSoundContextOptional } from '@/contexts/SoundContext';
+import { useSoundStore } from '@/stores/soundStore';
 import { useDesktopNotifications } from '@/hooks/useDesktopNotifications';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Volume1, Volume2, Bell, BellOff } from 'lucide-react';
@@ -18,7 +18,7 @@ export const NotificationSettings = ({ userId, accessToken }: NotificationSettin
   const { t } = useLanguage();
   const { toast } = useToast();
   const { settings, loading, updating, updateSettings } = useUserSettings(userId, accessToken);
-  const soundContext = useSoundContextOptional();
+  const soundContext = useSoundStore();
   const { isSupported, permission, requestPermission } = useDesktopNotifications();
 
   const handleSoundToggle = (checked: boolean) => {

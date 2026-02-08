@@ -1,7 +1,7 @@
 // Unified emotion orchestration - coordinates eye visuals, sounds, and haptics in sync
 import { useCallback, useRef } from 'react';
 import { AYNEmotion, useAYNEmotion, EMOTION_CONFIGS } from '@/contexts/AYNEmotionContext';
-import { useSoundContextOptional } from '@/contexts/SoundContext';
+import { useSoundStore } from '@/stores/soundStore';
 import { hapticFeedback } from '@/lib/haptics';
 
 // Transition timing per emotion - longer for natural flowing colors
@@ -24,7 +24,7 @@ const HAPTIC_DELAY = 40; // ms after eye starts changing - tight sync
 
 export const useEmotionOrchestrator = () => {
   const { setEmotion, triggerPulse, emotion: currentEmotion } = useAYNEmotion();
-  const soundContext = useSoundContextOptional();
+  const soundContext = useSoundStore();
   const lastOrchestrationRef = useRef<{ emotion: AYNEmotion; time: number } | null>(null);
   const orchestrationTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
 

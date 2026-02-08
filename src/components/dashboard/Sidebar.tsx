@@ -18,7 +18,7 @@ import SupportWidget from '@/components/support/SupportWidget';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { SidebarProps } from '@/types/dashboard.types';
-import { useSoundContextOptional } from '@/contexts/SoundContext';
+import { useSoundStore } from '@/stores/soundStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   AlertDialog,
@@ -128,7 +128,7 @@ export const Sidebar = ({
   } = useSidebar();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const soundContext = useSoundContextOptional();
+  const soundContext = useSoundStore();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);

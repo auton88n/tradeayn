@@ -6,7 +6,7 @@ import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTrian
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
-import { useSoundContextOptional } from '@/contexts/SoundContext';
+import { useSoundStore } from '@/stores/soundStore';
 import { detectLanguage, DetectedLanguage } from '@/lib/languageDetection';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -260,7 +260,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     triggerAttentionBlink,
     bumpActivity
   } = useAYNEmotion();
-  const soundContext = useSoundContextOptional();
+  const soundContext = useSoundStore();
   const playSound = soundContext?.playSound;
   const playModeChange = soundContext?.playModeChange;
 
