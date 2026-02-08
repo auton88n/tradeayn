@@ -1,38 +1,31 @@
 
 
-# Fix Memory Leak in AYNEmotionContext
+# Disable Debug Mode Keyboard Toggle in Production
 
 ## Problem
 
-The `AYNEmotionProvider` in `src/contexts/AYNEmotionContext.tsx` creates multiple `setTimeout` calls stored in refs (`activityDecayRef`, `blinkTimeoutRef`, `surpriseTimeoutRef`, `pulseTimeoutRef`, `winkTimeoutRef`) but never clears them on unmount. The recursive `activityDecayRef` setTimeout is especially problematic -- it keeps scheduling itself indefinitely even after the component unmounts.
+The debug mode keyboard listener (press "D" to toggle) is active in production. Any user accidentally pressing D sees debug overlays with FPS counters, CLS scores, and re-render counts.
 
 ## Solution
 
-Add a single cleanup `useEffect` that clears all five timeout refs on unmount.
+Add `if (import.meta.env.PROD) return;` as the first line inside the keyboard listener `useEffect` (around line 85 of `src/contexts/DebugContext.tsx`). This early-returns in production builds, so the listener is never registered.
 
-### File: `src/contexts/AYNEmotionContext.tsx`
+### File: `src/contexts/DebugContext.tsx`
 
-Add this `useEffect` inside `AYNEmotionProvider`, after the existing ref declarations (around line 155, after `winkTimeoutRef`):
+Add one line at the top of the existing `useEffect`:
 
 ```typescript
 useEffect(() => {
-  return () => {
-    if (activityDecayRef.current) clearTimeout(activityDecayRef.current);
-    if (blinkTimeoutRef.current) clearTimeout(blinkTimeoutRef.current);
-    if (surpriseTimeoutRef.current) clearTimeout(surpriseTimeoutRef.current);
-    if (pulseTimeoutRef.current) clearTimeout(pulseTimeoutRef.current);
-    if (winkTimeoutRef.current) clearTimeout(winkTimeoutRef.current);
+  if (import.meta.env.PROD) return;
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // ... existing handler unchanged
   };
+
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
 }, []);
 ```
 
-This is a single `useEffect` with an empty dependency array, so it runs once on mount and the cleanup runs on unmount -- clearing any outstanding timers.
-
-### Files changed
-
-| File | Change |
-|------|--------|
-| `src/contexts/AYNEmotionContext.tsx` | Add cleanup `useEffect` for all 5 timeout refs |
-
-No other files are affected. No behavioral change -- this only prevents timers from firing after unmount.
+No other files affected. No behavioral change in development.
 
