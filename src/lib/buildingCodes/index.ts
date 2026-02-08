@@ -91,6 +91,7 @@ export {
   getDevelopmentLengthCompression,
   getLapSpliceLength,
   checkDesignWarnings,
+  getCodeDesignParameters,
 } from './calculator';
 
 // Available building codes list (for UI dropdowns)

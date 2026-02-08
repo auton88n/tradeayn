@@ -612,6 +612,28 @@ export function getCodeReference(
 /**
  * Compare two codes side by side
  */
+// ============================================================================
+// DESIGN PARAMETERS (simplified shape for calculators)
+// ============================================================================
+
+/**
+ * Get simplified design parameters for calculator functions.
+ * Maps the comprehensive BuildingCodeConfig to the shape used by engineeringCalculations.ts
+ */
+export function getCodeDesignParameters(codeId: BuildingCodeId) {
+  const config = getBuildingCode(codeId);
+  return {
+    loadFactors: { dead: config.loadFactors.dead, live: config.loadFactors.live },
+    resistanceFactors: {
+      flexure: config.resistanceFactors.flexure,
+      shear: config.resistanceFactors.shear,
+      steel: config.resistanceFactors.steel,
+    },
+    minRho: config.reinforcement.minFlexural,
+    name: config.name,
+  };
+}
+
 export function compareCodeParameters(
   code1: BuildingCodeConfig,
   code2: BuildingCodeConfig

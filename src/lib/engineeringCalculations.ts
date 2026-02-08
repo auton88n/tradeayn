@@ -4,32 +4,7 @@
  */
 
 import type { BuildingCodeId } from '@/lib/buildingCodes';
-
-// ============ CODE-SPECIFIC PARAMETERS ============
-interface CodeParameters {
-  loadFactors: { dead: number; live: number };
-  resistanceFactors: { flexure: number; shear: number; steel: number };
-  minRho: number;
-  name: string;
-}
-
-const getCodeParameters = (buildingCode: BuildingCodeId): CodeParameters => {
-  if (buildingCode === 'CSA') {
-    return {
-      loadFactors: { dead: 1.25, live: 1.5 },
-      resistanceFactors: { flexure: 0.65, shear: 0.65, steel: 0.85 },
-      minRho: 0.002,
-      name: 'CSA A23.3-24',
-    };
-  }
-  // Default: ACI 318-25
-  return {
-    loadFactors: { dead: 1.2, live: 1.6 },
-    resistanceFactors: { flexure: 0.90, shear: 0.75, steel: 1.0 },
-    minRho: 0.0018,
-    name: 'ACI 318-25',
-  };
-};
+import { getCodeDesignParameters } from '@/lib/buildingCodes';
 
 // ============ BEAM CALCULATOR ============
 export interface BeamInputs {
@@ -74,7 +49,7 @@ export function calculateBeam(inputs: BeamInputs): BeamOutputs {
   const { span, deadLoad, liveLoad, beamWidth, concreteGrade, steelGrade, supportType, buildingCode = 'ACI' } = inputs;
 
   // Get code-specific parameters
-  const codeParams = getCodeParameters(buildingCode);
+  const codeParams = getCodeDesignParameters(buildingCode);
 
   const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35, C40: 40 };
   const steelProps: Record<string, number> = { Fy420: 420, Fy500: 500 };
@@ -204,7 +179,7 @@ export function calculateSlab(inputs: SlabInputs) {
   const { longSpan, shortSpan, deadLoad, liveLoad, concreteGrade, steelGrade, slabType, supportCondition, cover, buildingCode = 'ACI' } = inputs;
 
   // Get code-specific parameters
-  const codeParams = getCodeParameters(buildingCode);
+  const codeParams = getCodeDesignParameters(buildingCode);
 
   const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35, C40: 40 };
   const steelProps: Record<string, number> = { Fy420: 420, Fy500: 500 };
@@ -465,7 +440,7 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
   } = inputs;
   
   // Get code-specific parameters
-  const codeParams = getCodeParameters(buildingCode);
+  const codeParams = getCodeDesignParameters(buildingCode);
 
   const fck = parseInt(concreteGrade.replace('C', ''));
   const fy = parseInt(steelGrade);
@@ -747,7 +722,7 @@ export function calculateFoundation(inputs: FoundationInputs, buildingCode: Buil
   const { columnLoad, momentX, momentY, columnWidth, columnDepth, bearingCapacity, concreteGrade } = inputs;
 
   // Get code-specific parameters
-  const codeParams = getCodeParameters(buildingCode);
+  const codeParams = getCodeDesignParameters(buildingCode);
   
   const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35 };
   const fck = concreteProps[concreteGrade] || 30;
@@ -868,7 +843,7 @@ export function calculateRetainingWall(inputs: RetainingWallInputs, buildingCode
   } = inputs;
 
   // Get code-specific parameters
-  const codeParams = getCodeParameters(buildingCode);
+  const codeParams = getCodeDesignParameters(buildingCode);
 
   const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35, C40: 40 };
   const steelProps: Record<string, number> = { Fy420: 420, Fy500: 500 };
