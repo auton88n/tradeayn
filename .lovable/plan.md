@@ -1,93 +1,97 @@
 
 
-# Consolidate Duplicate REST API Helpers into `supabaseApi`
+# Migrate to Zustand Stores (Phase 1: debugStore)
 
 ## Overview
 
-Remove the local `fetchFromSupabase` and `fetchWithRetry` functions duplicated across `useAuth.ts` and `useMessages.ts`, replacing all their calls with the centralized `supabaseApi` from `src/lib/supabaseApi.ts`.
+Replace the React Context-based state management for Debug, Sound, and Emotion with Zustand stores. Zustand's selector-based subscriptions prevent cascading re-renders -- components only re-render when the specific slice of state they subscribe to changes.
 
-## Current Duplication
+This plan covers **Phase 1 only: debugStore**. Sound and Emotion stores will follow in separate prompts after verification.
 
-There are 3 separate implementations:
+## Current State Analysis
 
-| Location | Functions | Differences |
-|----------|-----------|-------------|
-| `src/lib/supabaseApi.ts` | `supabaseApi.get/post/patch/delete/rpc/fetch` | 15s timeout, AbortController, structured error messages, configurable Prefer header |
-| `src/hooks/useAuth.ts` | `fetchFromSupabase`, `fetchWithRetry` | No timeout, retry with 300ms delay, returns null on failure, special POST/upsert handling |
-| `src/hooks/useMessages.ts` | `fetchFromSupabase`, `fetchWithRetry` | `fetchWithRetry` wraps raw `fetch()` (not REST API), 1s retry delay, returns Response object (different signature) |
+- **DebugContext**: Defined in `src/contexts/DebugContext.tsx` but the `DebugContextProvider` is **never mounted** -- `DebugProvider` in App.tsx is a passthrough. All 8 consumers use `useDebugContextOptional()` which always returns `null`. The debug system is effectively dead code being safely ignored.
+- **Zustand**: Not currently installed.
+- **Consumers**: 8 files import from DebugContext (Hero, LazyLoad, DebugOverlay, LandingPage, EmotionalEye, useDebugMode, useRenderLogger, useScrollAnimation, useLayoutShiftObserver).
 
 ## Changes
 
-### 1. Update `src/lib/supabaseApi.ts` -- Add retry helper
+### 1. Install Zustand
 
-Add a `getWithRetry` convenience method that wraps `supabaseApi.get` with retry logic (matching useAuth's pattern of returning `null` on failure instead of throwing):
+Add `zustand` as a dependency.
+
+### 2. New file: `src/stores/debugStore.ts`
+
+Create a Zustand store that mirrors the `DebugContextType` interface:
+
+- `isDebugMode`, `toggleDebugMode`, `setIsDebugMode`
+- `layoutShifts`, `addLayoutShift`, `clsScore`
+- `reRenderCounts`, `incrementRenderCount`, `resetRenderCounts`
+- `intersectionTriggers`, `addIntersectionTrigger`, `clearIntersectionTriggers`
+- `fps`, `setFps`
+- `isSlowConnection`
+
+The store will include the keyboard toggle (D key) and connection detection logic as side effects initialized on first import. The batch update interval for render counts will use `subscribe` + `setInterval` pattern.
+
+### 3. Update: `src/hooks/useDebugMode.ts`
+
+Replace re-exports of context hooks with store selectors:
 
 ```typescript
-async getWithRetry<T = unknown>(
-  endpoint: string, 
-  token: string, 
-  retries = 2
-): Promise<T | null> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await this.get<T>(endpoint, token);
-    } catch {
-      if (attempt === retries) return null;
-      await new Promise(r => setTimeout(r, 300));
-    }
-  }
-  return null;
-}
+export const useDebugMode = () => useDebugStore();
+export const useDebugModeOptional = () => useDebugStore();
+export const useDebugRender = (name: string) => {
+  const isDebugMode = useDebugStore(s => s.isDebugMode);
+  if (isDebugMode) useDebugStore.getState().incrementRenderCount(name);
+};
 ```
 
-### 2. Update `src/hooks/useAuth.ts`
+### 4. Update all 8 consumer files
 
-- **Remove**: `fetchFromSupabase` (lines 12-39) and `fetchWithRetry` (lines 42-62)
-- **Remove**: `SUPABASE_URL` and `SUPABASE_ANON_KEY` imports from `@/config` (no longer needed directly)
-- **Remove**: unused `QUERY_TIMEOUT_MS` constant
-- **Add**: `import { supabaseApi } from '@/lib/supabaseApi'`
-- **Replace** all `fetchFromSupabase(endpoint, token)` calls with `supabaseApi.get(endpoint, token)`
-- **Replace** all `fetchWithRetry(endpoint, token)` calls with `supabaseApi.getWithRetry(endpoint, token)`
-- **Replace** the raw `fetch()` in `acceptTerms` with `supabaseApi.post()` using a custom `Prefer: resolution=merge-duplicates` header
+Replace `useDebugContextOptional()` imports with `useDebugStore` selectors. Each component only subscribes to the specific fields it needs:
 
-Affected call sites:
-- `checkAccess` (line 81)
-- `checkAdminRole` (line 105)
-- `loadUserProfile` (line 121)
-- `acceptTerms` (lines 138-151) -- uses POST with custom Prefer header
-- `runQueries` in useEffect (lines 190-193) -- 4 parallel `fetchWithRetry` calls
+| File | Current | New |
+|------|---------|-----|
+| `Hero.tsx` | `useDebugContextOptional()` stored in ref | `useDebugStore` in ref (same pattern) |
+| `lazy-load.tsx` | `useDebugContextOptional()` stored in ref | `useDebugStore` in ref |
+| `LandingPage.tsx` | `useDebugContextOptional()` stored in ref | `useDebugStore` in ref |
+| `EmotionalEye.tsx` | `useDebugContextOptional()` | Selective: `useDebugStore(s => s.isDebugMode)` |
+| `DebugOverlay.tsx` | `useDebugContext()` (throws) | `useDebugStore()` (full store) |
+| `useRenderLogger.ts` | `useDebugContextOptional()` | `useDebugStore(s => s.isDebugMode)` |
+| `useScrollAnimation.ts` | `useDebugContextOptional()` stored in ref | `useDebugStore` in ref |
+| `useLayoutShiftObserver.ts` | `useDebugContextOptional()` | `useDebugStore(s => s.addLayoutShift)` |
 
-### 3. Update `src/hooks/useMessages.ts`
+### 5. Remove: `DebugProvider` from App.tsx
 
-- **Remove**: `fetchFromSupabase` (lines 44-62) -- the GET-only REST helper
-- **Remove**: `SUPABASE_ANON_KEY` from `@/config` import (keep `SUPABASE_URL` -- still needed for edge function URLs and inline REST calls that use specific Prefer headers)
-- **Add**: `import { supabaseApi } from '@/lib/supabaseApi'`
-- **Keep**: `fetchWithRetry` (lines 25-41) -- this one is different, it wraps raw `fetch()` for edge function calls (not REST API), returns a `Response` object for streaming, and handles specific HTTP status codes (429, 402, 403). It cannot be replaced by `supabaseApi`.
-- **Replace** `fetchFromSupabase` call at line 150 (`loadMessages`) with `supabaseApi.get()`
-- **Replace** `fetchFromSupabase` call at line 709 (usage check) with `supabaseApi.get()`
+Remove the `<DebugProvider>` wrapper and its import. Zustand stores don't need providers.
 
-The following raw `fetch()` calls in `useMessages.ts` stay as-is because they have specialized behavior:
-- Line 240: `rpc/increment_usage` -- RPC call (could use `supabaseApi.rpc` but has specific error handling flow)
-- Line 371: `fetchWithRetry` for edge function -- returns Response object for streaming
-- Lines 623-651: Chat session check/create -- inline REST with specific headers
-- Lines 657-694: Message save -- bulk POST with specific payload
+### 6. Clean up old files
 
-### 4. No changes to `src/lib/supabaseApi.ts` API surface
+- Remove `src/components/debug/DebugProvider.tsx` (passthrough, no longer needed)
+- Keep `src/contexts/DebugContext.tsx` temporarily but mark as deprecated -- will be removed once all consumers are verified working
 
-The existing `get`, `post`, `patch`, `delete`, `rpc`, and `fetch` methods remain unchanged. Only the new `getWithRetry` method is added.
+## Why debugStore first
 
-## What stays the same
-
-- `useMessages.ts` `fetchWithRetry` (the edge function retry wrapper) -- different purpose, different signature
-- All inline `fetch()` calls for edge functions, RPC, and bulk inserts -- these have specialized headers, response handling, or return raw Response objects
-- SSE streaming code
-- Error handling patterns within each hook
+- Lowest risk: the context provider isn't even mounted, so all consumers already handle `null`
+- Fewest real consumers: most use the optional hook pattern
+- No database sync (unlike SoundContext)
+- No complex timer/ref logic interleaved with React state (unlike EmotionContext)
 
 ## Files changed
 
 | File | Change |
 |------|--------|
-| `src/lib/supabaseApi.ts` | Add `getWithRetry` method |
-| `src/hooks/useAuth.ts` | Remove local helpers, use `supabaseApi.get` and `supabaseApi.getWithRetry` |
-| `src/hooks/useMessages.ts` | Remove local `fetchFromSupabase`, use `supabaseApi.get` for 2 call sites |
+| `package.json` | Add `zustand` dependency |
+| `src/stores/debugStore.ts` | New Zustand store |
+| `src/hooks/useDebugMode.ts` | Rewrite to use store |
+| `src/components/debug/DebugProvider.tsx` | Delete |
+| `src/App.tsx` | Remove DebugProvider import and wrapper |
+| `src/components/landing/Hero.tsx` | Switch to debugStore |
+| `src/components/ui/lazy-load.tsx` | Switch to debugStore |
+| `src/components/LandingPage.tsx` | Switch to debugStore |
+| `src/components/eye/EmotionalEye.tsx` | Switch to debugStore |
+| `src/components/debug/DebugOverlay.tsx` | Switch to debugStore |
+| `src/hooks/useRenderLogger.ts` | Switch to debugStore |
+| `src/hooks/useScrollAnimation.ts` | Switch to debugStore |
+| `src/hooks/useLayoutShiftObserver.ts` | Switch to debugStore |
 
