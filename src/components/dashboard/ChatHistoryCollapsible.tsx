@@ -110,7 +110,7 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear }: 
             >
               <div
                 className="rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg overflow-hidden flex flex-col"
-                style={{ maxHeight: "70vh", willChange: "transform", contain: "content" }}
+                style={{ maxHeight: "70vh", willChange: "transform" }}
               >
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30 flex-shrink-0">
@@ -159,7 +159,7 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear }: 
                       />
                     ))}
                     {/* Bottom padding so last message isn't clipped */}
-                    <div className="h-6" />
+                    <div className="h-12" />
                   </div>
 
                   {/* Scroll-to-bottom button */}
