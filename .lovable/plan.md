@@ -1,70 +1,68 @@
 
-# Centralize Supabase Credentials
+
+# Replace Custom HTML Sanitizer with DOMPurify
 
 ## Problem
 
-The Supabase URL and anon key are copy-pasted across **8 files** in `src/`:
-
-1. `src/integrations/supabase/client.ts`
-2. `src/lib/supabaseApi.ts`
-3. `src/hooks/useAuth.ts`
-4. `src/hooks/useMessages.ts`
-5. `src/components/AdminPanel.tsx`
-6. `src/components/admin/AdminAIAssistant.tsx` (URL only)
-7. `src/components/admin/TestResultsDashboard.tsx` (URL only)
-8. `src/components/engineering/AICalculatorAssistant.tsx` and `EngineeringAIChat.tsx` (use `import.meta.env.VITE_*` which is unsupported)
-
-If the project ID or key ever changes, every file must be updated manually -- error-prone and a maintenance risk.
+The current `src/lib/security.ts` uses regex-based sanitization (`sanitizeUserInput`, `escapeHtml`) which is bypassable. Regex cannot reliably parse HTML, so edge cases (nested tags, encoding tricks, etc.) can slip through.
 
 ## Solution
 
-### Step 1: Create `src/config.ts`
+Replace the custom implementation with DOMPurify, a battle-tested sanitization library.
 
-A single source of truth exporting both values:
+### Step 1: Install DOMPurify
 
-```typescript
-export const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
-export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIs...';
-```
+Add `dompurify` and `@types/dompurify` as dependencies.
 
-### Step 2: Update all 8 files
+### Step 2: Rewrite `src/lib/security.ts`
 
-Each file's local `SUPABASE_URL` / `SUPABASE_KEY` / `SUPABASE_ANON_KEY` / `SUPABASE_PUBLISHABLE_KEY` declarations are **removed** and replaced with a single import:
+Replace the entire file contents:
 
 ```typescript
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
+import DOMPurify from 'dompurify';
+
+/**
+ * Sanitizes user input using DOMPurify to prevent XSS attacks.
+ * Strips all HTML tags and dangerous content by default.
+ */
+export function sanitizeUserInput(input: string): string {
+  return DOMPurify.sanitize(input, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+}
+
+/**
+ * Sanitizes HTML content, allowing safe markup (bold, italic, links, etc.)
+ * but removing dangerous elements like script tags and event handlers.
+ */
+export function sanitizeHtml(input: string): string {
+  return DOMPurify.sanitize(input);
+}
+
+/**
+ * Validates that text doesn't contain malicious patterns.
+ * Uses DOMPurify to check if sanitization would change the input.
+ */
+export function isValidUserInput(input: string): boolean {
+  return DOMPurify.sanitize(input) === input;
+}
 ```
 
-For files that only use the URL (e.g., `AdminAIAssistant.tsx`, `TestResultsDashboard.tsx`):
+- `sanitizeUserInput` strips ALL HTML (plain text output) -- same intent as before, but robust
+- `sanitizeHtml` is a new helper that allows safe markup (useful for rich content)
+- `isValidUserInput` returns true only if DOMPurify finds nothing to strip
+- `escapeHtml` is removed (DOMPurify handles this internally)
 
-```typescript
-import { SUPABASE_URL } from '@/config';
-```
+### Step 3: Update `src/components/shared/MessageFormatter.tsx`
 
-For files using the broken `import.meta.env.VITE_*` pattern (`AICalculatorAssistant.tsx`, `EngineeringAIChat.tsx`, `useAYN.ts`), those references are also replaced with the centralized import.
+No import changes needed -- it already imports `sanitizeUserInput` and `isValidUserInput` from `@/lib/security`, and those function signatures remain the same.
 
-The `src/integrations/supabase/client.ts` file will import from `@/config` instead of declaring its own constants.
+The only behavioral change: sanitization is now handled by DOMPurify instead of regex, making it more reliable.
 
 ### Files changed
 
 | File | Change |
 |------|--------|
-| `src/config.ts` | **New file** -- single source of truth |
-| `src/integrations/supabase/client.ts` | Remove local constants, import from config |
-| `src/lib/supabaseApi.ts` | Remove local constants, import from config |
-| `src/hooks/useAuth.ts` | Remove local constants, import from config |
-| `src/hooks/useMessages.ts` | Remove local constants, import from config |
-| `src/components/AdminPanel.tsx` | Remove local constants, import from config |
-| `src/components/admin/AdminAIAssistant.tsx` | Remove local URL, import from config |
-| `src/components/admin/TestResultsDashboard.tsx` | Remove local URL, import from config |
-| `src/components/engineering/AICalculatorAssistant.tsx` | Replace `import.meta.env.VITE_*` with config import |
-| `src/components/engineering/EngineeringAIChat.tsx` | Replace `import.meta.env.VITE_*` with config import |
-| `src/hooks/useAYN.ts` | Replace `import.meta.env.VITE_*` with config import |
+| `package.json` | Add `dompurify` and `@types/dompurify` |
+| `src/lib/security.ts` | Replace regex functions with DOMPurify-based implementations |
 
-Note: The `e2e/` test files and `supabase/functions/` edge functions are outside the app bundle and will keep their own constants since they run in different environments (Playwright/Deno).
+`MessageFormatter.tsx` requires **no changes** -- the imports and function signatures are unchanged.
 
-### What this does NOT do
-
-- Does not change any runtime behavior -- same values, just imported from one place
-- Does not use environment variables (not supported in Lovable)
-- Does not touch edge functions or e2e tests (different runtime contexts)
