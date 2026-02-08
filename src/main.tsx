@@ -24,6 +24,7 @@ import '@fontsource/noto-sans-arabic/700.css';
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { initPerformanceMonitoring } from '@/lib/performanceMonitor';
 
 // Global handler for unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {
@@ -31,3 +32,4 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 createRoot(document.getElementById("root")!).render(<App />);
+initPerformanceMonitoring();
