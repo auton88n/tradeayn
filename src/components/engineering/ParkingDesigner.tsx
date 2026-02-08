@@ -28,7 +28,7 @@ import { AnglePicker, ParkingStatsBar } from './parking/components';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionContext';
-import generatePDF, { Margin } from 'react-to-pdf';
+
 import { SaveDesignDialog } from './SaveDesignDialog';
 import { BoundaryPointsTable } from './parking/boundary/BoundaryPointsTable';
 import { BoundaryPreview } from './parking/boundary/BoundaryPreview';
@@ -515,6 +515,7 @@ const UnifiedDesigner: React.FC<{
       `;
       document.body.appendChild(printContent);
       
+      const { default: generatePDF, Margin } = await import('react-to-pdf');
       await generatePDF(() => printContent, {
         filename: `parking-report-${Date.now()}.pdf`,
         page: {

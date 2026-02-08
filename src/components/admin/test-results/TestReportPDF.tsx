@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import generatePDF, { Margin } from 'react-to-pdf';
+
 
 interface TestResult {
   name: string;
@@ -149,6 +149,7 @@ export function TestReportPDF({
 
       const getTargetElement = () => document.getElementById('temp-pdf-container');
 
+      const { default: generatePDF, Margin } = await import('react-to-pdf');
       await generatePDF(getTargetElement, {
         filename: `${categoryName.replace(/\s+/g, '-')}-Report-${new Date().toISOString().split('T')[0]}.pdf`,
         page: {

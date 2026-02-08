@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, lazy, Suspense } from 'react';
 import { Download, TrendingUp, TrendingDown, FileText, AlertTriangle, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -6,9 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { StationDataTable } from './StationDataTable';
-import { ElevationProfile } from './ElevationProfile';
+const ElevationProfile = lazy(() => import('./ElevationProfile').then(m => ({ default: m.ElevationProfile })));
 import { GradingPDFReport } from './GradingPDFReport';
-import generatePDF, { Margin } from 'react-to-pdf';
 
 interface Point {
   id: string;
@@ -112,6 +111,7 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
     
     setExportingPDF(true);
     try {
+      const { default: generatePDF, Margin } = await import('react-to-pdf');
       await generatePDF(getTargetElement, {
         filename: `${projectName.replace(/\s+/g, '_')}_Grading_Report.pdf`,
         page: {
@@ -232,7 +232,9 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
 
         {/* Elevation Profile Tab */}
         <TabsContent value="profile" className="mt-4">
-          <ElevationProfile points={fglPoints} height={400} />
+          <Suspense fallback={<div className="h-[400px] bg-muted animate-pulse rounded-lg" />}>
+            <ElevationProfile points={fglPoints} height={400} />
+          </Suspense>
         </TabsContent>
 
         {/* Station Data Tab */}

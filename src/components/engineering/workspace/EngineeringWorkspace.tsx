@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { type BuildingCodeId, type NBCCVersion } from '@/lib/buildingCodes';
 import { toast } from 'sonner';
-import generatePDF, { Margin } from 'react-to-pdf';
+
 
 // Lazy load calculator components
 const BeamCalculator = lazy(() => import('@/components/engineering/BeamCalculator').then(m => ({ default: m.BeamCalculator })));
@@ -264,6 +264,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
       document.body.appendChild(tempDiv);
       
       // Generate and download PDF directly
+      const { default: generatePDF, Margin } = await import('react-to-pdf');
       await generatePDF(() => tempDiv, {
         filename: `${selectedCalculator}-design-${Date.now().toString(36).toUpperCase()}.pdf`,
         page: {

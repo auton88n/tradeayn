@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { ResultRow } from './ResultRow';
 import { DesignCheckItem, DesignCheck } from './DesignCheckItem';
-import { InteractionDiagram, type InteractionPoint } from './InteractionDiagram';
+import { type InteractionPoint } from './InteractionDiagram';
+const InteractionDiagram = lazy(() => import('./InteractionDiagram').then(m => ({ default: m.InteractionDiagram })));
 import { Separator } from '@/components/ui/separator';
 import { type BuildingCodeId } from '@/lib/buildingCodes';
 
@@ -121,12 +122,14 @@ export const ColumnResultsSection: React.FC<ColumnResultsSectionProps> = ({
       <>
         <Separator />
         {interactionCurve && interactionCurve.length > 0 ? (
-          <InteractionDiagram
-            curvePoints={interactionCurve}
-            appliedP={appliedP}
-            appliedM={appliedM}
-            buildingCode={buildingCode}
-          />
+          <Suspense fallback={<div className="h-[280px] bg-muted animate-pulse rounded-lg" />}>
+            <InteractionDiagram
+              curvePoints={interactionCurve}
+              appliedP={appliedP}
+              appliedM={appliedM}
+              buildingCode={buildingCode}
+            />
+          </Suspense>
         ) : (
           <div className="text-sm text-muted-foreground p-4 text-center bg-muted/20 rounded-lg">
             M-N Interaction Diagram data not available
