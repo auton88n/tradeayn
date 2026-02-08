@@ -366,66 +366,70 @@ const ResponseCardComponent = ({
           {/* Content area */}
           {transcriptOpen ? (
             /* History mode content */
-            <div className="relative flex flex-col">
-              <div
-                ref={historyScrollRef}
-                onScroll={handleHistoryScroll}
-                className="max-h-[60vh] overflow-y-auto overflow-x-hidden overscroll-contain [-webkit-overflow-scrolling:touch]"
-              >
-                <div className="p-3 pb-6 space-y-1 [overflow-wrap:anywhere]">
-                  {sortedMessages.map((msg, idx) => {
-                    const isLastAyn = msg.sender === 'ayn' && idx === sortedMessages.length - 1;
-                    const isNew = !seenMessageIdsRef.current.has(msg.id);
-                    if (!isNew) { /* already seen */ }
-                    else if (!isLastAyn || historyTyping) { seenMessageIdsRef.current.add(msg.id); }
-                    const shouldStream = isLastAyn && isNew && !historyTyping && msg.sender === 'ayn';
-                    if (shouldStream) seenMessageIdsRef.current.add(msg.id);
-                    return (
-                      <TranscriptMessage
-                        key={msg.id}
-                        content={msg.content}
-                        sender={msg.sender}
-                        timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
-                        status={msg.status}
-                        isStreaming={shouldStream}
-                        shouldAnimate={isNew}
-                        compact={false}
-                      />
-                    );
-                  })}
+             <div className="flex flex-col min-h-0">
+              {/* Scroll area with floating button */}
+              <div className="relative min-h-0">
+                <div
+                  ref={historyScrollRef}
+                  onScroll={handleHistoryScroll}
+                  className="max-h-[55vh] overflow-y-auto overflow-x-hidden overscroll-contain [-webkit-overflow-scrolling:touch]"
+                >
+                  <div className="p-3 pb-6 space-y-1 [overflow-wrap:anywhere]">
+                    {sortedMessages.map((msg, idx) => {
+                      const isLastAyn = msg.sender === 'ayn' && idx === sortedMessages.length - 1;
+                      const isNew = !seenMessageIdsRef.current.has(msg.id);
+                      if (!isNew) { /* already seen */ }
+                      else if (!isLastAyn || historyTyping) { seenMessageIdsRef.current.add(msg.id); }
+                      const shouldStream = isLastAyn && isNew && !historyTyping && msg.sender === 'ayn';
+                      if (shouldStream) seenMessageIdsRef.current.add(msg.id);
+                      return (
+                        <TranscriptMessage
+                          key={msg.id}
+                          content={msg.content}
+                          sender={msg.sender}
+                          timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
+                          status={msg.status}
+                          isStreaming={shouldStream}
+                          shouldAnimate={isNew}
+                          compact={false}
+                        />
+                      );
+                    })}
 
-                  {historyTyping && (
-                    <div className="flex gap-2 p-3">
-                      <div className="rounded-full w-8 h-8 bg-foreground text-background flex items-center justify-center shrink-0">
-                        <Brain className="w-4 h-4" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-foreground mb-0.5">AYN</span>
-                        <div className="inline-flex items-center gap-1 px-4 py-2.5 rounded-[20px] rounded-bl-sm bg-muted/50 shadow-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '0ms' }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '150ms' }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '300ms' }} />
+                    {historyTyping && (
+                      <div className="flex gap-2 p-3">
+                        <div className="rounded-full w-8 h-8 bg-foreground text-background flex items-center justify-center shrink-0">
+                          <Brain className="w-4 h-4" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-foreground mb-0.5">AYN</span>
+                          <div className="inline-flex items-center gap-1 px-4 py-2.5 rounded-[20px] rounded-bl-sm bg-muted/50 shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce-dot" style={{ animationDelay: '300ms' }} />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <AnimatePresence>
-                {showHistoryScrollDown && (
-                  <motion.button
-                    initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                    onClick={scrollHistoryToBottom}
-                    className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
-                    aria-label="Scroll to bottom"
-                  >
-                    <ChevronDown className="h-5 w-5" />
-                  </motion.button>
-                )}
-              </AnimatePresence>
+                {/* Scroll-to-bottom — positioned over scroll area, not footer */}
+                <AnimatePresence>
+                  {showHistoryScrollDown && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                      onClick={scrollHistoryToBottom}
+                      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+                      aria-label="Scroll to bottom"
+                    >
+                      <ChevronDown className="h-5 w-5" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Reply footer */}
               <div className="flex-shrink-0 px-3 py-2 border-t border-border/40 flex items-center justify-end">
