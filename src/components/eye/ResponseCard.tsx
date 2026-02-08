@@ -16,7 +16,7 @@ import {
   ChevronDown,
   Palette,
   Maximize2,
-  CornerDownLeft,
+  
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -468,16 +468,6 @@ const ResponseCardComponent = ({
                 </AnimatePresence>
               </div>
 
-              {/* Reply footer */}
-              <div className="flex-shrink-0 flex items-center justify-center px-3 py-1.5 border-t border-border/40">
-                <button
-                  onClick={onHistoryClose}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                >
-                  <CornerDownLeft size={12} />
-                  <span>Reply</span>
-                </button>
-              </div>
             </div>
           ) : (
             /* ============================================
