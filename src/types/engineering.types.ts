@@ -8,6 +8,7 @@ export type CalculatorType =
   | 'retaining_wall' 
   | 'parking' 
   | 'grading'
+  | 'compliance'
   | null;
 
 export interface CalculationResult {

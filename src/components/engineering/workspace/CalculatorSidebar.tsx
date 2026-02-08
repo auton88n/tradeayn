@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   HardHat,
-  Sparkles
+  Sparkles,
+  ClipboardCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -18,7 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { BuildingCodeSelector } from '@/components/engineering/BuildingCodeSelector';
 import { type BuildingCodeId, type NBCCVersion } from '@/lib/buildingCodes';
 
-export type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | 'grading' | null;
+export type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | 'grading' | 'compliance' | null;
 
 interface CalculatorOption {
   id: CalculatorType;
@@ -86,6 +87,14 @@ const calculatorOptions: CalculatorOption[] = [
     shortTitle: 'Parking',
     icon: Car,
     gradient: 'from-indigo-500 to-violet-500',
+    available: true,
+  },
+  {
+    id: 'compliance',
+    title: 'Code Compliance Check',
+    shortTitle: 'Code Check',
+    icon: ClipboardCheck,
+    gradient: 'from-teal-500 to-cyan-500',
     available: true,
   },
 ];
