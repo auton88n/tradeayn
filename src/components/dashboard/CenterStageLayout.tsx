@@ -737,16 +737,13 @@ export const CenterStageLayout = ({
               (hasVisibleResponses || isTransitioningToChat) && "pb-4",
               isAbsorbPulsing && "scale-105 transition-transform duration-300"
             )}
-            style={{ pointerEvents: transcriptOpen ? 'none' : 'auto' }}
             data-tutorial="eye"
             animate={{
-              opacity: transcriptOpen ? 0 : 1,
-              scale: (!transcriptOpen && (hasVisibleResponses || isTransitioningToChat)) ? (isMobile ? 0.55 : 0.5) : 1,
-              marginBottom: (!transcriptOpen && (hasVisibleResponses || isTransitioningToChat)) ? -20 : 0,
-              y: (!transcriptOpen && (hasVisibleResponses || isTransitioningToChat)) ? -20 : -40,
+              scale: (hasVisibleResponses || isTransitioningToChat) ? (isMobile ? 0.55 : 0.5) : 1,
+              marginBottom: (hasVisibleResponses || isTransitioningToChat) ? -20 : 0,
+              y: (hasVisibleResponses || isTransitioningToChat) ? -20 : -40,
             }}
             transition={{
-              opacity: { duration: 0.15, ease: 'easeOut' },
               scale: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },
               marginBottom: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },
               y: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },
