@@ -1,95 +1,93 @@
 
 
-# Offline Message Queue with Auto-Retry
+# Consolidate Duplicate REST API Helpers into `supabaseApi`
 
 ## Overview
 
-When a user loses internet mid-chat, their message currently fails and they get a friendly but unhelpful AI error response. This change queues failed messages locally and auto-retries them when connectivity is restored.
+Remove the local `fetchFromSupabase` and `fetchWithRetry` functions duplicated across `useAuth.ts` and `useMessages.ts`, replacing all their calls with the centralized `supabaseApi` from `src/lib/supabaseApi.ts`.
+
+## Current Duplication
+
+There are 3 separate implementations:
+
+| Location | Functions | Differences |
+|----------|-----------|-------------|
+| `src/lib/supabaseApi.ts` | `supabaseApi.get/post/patch/delete/rpc/fetch` | 15s timeout, AbortController, structured error messages, configurable Prefer header |
+| `src/hooks/useAuth.ts` | `fetchFromSupabase`, `fetchWithRetry` | No timeout, retry with 300ms delay, returns null on failure, special POST/upsert handling |
+| `src/hooks/useMessages.ts` | `fetchFromSupabase`, `fetchWithRetry` | `fetchWithRetry` wraps raw `fetch()` (not REST API), 1s retry delay, returns Response object (different signature) |
 
 ## Changes
 
-### 1. New file: `src/lib/offlineQueue.ts`
+### 1. Update `src/lib/supabaseApi.ts` -- Add retry helper
 
-A singleton class that:
-- Maintains an in-memory queue of failed messages, persisted to `sessionStorage`
-- Exposes `add(content, attachment?)` returning a queue ID
-- Exposes `processQueue()` which iterates queued items, calls a registered retry handler, and removes successful ones
-- Caps retries at 3 per message, then discards
-- Stores message content, optional attachment metadata, and retry count
+Add a `getWithRetry` convenience method that wraps `supabaseApi.get` with retry logic (matching useAuth's pattern of returning `null` on failure instead of throwing):
 
-### 2. Update: `src/types/dashboard.types.ts`
-
-Add `'queued'` to the `Message.status` union type so pending messages can be visually distinguished:
-```
-status?: 'sending' | 'sent' | 'error' | 'queued';
-```
-
-### 3. Update: `src/hooks/useMessages.ts`
-
-In the main `catch` block (lines 743-773), detect network errors specifically:
-- If `!navigator.onLine` or the error is a `TypeError` (fetch network failure):
-  - Add the message to `offlineQueue`
-  - Mark the already-displayed user message status as `'queued'` instead of adding a fake AI response
-  - Show a toast: "Message queued -- will send when you're back online"
-- If it's a non-network error (timeout, server error): keep current behavior unchanged
-
-Register a retry handler on mount that calls `sendMessage` for queued items.
-
-Expose a `retryQueued()` function that calls `offlineQueue.processQueue()`.
-
-### 4. Update: `src/components/shared/OfflineBanner.tsx`
-
-When connectivity is restored (`wasOffline.current` transitions to online):
-- Import and call `offlineQueue.processQueue()`
-- If the queue has items, show toast: "Sending X queued message(s)..." instead of just "Back online"
-- If queue is empty, show the existing "Back online" toast
-
-### 5. Update: Chat message UI (visual indicator)
-
-In the component that renders individual messages, add a small "queued" badge or clock icon for messages with `status: 'queued'`. This is a minor addition -- a `Clock` icon from lucide-react with "Queued" text below the message bubble.
-
-## How It Works
-
-```text
-User sends message while offline
-        |
-        v
-sendMessage() fires -> fetch fails (TypeError)
-        |
-        v
-Message stays in UI with status='queued' + clock icon
-offlineQueue.add(content, attachment)
-Toast: "Message queued"
-        |
-        v
-... user regains connection ...
-        |
-        v
-OfflineBanner detects online event
-offlineQueue.processQueue()
-Toast: "Sending 1 queued message..."
-        |
-        v
-sendMessage() called again for queued content
-Success -> remove from queue, update message status to 'sent'
-Failure -> increment retry count (max 3)
+```typescript
+async getWithRetry<T = unknown>(
+  endpoint: string, 
+  token: string, 
+  retries = 2
+): Promise<T | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await this.get<T>(endpoint, token);
+    } catch {
+      if (attempt === retries) return null;
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+  return null;
+}
 ```
 
-## Edge Cases Handled
+### 2. Update `src/hooks/useAuth.ts`
 
-- **Multiple queued messages**: Processed sequentially to maintain order
-- **Tab refresh while offline**: Queue persists in `sessionStorage`, loaded on init
-- **Max retries exceeded**: Message removed from queue after 3 failures (user can always re-type)
-- **Rate limiting on retry**: If retry hits a 429, the message stays queued for next attempt rather than being discarded
-- **Already online but server error**: Only network failures trigger queueing; server errors keep existing friendly-response behavior
+- **Remove**: `fetchFromSupabase` (lines 12-39) and `fetchWithRetry` (lines 42-62)
+- **Remove**: `SUPABASE_URL` and `SUPABASE_ANON_KEY` imports from `@/config` (no longer needed directly)
+- **Remove**: unused `QUERY_TIMEOUT_MS` constant
+- **Add**: `import { supabaseApi } from '@/lib/supabaseApi'`
+- **Replace** all `fetchFromSupabase(endpoint, token)` calls with `supabaseApi.get(endpoint, token)`
+- **Replace** all `fetchWithRetry(endpoint, token)` calls with `supabaseApi.getWithRetry(endpoint, token)`
+- **Replace** the raw `fetch()` in `acceptTerms` with `supabaseApi.post()` using a custom `Prefer: resolution=merge-duplicates` header
 
-## Files Changed
+Affected call sites:
+- `checkAccess` (line 81)
+- `checkAdminRole` (line 105)
+- `loadUserProfile` (line 121)
+- `acceptTerms` (lines 138-151) -- uses POST with custom Prefer header
+- `runQueries` in useEffect (lines 190-193) -- 4 parallel `fetchWithRetry` calls
+
+### 3. Update `src/hooks/useMessages.ts`
+
+- **Remove**: `fetchFromSupabase` (lines 44-62) -- the GET-only REST helper
+- **Remove**: `SUPABASE_ANON_KEY` from `@/config` import (keep `SUPABASE_URL` -- still needed for edge function URLs and inline REST calls that use specific Prefer headers)
+- **Add**: `import { supabaseApi } from '@/lib/supabaseApi'`
+- **Keep**: `fetchWithRetry` (lines 25-41) -- this one is different, it wraps raw `fetch()` for edge function calls (not REST API), returns a `Response` object for streaming, and handles specific HTTP status codes (429, 402, 403). It cannot be replaced by `supabaseApi`.
+- **Replace** `fetchFromSupabase` call at line 150 (`loadMessages`) with `supabaseApi.get()`
+- **Replace** `fetchFromSupabase` call at line 709 (usage check) with `supabaseApi.get()`
+
+The following raw `fetch()` calls in `useMessages.ts` stay as-is because they have specialized behavior:
+- Line 240: `rpc/increment_usage` -- RPC call (could use `supabaseApi.rpc` but has specific error handling flow)
+- Line 371: `fetchWithRetry` for edge function -- returns Response object for streaming
+- Lines 623-651: Chat session check/create -- inline REST with specific headers
+- Lines 657-694: Message save -- bulk POST with specific payload
+
+### 4. No changes to `src/lib/supabaseApi.ts` API surface
+
+The existing `get`, `post`, `patch`, `delete`, `rpc`, and `fetch` methods remain unchanged. Only the new `getWithRetry` method is added.
+
+## What stays the same
+
+- `useMessages.ts` `fetchWithRetry` (the edge function retry wrapper) -- different purpose, different signature
+- All inline `fetch()` calls for edge functions, RPC, and bulk inserts -- these have specialized headers, response handling, or return raw Response objects
+- SSE streaming code
+- Error handling patterns within each hook
+
+## Files changed
 
 | File | Change |
 |------|--------|
-| `src/lib/offlineQueue.ts` | New -- singleton queue with sessionStorage persistence |
-| `src/types/dashboard.types.ts` | Add `'queued'` to Message status union |
-| `src/hooks/useMessages.ts` | Queue on network error, register retry handler |
-| `src/components/shared/OfflineBanner.tsx` | Process queue on reconnection |
-| Chat message render component | Show queued indicator for pending messages |
+| `src/lib/supabaseApi.ts` | Add `getWithRetry` method |
+| `src/hooks/useAuth.ts` | Remove local helpers, use `supabaseApi.get` and `supabaseApi.getWithRetry` |
+| `src/hooks/useMessages.ts` | Remove local `fetchFromSupabase`, use `supabaseApi.get` for 2 call sites |
 
