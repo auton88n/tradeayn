@@ -412,16 +412,20 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       handleSend();
     }
   }, [handleSend]);
+  const resizeRafRef = useRef<number | null>(null);
   const handleTextareaChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Value comes from RTL textarea but content is LTR
     const value = e.target.value;
     setInputMessage(value);
     setShowPlaceholder(!value);
 
-    // Auto-resize with increased max-height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.max(44, Math.min(textareaRef.current.scrollHeight, 200)) + 'px';
+    // Defer auto-resize to next frame to avoid synchronous layout thrashing
+    const textarea = textareaRef.current;
+    if (textarea) {
+      if (resizeRafRef.current) cancelAnimationFrame(resizeRafRef.current);
+      resizeRafRef.current = requestAnimationFrame(() => {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.max(44, Math.min(textarea.scrollHeight, 200)) + 'px';
+      });
     }
   }, []);
   const handleFileClick = useCallback(() => {
