@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Lock, Loader2, Eye, EyeOff, AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
+import { SEO } from '@/components/shared/SEO';
 
 // Helper: race a promise against a timeout
 const withTimeout = <T,>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> => {
@@ -258,7 +259,8 @@ const ResetPassword = () => {
   // Loading state while validating
   if (isValidating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted p-4">
+        <SEO title="Reset Password - AYN" description="Reset your AYN account password." noIndex={true} />
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <div className="flex items-center justify-center mb-4">

@@ -1,6 +1,7 @@
 import { useSearchParams, Link } from "react-router-dom";
 import { CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SEO } from "@/components/shared/SEO";
 
 const ApprovalResult = () => {
   const [searchParams] = useSearchParams();
@@ -50,6 +51,7 @@ const ApprovalResult = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <SEO title="Approval Result - AYN" description="Access approval status for AYN." noIndex={true} />
       <div className="max-w-md w-full text-center space-y-8">
         {/* Logo */}
         <div className="space-y-2">
