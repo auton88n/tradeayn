@@ -145,9 +145,9 @@ export const DrawingSheet: React.FC<DrawingSheetProps> = ({
       <text
         x={width / 2} y={height / 2}
         textAnchor="middle" dominantBaseline="middle"
-        fill={DRAWING_COLORS.VERY_LIGHT_GRAY}
+        fill="#E0E0E0"
         fontFamily={FONTS.TITLE_BLOCK.family}
-        fontSize={24} fontWeight="700" opacity={0.15}
+        fontSize={20} fontWeight="700" opacity={0.06}
         transform={`rotate(-30, ${width / 2}, ${height / 2})`}
       >
         PRELIMINARY — NOT FOR CONSTRUCTION

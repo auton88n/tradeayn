@@ -69,7 +69,7 @@ export function formatDimension(feet: number): string {
 export const FONTS = {
   DIMENSION: {
     family: "'JetBrains Mono', 'Courier New', monospace",
-    size: 3.2,
+    size: 4.5,
     weight: '400',
   },
   ROOM_LABEL: {
@@ -79,7 +79,7 @@ export const FONTS = {
   },
   ROOM_AREA: {
     family: "'JetBrains Mono', 'Courier New', monospace",
-    size: 3.0,
+    size: 3.8,
     weight: '400',
   },
   TITLE_BLOCK: {
@@ -161,5 +161,5 @@ export const SHEET = {
   BORDER_WIDTH: 1.5,
   DIMENSION_OFFSET: 15, // Distance of dimension chains from walls
   EXTENSION_OVERSHOOT: 2,
-  TICK_SIZE: 2,
+  TICK_SIZE: 2.5,
 } as const;
