@@ -333,7 +333,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                 <RoomLabel
                   key={room.id}
                   x={ftToSvg(room.x + room.width / 2, scale)}
-                  y={ftToSvg(room.y + room.depth / 2, scale)}
+                  y={ftToSvg(room.y + room.depth * 0.6, scale)}
                   name={room.name}
                   widthFt={room.width}
                   depthFt={room.depth}
@@ -609,31 +609,42 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
 
             {/* ── Interior Room Dimensions ── */}
             {floor.rooms
-              .filter(r => !['closet', 'hallway', 'entry', 'stairwell'].includes(r.type))
               .map(room => {
                 const rx = ftToSvg(room.x, scale);
                 const ry = ftToSvg(room.y, scale);
                 const rw = ftToSvg(room.width, scale);
                 const rd = ftToSvg(room.depth, scale);
-                const inset = 2;
+                const inset = 1.5;
+                const tickLen = 1;
+                const dimFontSize = FONTS.NOTE.size * 1.2;
                 return (
                   <g key={`idim-${room.id}`}>
                     {/* Width dimension near top wall */}
                     <line x1={rx} y1={ry + inset} x2={rx + rw} y2={ry + inset}
                       stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
+                    {/* Tick marks for width */}
+                    <line x1={rx} y1={ry + inset - tickLen / 2} x2={rx} y2={ry + inset + tickLen / 2}
+                      stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
+                    <line x1={rx + rw} y1={ry + inset - tickLen / 2} x2={rx + rw} y2={ry + inset + tickLen / 2}
+                      stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
                     <text x={rx + rw / 2} y={ry + inset - 1} textAnchor="middle"
                       fill={DRAWING_COLORS.MEDIUM_GRAY} fontFamily={FONTS.NOTE.family}
-                      fontSize={FONTS.NOTE.size} fontWeight={FONTS.NOTE.weight}>
+                      fontSize={dimFontSize} fontWeight={FONTS.NOTE.weight}>
                       {formatDimension(room.width)}
                     </text>
                     {/* Depth dimension near left wall */}
                     <line x1={rx + inset} y1={ry} x2={rx + inset} y2={ry + rd}
                       stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
+                    {/* Tick marks for depth */}
+                    <line x1={rx + inset - tickLen / 2} y1={ry} x2={rx + inset + tickLen / 2} y2={ry}
+                      stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
+                    <line x1={rx + inset - tickLen / 2} y1={ry + rd} x2={rx + inset + tickLen / 2} y2={ry + rd}
+                      stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
                     <text x={rx + inset - 1} y={ry + rd / 2} textAnchor="middle"
                       dominantBaseline="middle"
                       transform={`rotate(-90, ${rx + inset - 1}, ${ry + rd / 2})`}
                       fill={DRAWING_COLORS.MEDIUM_GRAY} fontFamily={FONTS.NOTE.family}
-                      fontSize={FONTS.NOTE.size} fontWeight={FONTS.NOTE.weight}>
+                      fontSize={dimFontSize} fontWeight={FONTS.NOTE.weight}>
                       {formatDimension(room.depth)}
                     </text>
                   </g>
