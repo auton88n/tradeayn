@@ -82,30 +82,6 @@ const calculatorOptions: CalculatorOption[] = [
     gradient: 'from-rose-500 to-orange-500',
     available: true,
   },
-  {
-    id: 'parking',
-    title: 'Car Parking Designer',
-    shortTitle: 'Parking',
-    icon: Car,
-    gradient: 'from-indigo-500 to-violet-500',
-    available: true,
-  },
-  {
-    id: 'compliance',
-    title: 'Code Compliance Check',
-    shortTitle: 'Code Check',
-    icon: ClipboardCheck,
-    gradient: 'from-teal-500 to-cyan-500',
-    available: true,
-  },
-  {
-    id: 'drawings',
-    title: 'Architectural Drawings',
-    shortTitle: 'Drawings',
-    icon: Ruler,
-    gradient: 'from-slate-600 to-gray-800',
-    available: true,
-  },
 ];
 
 interface CalculatorSidebarProps {
