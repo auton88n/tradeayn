@@ -121,23 +121,23 @@ export const WindowSymbol: React.FC<WindowSymbolProps> = ({
     return (
       <g>
         <line x1={x} y1={y + lineOffset} x2={x + width} y2={y + lineOffset}
-          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
+          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.CUT_LINE} />
         <line x1={x} y1={y + thickness - lineOffset} x2={x + width} y2={y + thickness - lineOffset}
-          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
+          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.CUT_LINE} />
         {/* Center glass line */}
         <line x1={x} y1={y + thickness / 2} x2={x + width} y2={y + thickness / 2}
-          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />
+          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
       </g>
     );
   } else {
     return (
       <g>
         <line x1={x + lineOffset} y1={y} x2={x + lineOffset} y2={y + width}
-          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
+          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.CUT_LINE} />
         <line x1={x + thickness - lineOffset} y1={y} x2={x + thickness - lineOffset} y2={y + width}
-          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
+          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.CUT_LINE} />
         <line x1={x + thickness / 2} y1={y} x2={x + thickness / 2} y2={y + width}
-          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />
+          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
       </g>
     );
   }

@@ -191,17 +191,18 @@ CRITICAL RULES:
    - Closets: 2x4 minimum walk-in, 2x2 minimum reach-in
 5. MANDATORY DOORS:
    - EVERY room must have at least one door. No room should be inaccessible.
-   - Front entry door (36" wide, type "exterior") on the street-facing wall is MANDATORY.
+   - The FRONT ENTRY DOOR (36" wide, type "exterior") must be placed on the BOTTOM exterior wall (street-facing). This is the primary entrance for visitors. Always generate it. If an entry/foyer room exists, the front door opens into it.
    - Garage-to-house door (36" wide, type "garage") through mudroom/utility is REQUIRED when garage is present.
    - Every bedroom needs a door (32" wide) from the hallway.
    - Every bathroom needs a door (30" wide).
    - Master bedroom must have a direct door to the ensuite.
    - Kitchen to mudroom/laundry needs a door.
 6. MANDATORY WINDOWS:
-   - EVERY habitable room on an exterior wall MUST have windows.
-   - Living rooms: 2+ windows (48-72" wide each).
-   - Kitchen: 1+ window (36-48" wide), typically above sink.
-   - Bedrooms: 1+ egress window (minimum 24"W x 36"H).
+   - EVERY habitable room on an exterior wall MUST have windows. No habitable room's exterior wall should be windowless.
+   - Window width must be at least 36 inches for bedrooms, 48 inches for living rooms.
+   - Living rooms: 2+ windows (48-72" wide each). Living/dining rooms with large exterior walls need 3-4 windows.
+   - Kitchen: 1+ window (36-48" wide), typically above sink on exterior wall.
+   - Bedrooms: 1+ egress window (minimum 24"W x 36"H). Master bedroom: 2 windows.
    - Bathrooms: 1 smaller window (24"-36") if on exterior wall.
    - Generate windows on ALL exterior walls — no blank exterior walls on habitable rooms.
 7. DOOR SIZES: Exterior=36", Interior=32", Bathroom=30", Closet=24". All doors need clearance for swing arc.
@@ -209,6 +210,7 @@ CRITICAL RULES:
 9. WALL CONNECTIVITY: Walls must form closed perimeters for exterior and connect logically for interior. Every wall endpoint should connect to another wall (no floating walls).
 10. CODE COMPLIANCE: Minimum ceiling height 7'6" (typically 9'). Bedroom minimum area 70 sq ft with minimum dimension 7'. At least one bathroom per 3 bedrooms.
 11. STRUCTURAL: Align interior bearing walls with exterior walls where possible. Keep spans reasonable (<20ft without intermediate support).
+12. OPEN CONCEPT: When kitchen and living/dining are OPEN CONCEPT, do NOT generate a wall between them. The kitchen island or peninsula defines the space boundary. Open concept means kitchen, living, and dining share one continuous space with NO separating walls. Only generate interior walls where there is an actual room separation (hallway, bedrooms, bathrooms).
 
 When given a refinement instruction with a previous layout, modify only the relevant parts and maintain consistency.`;
 
