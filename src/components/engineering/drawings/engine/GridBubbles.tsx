@@ -22,20 +22,52 @@ interface GridBubblesProps {
   scale: DrawingScale;
 }
 
-function getGridPositions(rooms: GridBubblesProps['rooms'], axis: 'x' | 'y', totalSize: number): number[] {
-  const positions = new Set<number>();
-  positions.add(0);
-  positions.add(totalSize);
+function getGridPositions(
+  rooms: GridBubblesProps['rooms'],
+  axis: 'x' | 'y',
+  totalSize: number,
+  maxPositions: number,
+): number[] {
+  const raw = new Set<number>();
+  raw.add(0);
+  raw.add(totalSize);
   for (const room of rooms) {
     if (axis === 'x') {
-      positions.add(room.x);
-      positions.add(room.x + room.width);
+      raw.add(room.x);
+      raw.add(room.x + room.width);
     } else {
-      positions.add(room.y);
-      positions.add(room.y + room.depth);
+      raw.add(room.y);
+      raw.add(room.y + room.depth);
     }
   }
-  return Array.from(positions).sort((a, b) => a - b);
+  const sorted = Array.from(raw).sort((a, b) => a - b);
+
+  // Merge positions less than 4ft apart (keep the first of each cluster)
+  const merged: number[] = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] - merged[merged.length - 1] < 4) continue;
+    merged.push(sorted[i]);
+  }
+  // Always ensure the last position (building edge) is included
+  if (merged[merged.length - 1] !== totalSize) {
+    merged.push(totalSize);
+  }
+
+  // If still over cap, drop positions with smallest gaps to neighbors
+  while (merged.length > maxPositions) {
+    let minGap = Infinity;
+    let minIdx = 1; // never drop first or last
+    for (let i = 1; i < merged.length - 1; i++) {
+      const gap = Math.min(merged[i] - merged[i - 1], merged[i + 1] - merged[i]);
+      if (gap < minGap) {
+        minGap = gap;
+        minIdx = i;
+      }
+    }
+    merged.splice(minIdx, 1);
+  }
+
+  return merged;
 }
 
 export const GridBubbles: React.FC<GridBubblesProps> = ({
@@ -43,8 +75,8 @@ export const GridBubbles: React.FC<GridBubblesProps> = ({
 }) => {
   const r = 4;
   const offset = SHEET.DIMENSION_OFFSET * 1.5;
-  const xPositions = getGridPositions(rooms, 'x', totalWidthFt);
-  const yPositions = getGridPositions(rooms, 'y', totalDepthFt);
+  const xPositions = getGridPositions(rooms, 'x', totalWidthFt, 7);
+  const yPositions = getGridPositions(rooms, 'y', totalDepthFt, 6);
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   return (

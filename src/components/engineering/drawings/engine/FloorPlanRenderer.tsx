@@ -122,51 +122,190 @@ function filterOpenConceptWalls(
 
   if (kitchenRooms.length === 0 || livingRooms.length === 0) return walls;
 
+  const TOL = 1.5; // aggressive tolerance for boundary matching
+
+  // Build removal zones: bounding box between each kitchen-living pair
+  const removalZones: Array<{
+    minX: number; maxX: number; minY: number; maxY: number;
+  }> = [];
+
+  for (const kitchen of kitchenRooms) {
+    for (const living of livingRooms) {
+      const kRight = kitchen.x + kitchen.width;
+      const kBottom = kitchen.y + kitchen.depth;
+      const lRight = living.x + living.width;
+      const lBottom = living.y + living.depth;
+
+      // Check if rooms are within 2ft on at least one axis (adjacent or overlapping)
+      const xOverlap = Math.min(kRight, lRight) - Math.max(kitchen.x, living.x);
+      const yOverlap = Math.min(kBottom, lBottom) - Math.max(kitchen.y, living.y);
+      const xGap = Math.max(kitchen.x, living.x) - Math.min(kRight, lRight);
+      const yGap = Math.max(kitchen.y, living.y) - Math.min(kBottom, lBottom);
+
+      const horizontallyAdjacent = xOverlap > -2 && yGap <= 2;
+      const verticallyAdjacent = yOverlap > -2 && xGap <= 2;
+
+      if (horizontallyAdjacent || verticallyAdjacent) {
+        removalZones.push({
+          minX: Math.min(kitchen.x, living.x) - TOL,
+          maxX: Math.max(kRight, lRight) + TOL,
+          minY: Math.min(kitchen.y, living.y) - TOL,
+          maxY: Math.max(kBottom, lBottom) + TOL,
+        });
+      }
+    }
+  }
+
+  if (removalZones.length === 0) return walls;
+
   return walls.filter(wall => {
     if (wall.type === 'exterior') return true;
 
-    for (const kitchen of kitchenRooms) {
-      for (const living of livingRooms) {
-        const isHorizontal = Math.abs(wall.start_y - wall.end_y) < 0.1;
-        const isVertical = Math.abs(wall.start_x - wall.end_x) < 0.1;
+    const wallMinX = Math.min(wall.start_x, wall.end_x);
+    const wallMaxX = Math.max(wall.start_x, wall.end_x);
+    const wallMinY = Math.min(wall.start_y, wall.end_y);
+    const wallMaxY = Math.max(wall.start_y, wall.end_y);
+    const isHorizontal = Math.abs(wall.start_y - wall.end_y) < 0.1;
+    const isVertical = Math.abs(wall.start_x - wall.end_x) < 0.1;
 
-        if (isHorizontal) {
-          const wallY = wall.start_y;
-          const kBottom = kitchen.y + kitchen.depth;
-          const lTop = living.y;
-          const kTop = kitchen.y;
-          const lBottom = living.y + living.depth;
+    for (const zone of removalZones) {
+      // Wall must be inside the zone's span
+      if (wallMinX < zone.minX || wallMaxX > zone.maxX) continue;
+      if (wallMinY < zone.minY || wallMaxY > zone.maxY) continue;
 
-          if ((Math.abs(wallY - kBottom) < 0.5 && Math.abs(wallY - lTop) < 0.5) ||
-              (Math.abs(wallY - lBottom) < 0.5 && Math.abs(wallY - kTop) < 0.5)) {
-            const wallMinX = Math.min(wall.start_x, wall.end_x);
-            const wallMaxX = Math.max(wall.start_x, wall.end_x);
-            const overlapMin = Math.max(wallMinX, Math.max(kitchen.x, living.x));
-            const overlapMax = Math.min(wallMaxX, Math.min(kitchen.x + kitchen.width, living.x + living.width));
-            if (overlapMax > overlapMin) return false;
+      if (isHorizontal) {
+        const wallY = wall.start_y;
+        // Check if this wall sits between any kitchen-living pair on the Y axis
+        for (const kitchen of kitchenRooms) {
+          for (const living of livingRooms) {
+            const kBottom = kitchen.y + kitchen.depth;
+            const kTop = kitchen.y;
+            const lBottom = living.y + living.depth;
+            const lTop = living.y;
+            // Wall is between kitchen bottom and living top (or vice versa)
+            const betweenKL = wallY >= Math.min(kBottom, lTop) - TOL && wallY <= Math.max(kBottom, lTop) + TOL;
+            const betweenLK = wallY >= Math.min(lBottom, kTop) - TOL && wallY <= Math.max(lBottom, kTop) + TOL;
+            if (betweenKL || betweenLK) {
+              // Check perpendicular overlap
+              const overlapMin = Math.max(wallMinX, Math.max(kitchen.x, living.x));
+              const overlapMax = Math.min(wallMaxX, Math.min(kitchen.x + kitchen.width, living.x + living.width));
+              if (overlapMax > overlapMin - TOL) return false;
+            }
           }
         }
+      }
 
-        if (isVertical) {
-          const wallX = wall.start_x;
-          const kRight = kitchen.x + kitchen.width;
-          const lLeft = living.x;
-          const kLeft = kitchen.x;
-          const lRight = living.x + living.width;
-
-          if ((Math.abs(wallX - kRight) < 0.5 && Math.abs(wallX - lLeft) < 0.5) ||
-              (Math.abs(wallX - lRight) < 0.5 && Math.abs(wallX - kLeft) < 0.5)) {
-            const wallMinY = Math.min(wall.start_y, wall.end_y);
-            const wallMaxY = Math.max(wall.start_y, wall.end_y);
-            const overlapMin = Math.max(wallMinY, Math.max(kitchen.y, living.y));
-            const overlapMax = Math.min(wallMaxY, Math.min(kitchen.y + kitchen.depth, living.y + living.depth));
-            if (overlapMax > overlapMin) return false;
+      if (isVertical) {
+        const wallX = wall.start_x;
+        for (const kitchen of kitchenRooms) {
+          for (const living of livingRooms) {
+            const kRight = kitchen.x + kitchen.width;
+            const kLeft = kitchen.x;
+            const lRight = living.x + living.width;
+            const lLeft = living.x;
+            const betweenKL = wallX >= Math.min(kRight, lLeft) - TOL && wallX <= Math.max(kRight, lLeft) + TOL;
+            const betweenLK = wallX >= Math.min(lRight, kLeft) - TOL && wallX <= Math.max(lRight, kLeft) + TOL;
+            if (betweenKL || betweenLK) {
+              const overlapMin = Math.max(wallMinY, Math.max(kitchen.y, living.y));
+              const overlapMax = Math.min(wallMaxY, Math.min(kitchen.y + kitchen.depth, living.y + living.depth));
+              if (overlapMax > overlapMin - TOL) return false;
+            }
           }
         }
       }
     }
     return true;
   });
+}
+
+// ── Room label abbreviation helpers ─────────────────────────────────────────
+
+const ABBREVIATION_MAP: Array<[RegExp, string]> = [
+  [/walk[- ]?in/i, 'W/W'],
+  [/closet/i, 'CL'],
+  [/en[- ]?suite/i, 'ENS'],
+  [/powder/i, 'PWD'],
+  [/pantry/i, 'PAN'],
+  [/mudroom/i, 'MUD'],
+  [/laundry/i, 'LAU'],
+  [/mechanical|utility/i, 'MECH'],
+  [/hallway|hall/i, 'HALL'],
+  [/stairwell|stair/i, 'STAIR'],
+];
+
+function abbreviateRoomName(name: string): string {
+  for (const [pattern, abbrev] of ABBREVIATION_MAP) {
+    if (pattern.test(name)) return abbrev;
+  }
+  return name;
+}
+
+// ── Living room window injection ────────────────────────────────────────────
+
+function injectLivingRoomWindows(
+  windows: WindowData[],
+  rooms: FloorPlanLayout['floors'][0]['rooms'],
+  walls: WallData[],
+  totalWidth: number,
+  totalDepth: number,
+): WindowData[] {
+  const livingRooms = rooms.filter(r =>
+    r.type === 'living' || r.name.toLowerCase().includes('living'));
+  if (livingRooms.length === 0) return windows;
+
+  const result = [...windows];
+  let injectedIdx = 0;
+
+  for (const room of livingRooms) {
+    const edges: Array<{ axis: 'x' | 'y'; value: number; start: number; end: number; wallId: string }> = [];
+    const rRight = room.x + room.width;
+    const rBottom = room.y + room.depth;
+
+    // Check which room edges are on building exterior
+    if (Math.abs(room.x) < 0.5) {
+      // Left exterior wall (vertical, x≈0)
+      const wallId = walls.find(w => w.type === 'exterior' && Math.abs(w.start_x) < 0.5 && Math.abs(w.end_x) < 0.5)?.id || '';
+      if (wallId) edges.push({ axis: 'x', value: 0, start: room.y, end: rBottom, wallId });
+    }
+    if (Math.abs(rRight - totalWidth) < 0.5) {
+      const wallId = walls.find(w => w.type === 'exterior' && Math.abs(w.start_x - totalWidth) < 0.5 && Math.abs(w.end_x - totalWidth) < 0.5)?.id || '';
+      if (wallId) edges.push({ axis: 'x', value: totalWidth, start: room.y, end: rBottom, wallId });
+    }
+    if (Math.abs(room.y) < 0.5) {
+      const wallId = walls.find(w => w.type === 'exterior' && Math.abs(w.start_y) < 0.5 && Math.abs(w.end_y) < 0.5)?.id || '';
+      if (wallId) edges.push({ axis: 'y', value: 0, start: room.x, end: rRight, wallId });
+    }
+    if (Math.abs(rBottom - totalDepth) < 0.5) {
+      const wallId = walls.find(w => w.type === 'exterior' && Math.abs(w.start_y - totalDepth) < 0.5 && Math.abs(w.end_y - totalDepth) < 0.5)?.id || '';
+      if (wallId) edges.push({ axis: 'y', value: totalDepth, start: room.y, end: rBottom, wallId });
+    }
+
+    for (const edge of edges) {
+      // Check if windows already exist on this edge within the room's span
+      const hasWindow = result.some(w => {
+        if (w.wall_id !== edge.wallId) return false;
+        return w.position_along_wall >= edge.start && w.position_along_wall <= edge.end;
+      });
+      if (hasWindow) continue;
+
+      const span = edge.end - edge.start;
+      const winWidthIn = 48;
+      for (const frac of [1 / 3, 2 / 3]) {
+        const pos = edge.start + span * frac;
+        result.push({
+          id: `injected-win-living-${injectedIdx++}`,
+          wall_id: edge.wallId,
+          position_along_wall: pos,
+          width: winWidthIn,
+          height: 60,
+          sill_height: 24,
+          type: 'picture',
+        });
+      }
+    }
+  }
+
+  return result;
 }
 
 // ── Dimension chain offset constants (SVG units from building edge) ─────────
@@ -190,9 +329,13 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
   const processedData = useMemo(() => {
     if (!floor) return [];
     const filteredWalls = filterOpenConceptWalls(floor.walls, floor.rooms);
-    const segments = processWalls(filteredWalls, floor.doors, floor.windows, scale);
+    const augmentedWindows = injectLivingRoomWindows(
+      floor.windows, floor.rooms, filteredWalls,
+      layout.building.total_width_ft, layout.building.total_depth_ft,
+    );
+    const segments = processWalls(filteredWalls, floor.doors, augmentedWindows, scale);
     return resolveIntersections(segments);
-  }, [floor, scale]);
+  }, [floor, scale, layout.building.total_width_ft, layout.building.total_depth_ft]);
 
   // Margin: outermost dim chain (12) + text clearance (8) + sheet margin
   const margin = DIM_LEVEL_3 + SHEET.MARGIN + 8;
@@ -330,16 +473,27 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
         {showLabels && (
           <g id="layer-labels">
             {floor.rooms
-              .map(room => (
-                <RoomLabel
-                  key={room.id}
-                  x={ftToSvg(room.x + room.width / 2, scale)}
-                  y={ftToSvg(room.y + room.depth * 0.6, scale)}
-                  name={room.name}
-                  widthFt={room.width}
-                  depthFt={room.depth}
-                />
-              ))}
+              .map(room => {
+                const area = room.width * room.depth;
+                const isCompact = area < 40;
+                const showArea = area >= 80;
+                const displayName = area < 80
+                  ? abbreviateRoomName(room.name)
+                  : room.name;
+                return (
+                  <RoomLabel
+                    key={room.id}
+                    x={ftToSvg(room.x + room.width / 2, scale)}
+                    y={ftToSvg(room.y + room.depth * 0.6, scale)}
+                    name={displayName}
+                    widthFt={room.width}
+                    depthFt={room.depth}
+                    compact={isCompact}
+                    showDimensions={!isCompact}
+                    showArea={showArea}
+                  />
+                );
+              })}
           </g>
         )}
 
