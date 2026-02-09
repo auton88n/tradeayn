@@ -1,134 +1,92 @@
 
 
-# Fix 4 Floor Plan Issues: Open Concept, Grid Bubbles, Text Overlaps, Living Room Windows
+# Move "New" Button into Chat Input Toolbar
 
-## Overview
+## What Changes
 
-4 targeted fixes across 3 files. The open concept wall removal is the most critical -- the current filter has tolerance issues that let walls slip through.
-
----
-
-## Fix 1: Force Open Concept Wall Removal
-
-**File: `FloorPlanRenderer.tsx`** (lines 113-170)
-
-The current `filterOpenConceptWalls` checks if a wall sits exactly at the boundary between kitchen and living rooms (within 0.5ft tolerance). This fails when:
-- Rooms don't share an exact boundary (e.g., kitchen ends at y=18 but living starts at y=18.5)
-- The wall extends beyond the overlap zone (wall goes from x=0 to x=40 but rooms only overlap x=12 to x=26)
-- Multiple small walls make up the boundary instead of one long wall
-
-**Fix**: Rewrite the filter to be much more aggressive:
-- Increase tolerance from 0.5 to **1.5 feet** for boundary matching
-- Instead of requiring the wall to sit exactly at a room edge, check if the wall falls **anywhere between** the two rooms (within their combined bounding box)
-- For any interior/partition wall that runs between a kitchen-type room and a living/dining-type room with **any** horizontal or vertical overlap, remove it
-- Add a secondary pass: if any room's name/type contains "kitchen" AND another contains "living" or "dining", and they are within 2ft of each other on one axis, remove ALL interior walls in that gap zone
-
-This guarantees open concept works regardless of the AI's exact wall placement.
+Add a **"+ New"** pill-shaped button to the chat input toolbar that lets users start a new chat. When the message limit is reached, this button becomes visually prominent (highlighted, pulsing) to guide users to click it.
 
 ---
 
-## Fix 2: Reduce Grid Bubbles to 5-7 Horizontal, 4-6 Vertical
+## Change 1: Add "+ New" Button to Toolbar
 
-**File: `GridBubbles.tsx`** (lines 25-38)
+**File: `src/components/dashboard/ChatInput.tsx`**
 
-Replace `getGridPositions` with a smarter version that merges nearby positions:
+In the toolbar row (line 575-627), add a "+ New" button to the **left side** of the toolbar, before the file upload Plus button:
 
-- After collecting all room boundary positions, **merge positions that are less than 4ft apart** (keep the average of the merged group)
-- Always keep position 0 and the total size (building corners)
-- Cap at **7 positions max** for X-axis and **6 positions max** for Y-axis
-- If still over the cap after merging, keep only the positions with the largest gaps between them (prioritize structural grid lines, not minor partitions)
+- Renders as a pill-shaped button: `rounded-full border border-border px-3 py-1` with `Plus` icon + "New" text (matching the screenshot reference)
+- Calls `onStartNewChat` on click
+- Always visible in the toolbar (not just when limit is reached)
+- When `hasReachedLimit` is true: the button gets a highlighted style (e.g., `bg-foreground text-background` or a subtle pulse animation) to draw attention
+- When `hasReachedLimit` is false: the button has a muted/ghost style (`text-muted-foreground hover:bg-muted/60`)
 
-This reduces a typical 13-bubble layout to 6-7 bubbles that mark major structural intersections only.
+## Change 2: Simplify Limit Overlay
+
+**File: `src/components/dashboard/ChatInput.tsx`**
+
+Since the "+ New" button is now always in the toolbar, simplify the limit reached overlay (lines 418-434):
+
+- Remove the `Button` from inside the overlay (no longer needed -- the toolbar "+ New" button handles it)
+- Keep the overlay text message ("You exceeded your limit") as a subtle indicator
+- The overlay still blurs the input area, but users can see and click the toolbar "+ New" button (move it outside/below the overlay z-index, or make the toolbar sit above the overlay)
+- Actually, better approach: **remove the full-screen overlay entirely** and instead just disable the textarea + show a small inline message. The "+ New" button in the toolbar is the primary CTA.
+
+Revised approach for the limit state:
+- Disable the textarea (already done via `isDisabled`)
+- Show a small text above or inside the input area: "Limit reached -- start a new chat"
+- The "+ New" button in the toolbar pulses/highlights to be the clear action
+
+## Change 3: Toolbar Layout Adjustment
+
+The current toolbar left section has: Plus (file), Voice, Sound. The new layout:
+
+**Left section**: `[+ New pill]` `[file attach icon]` `[voice icon]` `[sound icon]`
+
+The "+ New" pill is visually distinct from the icon buttons -- it has text + border like the screenshot.
 
 ---
 
-## Fix 3: Smart Room Labels with Abbreviations and Overlap Prevention
+## Technical Details
 
-**File: `ArchitecturalSymbols.tsx`** (lines 342-392, `RoomLabel` component)
-
-Add a new prop `compact` to `RoomLabel`:
-- When `compact={true}`: show ONLY the abbreviated name, skip dimensions and SF text
-- When `compact={false}` (default): show full name, dimensions, and SF as today
-
-**File: `FloorPlanRenderer.tsx`** (lines 329-344, room labels section)
-
-Add abbreviation logic before rendering labels:
+### New Button Markup (inside toolbar left `div`, before the file upload button)
 
 ```text
-Abbreviation map:
-- Names containing "closet" -> "CL"
-- Names containing "walk-in" or "walk in" -> "W/W"  
-- Names containing "ensuite" or "en-suite" -> "ENS"
-- Names containing "powder" -> "PWD"
-- Names containing "pantry" -> "PAN"
-- Names containing "mudroom" -> "MUD"
-- Names containing "laundry" -> "LAU"
-- Names containing "mechanical" or "utility" -> "MECH"
-- Names containing "hallway" or "hall" -> "HALL"
-- Names containing "stairwell" or "stair" -> "STAIR"
+<button
+  onClick={onStartNewChat}
+  disabled={!onStartNewChat}
+  className={cn(
+    "inline-flex items-center gap-1 px-3 py-1 rounded-full border text-xs sm:text-sm transition-all",
+    hasReachedLimit
+      ? "bg-foreground text-background border-foreground animate-pulse shadow-md"
+      : "border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+  )}
+>
+  <Plus className="w-3.5 h-3.5" />
+  <span>New</span>
+</button>
 ```
 
-Decision logic per room:
-1. Calculate room area in SF (`room.width * room.depth`)
-2. If area < 40 SF: use abbreviated name, set `compact={true}` (no dimensions/SF)
-3. If area < 80 SF: use abbreviated name, still show dimensions but skip SF
-4. If area >= 80 SF: use full name, show everything
+### Limit Overlay Simplification
 
-This prevents labels from overflowing small closets and utility rooms while keeping full detail on major rooms.
+Replace the current overlay (lines 418-434) with a simple inline banner above the textarea:
 
----
+```text
+{hasReachedLimit && !maintenanceActive && !creditsExhausted && (
+  <div className="px-4 pt-2 text-center">
+    <span className="text-xs text-muted-foreground">
+      Message limit reached - tap <strong>+ New</strong> to start a new chat
+    </span>
+  </div>
+)}
+```
 
-## Fix 4: Add Windows to Living Room Exterior Walls
-
-**File: `FloorPlanRenderer.tsx`** (lines 190-195, `processedData` useMemo)
-
-After the open concept wall filter but before `processWalls`, add a post-processing step that ensures living room exterior walls have windows:
-
-- Find the living room(s) in `floor.rooms`
-- For each exterior wall that borders the living room (wall runs along the room's edge on x=0, x=totalWidth, y=0, or y=totalDepth), check if any window already exists on that wall within the living room's span
-- If no window exists on that wall segment, **inject 2 windows** into the `floor.windows` array:
-  - Each window: 48" wide, positioned at 1/3 and 2/3 along the living room's wall span
-  - Type: "picture" for large living room windows
-  - Sill height: 24"
-  - Height: 60"
-- This runs client-side so it catches cases where the AI forgot to add windows
+This removes the blocking overlay so users can still see the toolbar and click "+ New".
 
 ---
 
-## Files Modified (3 total)
+## Files Modified (1)
 
 | File | Changes |
 |------|---------|
-| `FloorPlanRenderer.tsx` | Fix 1 (aggressive open concept filter), Fix 3 (label abbreviation logic), Fix 4 (inject living room windows) |
-| `GridBubbles.tsx` | Fix 2 (merge nearby positions, cap at 7/6) |
-| `ArchitecturalSymbols.tsx` | Fix 3 (add `compact` prop to RoomLabel) |
+| `ChatInput.tsx` | Add "+ New" pill button to toolbar left section, highlight when limit reached, replace blocking overlay with inline message |
 
----
-
-## Implementation Order
-
-1. `GridBubbles.tsx` -- Merge + cap grid positions (smallest change, big readability improvement)
-2. `ArchitecturalSymbols.tsx` -- Add `compact` prop to RoomLabel
-3. `FloorPlanRenderer.tsx` -- All three fixes (open concept, label abbreviations, living room windows)
-
----
-
-## Technical Notes
-
-### Open Concept Filter Rewrite
-The key change is moving from exact-boundary matching to zone-based matching. Instead of checking "is this wall at y=18 and does kitchen end at y=18 and living start at y=18?", the new logic checks "is this interior wall within the bounding box that spans from kitchen to living, with any overlap on the perpendicular axis?" This catches walls that the AI placed slightly off-grid.
-
-### Grid Bubble Merging Algorithm
-```text
-1. Collect all positions [0, 4, 6, 10, 14, 18, 22, 24, 26, 30, 34, 38, 42]
-2. Sort ascending
-3. Walk through: if gap to previous kept position < 4ft, skip (merge into previous)
-4. Result: [0, 6, 14, 22, 30, 38, 42] = 7 positions
-5. If still > 7, drop positions with smallest gaps to neighbors
-```
-
-### Label Sizing
-At 1:48 scale, a 40 SF room (e.g., 5'x8' closet) is about 32x51 SVG units. A full 3-line label (name + dims + SF) needs ~15 SVG units height. An abbreviated single-line label needs ~5 SVG units. The 40 SF threshold ensures labels fit their rooms.
-
-### Living Room Window Injection
-Windows are injected into the mutable copy of `floor.windows` before passing to `processWalls`. Each injected window gets a unique ID (`injected-win-living-{index}`). The wall_id is matched by finding the exterior wall that runs along the living room's exterior edge. If no matching wall_id is found (rare edge case), the injection is skipped for that edge.
