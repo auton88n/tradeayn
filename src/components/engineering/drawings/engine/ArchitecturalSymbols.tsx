@@ -347,11 +347,39 @@ interface RoomLabelProps {
   name: string;
   widthFt: number;
   depthFt: number;
+  compact?: boolean;     // true = name only, no dims/SF
+  showDimensions?: boolean; // false = skip dims line
+  showArea?: boolean;      // false = skip SF line
 }
 
-export const RoomLabel: React.FC<RoomLabelProps> = ({ x, y, name, widthFt, depthFt }) => {
+export const RoomLabel: React.FC<RoomLabelProps> = ({
+  x, y, name, widthFt, depthFt,
+  compact = false,
+  showDimensions = true,
+  showArea = true,
+}) => {
   const area = Math.round(widthFt * depthFt);
   const dimText = `${formatDimension(widthFt)} × ${formatDimension(depthFt)}`;
+
+  if (compact) {
+    // Single line: abbreviated name only
+    return (
+      <g>
+        <text
+          x={x} y={y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill={DRAWING_COLORS.BLACK}
+          fontFamily={FONTS.ROOM_LABEL.family}
+          fontSize={FONTS.ROOM_LABEL.size * 0.85}
+          fontWeight={FONTS.ROOM_LABEL.weight}
+          letterSpacing="0.5"
+        >
+          {name.toUpperCase()}
+        </text>
+      </g>
+    );
+  }
 
   return (
     <g>
@@ -367,26 +395,30 @@ export const RoomLabel: React.FC<RoomLabelProps> = ({ x, y, name, widthFt, depth
       >
         {name.toUpperCase()}
       </text>
-      <text
-        x={x} y={y + 2}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill={DRAWING_COLORS.MEDIUM_GRAY}
-        fontFamily={FONTS.ROOM_AREA.family}
-        fontSize={FONTS.ROOM_AREA.size}
-      >
-        {dimText}
-      </text>
-      <text
-        x={x} y={y + 5.5}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill={DRAWING_COLORS.MEDIUM_GRAY}
-        fontFamily={FONTS.ROOM_AREA.family}
-        fontSize={FONTS.ROOM_AREA.size}
-      >
-        {area} SF
-      </text>
+      {showDimensions && (
+        <text
+          x={x} y={y + 2}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill={DRAWING_COLORS.MEDIUM_GRAY}
+          fontFamily={FONTS.ROOM_AREA.family}
+          fontSize={FONTS.ROOM_AREA.size}
+        >
+          {dimText}
+        </text>
+      )}
+      {showArea && (
+        <text
+          x={x} y={y + 5.5}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill={DRAWING_COLORS.MEDIUM_GRAY}
+          fontFamily={FONTS.ROOM_AREA.family}
+          fontSize={FONTS.ROOM_AREA.size}
+        >
+          {area} SF
+        </text>
+      )}
     </g>
   );
 };
