@@ -1,108 +1,103 @@
 
 
-# PropertySection with "Do You Have a Lot?" Toggle
+# Fix Floor Plan Drawing Quality -- Overlaps, Details, and Layout
 
-## Overview
+## Problems Identified from Screenshot
 
-Create `PropertySection.tsx` as part of the new Configure Wizard. It has two modes controlled by a toggle at the top:
+Looking at the generated floor plan, there are several visible issues:
 
-- **"Yes, I have a lot"** -- Full property form with lot dimensions, setbacks, street direction, driveway, features
-- **"Not yet -- just exploring"** -- Minimal form with only front-facing direction preference and optional view preference
+1. **Wall overlaps at corners and T-junctions** -- walls overlap each other creating dark blobs at intersections instead of clean joins
+2. **Door swings overlapping walls and room content** -- door arcs extend into adjacent rooms and clip through walls
+3. **Fixture placement conflicts** -- furniture/fixtures overlap with doors, walls, or each other
+4. **Stair symbol rendering issues** -- the X-pattern and tread lines are dense and visually cluttered
+5. **Labels overlapping elements** -- room labels collide with fixtures and dimension lines
+6. **Dimension chain clutter** -- too many redundant dimension lines at small intervals creating visual noise
+7. **Missing common-sense layout** -- rooms appear placed without logical flow (e.g., garage should connect through mudroom, not directly to living)
 
-## Component Structure
+## Root Causes
 
-### Toggle at Top
+### 1. Wall Intersection Engine (`wallGeometry.ts`)
+The `resolveIntersections` function uses a simple endpoint-matching approach that doesn't handle cases where:
+- The AI generates walls with slightly misaligned endpoints (off by fractions of a foot)
+- Through-walls at T-junctions don't get properly trimmed -- the butting wall extends into the through-wall creating overlap
+- The tolerance (0.5 SVG units) is too tight for the coordinate rounding the AI produces
 
-A styled two-option toggle (using chip/pill buttons, not a Switch) centered at the top of the section:
+### 2. Door Swing Rendering (`ArchitecturalSymbols.tsx`)
+- Door swings always extend downward (for horizontal walls) or rightward (for vertical walls) regardless of which room the door should swing INTO
+- No collision detection -- arcs can swing through adjacent walls
+- The `DoorSymbol` doesn't account for the side of the wall the swing should go to
 
-```text
-[ Yes, I have a lot ]  [ Not yet -- just exploring ]
-```
+### 3. AI-Generated Layout Quality
+- The system prompt has rules but the AI still generates suboptimal layouts
+- No post-processing validation on the client side to catch and fix common issues
 
-Default selection: **"Not yet -- just exploring"** (most users won't have lot info)
+## Fix Plan
 
-### Mode: "Just Exploring" (Default)
+### Fix 1: Improve Wall Intersection Resolution (`wallGeometry.ts`)
 
-Only two fields shown:
+**Changes:**
+- Increase endpoint matching tolerance from 0.5 to 1.0 SVG units
+- Round endpoint keys more coarsely to catch near-misses from AI coordinates
+- Fix `miterLCorner` to check wall direction before extending (currently assumes extension direction incorrectly for some orientations)
+- Fix `handleTJunction` to correctly identify which face of the through-wall the butting wall meets, based on the butting wall's approach direction
+- Add a deduplication pass to remove walls that are nearly identical (same start/end within tolerance)
 
-1. **Front of house direction** -- "Which direction would you like the front of your house to face?"
-   - 4 pill buttons: North / South / East / West
-   - Optional (can be left unselected)
-   - Helper text: "This helps AYN plan sunlight in your rooms"
+### Fix 2: Improve Door Swing Direction (`ArchitecturalSymbols.tsx`)
 
-2. **View preference** (optional)
-   - "Is there a direction you'd love views toward?"
-   - Same 4 direction pills + "No preference" option
+**Changes:**
+- Add a `swingDirection` prop ("inward" | "outward") to `DoorSymbol` to control which side of the wall the arc swings to
+- Default swing direction: INTO the room (away from hallways/public areas)
+- For horizontal walls: swing can go up or down (currently always down)
+- For vertical walls: swing can go left or right (currently always right)
+- Update `FloorPlanRenderer` to pass swing direction based on room adjacency
 
-### Mode: "I Have a Lot"
+### Fix 3: Filter Redundant Dimension Lines (`FloorPlanRenderer.tsx`)
 
-Full form with these groups:
+**Changes:**
+- Skip Level 1 (detail) dimension segments shorter than 2 feet
+- Skip Level 2 (room) segments that duplicate Level 1 segments
+- Merge Level 1 segments that are within 1 foot of each other
+- Only show interior room dimensions for rooms larger than 60 SF (skip closets, tiny utility rooms)
 
-**Lot Dimensions**
-- Lot shape: 4 pill buttons (Rectangle / Square / L-shaped / Irregular)
-- Lot width (ft): number input, placeholder "e.g., 60"
-- Lot depth (ft): number input, placeholder "e.g., 120"
+### Fix 4: Prevent Fixture-Door Overlap (`RoomFixtures.tsx`)
 
-**Street & Orientation**
-- Street direction: 4 pill buttons (North / South / East / West) -- "Which side of your lot faces the street?"
-- Driveway location: 3 pill buttons (Left / Right / Center)
+**Changes:**
+- Add padding awareness: fixtures should respect a clearance zone around the room edges where doors typically sit
+- For bedrooms: position bed centered but offset from the door wall
+- For bathrooms: position toilet away from the door swing zone
+- Add a minimum room size check per fixture (already exists but thresholds need tuning)
 
-**Setbacks**
-- Toggle: "Use local defaults" (on) / "Enter manually" (off)
-- When manual: 4 number inputs in a 2x2 grid -- Front, Rear, Left Side, Right Side (in feet)
-- Default values: Front 25, Rear 20, Left 5, Right 5
+### Fix 5: Improve Stair Symbol (`ArchitecturalSymbols.tsx`)
 
-**Lot Features** (all optional toggles/selectors)
-- Trees to preserve: Yes / No toggle
-- Slope: 3 pills (Flat / Gentle / Steep)
-- View direction: 4 direction pills + "None"
-- Neighbor proximity: Per-side selector (Left: Close/Medium/Far, Right: Close/Medium/Far)
+**Changes:**
+- Reduce tread line count -- show every other tread line instead of every one
+- Make the X-pattern (floor void indicator) lighter weight and only show it in the upper portion
+- Add outline rectangle for the stair footprint for clarity
 
-## Props Interface
+### Fix 6: Strengthen AI System Prompt (`generate-floor-plan-layout/index.ts`)
 
-```text
-interface PropertyData {
-  has_specific_lot: boolean;
-  // Lot dimensions (only when has_specific_lot)
-  lot_shape?: 'rectangle' | 'square' | 'l-shaped' | 'irregular';
-  lot_width_ft?: number;
-  lot_depth_ft?: number;
-  // Orientation
-  street_direction?: 'north' | 'south' | 'east' | 'west';
-  preferred_front_direction?: 'north' | 'south' | 'east' | 'west';
-  driveway_location?: 'left' | 'right' | 'center';
-  // Setbacks
-  use_default_setbacks?: boolean;
-  setbacks?: { front: number; rear: number; left: number; right: number };
-  // Features
-  trees_to_preserve?: boolean;
-  slope?: 'flat' | 'gentle' | 'steep';
-  view_direction?: 'north' | 'south' | 'east' | 'west' | 'none';
-  neighbor_proximity?: { left: string; right: string };
-}
+**Changes to system prompt:**
+- Add explicit wall coordinate rules: "All wall endpoints must land on exact foot or half-foot values. Round all coordinates to the nearest 0.5 feet."
+- Add door position validation: "Door position_along_wall must be at least 2 feet from the wall start and 2 feet from the wall end."
+- Add explicit instruction: "Do NOT place overlapping walls. Each interior wall boundary should appear exactly once."
+- Strengthen the room adjacency enforcement with specific coordinate examples
 
-interface PropertySectionProps {
-  data: PropertyData;
-  onChange: (data: PropertyData) => void;
-}
-```
+## Files Modified
 
-## UI Patterns
+| File | Changes |
+|------|---------|
+| `src/components/engineering/drawings/engine/wallGeometry.ts` | Increase tolerance, fix miter/T-junction logic, add wall dedup |
+| `src/components/engineering/drawings/engine/ArchitecturalSymbols.tsx` | Add swing direction support to DoorSymbol, reduce stair line density |
+| `src/components/engineering/drawings/engine/FloorPlanRenderer.tsx` | Filter small dimensions, improve fixture clearance, pass door swing direction |
+| `src/components/engineering/drawings/engine/RoomFixtures.tsx` | Add door-clearance padding to fixture placement |
+| `supabase/functions/generate-floor-plan-layout/index.ts` | Strengthen coordinate rounding and wall dedup rules in system prompt |
 
-- Uses the same pill button pattern as `DrawingRequestForm` (rounded-full buttons with active/inactive states)
-- Uses `InputSection` wrapper for collapsible sub-groups within the section
-- Number inputs use the existing `Input` component with type="number"
-- Toggle for "use local defaults" uses the existing `Switch` component
-- Framer Motion `AnimatePresence` for smooth show/hide of mode-specific fields
+## Build Order
 
-## File
-
-| File | Action |
-|------|--------|
-| `src/components/engineering/drawings/configure/PropertySection.tsx` | Create |
-| `src/components/engineering/drawings/configure/types.ts` | Create (includes PropertyData + other config types needed later) |
-
-## Types File
-
-The `types.ts` file will include `PropertyData` plus the full `DesignConfiguration` interface (with property as one field) so other sections can import from the same place. Property-specific types are defined first; remaining section types use placeholder interfaces that will be filled in when those sections are built.
+1. Wall geometry fixes (wallGeometry.ts) -- fixes the most visible overlapping issue
+2. Door swing direction (ArchitecturalSymbols.tsx + FloorPlanRenderer.tsx) -- fixes door arcs going wrong way
+3. Dimension line cleanup (FloorPlanRenderer.tsx) -- reduces visual clutter
+4. Stair symbol improvement (ArchitecturalSymbols.tsx) -- cleaner stair rendering
+5. Fixture clearance (RoomFixtures.tsx) -- prevents furniture-door overlap
+6. AI prompt improvements (edge function) -- better layouts from the source
 
