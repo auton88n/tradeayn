@@ -51,28 +51,45 @@ export interface Point {
 export interface WallSegment {
   wallId: string;
   type: WallData['type'];
-  // Four corners of the wall rectangle (in SVG units)
   topLeft: Point;
   topRight: Point;
   bottomLeft: Point;
   bottomRight: Point;
-  // Centerline endpoints (SVG units)
   start: Point;
   end: Point;
-  // Half-thickness in SVG units
   halfThickness: number;
-  // Is wall horizontal or vertical?
   orientation: 'horizontal' | 'vertical';
-  // Openings cut into this wall
   openings: Array<{
     type: 'door' | 'window';
     data: DoorData | WindowData;
-    startOffset: number; // SVG units from wall start
-    width: number;       // SVG units
+    startOffset: number;
+    width: number;
   }>;
 }
 
 // ── Core Functions ──────────────────────────────────────────────────────────
+
+/** Remove near-duplicate walls (same start/end within tolerance) */
+function deduplicateWalls(walls: WallData[], toleranceFt: number = 0.5): WallData[] {
+  const result: WallData[] = [];
+  for (const wall of walls) {
+    const isDup = result.some(existing => {
+      const sameDirection =
+        Math.abs(existing.start_x - wall.start_x) < toleranceFt &&
+        Math.abs(existing.start_y - wall.start_y) < toleranceFt &&
+        Math.abs(existing.end_x - wall.end_x) < toleranceFt &&
+        Math.abs(existing.end_y - wall.end_y) < toleranceFt;
+      const reversed =
+        Math.abs(existing.start_x - wall.end_x) < toleranceFt &&
+        Math.abs(existing.start_y - wall.end_y) < toleranceFt &&
+        Math.abs(existing.end_x - wall.start_x) < toleranceFt &&
+        Math.abs(existing.end_y - wall.start_y) < toleranceFt;
+      return sameDirection || reversed;
+    });
+    if (!isDup) result.push(wall);
+  }
+  return result;
+}
 
 /** Convert raw wall data to WallSegments in SVG coordinates */
 export function processWalls(
@@ -81,7 +98,10 @@ export function processWalls(
   windows: WindowData[],
   scale: DrawingScale = DEFAULT_SCALE
 ): WallSegment[] {
-  const segments: WallSegment[] = walls.map(wall => {
+  // Deduplicate walls first
+  const uniqueWalls = deduplicateWalls(walls);
+
+  const segments: WallSegment[] = uniqueWalls.map(wall => {
     const startX = ftToSvg(wall.start_x, scale);
     const startY = ftToSvg(wall.start_y, scale);
     const endX = ftToSvg(wall.end_x, scale);
@@ -155,18 +175,15 @@ export function processWalls(
 
 /**
  * Find junctions where walls meet and extend/trim walls for clean intersections.
- * This modifies the wall corners in-place to produce mitered L-corners and
- * properly trimmed T-junctions.
+ * Uses coarser rounding for endpoint matching to handle AI coordinate imprecision.
  */
 export function resolveIntersections(segments: WallSegment[]): WallSegment[] {
-  const TOLERANCE = 0.5; // SVG units
-
-  // Build endpoint index: for each endpoint, find all walls that share it
+  // Build endpoint index with coarser rounding (÷5 instead of ÷10) for tolerance ~1.0 SVG units
   const endpointMap = new Map<string, Array<{ segment: WallSegment; endType: 'start' | 'end' }>>();
 
   for (const seg of segments) {
-    const startKey = `${Math.round(seg.start.x * 10)},${Math.round(seg.start.y * 10)}`;
-    const endKey = `${Math.round(seg.end.x * 10)},${Math.round(seg.end.y * 10)}`;
+    const startKey = `${Math.round(seg.start.x * 5)},${Math.round(seg.start.y * 5)}`;
+    const endKey = `${Math.round(seg.end.x * 5)},${Math.round(seg.end.y * 5)}`;
 
     if (!endpointMap.has(startKey)) endpointMap.set(startKey, []);
     endpointMap.get(startKey)!.push({ segment: seg, endType: 'start' });
@@ -178,59 +195,58 @@ export function resolveIntersections(segments: WallSegment[]): WallSegment[] {
   // Process junctions
   for (const [, connected] of endpointMap) {
     if (connected.length === 2) {
-      // L-corner or collinear: extend both walls to meet at outer corner
       const [a, b] = connected;
       if (a.segment.orientation !== b.segment.orientation) {
         miterLCorner(a.segment, a.endType, b.segment, b.endType);
       }
     } else if (connected.length === 3) {
-      // T-junction: find the through-wall and trim the butting wall
       handleTJunction(connected);
     }
-    // 4-way intersections: walls already overlap correctly when corners are extended
   }
 
   return segments;
 }
 
-/** Extend two perpendicular walls to meet at a mitered L-corner */
+/** Extend two perpendicular walls to meet at a mitered L-corner.
+ *  Direction-aware: checks which end of each wall is at the junction. */
 function miterLCorner(
   segA: WallSegment, endA: 'start' | 'end',
   segB: WallSegment, endB: 'start' | 'end'
 ): void {
-  // For an L-corner, the horizontal wall extends into the vertical wall's thickness
-  // and vice versa. This creates a clean filled corner.
-
   const hSeg = segA.orientation === 'horizontal' ? segA : segB;
   const vSeg = segA.orientation === 'horizontal' ? segB : segA;
   const hEnd = segA.orientation === 'horizontal' ? endA : endB;
   const vEnd = segA.orientation === 'horizontal' ? endB : endA;
 
-  // Extend horizontal wall into vertical wall's thickness
-  if (hEnd === 'end' || (hEnd === 'start' && hSeg.start.x > hSeg.end.x)) {
-    // Extend right
-    hSeg.topRight.x += vSeg.halfThickness;
-    hSeg.bottomRight.x += vSeg.halfThickness;
+  // Determine which end of the horizontal wall is at the junction
+  const hJunctionX = hEnd === 'start' ? hSeg.start.x : hSeg.end.x;
+  const hOtherX = hEnd === 'start' ? hSeg.end.x : hSeg.start.x;
+  const extendsRight = hJunctionX >= hOtherX; // junction is at the right end
+
+  if (extendsRight) {
+    hSeg.topRight.x = Math.max(hSeg.topRight.x, hSeg.topRight.x + vSeg.halfThickness);
+    hSeg.bottomRight.x = Math.max(hSeg.bottomRight.x, hSeg.bottomRight.x + vSeg.halfThickness);
   } else {
-    // Extend left
-    hSeg.topLeft.x -= vSeg.halfThickness;
-    hSeg.bottomLeft.x -= vSeg.halfThickness;
+    hSeg.topLeft.x = Math.min(hSeg.topLeft.x, hSeg.topLeft.x - vSeg.halfThickness);
+    hSeg.bottomLeft.x = Math.min(hSeg.bottomLeft.x, hSeg.bottomLeft.x - vSeg.halfThickness);
   }
 
-  // Extend vertical wall into horizontal wall's thickness
-  if (vEnd === 'end' || (vEnd === 'start' && vSeg.start.y > vSeg.end.y)) {
-    // Extend down
-    vSeg.bottomLeft.y += hSeg.halfThickness;
-    vSeg.bottomRight.y += hSeg.halfThickness;
+  // Determine which end of the vertical wall is at the junction
+  const vJunctionY = vEnd === 'start' ? vSeg.start.y : vSeg.end.y;
+  const vOtherY = vEnd === 'start' ? vSeg.end.y : vSeg.start.y;
+  const extendsDown = vJunctionY >= vOtherY; // junction is at the bottom end
+
+  if (extendsDown) {
+    vSeg.bottomLeft.y = Math.max(vSeg.bottomLeft.y, vSeg.bottomLeft.y + hSeg.halfThickness);
+    vSeg.bottomRight.y = Math.max(vSeg.bottomRight.y, vSeg.bottomRight.y + hSeg.halfThickness);
   } else {
-    // Extend up
-    vSeg.topLeft.y -= hSeg.halfThickness;
-    vSeg.topRight.y -= hSeg.halfThickness;
+    vSeg.topLeft.y = Math.min(vSeg.topLeft.y, vSeg.topLeft.y - hSeg.halfThickness);
+    vSeg.topRight.y = Math.min(vSeg.topRight.y, vSeg.topRight.y - hSeg.halfThickness);
   }
 }
 
-/** Handle a T-junction: the through-wall continues, butting wall stops at its face.
- *  Direction-aware: determines which face of the through-wall the butting wall should trim to. */
+/** Handle a T-junction: the through-wall continues, butting wall trims to through-wall face.
+ *  Direction-aware: determines which face based on approach direction. */
 function handleTJunction(
   connected: Array<{ segment: WallSegment; endType: 'start' | 'end' }>
 ): void {
@@ -247,22 +263,23 @@ function handleTJunction(
     throughWalls = vert;
     buttingWall = horiz[0];
   } else {
-    return; // Ambiguous, skip
+    return;
   }
 
   const tSeg = throughWalls[0].segment;
   const bSeg = buttingWall.segment;
   const bEnd = buttingWall.endType;
 
+  // Determine butting wall's approach direction
   if (bSeg.orientation === 'vertical') {
-    // Butting wall is vertical, through-wall is horizontal
-    // Determine if butting wall approaches from above or below
-    const buttCenter = bEnd === 'end' ? bSeg.end.y : bSeg.start.y;
-    const throughCenter = tSeg.start.y;
-    
-    if (buttCenter >= throughCenter) {
-      // Butting wall comes from above (its end/start is at/below through-wall)
-      // Trim to top face of through-wall
+    // Through-wall is horizontal; butting wall is vertical
+    // Figure out if butting wall approaches from above or below
+    const bOtherY = bEnd === 'end' ? bSeg.start.y : bSeg.end.y;
+    const bJunctionY = bEnd === 'end' ? bSeg.end.y : bSeg.start.y;
+    const comesFromAbove = bOtherY < bJunctionY;
+
+    if (comesFromAbove) {
+      // Wall comes down from above → trim bottom to top face of through-wall
       if (bEnd === 'end') {
         bSeg.bottomLeft.y = tSeg.topLeft.y;
         bSeg.bottomRight.y = tSeg.topLeft.y;
@@ -271,7 +288,7 @@ function handleTJunction(
         bSeg.topRight.y = tSeg.topLeft.y;
       }
     } else {
-      // Butting wall comes from below — trim to bottom face
+      // Wall comes up from below → trim top to bottom face of through-wall
       if (bEnd === 'end') {
         bSeg.bottomLeft.y = tSeg.bottomLeft.y;
         bSeg.bottomRight.y = tSeg.bottomLeft.y;
@@ -281,12 +298,13 @@ function handleTJunction(
       }
     }
   } else {
-    // Butting wall is horizontal, through-wall is vertical
-    const buttCenter = bEnd === 'end' ? bSeg.end.x : bSeg.start.x;
-    const throughCenter = tSeg.start.x;
-    
-    if (buttCenter >= throughCenter) {
-      // Butting wall comes from left — trim to left face
+    // Through-wall is vertical; butting wall is horizontal
+    const bOtherX = bEnd === 'end' ? bSeg.start.x : bSeg.end.x;
+    const bJunctionX = bEnd === 'end' ? bSeg.end.x : bSeg.start.x;
+    const comesFromLeft = bOtherX < bJunctionX;
+
+    if (comesFromLeft) {
+      // Wall comes from left → trim right edge to left face of through-wall
       if (bEnd === 'end') {
         bSeg.topRight.x = tSeg.topLeft.x;
         bSeg.bottomRight.x = tSeg.topLeft.x;
@@ -295,7 +313,7 @@ function handleTJunction(
         bSeg.bottomLeft.x = tSeg.topLeft.x;
       }
     } else {
-      // Butting wall comes from right — trim to right face
+      // Wall comes from right → trim left edge to right face of through-wall
       if (bEnd === 'end') {
         bSeg.topRight.x = tSeg.topRight.x;
         bSeg.bottomRight.x = tSeg.topRight.x;
@@ -309,15 +327,12 @@ function handleTJunction(
 
 /**
  * Generate SVG path data for a wall segment, with openings cut out.
- * Returns an array of path segments (one continuous wall may be split by openings).
  */
 export function wallToSvgPaths(segment: WallSegment): string[] {
   if (segment.openings.length === 0) {
-    // Simple rectangle
     return [rectToPath(segment.topLeft, segment.topRight, segment.bottomRight, segment.bottomLeft)];
   }
 
-  // Sort openings by position along wall
   const sorted = [...segment.openings].sort((a, b) => a.startOffset - b.startOffset);
   const paths: string[] = [];
 
@@ -332,7 +347,6 @@ export function wallToSvgPaths(segment: WallSegment): string[] {
       const openEnd = openStart + opening.width;
 
       if (openStart > currentX) {
-        // Wall segment before this opening
         paths.push(
           `M ${currentX},${y1} L ${openStart},${y1} L ${openStart},${y2} L ${currentX},${y2} Z`
         );
@@ -340,7 +354,6 @@ export function wallToSvgPaths(segment: WallSegment): string[] {
       currentX = openEnd;
     }
 
-    // Wall segment after last opening
     const wallEndX = segment.topRight.x;
     if (currentX < wallEndX) {
       paths.push(
@@ -348,7 +361,6 @@ export function wallToSvgPaths(segment: WallSegment): string[] {
       );
     }
   } else {
-    // Vertical wall
     const wallStartY = segment.topLeft.y;
     const x1 = segment.topLeft.x;
     const x2 = segment.topRight.x;
@@ -383,8 +395,7 @@ function rectToPath(tl: Point, tr: Point, br: Point, bl: Point): string {
 }
 
 /**
- * Get the position and dimensions of an opening in SVG coordinates,
- * for placing door/window symbols.
+ * Get the position and dimensions of an opening in SVG coordinates.
  */
 export function getOpeningPosition(
   segment: WallSegment,

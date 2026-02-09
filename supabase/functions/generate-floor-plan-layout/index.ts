@@ -442,6 +442,25 @@ Before returning, verify ALL of the following:
 ADDITIONAL RULES
 ═══════════════════════════════════════════════════════════════════════
 
+COORDINATE PRECISION (CRITICAL):
+- All wall endpoints must land on exact foot or half-foot values (e.g. 0, 0.5, 1, 1.5, ...). Round ALL coordinates to the nearest 0.5 feet.
+- Room x, y, width, depth must also be on 0.5-foot increments.
+- Do NOT use fractional values like 12.333 or 7.8 — snap to 0.5-foot grid.
+
+WALL DEDUPLICATION (CRITICAL):
+- Do NOT place overlapping walls. Each interior wall boundary should appear exactly once.
+- If two rooms share a wall, generate ONE wall segment for that boundary, not two.
+- Check every wall you generate against existing walls — if a wall already covers that boundary, skip it.
+
+DOOR POSITION RULES:
+- Door position_along_wall must be at least 2 feet from the wall start AND at least 2 feet from the wall end.
+- Never place a door within 1 foot of a wall corner — leave space for the frame and swing clearance.
+
+ROOM ADJACENCY ENFORCEMENT:
+- Garage MUST connect to Mudroom or Utility — NEVER directly to Living, Dining, or Kitchen.
+- Kitchen MUST be adjacent to Dining (shared wall or open concept).
+- Bedrooms MUST be accessed via Hallway — NEVER through another bedroom.
+
 OPEN CONCEPT (CRITICAL): NEVER generate ANY interior wall between kitchen and living/dining rooms. The kitchen island is the ONLY separator. Generate kitchen, living, and dining as separate rooms that are adjacent but do NOT place a wall on their shared boundary.
 
 COORDINATES: All room positions (x,y) in feet from building origin (0,0) at top-left. Walls reference start/end points in feet. All walls axis-aligned (horizontal or vertical only).

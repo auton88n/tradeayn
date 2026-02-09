@@ -105,9 +105,11 @@ export const BathroomFixtures: React.FC<FixtureProps & { isEnsuite?: boolean }> 
   const pad = 1;
 
   // Toilet — 18"W × 28"D (tank 18"×8", bowl 14"×18" ellipse)
+  // Position away from door zones: offset from bottom-left corner with clearance
+  const doorClearance = clamp(realIn(36), width * 0.3, 0); // 36" door swing zone
   const toiletW = clamp(realIn(18), width * 0.4, pad);
   const toiletH = clamp(realIn(28), depth * 0.4, pad);
-  const toiletX = x + pad;
+  const toiletX = x + pad + doorClearance * 0.3; // offset from left wall
   const toiletY = y + depth - toiletH - pad;
   const tankH = clamp(realIn(8), toiletH * 0.4, 0);
   const bowlRx = clamp(realIn(7), toiletW * 0.45, 0);
@@ -175,10 +177,12 @@ export const BedroomFixtures: React.FC<FixtureProps & { isMaster?: boolean }> = 
   x, y, width, depth, isMaster = false,
 }) => {
   // King bed 76"×80", Queen bed 60"×80"
+  // Bed centered but offset from door wall (assume door on bottom wall)
+  const doorClearancePad = 3; // SVG units clearance from door zone
   const bedW = isMaster ? clamp(realIn(76), width * 0.7, 3) : clamp(realIn(60), width * 0.6, 3);
   const bedH = isMaster ? clamp(realIn(80), depth * 0.6, 3) : clamp(realIn(80), depth * 0.55, 3);
   const bedX = x + width / 2 - bedW / 2;
-  const bedY = y + depth * 0.35;
+  const bedY = y + depth * 0.25; // Push bed toward top wall, away from door
   const pillowW = clamp(realIn(20), bedW * 0.42, 0);
   const pillowH = clamp(realIn(6), bedH * 0.12, 0);
   const nightstandS = clamp(realIn(18), 3, 0); // 18" × 18" nightstands
