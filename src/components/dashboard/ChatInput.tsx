@@ -414,24 +414,14 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             </motion.div>}
         </AnimatePresence>
 
-        {/* Limit reached overlay */}
-        <AnimatePresence>
-          {hasReachedLimit && !maintenanceActive && !creditsExhausted && <motion.div initial={{
-          opacity: 0
-        }} animate={{
-          opacity: 1
-        }} exit={{
-          opacity: 0
-        }} className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-20 rounded-2xl">
-            <p className="text-sm text-muted-foreground">
-              you exceeded your limit open new chat
-            </p>
-              {onStartNewChat && <Button onClick={onStartNewChat} size="sm" className="gap-2">
-                  <MessageSquarePlus className="w-4 h-4" />
-                  New Chat
-                </Button>}
-            </motion.div>}
-        </AnimatePresence>
+        {/* Limit reached inline banner */}
+        {hasReachedLimit && !maintenanceActive && !creditsExhausted && (
+          <div className="px-4 pt-2 text-center">
+            <span className="text-xs text-muted-foreground">
+              Message limit reached — tap <strong>+ New</strong> to start a new chat
+            </span>
+          </div>
+        )}
 
         {/* Credits exhausted overlay */}
         <AnimatePresence>
@@ -575,6 +565,21 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         <div className="grid grid-cols-3 items-center px-2 sm:px-3 py-1.5 sm:py-2 border-t border-border/30 bg-muted/20">
           {/* Left: Action buttons */}
           <div className="flex items-center gap-0.5 sm:gap-2">
+            {/* + New pill button */}
+            <button
+              onClick={onStartNewChat}
+              disabled={!onStartNewChat}
+              className={cn(
+                "inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full border text-xs sm:text-sm transition-all",
+                hasReachedLimit
+                  ? "bg-foreground text-background border-foreground animate-pulse shadow-md"
+                  : "border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              )}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New</span>
+            </button>
+
             <button onClick={handleFileClick} disabled={isDisabled || isUploading} className={cn("p-1.5 sm:p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed")}>
               <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
             </button>
