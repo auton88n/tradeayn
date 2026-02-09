@@ -122,7 +122,7 @@ export const PropertySection: React.FC<PropertySectionProps> = ({ data, onChange
       {/* Mode toggle */}
       <div className="flex items-center justify-center gap-2">
         {[
-          { val: true, label: 'Yes, I have a lot' },
+          { val: true, label: 'Yes, I have a property' },
           { val: false, label: 'Not yet — just exploring' },
         ].map((opt) => (
           <button
