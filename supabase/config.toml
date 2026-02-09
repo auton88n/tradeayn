@@ -189,3 +189,6 @@ verify_jwt = false
 
 [functions.analyze-floor-plan]
 verify_jwt = true
+
+[functions.generate-floor-plan-layout]
+verify_jwt = true
