@@ -35,6 +35,7 @@ interface CenterStageLayoutProps {
   onSendMessage: (content: string, file?: File | null) => Promise<void>;
   isTyping: boolean;
   isGeneratingDocument?: boolean;
+  isGeneratingFloorPlan?: boolean;
   documentType?: "pdf" | "excel" | null;
   isDisabled: boolean;
   selectedMode: AIMode;
@@ -95,6 +96,7 @@ export const CenterStageLayout = ({
   onSendMessage,
   isTyping,
   isGeneratingDocument = false,
+  isGeneratingFloorPlan = false,
   documentType = null,
   isDisabled,
   selectedMode,
@@ -270,7 +272,7 @@ export const CenterStageLayout = ({
     { x: -15, y: 8 },
   ];
 
-  const showThinking = isTyping || isGeneratingDocument;
+  const showThinking = isTyping || isGeneratingDocument || isGeneratingFloorPlan;
 
   // Cycle through suggestion cards with glances
   useEffect(() => {

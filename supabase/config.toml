@@ -192,3 +192,6 @@ verify_jwt = true
 
 [functions.generate-floor-plan-layout]
 verify_jwt = false
+
+[functions.render-floor-plan-svg]
+verify_jwt = false

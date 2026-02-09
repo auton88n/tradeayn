@@ -16,6 +16,13 @@ export function detectIntent(message: string): string {
     'créer excel', 'feuille excel', 'tableur', 'rapport sur', 'faire un rapport'
   ];
   
+  const floorPlanKeywords = [
+    'floor plan', 'house plan', 'home layout', 'design a house', 'design me a home',
+    'design a home', 'architectural drawing', 'home design', 'house design', 'design a floor plan',
+    'مخطط', 'تصميم بيت', 'تصميم منزل', 'رسم معماري', 'مخطط طابق', 'تصميم دار',
+    'plan de maison', "plan d'etage", 'concevoir une maison'
+  ];
+
   const engineeringKeywords = [
     'beam', 'column', 'foundation', 'slab', 'retaining wall', 'grading',
     'calculate', 'structural', 'load', 'stress', 'reinforcement', 'concrete',
@@ -27,6 +34,7 @@ export function detectIntent(message: string): string {
   const imageKeywords = ['generate image', 'create image', 'draw', 'picture of'];
 
   if (documentKeywords.some(kw => lower.includes(kw))) return 'document';
+  if (floorPlanKeywords.some(kw => lower.includes(kw))) return 'floor_plan';
   if (imageKeywords.some(kw => lower.includes(kw))) return 'image';
   if (fileKeywords.some(kw => lower.includes(kw))) return 'files';
   if (searchKeywords.some(kw => lower.includes(kw))) return 'search';

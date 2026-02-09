@@ -184,6 +184,7 @@ export interface UseMessagesReturn {
   messages: Message[];
   isTyping: boolean;
   isGeneratingDocument: boolean;
+  isGeneratingFloorPlan: boolean;
   documentType: 'pdf' | 'excel' | null;
   lastSuggestedEmotion: string | null;
   moodPattern: MoodPattern | null;
