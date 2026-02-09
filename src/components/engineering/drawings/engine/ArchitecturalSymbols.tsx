@@ -71,9 +71,8 @@ export const DoorSymbol: React.FC<DoorSymbolProps> = ({
             : `M ${tipX},${y + thickness} A ${radius},${radius} 0 0,1 ${hingeX},${y + thickness + radius}`
           }
           fill="none"
-          stroke={DRAWING_COLORS.MEDIUM_GRAY}
-          strokeWidth={LINE_WEIGHTS.DIMENSION}
-          strokeDasharray="2,1"
+          stroke={DRAWING_COLORS.BLACK}
+          strokeWidth={LINE_WEIGHTS.MEDIUM}
         />
       </g>
     );
@@ -92,9 +91,8 @@ export const DoorSymbol: React.FC<DoorSymbolProps> = ({
             : `M ${x + thickness},${tipY} A ${radius},${radius} 0 0,0 ${x + thickness + radius},${hingeY}`
           }
           fill="none"
-          stroke={DRAWING_COLORS.MEDIUM_GRAY}
-          strokeWidth={LINE_WEIGHTS.DIMENSION}
-          strokeDasharray="2,1"
+          stroke={DRAWING_COLORS.BLACK}
+          strokeWidth={LINE_WEIGHTS.MEDIUM}
         />
       </g>
     );
@@ -203,10 +201,29 @@ export const StairSymbol: React.FC<StairSymbolProps> = ({
   const arrowY = isVertical ? y + 2 : y + width / 2;
   const arrowX = isVertical ? x + width / 2 : x + 2;
 
+  // X pattern in stair well area (above break line — represents floor void)
+  const xLines: React.ReactElement[] = [];
+  if (isVertical) {
+    xLines.push(
+      <line key="x1" x1={x} y1={y + breakPos} x2={x + width} y2={y + run}
+        stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />,
+      <line key="x2" x1={x + width} y1={y + breakPos} x2={x} y2={y + run}
+        stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />
+    );
+  } else {
+    xLines.push(
+      <line key="x1" x1={x + breakPos} y1={y} x2={x + run} y2={y + width}
+        stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />,
+      <line key="x2" x1={x + breakPos} y1={y + width} x2={x + run} y2={y}
+        stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />
+    );
+  }
+
   return (
     <g>
       {lines}
       {breakLine}
+      {xLines}
       {/* UP/DN label */}
       <text
         x={x + width / 2} y={y + (isVertical ? run - 3 : width / 2)}

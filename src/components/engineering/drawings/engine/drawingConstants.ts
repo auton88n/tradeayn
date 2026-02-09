@@ -111,11 +111,20 @@ export const DASH_PATTERNS = {
 // ── SVG Hatch Pattern Definitions ───────────────────────────────────────────
 
 export const HATCH_PATTERNS = {
+  EXTERIOR_CROSS: {
+    id: 'hatch-exterior-cross',
+    width: 4,
+    height: 4,
+  },
+  INTERIOR: {
+    id: 'hatch-interior',
+    width: 5,
+    height: 5,
+  },
   CONCRETE: {
     id: 'hatch-concrete',
     width: 8,
     height: 8,
-    // Random dots pattern
     content: `<circle cx="2" cy="2" r="0.5" fill="#666"/>
       <circle cx="6" cy="5" r="0.4" fill="#666"/>
       <circle cx="4" cy="7" r="0.35" fill="#666"/>`,
@@ -124,21 +133,18 @@ export const HATCH_PATTERNS = {
     id: 'hatch-insulation',
     width: 12,
     height: 6,
-    // Wavy lines
     content: `<path d="M0,3 Q3,0 6,3 Q9,6 12,3" fill="none" stroke="#999" stroke-width="0.3"/>`,
   },
   EARTH: {
     id: 'hatch-earth',
     width: 6,
     height: 6,
-    // Diagonal lines
     content: `<line x1="0" y1="6" x2="6" y2="0" stroke="#999" stroke-width="0.3"/>`,
   },
   WOOD: {
     id: 'hatch-wood',
     width: 10,
     height: 4,
-    // Wood grain
     content: `<path d="M0,2 Q2.5,1 5,2 Q7.5,3 10,2" fill="none" stroke="#999" stroke-width="0.25"/>`,
   },
   BRICK: {
