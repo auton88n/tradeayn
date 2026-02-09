@@ -58,10 +58,17 @@ export const DrawingSheet: React.FC<DrawingSheetProps> = ({
       style={{ background: DRAWING_COLORS.WHITE, width: '100%', height: '100%' }}
     >
       {/* Sheet border */}
+      {/* Outer border — thick */}
       <rect
         x={borderMargin} y={borderMargin}
         width={width - borderMargin * 2} height={height - borderMargin * 2}
-        fill="none" stroke={DRAWING_COLORS.BLACK} strokeWidth={SHEET.BORDER_WIDTH}
+        fill="none" stroke={DRAWING_COLORS.BLACK} strokeWidth={3.0}
+      />
+      {/* Inner border — thin (double-border effect) */}
+      <rect
+        x={borderMargin + 2} y={borderMargin + 2}
+        width={width - borderMargin * 2 - 4} height={height - borderMargin * 2 - 4}
+        fill="none" stroke={DRAWING_COLORS.BLACK} strokeWidth={0.5}
       />
 
       {/* Inner content area */}
