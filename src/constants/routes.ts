@@ -9,6 +9,7 @@ export const ROUTES = {
   SUPPORT: '/support',
   PRICING: '/pricing',
   ENGINEERING: '/engineering',
+  DESIGN: '/design',
   ENGINEERING_GRADING: '/engineering/grading',
   ADMIN: '/admin',
   RESET_PASSWORD: '/reset-password',
