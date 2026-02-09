@@ -1,103 +1,130 @@
 
 
-# Fix Floor Plan Drawing Quality -- Overlaps, Details, and Layout
+# Embed Full Architectural Knowledge Base into AI System Prompt
 
-## Problems Identified from Screenshot
+## What This Does
 
-Looking at the generated floor plan, there are several visible issues:
+Instead of splitting work between AI and client code, we give the AI the complete knowledge base you provided -- all 6 parts -- so it generates perfectly proportioned, code-compliant floor plans with correct walls, doors, windows, and room relationships on the first try.
 
-1. **Wall overlaps at corners and T-junctions** -- walls overlap each other creating dark blobs at intersections instead of clean joins
-2. **Door swings overlapping walls and room content** -- door arcs extend into adjacent rooms and clip through walls
-3. **Fixture placement conflicts** -- furniture/fixtures overlap with doors, walls, or each other
-4. **Stair symbol rendering issues** -- the X-pattern and tread lines are dense and visually cluttered
-5. **Labels overlapping elements** -- room labels collide with fixtures and dimension lines
-6. **Dimension chain clutter** -- too many redundant dimension lines at small intervals creating visual noise
-7. **Missing common-sense layout** -- rooms appear placed without logical flow (e.g., garage should connect through mudroom, not directly to living)
+The current system prompt is ~470 lines and covers basics. The new prompt will be ~900 lines and include everything from your knowledge base:
 
-## Root Causes
+- Part 1: Design Patterns (privacy gradient, sunlight rules, intimacy zones, entry sequence, adjacency matrix)
+- Part 2: Drawing Standards (line types, weights, wall representation, symbols, dimensions, title block)
+- Part 3: Room Size Standards (exact min/typical/generous for every room type, kitchen work triangle, bathroom clearances)
+- Part 4: Construction Standards (wall thicknesses, all door sizes, all window sizes with sill heights, stair dimensions, ceiling heights)
+- Part 5: Building Proportion Rules (envelope ratios, room allocation percentages, SF by bedroom count)
+- Part 6: Architectural Style Guidelines (10+ styles with layout characteristics)
 
-### 1. Wall Intersection Engine (`wallGeometry.ts`)
-The `resolveIntersections` function uses a simple endpoint-matching approach that doesn't handle cases where:
-- The AI generates walls with slightly misaligned endpoints (off by fractions of a foot)
-- Through-walls at T-junctions don't get properly trimmed -- the butting wall extends into the through-wall creating overlap
-- The tolerance (0.5 SVG units) is too tight for the coordinate rounding the AI produces
+## Key Improvements Over Current Prompt
 
-### 2. Door Swing Rendering (`ArchitecturalSymbols.tsx`)
-- Door swings always extend downward (for horizontal walls) or rightward (for vertical walls) regardless of which room the door should swing INTO
-- No collision detection -- arcs can swing through adjacent walls
-- The `DoorSymbol` doesn't account for the side of the wall the swing should go to
+1. **Privacy Gradient** -- currently missing. New prompt teaches the AI that rooms go Public (front) to Private (back), with the exact sequence: Entry, Living/Dining, Kitchen, Hallway, Kids Bedrooms, Master Suite
 
-### 3. AI-Generated Layout Quality
-- The system prompt has rules but the AI still generates suboptimal layouts
-- No post-processing validation on the client side to catch and fix common issues
+2. **Sunlight Orientation** -- currently missing. New prompt includes the direction table (East=kitchen morning, South=living midday, West=dining evening, North=bathrooms/garage)
 
-## Fix Plan
+3. **Complete Adjacency Matrix** -- current prompt has basic rules. New prompt has the full 14-row adjacency table with MUST/SHOULD/MUST NOT relationships
 
-### Fix 1: Improve Wall Intersection Resolution (`wallGeometry.ts`)
+4. **Exact Room Sizes with Max Aspect Ratios** -- current prompt has sizes but no max aspect. New prompt adds the 1:1.3, 1:1.5 etc. limits per room type
 
-**Changes:**
-- Increase endpoint matching tolerance from 0.5 to 1.0 SVG units
-- Round endpoint keys more coarsely to catch near-misses from AI coordinates
-- Fix `miterLCorner` to check wall direction before extending (currently assumes extension direction incorrectly for some orientations)
-- Fix `handleTJunction` to correctly identify which face of the through-wall the butting wall meets, based on the butting wall's approach direction
-- Add a deduplication pass to remove walls that are nearly identical (same start/end within tolerance)
+5. **Full Door Size Table** -- current has basics. New adds bifold closet doors, pocket doors, sliding glass exact sizes, garage overhead doors
 
-### Fix 2: Improve Door Swing Direction (`ArchitecturalSymbols.tsx`)
+6. **Full Window Size Table with Sill Heights** -- current has ranges. New has exact per-room sill heights (kitchen=42", bathroom=48-60", bedroom=24-36") and egress requirements (5.7 SF opening, max 44" sill)
 
-**Changes:**
-- Add a `swingDirection` prop ("inward" | "outward") to `DoorSymbol` to control which side of the wall the arc swings to
-- Default swing direction: INTO the room (away from hallways/public areas)
-- For horizontal walls: swing can go up or down (currently always down)
-- For vertical walls: swing can go left or right (currently always right)
-- Update `FloorPlanRenderer` to pass swing direction based on room adjacency
+7. **Ceiling Height Variety** -- currently missing. New prompt teaches 9-10' for public, 8' for bedrooms, 7' min for baths
 
-### Fix 3: Filter Redundant Dimension Lines (`FloorPlanRenderer.tsx`)
+8. **Kitchen Work Triangle** -- more detail: 4-9' legs, 12-26' perimeter, no leg crosses walkway
 
-**Changes:**
-- Skip Level 1 (detail) dimension segments shorter than 2 feet
-- Skip Level 2 (room) segments that duplicate Level 1 segments
-- Merge Level 1 segments that are within 1 foot of each other
-- Only show interior room dimensions for rooms larger than 60 SF (skip closets, tiny utility rooms)
+9. **Back-to-back Plumbing** -- current has basic rule. New adds stacking rule for multi-story and specific plumbing wall requirements
 
-### Fix 4: Prevent Fixture-Door Overlap (`RoomFixtures.tsx`)
+10. **Entry Sequence** -- new: two entries (formal front + daily garage/mudroom), both must work independently
 
-**Changes:**
-- Add padding awareness: fixtures should respect a clearance zone around the room edges where doors typically sit
-- For bedrooms: position bed centered but offset from the door wall
-- For bathrooms: position toilet away from the door swing zone
-- Add a minimum room size check per fixture (already exists but thresholds need tuning)
+11. **Building Proportion Rules** -- new: room allocation percentages (30-40% public, 30-35% private, 10-15% service, 8-12% circulation), SF by bedroom count
 
-### Fix 5: Improve Stair Symbol (`ArchitecturalSymbols.tsx`)
+12. **Style-specific Guidelines** -- expanded from 8 styles to 11, with typical SF ranges
 
-**Changes:**
-- Reduce tread line count -- show every other tread line instead of every one
-- Make the X-pattern (floor void indicator) lighter weight and only show it in the upper portion
-- Add outline rectangle for the stair footprint for clarity
+## Post-Generation Validation (Client-Side)
 
-### Fix 6: Strengthen AI System Prompt (`generate-floor-plan-layout/index.ts`)
+Add a `layoutValidator.ts` that runs after the AI returns data, catching any remaining issues before rendering:
 
-**Changes to system prompt:**
-- Add explicit wall coordinate rules: "All wall endpoints must land on exact foot or half-foot values. Round all coordinates to the nearest 0.5 feet."
-- Add door position validation: "Door position_along_wall must be at least 2 feet from the wall start and 2 feet from the wall end."
-- Add explicit instruction: "Do NOT place overlapping walls. Each interior wall boundary should appear exactly once."
-- Strengthen the room adjacency enforcement with specific coordinate examples
+- Room overlap detection (no two rooms should intersect)
+- All rooms fit within building envelope
+- Room aspect ratios within limits
+- Total room area approximately matches target SF
+- Adjacency violations (garage next to bedroom, etc.)
+- Missing doors (every room needs at least one)
+- Wall endpoint alignment (snap to 0.5ft grid if AI drifted)
+
+This acts as a safety net -- the AI should produce correct output, but the validator catches edge cases.
+
+## Technical Changes
+
+### 1. Edge Function: Replace System Prompt (`supabase/functions/generate-floor-plan-layout/index.ts`)
+
+Replace the current `SYSTEM_PROMPT` with the complete knowledge base. The prompt structure will be:
+
+```text
+SECTION 1: DESIGN PATTERNS
+  1.1 Privacy Gradient
+  1.2 Indoor Sunlight (direction table)
+  1.3 Common Areas at Heart
+  1.4 Couple's Realm
+  1.5 Room of One's Own
+  1.6 Sequence of Sitting Spaces
+  1.7 Entrance Transition (street > porch > foyer > living)
+  1.8 Three-Zone Design (public/private/service)
+  1.9 Short Passages (hallway < 10% of SF)
+  1.10 Ceiling Height Variety
+  1.11 Kitchen Work Triangle (4-9' legs, 12-26' total)
+  1.12 Back-to-back Plumbing
+  1.13 Entry Sequence (front formal + daily garage)
+  1.14 Full Adjacency Matrix (14 pairs)
+
+SECTION 2: ROOM SIZE STANDARDS
+  Complete table with Min/Typical/Generous/Max Aspect for all room types
+  Kitchen work triangle details
+  Bathroom clearance rules
+
+SECTION 3: CONSTRUCTION STANDARDS
+  3.1 Wall thicknesses (exterior 6.5", interior 4.5", plumbing 6.5")
+  3.2 Full door size table (front 36", interior 32", bath 30", closet 24-30", sliding 72-96", garage overhead 96/192")
+  3.3 Full window size table with sill heights per room type
+  3.4 Stair dimensions (IRC + NBC)
+  3.5 Ceiling heights per room type
+
+SECTION 4: BUILDING PROPORTION RULES
+  4.1 Envelope aspect ratios
+  4.2 Room allocation percentages
+  4.3 SF by bedroom count table
+
+SECTION 5: ARCHITECTURAL STYLE GUIDELINES
+  11 styles with typical SF, layout, and character rules
+
+SECTION 6: GENERATION ALGORITHM (7 steps + 14-point validation)
+
+SECTION 7: COORDINATE + WALL RULES
+  0.5ft grid, wall dedup, door clearance, open concept
+```
+
+### 2. New File: Layout Validator (`src/components/engineering/drawings/engine/layoutValidator.ts`)
+
+Post-generation validation that runs before rendering:
+
+- `validateRoomOverlaps(rooms)` -- check no two rooms share interior area
+- `validateBuildingEnvelope(rooms, building)` -- all rooms within total_width x total_depth
+- `validateAspectRatios(rooms)` -- per room type limits
+- `validateAdjacency(rooms)` -- MUST NOT pairs aren't adjacent
+- `snapCoordinates(layout)` -- round all coordinates to nearest 0.5ft
+- `validateDoors(doors, walls, rooms)` -- every room accessible
+- Returns warnings array (non-blocking) and errors array (blocking)
+
+### 3. Updated Hook: Run Validator (`src/components/engineering/drawings/hooks/useDrawingGeneration.ts`)
+
+After receiving AI response, run validator. If errors found, auto-retry with refinement instruction describing the specific violations. If only warnings, render with console warnings.
 
 ## Files Modified
 
-| File | Changes |
-|------|---------|
-| `src/components/engineering/drawings/engine/wallGeometry.ts` | Increase tolerance, fix miter/T-junction logic, add wall dedup |
-| `src/components/engineering/drawings/engine/ArchitecturalSymbols.tsx` | Add swing direction support to DoorSymbol, reduce stair line density |
-| `src/components/engineering/drawings/engine/FloorPlanRenderer.tsx` | Filter small dimensions, improve fixture clearance, pass door swing direction |
-| `src/components/engineering/drawings/engine/RoomFixtures.tsx` | Add door-clearance padding to fixture placement |
-| `supabase/functions/generate-floor-plan-layout/index.ts` | Strengthen coordinate rounding and wall dedup rules in system prompt |
-
-## Build Order
-
-1. Wall geometry fixes (wallGeometry.ts) -- fixes the most visible overlapping issue
-2. Door swing direction (ArchitecturalSymbols.tsx + FloorPlanRenderer.tsx) -- fixes door arcs going wrong way
-3. Dimension line cleanup (FloorPlanRenderer.tsx) -- reduces visual clutter
-4. Stair symbol improvement (ArchitecturalSymbols.tsx) -- cleaner stair rendering
-5. Fixture clearance (RoomFixtures.tsx) -- prevents furniture-door overlap
-6. AI prompt improvements (edge function) -- better layouts from the source
+| File | Action |
+|------|--------|
+| `supabase/functions/generate-floor-plan-layout/index.ts` | Replace system prompt with full knowledge base |
+| `src/components/engineering/drawings/engine/layoutValidator.ts` | Create -- post-generation validation |
+| `src/components/engineering/drawings/hooks/useDrawingGeneration.ts` | Update -- run validator, auto-retry on errors |
 
