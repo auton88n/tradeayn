@@ -18,7 +18,7 @@ export const DrawingViewer: React.FC<DrawingViewerProps> = ({
   const [zoom, setZoom] = useState(1);
   const [showDimensions, setShowDimensions] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
-  const [showHatching, setShowHatching] = useState(true);
+  const [showFixtures, setShowFixtures] = useState(true);
   const [isPanning, setIsPanning] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const lastPos = useRef({ x: 0, y: 0 });
@@ -96,12 +96,12 @@ export const DrawingViewer: React.FC<DrawingViewerProps> = ({
             Labels
           </Button>
           <Button
-            variant={showHatching ? 'default' : 'outline'}
+            variant={showFixtures ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setShowHatching(!showHatching)}
+            onClick={() => setShowFixtures(!showFixtures)}
             className="text-xs"
           >
-            Hatch
+            Fixtures
           </Button>
         </div>
 
@@ -138,7 +138,7 @@ export const DrawingViewer: React.FC<DrawingViewerProps> = ({
               layout={layout}
               showDimensions={showDimensions}
               showLabels={showLabels}
-              showHatching={showHatching}
+              showFixtures={showFixtures}
             />
           </DrawingSheet>
         </div>

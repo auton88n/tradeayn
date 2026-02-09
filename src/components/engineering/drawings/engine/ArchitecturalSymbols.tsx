@@ -126,7 +126,7 @@ export const WindowSymbol: React.FC<WindowSymbolProps> = ({
           stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
         {/* Center glass line */}
         <line x1={x} y1={y + thickness / 2} x2={x + width} y2={y + thickness / 2}
-          stroke={DRAWING_COLORS.LIGHT_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
+          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />
       </g>
     );
   } else {
@@ -137,7 +137,7 @@ export const WindowSymbol: React.FC<WindowSymbolProps> = ({
         <line x1={x + thickness - lineOffset} y1={y} x2={x + thickness - lineOffset} y2={y + width}
           stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
         <line x1={x + thickness / 2} y1={y} x2={x + thickness / 2} y2={y + width}
-          stroke={DRAWING_COLORS.LIGHT_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
+          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />
       </g>
     );
   }
@@ -382,7 +382,7 @@ interface NorthArrowProps {
   size?: number;
 }
 
-export const NorthArrow: React.FC<NorthArrowProps> = ({ x, y, size = 12 }) => {
+export const NorthArrow: React.FC<NorthArrowProps> = ({ x, y, size = 16 }) => {
   const half = size / 2;
   return (
     <g>
