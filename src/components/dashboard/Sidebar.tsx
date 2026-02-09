@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Calculator, Monitor } from 'lucide-react';
+import { Plus, LogOut, Trash2, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Calculator, Monitor, Ruler } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
@@ -419,20 +419,32 @@ export const Sidebar = ({
                 Eng
               </Button>
               
-              {/* New Chat Button */}
+              {/* Design Studio Button */}
               <Button 
-                onClick={onNewChat} 
+                onClick={() => {
+                  if (isMobile) {
+                    toast({
+                      title: 'Larger Screen Required',
+                      description: 'Design tools require a tablet or desktop for the best experience.',
+                      action: (
+                        <Monitor className="w-5 h-5 text-violet-500" />
+                      ),
+                    });
+                  } else {
+                    navigate('/design');
+                  }
+                }}
                 className={cn(
-                  "flex-1 h-9 rounded-lg text-sm",
-                  "bg-foreground text-background",
-                  "hover:bg-foreground/90",
+                  "flex-1 h-9 rounded-lg gap-1.5",
+                  "bg-gradient-to-r from-violet-600 to-purple-600",
+                  "hover:from-violet-500 hover:to-purple-500",
+                  "text-white text-sm font-medium",
                   "transition-colors duration-150",
-                  "disabled:opacity-40"
-                )} 
-                disabled={!hasAccess}
+                  "border-0"
+                )}
               >
-                <Plus className="w-4 h-4 mr-1.5" />
-                New
+                <Ruler className="w-4 h-4" />
+                Design
               </Button>
             </div>
           </SidebarGroupContent>
