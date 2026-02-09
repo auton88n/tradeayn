@@ -313,6 +313,51 @@ const DIM_LEVEL_1 = 4;   // Detail segments (closest)
 const DIM_LEVEL_2 = 8;   // Room segments (middle)
 const DIM_LEVEL_3 = 12;  // Overall dimension (outermost)
 
+// ── Door swing direction inference ──────────────────────────────────────────
+
+/** Infer which side of the wall a door should swing toward.
+ *  Exterior doors swing inward (positive). Interior doors swing into the
+ *  smaller / more private room. */
+function inferSwingDirection(
+  segment: { orientation: 'horizontal' | 'vertical'; start: { x: number; y: number }; end: { x: number; y: number } },
+  opening: { startOffset: number; width: number },
+  rooms: FloorPlanLayout['floors'][0]['rooms'],
+  building: FloorPlanLayout['building'],
+): 'positive' | 'negative' {
+  // Find the door center in feet
+  const scale = DEFAULT_SCALE;
+  const isH = segment.orientation === 'horizontal';
+  const wallCenter = isH ? segment.start.y : segment.start.x;
+
+  // Find rooms on each side of this wall
+  const roomsAboveOrLeft: typeof rooms = [];
+  const roomsBelowOrRight: typeof rooms = [];
+
+  for (const room of rooms) {
+    if (isH) {
+      const roomBottom = ftToSvg(room.y + room.depth, scale);
+      const roomTop = ftToSvg(room.y, scale);
+      if (Math.abs(roomBottom - wallCenter) < 2) roomsAboveOrLeft.push(room);
+      if (Math.abs(roomTop - wallCenter) < 2) roomsBelowOrRight.push(room);
+    } else {
+      const roomRight = ftToSvg(room.x + room.width, scale);
+      const roomLeft = ftToSvg(room.x, scale);
+      if (Math.abs(roomRight - wallCenter) < 2) roomsAboveOrLeft.push(room);
+      if (Math.abs(roomLeft - wallCenter) < 2) roomsBelowOrRight.push(room);
+    }
+  }
+
+  // If one side has no rooms (exterior edge), swing inward (toward rooms)
+  if (roomsAboveOrLeft.length === 0 && roomsBelowOrRight.length > 0) return 'positive';
+  if (roomsBelowOrRight.length === 0 && roomsAboveOrLeft.length > 0) return 'negative';
+
+  // Swing into the smaller room (more private)
+  const areaAbove = roomsAboveOrLeft.reduce((s, r) => s + r.width * r.depth, 0);
+  const areaBelow = roomsBelowOrRight.reduce((s, r) => s + r.width * r.depth, 0);
+
+  return areaAbove <= areaBelow ? 'negative' : 'positive';
+}
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
@@ -388,7 +433,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
           })}
         </g>
 
-        {/* ── Door Symbols ───────────────────────────────── */}
+        {/* ── Door Symbols (direction-aware swing) ─────── */}
         <g id="layer-doors">
           {processedData.flatMap(segment =>
             segment.openings
@@ -396,6 +441,9 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
               .map(opening => {
                 const pos = getOpeningPosition(segment, opening);
                 const door = opening.data as DoorData;
+                // Determine swing direction: exterior doors swing inward (positive=into building),
+                // interior doors swing into the smaller/private room
+                const swingDir = inferSwingDirection(segment, opening, floor.rooms, layout.building);
                 return (
                   <DoorSymbol
                     key={door.id}
@@ -405,6 +453,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     thickness={pos.thickness}
                     swing={door.swing}
                     isHorizontalWall={segment.orientation === 'horizontal'}
+                    swingDirection={swingDir}
                   />
                 );
               })
@@ -507,7 +556,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
               return sortedX.slice(0, -1).map((xPos, i) => {
                 const nextX = sortedX[i + 1];
                 const span = nextX - xPos;
-                if (span < 1) return null;
+                if (span < 2) return null; // Skip segments < 2ft
                 return (
                   <DimensionLine
                     key={`dim-top-d-${i}`}
@@ -563,7 +612,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
               return sortedX.slice(0, -1).map((xPos, i) => {
                 const nextX = sortedX[i + 1];
                 const span = nextX - xPos;
-                if (span < 1) return null;
+                if (span < 2) return null;
                 return (
                   <DimensionLine
                     key={`dim-bot-d-${i}`}
@@ -617,7 +666,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
               return sortedY.slice(0, -1).map((yPos, i) => {
                 const nextY = sortedY[i + 1];
                 const span = nextY - yPos;
-                if (span < 1) return null;
+                if (span < 2) return null;
                 return (
                   <DimensionLine
                     key={`dim-left-d-${i}`}
@@ -671,7 +720,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
               return sortedY.slice(0, -1).map((yPos, i) => {
                 const nextY = sortedY[i + 1];
                 const span = nextY - yPos;
-                if (span < 1) return null;
+                if (span < 2) return null;
                 return (
                   <DimensionLine
                     key={`dim-right-d-${i}`}
@@ -751,8 +800,9 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
               return annotations;
             })()}
 
-            {/* ── Interior Room Dimensions ── */}
+            {/* ── Interior Room Dimensions (skip small rooms < 60 SF) ── */}
             {floor.rooms
+              .filter(room => room.width * room.depth >= 60)
               .map(room => {
                 const rx = ftToSvg(room.x, scale);
                 const ry = ftToSvg(room.y, scale);

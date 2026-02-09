@@ -21,15 +21,16 @@ interface DoorSymbolProps {
   thickness: number;   // Wall thickness in SVG units
   swing: 'left' | 'right' | 'double' | 'sliding';
   isHorizontalWall: boolean;
+  swingDirection?: 'positive' | 'negative'; // positive = down/right, negative = up/left
 }
 
 export const DoorSymbol: React.FC<DoorSymbolProps> = ({
   x, y, width, thickness, swing, isHorizontalWall,
+  swingDirection = 'positive',
 }) => {
   const radius = width;
 
   if (swing === 'sliding') {
-    // Sliding door: two parallel lines offset inside the wall
     if (isHorizontalWall) {
       const midY = y + thickness / 2;
       return (
@@ -53,49 +54,82 @@ export const DoorSymbol: React.FC<DoorSymbolProps> = ({
     }
   }
 
-  // Swing door: line (door panel) + arc (sweep)
+  // Swing door with direction-aware arc
   if (isHorizontalWall) {
     const hingeX = swing === 'left' ? x : x + width;
     const tipX = swing === 'left' ? x + width : x;
-    const arcY = y + thickness; // swing downward
 
-    return (
-      <g>
-        {/* Door panel line */}
-        <line x1={hingeX} y1={y + thickness} x2={tipX} y2={y + thickness}
-          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
-        {/* Swing arc */}
-        <path
-          d={swing === 'left'
-            ? `M ${tipX},${y + thickness} A ${radius},${radius} 0 0,0 ${hingeX},${y + thickness + radius}`
-            : `M ${tipX},${y + thickness} A ${radius},${radius} 0 0,1 ${hingeX},${y + thickness + radius}`
-          }
-          fill="none"
-          stroke={DRAWING_COLORS.BLACK}
-          strokeWidth={LINE_WEIGHTS.MEDIUM}
-        />
-      </g>
-    );
+    if (swingDirection === 'positive') {
+      // Swing downward (below wall)
+      const panelY = y + thickness;
+      return (
+        <g>
+          <line x1={hingeX} y1={panelY} x2={tipX} y2={panelY}
+            stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
+          <path
+            d={swing === 'left'
+              ? `M ${tipX},${panelY} A ${radius},${radius} 0 0,0 ${hingeX},${panelY + radius}`
+              : `M ${tipX},${panelY} A ${radius},${radius} 0 0,1 ${hingeX},${panelY + radius}`
+            }
+            fill="none" stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM}
+          />
+        </g>
+      );
+    } else {
+      // Swing upward (above wall)
+      const panelY = y;
+      return (
+        <g>
+          <line x1={hingeX} y1={panelY} x2={tipX} y2={panelY}
+            stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
+          <path
+            d={swing === 'left'
+              ? `M ${tipX},${panelY} A ${radius},${radius} 0 0,1 ${hingeX},${panelY - radius}`
+              : `M ${tipX},${panelY} A ${radius},${radius} 0 0,0 ${hingeX},${panelY - radius}`
+            }
+            fill="none" stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM}
+          />
+        </g>
+      );
+    }
   } else {
     // Vertical wall
     const hingeY = swing === 'left' ? y : y + width;
     const tipY = swing === 'left' ? y + width : y;
 
-    return (
-      <g>
-        <line x1={x + thickness} y1={hingeY} x2={x + thickness} y2={tipY}
-          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
-        <path
-          d={swing === 'left'
-            ? `M ${x + thickness},${tipY} A ${radius},${radius} 0 0,1 ${x + thickness + radius},${hingeY}`
-            : `M ${x + thickness},${tipY} A ${radius},${radius} 0 0,0 ${x + thickness + radius},${hingeY}`
-          }
-          fill="none"
-          stroke={DRAWING_COLORS.BLACK}
-          strokeWidth={LINE_WEIGHTS.MEDIUM}
-        />
-      </g>
-    );
+    if (swingDirection === 'positive') {
+      // Swing rightward
+      const panelX = x + thickness;
+      return (
+        <g>
+          <line x1={panelX} y1={hingeY} x2={panelX} y2={tipY}
+            stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
+          <path
+            d={swing === 'left'
+              ? `M ${panelX},${tipY} A ${radius},${radius} 0 0,1 ${panelX + radius},${hingeY}`
+              : `M ${panelX},${tipY} A ${radius},${radius} 0 0,0 ${panelX + radius},${hingeY}`
+            }
+            fill="none" stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM}
+          />
+        </g>
+      );
+    } else {
+      // Swing leftward
+      const panelX = x;
+      return (
+        <g>
+          <line x1={panelX} y1={hingeY} x2={panelX} y2={tipY}
+            stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
+          <path
+            d={swing === 'left'
+              ? `M ${panelX},${tipY} A ${radius},${radius} 0 0,0 ${panelX - radius},${hingeY}`
+              : `M ${panelX},${tipY} A ${radius},${radius} 0 0,1 ${panelX - radius},${hingeY}`
+            }
+            fill="none" stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM}
+          />
+        </g>
+      );
+    }
   }
 };
 
@@ -112,7 +146,6 @@ interface WindowSymbolProps {
 export const WindowSymbol: React.FC<WindowSymbolProps> = ({
   x, y, width, thickness, isHorizontalWall,
 }) => {
-  // Standard architectural window: two parallel lines inside wall break
   const lineOffset = thickness * 0.25;
 
   if (isHorizontalWall) {
@@ -122,7 +155,6 @@ export const WindowSymbol: React.FC<WindowSymbolProps> = ({
           stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.CUT_LINE} />
         <line x1={x} y1={y + thickness - lineOffset} x2={x + width} y2={y + thickness - lineOffset}
           stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.CUT_LINE} />
-        {/* Center glass line */}
         <line x1={x} y1={y + thickness / 2} x2={x + width} y2={y + thickness / 2}
           stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
       </g>
@@ -141,13 +173,13 @@ export const WindowSymbol: React.FC<WindowSymbolProps> = ({
   }
 };
 
-// ── Stair Symbol ────────────────────────────────────────────────────────────
+// ── Stair Symbol (improved: fewer treads, lighter X, outline box) ──────────
 
 interface StairSymbolProps {
   x: number;
   y: number;
-  width: number;     // SVG units
-  run: number;       // Total run in SVG units
+  width: number;
+  run: number;
   numRisers: number;
   direction: 'up' | 'down';
   isVertical?: boolean;
@@ -160,18 +192,19 @@ export const StairSymbol: React.FC<StairSymbolProps> = ({
   const breakPoint = Math.floor(numRisers / 2);
   const lines: React.ReactElement[] = [];
 
-  for (let i = 0; i <= breakPoint; i++) {
+  // Show every OTHER tread line for cleaner look
+  for (let i = 0; i <= breakPoint; i += 2) {
     if (isVertical) {
       const ty = y + i * treadDepth;
       lines.push(
         <line key={i} x1={x} y1={ty} x2={x + width} y2={ty}
-          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />
+          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.THIN} />
       );
     } else {
       const tx = x + i * treadDepth;
       lines.push(
         <line key={i} x1={tx} y1={y} x2={tx} y2={y + width}
-          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />
+          stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.THIN} />
       );
     }
   }
@@ -197,30 +230,29 @@ export const StairSymbol: React.FC<StairSymbolProps> = ({
     );
   }
 
-  // Direction arrow
-  const arrowY = isVertical ? y + 2 : y + width / 2;
-  const arrowX = isVertical ? x + width / 2 : x + 2;
-
-  // X pattern in stair well area (above break line — represents floor void)
+  // Lighter X pattern — thinner stroke, only in upper portion
   const xLines: React.ReactElement[] = [];
   if (isVertical) {
     xLines.push(
       <line key="x1" x1={x} y1={y + breakPos} x2={x + width} y2={y + run}
-        stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />,
+        stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />,
       <line key="x2" x1={x + width} y1={y + breakPos} x2={x} y2={y + run}
-        stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />
+        stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
     );
   } else {
     xLines.push(
       <line key="x1" x1={x + breakPos} y1={y} x2={x + run} y2={y + width}
-        stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />,
+        stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />,
       <line key="x2" x1={x + breakPos} y1={y + width} x2={x + run} y2={y}
-        stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.MEDIUM} />
+        stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
     );
   }
 
   return (
     <g>
+      {/* Outline rectangle for stair footprint */}
+      <rect x={x} y={y} width={isVertical ? width : run} height={isVertical ? run : width}
+        fill="none" stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.OUTLINE} />
       {lines}
       {breakLine}
       {xLines}
@@ -258,8 +290,8 @@ interface DimensionLineProps {
   y1: number;
   x2: number;
   y2: number;
-  value: number;        // in feet
-  offset?: number;      // perpendicular offset from the measured element
+  value: number;
+  offset?: number;
   side?: 'top' | 'bottom' | 'left' | 'right';
 }
 
@@ -278,20 +310,16 @@ export const DimensionLine: React.FC<DimensionLineProps> = ({
 
     return (
       <g>
-        {/* Extension lines */}
         <line x1={x1} y1={extStart} x2={x1} y2={dimY}
           stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.DIMENSION} />
         <line x1={x2} y1={extStart} x2={x2} y2={dimY}
           stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.DIMENSION} />
-        {/* Dimension line */}
         <line x1={x1} y1={dimY} x2={x2} y2={dimY}
           stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.DIMENSION} />
-        {/* Tick marks (45-degree slashes) */}
         <line x1={x1 - tickSize / 2} y1={dimY + tickSize / 2} x2={x1 + tickSize / 2} y2={dimY - tickSize / 2}
           stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.DIMENSION} />
         <line x1={x2 - tickSize / 2} y1={dimY + tickSize / 2} x2={x2 + tickSize / 2} y2={dimY - tickSize / 2}
           stroke={DRAWING_COLORS.BLACK} strokeWidth={LINE_WEIGHTS.DIMENSION} />
-        {/* Label */}
         <text
           x={midX} y={dimY - 1.5}
           textAnchor="middle"
@@ -305,7 +333,6 @@ export const DimensionLine: React.FC<DimensionLineProps> = ({
       </g>
     );
   } else {
-    // Vertical dimension
     const dimX = side === 'left' ? x1 - offset : x1 + offset;
     const midY = (y1 + y2) / 2;
     const extStart = side === 'left' ? x1 - extensionOvershoot : x1 + extensionOvershoot;
@@ -342,14 +369,14 @@ export const DimensionLine: React.FC<DimensionLineProps> = ({
 // ── Room Label ──────────────────────────────────────────────────────────────
 
 interface RoomLabelProps {
-  x: number;        // Center X
-  y: number;        // Center Y
+  x: number;
+  y: number;
   name: string;
   widthFt: number;
   depthFt: number;
-  compact?: boolean;     // true = name only, no dims/SF
-  showDimensions?: boolean; // false = skip dims line
-  showArea?: boolean;      // false = skip SF line
+  compact?: boolean;
+  showDimensions?: boolean;
+  showArea?: boolean;
 }
 
 export const RoomLabel: React.FC<RoomLabelProps> = ({
@@ -362,7 +389,6 @@ export const RoomLabel: React.FC<RoomLabelProps> = ({
   const dimText = `${formatDimension(widthFt)} × ${formatDimension(depthFt)}`;
 
   if (compact) {
-    // Single line: abbreviated name only
     return (
       <g>
         <text
@@ -437,7 +463,6 @@ export const NorthArrow: React.FC<NorthArrowProps> = ({ x, y, size = 16 }) => {
     <g>
       <circle cx={x} cy={y} r={half} fill="none" stroke={DRAWING_COLORS.BLACK}
         strokeWidth={LINE_WEIGHTS.OUTLINE} />
-      {/* Arrow pointing up */}
       <polygon
         points={`${x},${y - half + 2} ${x - 3},${y + 2} ${x},${y - 1} ${x + 3},${y + 2}`}
         fill={DRAWING_COLORS.BLACK}
