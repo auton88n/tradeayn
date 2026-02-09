@@ -176,11 +176,21 @@ const floorPlanToolSchema = {
 
 const SYSTEM_PROMPT = `You are a professional residential architect and space planner. Generate realistic, buildable floor plan layouts as structured JSON data.
 
-CRITICAL RULES:
+CRITICAL RULES (in priority order):
 1. ADJACENCY: Kitchen MUST be adjacent to dining room. Master bedroom AWAY from living areas. Bathrooms BACK-TO-BACK or STACKED for plumbing efficiency. Utility/laundry near exterior wall. Garage entry through mudroom or utility room, never directly into living areas.
-2. CIRCULATION: ALWAYS include a HALLWAY (minimum 3.5ft wide, type "hallway") connecting the open-concept living area to the bedroom wing. Bedroom doors must open FROM the hallway, not from other bedrooms. Room access chain: Front Entry -> Living/Dining -> Hallway -> Bedrooms + Bathrooms. Every room must be reachable. No dead-end circulation.
-3. WALL CONVENTIONS: Exterior walls = 2x6 (5.5" thick). Interior bearing walls = 2x4 (3.5" thick). Partition walls = 2x4 (3.5"). All walls must be axis-aligned (horizontal or vertical only).
-4. STANDARD SIZES:
+2. OPEN CONCEPT (CRITICAL): NEVER generate ANY interior wall between the kitchen room and the living/dining room. Not even a partial wall. The kitchen island or peninsula is the ONLY separator. If you generate a wall here, the layout is INVALID. Open concept means kitchen, living, and dining share one continuous space with NO separating walls. Only generate interior walls where there is an actual room separation (hallway, bedrooms, bathrooms). Generate the kitchen, living, and dining as separate rooms that are adjacent but do NOT place a wall on their shared boundary.
+3. CIRCULATION: ALWAYS include a HALLWAY (minimum 3.5ft wide, type "hallway") connecting the open-concept living area to the bedroom wing. Bedroom doors must open FROM the hallway, not from other bedrooms. Room access chain: Front Entry -> Living/Dining -> Hallway -> Bedrooms + Bathrooms. Every room must be reachable. No dead-end circulation.
+4. WALL CONVENTIONS: Exterior walls = 2x6 (5.5" thick). Interior bearing walls = 2x4 (3.5" thick). Partition walls = 2x4 (3.5"). All walls must be axis-aligned (horizontal or vertical only).
+5. MANDATORY FRONT ENTRY DOOR (NON-NEGOTIABLE): The FRONT ENTRY DOOR (36" wide, type "exterior") MUST be placed on the BOTTOM exterior wall (street-facing). This is the primary entrance for visitors. If you generate a layout without a front entry door on the bottom exterior wall, the layout is INVALID. Verify this before returning. If an entry/foyer room exists, the front door opens into it.
+6. MANDATORY WINDOWS (CRITICAL): EVERY habitable room on an exterior wall MUST have windows. No habitable room's exterior wall should be windowless.
+   - Window width: at least 36 inches for bedrooms, 48 inches for living rooms, 36 inches for kitchen.
+   - Living rooms: 3-4 windows (48-72" wide each) on ALL exterior walls the room touches. A living/dining room's right wall and bottom wall must both have windows.
+   - Kitchen: 1+ window (36-48" wide), typically above sink on exterior wall.
+   - Bedrooms: 1-2 egress windows (minimum 36"W x 36"H). Master bedroom: 2 windows minimum on its exterior walls.
+   - Bathrooms: 1 smaller window (24"-36") if on exterior wall.
+   - For rooms with more than 20ft of exterior wall, generate at minimum 1 window per 8ft of wall length.
+   - A 3-bedroom house should have 12-16 windows minimum total. COUNT your windows before returning.
+7. STANDARD SIZES:
    - Bedrooms: Master 14x16 min, Secondary 11x12 min, closet for each
    - Bathrooms: Full bath 5x8 min, Half bath 3x5 min, Ensuite 8x10
    - Kitchen: 10x12 min, ideally open to dining
@@ -189,28 +199,25 @@ CRITICAL RULES:
    - Garage: 12x22 single, 22x22 double
    - Hallways: 3.5ft minimum width
    - Closets: 2x4 minimum walk-in, 2x2 minimum reach-in
-5. MANDATORY DOORS:
+8. MANDATORY DOORS:
    - EVERY room must have at least one door. No room should be inaccessible.
-   - The FRONT ENTRY DOOR (36" wide, type "exterior") must be placed on the BOTTOM exterior wall (street-facing). This is the primary entrance for visitors. Always generate it. If an entry/foyer room exists, the front door opens into it.
    - Garage-to-house door (36" wide, type "garage") through mudroom/utility is REQUIRED when garage is present.
    - Every bedroom needs a door (32" wide) from the hallway.
    - Every bathroom needs a door (30" wide).
    - Master bedroom must have a direct door to the ensuite.
    - Kitchen to mudroom/laundry needs a door.
-6. MANDATORY WINDOWS:
-   - EVERY habitable room on an exterior wall MUST have windows. No habitable room's exterior wall should be windowless.
-   - Window width must be at least 36 inches for bedrooms, 48 inches for living rooms.
-   - Living rooms: 2+ windows (48-72" wide each). Living/dining rooms with large exterior walls need 3-4 windows.
-   - Kitchen: 1+ window (36-48" wide), typically above sink on exterior wall.
-   - Bedrooms: 1+ egress window (minimum 24"W x 36"H). Master bedroom: 2 windows.
-   - Bathrooms: 1 smaller window (24"-36") if on exterior wall.
-   - Generate windows on ALL exterior walls — no blank exterior walls on habitable rooms.
-7. DOOR SIZES: Exterior=36", Interior=32", Bathroom=30", Closet=24". All doors need clearance for swing arc.
-8. COORDINATES: All room positions (x,y) are in feet from building origin (0,0) at top-left. Walls reference start and end points in feet.
-9. WALL CONNECTIVITY: Walls must form closed perimeters for exterior and connect logically for interior. Every wall endpoint should connect to another wall (no floating walls).
-10. CODE COMPLIANCE: Minimum ceiling height 7'6" (typically 9'). Bedroom minimum area 70 sq ft with minimum dimension 7'. At least one bathroom per 3 bedrooms.
-11. STRUCTURAL: Align interior bearing walls with exterior walls where possible. Keep spans reasonable (<20ft without intermediate support).
-12. OPEN CONCEPT: When kitchen and living/dining are OPEN CONCEPT, do NOT generate a wall between them. The kitchen island or peninsula defines the space boundary. Open concept means kitchen, living, and dining share one continuous space with NO separating walls. Only generate interior walls where there is an actual room separation (hallway, bedrooms, bathrooms).
+9. DOOR SIZES: Exterior=36", Interior=32", Bathroom=30", Closet=24". All doors need clearance for swing arc.
+10. COORDINATES: All room positions (x,y) are in feet from building origin (0,0) at top-left. Walls reference start and end points in feet.
+11. WALL CONNECTIVITY: Walls must form closed perimeters for exterior and connect logically for interior. Every wall endpoint should connect to another wall (no floating walls).
+12. CODE COMPLIANCE: Minimum ceiling height 7'6" (typically 9'). Bedroom minimum area 70 sq ft with minimum dimension 7'. At least one bathroom per 3 bedrooms.
+13. STRUCTURAL: Align interior bearing walls with exterior walls where possible. Keep spans reasonable (<20ft without intermediate support).
+
+VALIDATION CHECKLIST (verify before returning):
+- Front entry door exists on bottom wall? YES
+- Kitchen and living/dining have NO wall between them? YES
+- Every habitable room has windows on its exterior walls? YES
+- Total window count >= 12 for a 3-bedroom house? YES
+- Every room is reachable via doors? YES
 
 When given a refinement instruction with a previous layout, modify only the relevant parts and maintain consistency.`;
 
@@ -293,7 +300,14 @@ Modify the layout according to the user's request. Keep all unchanged rooms, wal
 - Location: ${locationStr}
 ${custom_description ? `- Additional requirements: ${custom_description}` : ""}
 
-Generate the complete floor plan layout with all rooms, walls (with proper thicknesses), doors (with swing directions), and windows (with sizes and types). Ensure realistic proportions and buildable geometry.`;
+Generate the complete floor plan layout with all rooms, walls (with proper thicknesses), doors (with swing directions), and windows (with sizes and types). Ensure realistic proportions and buildable geometry.
+
+IMPORTANT REMINDERS:
+- Kitchen and living/dining MUST be open concept with NO wall between them. The island is the only separator.
+- Include a FRONT ENTRY DOOR (36", type "exterior") on the BOTTOM exterior wall. This is mandatory.
+- Every exterior wall of every habitable room must have at least one window. Living rooms need 3-4 windows total.
+- Master bedroom needs 2 windows minimum.
+- Count your total windows before returning — aim for 12-16 for a 3-bedroom house.`;
     }
 
     // Call Lovable AI Gateway
