@@ -958,6 +958,80 @@ export type Database = {
         }
         Relationships: []
       }
+      drawing_projects: {
+        Row: {
+          compliance_project_id: string | null
+          conversation_history: Json | null
+          created_at: string
+          custom_description: string | null
+          exterior_materials: string[] | null
+          garage_type: string | null
+          has_garage: boolean | null
+          id: string
+          layout_json: Json | null
+          location_country: string | null
+          location_state_province: string | null
+          num_bathrooms: number | null
+          num_bedrooms: number | null
+          num_storeys: number | null
+          project_name: string | null
+          style_preset: string | null
+          target_sqft: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          compliance_project_id?: string | null
+          conversation_history?: Json | null
+          created_at?: string
+          custom_description?: string | null
+          exterior_materials?: string[] | null
+          garage_type?: string | null
+          has_garage?: boolean | null
+          id?: string
+          layout_json?: Json | null
+          location_country?: string | null
+          location_state_province?: string | null
+          num_bathrooms?: number | null
+          num_bedrooms?: number | null
+          num_storeys?: number | null
+          project_name?: string | null
+          style_preset?: string | null
+          target_sqft?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          compliance_project_id?: string | null
+          conversation_history?: Json | null
+          created_at?: string
+          custom_description?: string | null
+          exterior_materials?: string[] | null
+          garage_type?: string | null
+          has_garage?: boolean | null
+          id?: string
+          layout_json?: Json | null
+          location_country?: string | null
+          location_state_province?: string | null
+          num_bathrooms?: number | null
+          num_bedrooms?: number | null
+          num_storeys?: number | null
+          project_name?: string | null
+          style_preset?: string | null
+          target_sqft?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drawing_projects_compliance_project_id_fkey"
+            columns: ["compliance_project_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           email_type: string

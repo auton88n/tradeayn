@@ -9,6 +9,7 @@ export type CalculatorType =
   | 'parking' 
   | 'grading'
   | 'compliance'
+  | 'drawings'
   | null;
 
 export interface CalculationResult {
