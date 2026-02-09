@@ -113,13 +113,13 @@ export const DASH_PATTERNS = {
 export const HATCH_PATTERNS = {
   EXTERIOR_CROSS: {
     id: 'hatch-exterior-cross',
-    width: 4,
-    height: 4,
+    width: 2,
+    height: 2,
   },
   INTERIOR: {
     id: 'hatch-interior',
-    width: 5,
-    height: 5,
+    width: 2.5,
+    height: 2.5,
   },
   CONCRETE: {
     id: 'hatch-concrete',

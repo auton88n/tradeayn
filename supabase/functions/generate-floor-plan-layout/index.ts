@@ -191,33 +191,36 @@ CRITICAL RULES (in priority order):
    - For rooms with more than 20ft of exterior wall, generate at minimum 1 window per 8ft of wall length.
    - A 3-bedroom house should have 12-16 windows minimum total. COUNT your windows before returning.
 7. STANDARD SIZES:
-   - Bedrooms: Master 14x16 min, Secondary 11x12 min, closet for each
-   - Bathrooms: Full bath 5x8 min, Half bath 3x5 min, Ensuite 8x10
-   - Kitchen: 10x12 min, ideally open to dining
-   - Living/Family: 14x16 min
-   - Dining: 10x12 min
-   - Garage: 12x22 single, 22x22 double
-   - Hallways: 3.5ft minimum width
-   - Closets: 2x4 minimum walk-in, 2x2 minimum reach-in
+    - Bedrooms: Master 14x16 min, Secondary 11x12 min, closet for each
+    - Bathrooms: Full bath 5x8 min, Half bath 3x5 min, Ensuite 8x10
+    - Kitchen: 10x12 min, ideally open to dining
+    - Living/Family: 14x16 min
+    - Dining: 10x12 min
+    - Garage: 12x22 single, 22x22 double
+    - Hallways: 3.5ft minimum width
+    - Closets: 3x5 minimum reach-in, 6x6 minimum walk-in
 8. MANDATORY DOORS:
-   - EVERY room must have at least one door. No room should be inaccessible.
-   - Garage-to-house door (36" wide, type "garage") through mudroom/utility is REQUIRED when garage is present.
-   - Every bedroom needs a door (32" wide) from the hallway.
-   - Every bathroom needs a door (30" wide).
-   - Master bedroom must have a direct door to the ensuite.
-   - Kitchen to mudroom/laundry needs a door.
+    - EVERY room must have at least one door. No room should be inaccessible.
+    - Garage-to-house door (36" wide, type "garage") through mudroom/utility is REQUIRED when garage is present.
+    - Every bedroom needs a door (32" wide) from the hallway.
+    - Every bathroom needs a door (30" wide).
+    - Master bedroom must have a direct door to the ensuite.
+    - Kitchen to mudroom/laundry needs a door.
 9. DOOR SIZES: Exterior=36", Interior=32", Bathroom=30", Closet=24". All doors need clearance for swing arc.
 10. COORDINATES: All room positions (x,y) are in feet from building origin (0,0) at top-left. Walls reference start and end points in feet.
 11. WALL CONNECTIVITY: Walls must form closed perimeters for exterior and connect logically for interior. Every wall endpoint should connect to another wall (no floating walls).
 12. CODE COMPLIANCE: Minimum ceiling height 7'6" (typically 9'). Bedroom minimum area 70 sq ft with minimum dimension 7'. At least one bathroom per 3 bedrooms.
 13. STRUCTURAL: Align interior bearing walls with exterior walls where possible. Keep spans reasonable (<20ft without intermediate support).
+14. CLOSETS (MANDATORY): Every bedroom MUST include a closet or walk-in wardrobe (W/W). Generate closets as SEPARATE rooms with type "closet". Minimum size: 3'x5' for reach-in, 6'x6' for walk-in. The master bedroom MUST have a walk-in closet (labeled "Walk-in Closet" or "W/W"). Each closet needs a door (24" wide) opening into the bedroom it serves.
 
-VALIDATION CHECKLIST (verify before returning):
+VALIDATION CHECKLIST (verify ALL before returning):
 - Front entry door exists on bottom wall? YES
 - Kitchen and living/dining have NO wall between them? YES
 - Every habitable room has windows on its exterior walls? YES
 - Total window count >= 12 for a 3-bedroom house? YES
 - Every room is reachable via doors? YES
+- Every bedroom has a closet room attached? YES
+- Master bedroom has a walk-in closet? YES
 
 When given a refinement instruction with a previous layout, modify only the relevant parts and maintain consistency.`;
 

@@ -119,6 +119,9 @@ export const BathroomFixtures: React.FC<FixtureProps & { isEnsuite?: boolean }> 
       <ellipse cx={toiletX + toiletW / 2} cy={toiletY + tankH + bowlH * 0.5}
         rx={toiletW * 0.45} ry={bowlH * 0.45}
         fill="none" stroke={FIX_STROKE} strokeWidth={FIX_WEIGHT} />
+      {/* WC label */}
+      <text x={toiletX + toiletW + 1} y={toiletY + toiletH * 0.5}
+        fontFamily={FONTS.NOTE.family} fontSize={2.5} fill={DRAWING_COLORS.MEDIUM_GRAY}>WC</text>
 
       {/* Vanity + basin(s) */}
       <rect x={vanityX} y={y + pad} width={vanityW} height={vanityH}
@@ -143,6 +146,9 @@ export const BathroomFixtures: React.FC<FixtureProps & { isEnsuite?: boolean }> 
         fill="none" stroke={FIX_STROKE} strokeWidth={FIX_WEIGHT} />
       <line x1={tubX} y1={tubY} x2={tubX + tubW} y2={tubY + tubH}
         stroke={FIX_STROKE} strokeWidth={FIX_THIN} />
+      {/* Bath label */}
+      <text x={tubX + tubW / 2} y={tubY + tubH / 2} textAnchor="middle" dominantBaseline="middle"
+        fontFamily={FONTS.NOTE.family} fontSize={2.5} fill={DRAWING_COLORS.MEDIUM_GRAY}>BATH</text>
     </g>
   );
 };
@@ -325,6 +331,28 @@ export const LaundryFixtures: React.FC<FixtureProps> = ({ x, y, width, depth }) 
   );
 };
 
+// ── Closet / Walk-in Wardrobe ────────────────────────────────────────────────
+
+export const ClosetFixtures: React.FC<FixtureProps> = ({ x, y, width, depth }) => {
+  const pad = 0.5;
+  // Shelf line near top wall
+  const shelfY = y + pad + 1.5;
+  // Rod (small circles representing rod in plan view)
+  const rodY = shelfY + 1;
+
+  return (
+    <g>
+      {/* Shelf line */}
+      <line x1={x + pad} y1={shelfY} x2={x + width - pad} y2={shelfY}
+        stroke={FIX_STROKE} strokeWidth={FIX_WEIGHT} />
+      {/* Rod — dashed line below shelf */}
+      <line x1={x + pad} y1={rodY} x2={x + width - pad} y2={rodY}
+        stroke={FIX_STROKE} strokeWidth={FIX_THIN}
+        strokeDasharray={DASH_PATTERNS.HIDDEN} />
+    </g>
+  );
+};
+
 // ── Fixture Renderer (maps room type to fixture component) ──────────────────
 
 interface RoomFixtureRendererProps {
@@ -364,6 +392,9 @@ export const RoomFixtureRenderer: React.FC<RoomFixtureRendererProps> = ({
   }
   if (type === 'laundry' || type === 'mudroom' || type === 'utility') {
     return <LaundryFixtures x={x} y={y} width={width} depth={depth} />;
+  }
+  if (type === 'closet' || name.includes('closet') || name.includes('w/w') || name.includes('wardrobe')) {
+    return <ClosetFixtures x={x} y={y} width={width} depth={depth} />;
   }
 
   return null;

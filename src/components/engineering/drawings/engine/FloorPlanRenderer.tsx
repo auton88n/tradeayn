@@ -230,9 +230,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
             const fillPattern = isExterior
               ? 'url(#hatch-exterior-cross)'
               : 'url(#hatch-interior)';
-            const strokeWeight = isExterior
-              ? LINE_WEIGHTS.CUT_LINE
-              : LINE_WEIGHTS.OUTLINE;
+            const strokeWeight = isExterior ? 2.5 : LINE_WEIGHTS.OUTLINE;
 
             return paths.map((pathData, i) => (
               <path
@@ -312,7 +310,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
         {showFixtures && (
           <g id="layer-fixtures">
             {floor.rooms
-              .filter(r => r.type !== 'closet' && r.type !== 'hallway' && r.type !== 'entry' && r.type !== 'stairwell')
+              .filter(r => r.type !== 'hallway' && r.type !== 'entry' && r.type !== 'stairwell')
               .map(room => (
                 <RoomFixtureRenderer
                   key={`fix-${room.id}`}
@@ -331,7 +329,6 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
         {showLabels && (
           <g id="layer-labels">
             {floor.rooms
-              .filter(r => r.type !== 'closet')
               .map(room => (
                 <RoomLabel
                   key={room.id}
@@ -407,6 +404,54 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
             />
 
             {/* ── BOTTOM ── */}
+            {/* Level 1: Detail segments */}
+            {(() => {
+              const sortedX = getUniquePositions(floor.rooms, 'x', layout.building.total_width_ft);
+              return sortedX.slice(0, -1).map((xPos, i) => {
+                const nextX = sortedX[i + 1];
+                const span = nextX - xPos;
+                if (span < 1) return null;
+                return (
+                  <DimensionLine
+                    key={`dim-bot-d-${i}`}
+                    x1={ftToSvg(xPos, scale)} y1={buildingH}
+                    x2={ftToSvg(nextX, scale)} y2={buildingH}
+                    value={span}
+                    offset={dimOffset * 0.35}
+                    side="bottom"
+                  />
+                );
+              });
+            })()}
+            {/* Level 2: Room segments */}
+            {(() => {
+              const sortedX = getUniquePositions(floor.rooms, 'x', layout.building.total_width_ft);
+              const merged: number[] = [sortedX[0]];
+              for (let i = 1; i < sortedX.length; i++) {
+                if (sortedX[i] - merged[merged.length - 1] >= 3) {
+                  merged.push(sortedX[i]);
+                }
+              }
+              if (merged[merged.length - 1] !== sortedX[sortedX.length - 1]) {
+                merged.push(sortedX[sortedX.length - 1]);
+              }
+              return merged.slice(0, -1).map((xPos, i) => {
+                const nextX = merged[i + 1];
+                const span = nextX - xPos;
+                if (span < 3) return null;
+                return (
+                  <DimensionLine
+                    key={`dim-bot-r-${i}`}
+                    x1={ftToSvg(xPos, scale)} y1={buildingH}
+                    x2={ftToSvg(nextX, scale)} y2={buildingH}
+                    value={span}
+                    offset={dimOffset * 0.75}
+                    side="bottom"
+                  />
+                );
+              });
+            })()}
+            {/* Level 3: Overall width */}
             <DimensionLine
               x1={0} y1={buildingH}
               x2={buildingW} y2={buildingH}
@@ -473,6 +518,54 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
             />
 
             {/* ── RIGHT ── */}
+            {/* Level 1: Detail segments */}
+            {(() => {
+              const sortedY = getUniquePositions(floor.rooms, 'y', layout.building.total_depth_ft);
+              return sortedY.slice(0, -1).map((yPos, i) => {
+                const nextY = sortedY[i + 1];
+                const span = nextY - yPos;
+                if (span < 1) return null;
+                return (
+                  <DimensionLine
+                    key={`dim-right-d-${i}`}
+                    x1={buildingW} y1={ftToSvg(yPos, scale)}
+                    x2={buildingW} y2={ftToSvg(nextY, scale)}
+                    value={span}
+                    offset={dimOffset * 0.35}
+                    side="right"
+                  />
+                );
+              });
+            })()}
+            {/* Level 2: Room segments */}
+            {(() => {
+              const sortedY = getUniquePositions(floor.rooms, 'y', layout.building.total_depth_ft);
+              const merged: number[] = [sortedY[0]];
+              for (let i = 1; i < sortedY.length; i++) {
+                if (sortedY[i] - merged[merged.length - 1] >= 3) {
+                  merged.push(sortedY[i]);
+                }
+              }
+              if (merged[merged.length - 1] !== sortedY[sortedY.length - 1]) {
+                merged.push(sortedY[sortedY.length - 1]);
+              }
+              return merged.slice(0, -1).map((yPos, i) => {
+                const nextY = merged[i + 1];
+                const span = nextY - yPos;
+                if (span < 3) return null;
+                return (
+                  <DimensionLine
+                    key={`dim-right-r-${i}`}
+                    x1={buildingW} y1={ftToSvg(yPos, scale)}
+                    x2={buildingW} y2={ftToSvg(nextY, scale)}
+                    value={span}
+                    offset={dimOffset * 0.75}
+                    side="right"
+                  />
+                );
+              });
+            })()}
+            {/* Level 3: Overall depth */}
             <DimensionLine
               x1={buildingW} y1={0}
               x2={buildingW} y2={buildingH}
@@ -480,6 +573,39 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
               offset={dimOffset * 1.2}
               side="right"
             />
+
+            {/* ── Wall Thickness Annotations ── */}
+            {(() => {
+              // Find first exterior and interior wall midpoints for annotations
+              const extWall = floor.walls.find(w => w.type === 'exterior');
+              const intWall = floor.walls.find(w => w.type === 'interior' || w.type === 'partition');
+              const annotations: React.ReactNode[] = [];
+              if (extWall) {
+                const mx = ftToSvg((extWall.start_x + extWall.end_x) / 2, scale);
+                const my = ftToSvg((extWall.start_y + extWall.end_y) / 2, scale);
+                annotations.push(
+                  <g key="wt-ext">
+                    <line x1={mx} y1={my} x2={mx + 8} y2={my - 6}
+                      stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
+                    <text x={mx + 9} y={my - 7} fontFamily={FONTS.NOTE.family}
+                      fontSize={2.5} fill={DRAWING_COLORS.MEDIUM_GRAY}>5½"</text>
+                  </g>
+                );
+              }
+              if (intWall) {
+                const mx = ftToSvg((intWall.start_x + intWall.end_x) / 2, scale);
+                const my = ftToSvg((intWall.start_y + intWall.end_y) / 2, scale);
+                annotations.push(
+                  <g key="wt-int">
+                    <line x1={mx} y1={my} x2={mx + 8} y2={my + 6}
+                      stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
+                    <text x={mx + 9} y={my + 7} fontFamily={FONTS.NOTE.family}
+                      fontSize={2.5} fill={DRAWING_COLORS.MEDIUM_GRAY}>3½"</text>
+                  </g>
+                );
+              }
+              return annotations;
+            })()}
 
             {/* ── Interior Room Dimensions ── */}
             {floor.rooms
