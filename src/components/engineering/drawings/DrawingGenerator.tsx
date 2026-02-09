@@ -6,11 +6,14 @@ import { DrawingRequestForm } from './DrawingRequestForm';
 import { DrawingViewer } from './DrawingViewer';
 import { DrawingRefinement } from './DrawingRefinement';
 import { useDrawingGeneration } from './hooks/useDrawingGeneration';
+import { PropertySection } from './configure/PropertySection';
+import type { PropertyData } from './configure/types';
 
 type ViewState = 'input' | 'generating' | 'viewing';
 
 const DrawingGenerator: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>('input');
+  const [propertyData, setPropertyData] = useState<PropertyData>({ has_specific_lot: false });
   const {
     layout,
     isGenerating,
@@ -47,6 +50,12 @@ const DrawingGenerator: React.FC = () => {
           </div>
         </div>
         <DrawingRequestForm onGenerate={handleGenerate} isGenerating={isGenerating} />
+
+        {/* Property Section */}
+        <div className="border-t border-border pt-6">
+          <h3 className="text-lg font-semibold mb-4">Your Property</h3>
+          <PropertySection data={propertyData} onChange={setPropertyData} />
+        </div>
       </div>
     );
   }
