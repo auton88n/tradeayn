@@ -123,6 +123,7 @@ export const useMessages = (
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false);
+  const [isGeneratingFloorPlan, setIsGeneratingFloorPlan] = useState(false);
   const [documentType, setDocumentType] = useState<'pdf' | 'excel' | null>(null);
   const [lastSuggestedEmotion, setLastSuggestedEmotion] = useState<string | null>(null);
   const [moodPattern, setMoodPattern] = useState<MoodPattern | null>(null);
@@ -315,6 +316,9 @@ export const useMessages = (
         if (/اعمل pdf|انشئ pdf|ملف pdf|تقرير pdf|اعمل لي|سوي لي/.test(lower)) return 'document';
         if (/créer pdf|faire pdf|rapport pdf|document pdf|créer excel/.test(lower)) return 'document';
         
+        // Floor plan detection
+        if (/floor plan|house plan|home layout|design a house|design me a|مخطط|تصميم بيت|تصميم منزل|plan de maison/.test(lower)) return 'floor_plan';
+        
         // Other intent detection
         if (/search|find|look up|latest|news/.test(lower)) return 'search';
         if (/beam|column|foundation|slab|calculate|structural/.test(lower)) return 'engineering';
@@ -324,7 +328,7 @@ export const useMessages = (
       const detectedIntent = detectIntent();
       
       // Intents that require non-streaming (return JSON with URLs)
-      const requiresNonStreaming = ['document', 'image'].includes(detectedIntent);
+      const requiresNonStreaming = ['document', 'image', 'floor_plan'].includes(detectedIntent);
       
       // Set document generation state for visual indicator
       if (detectedIntent === 'document') {
@@ -332,6 +336,11 @@ export const useMessages = (
         // Detect document type from content
         const isExcel = /excel|spreadsheet|xlsx|جدول/.test(messageContent.toLowerCase());
         setDocumentType(isExcel ? 'excel' : 'pdf');
+      }
+      
+      // Set floor plan generation state
+      if (detectedIntent === 'floor_plan') {
+        setIsGeneratingFloorPlan(true);
       }
 
       // Build conversation history in ayn-unified format
@@ -385,6 +394,7 @@ export const useMessages = (
       if (webhookResponse.status === 429) {
         setIsTyping(false);
         setIsGeneratingDocument(false);
+        setIsGeneratingFloorPlan(false);
         setDocumentType(null);
         
         const errorData = await webhookResponse.json().catch(() => ({}));
@@ -434,6 +444,7 @@ export const useMessages = (
       if (webhookResponse.status === 403) {
         setIsTyping(false);
         setIsGeneratingDocument(false);
+        setIsGeneratingFloorPlan(false);
         setDocumentType(null);
         
         const upgradeData = await webhookResponse.json().catch(() => ({}));
@@ -507,6 +518,7 @@ export const useMessages = (
 
           setIsTyping(false);
           setIsGeneratingDocument(false);
+          setIsGeneratingFloorPlan(false);
           setDocumentType(null);
 
           // Detect emotion from complete response
@@ -530,6 +542,7 @@ export const useMessages = (
           ));
           setIsTyping(false);
           setIsGeneratingDocument(false);
+          setIsGeneratingFloorPlan(false);
           setDocumentType(null);
           return;
         }
@@ -538,6 +551,7 @@ export const useMessages = (
         // Handle non-streaming JSON response (documents, images, or fallback)
         setIsTyping(false);
         setIsGeneratingDocument(false);
+        setIsGeneratingFloorPlan(false);
         setDocumentType(null);
 
         webhookData = await webhookResponse.json();
@@ -738,6 +752,7 @@ export const useMessages = (
     } catch (error) {
       setIsTyping(false);
       setIsGeneratingDocument(false);
+      setIsGeneratingFloorPlan(false);
       setDocumentType(null);
 
       const isTimeout = error instanceof Error && error.name === 'AbortError';
@@ -810,6 +825,7 @@ export const useMessages = (
     messages,
     isTyping,
     isGeneratingDocument,
+    isGeneratingFloorPlan,
     documentType,
     lastSuggestedEmotion,
     moodPattern,

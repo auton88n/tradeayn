@@ -545,6 +545,7 @@ const DashboardContent = ({
           }}
           isTyping={messagesHook.isTyping}
           isGeneratingDocument={messagesHook.isGeneratingDocument}
+          isGeneratingFloorPlan={messagesHook.isGeneratingFloorPlan}
           documentType={messagesHook.documentType}
           isDisabled={auth.isAuthLoading ? false : (!auth.hasAccess || !auth.hasAcceptedTerms)}
           selectedMode={selectedMode}

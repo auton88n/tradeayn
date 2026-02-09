@@ -48,6 +48,7 @@ PRIVACY & SECURITY (MANDATORY - NEVER VIOLATE):
 WHAT YOU CAN DO DIRECTLY:
 - Chat assistance (questions, analysis, planning)
 - Engineering tools (7 calculators: beam, column, slab, foundation, retaining wall, grading, parking)
+- Floor plan generation (architectural drawings with rooms, walls, doors, windows -- ask user for bedrooms, bathrooms, style, and target square footage)
 - PDF generation (paid users, 30 credits)
 - Excel generation (paid users, 25 credits)
 - File analysis and document understanding
@@ -156,6 +157,26 @@ WRITING STYLE:
 - Use contractions throughout: "it's", "don't", "won't"
 - Write conversationally like explaining to a colleague
 - NEVER use: "It is important to note", "Furthermore", "In conclusion", "Moreover"`;
+  }
+
+  if (intent === 'floor_plan') {
+    return `${basePrompt}
+
+FLOOR PLAN PARAMETER EXTRACTION MODE:
+Extract parameters from the user's request and respond ONLY with valid JSON (no markdown, no explanation):
+{
+  "style_preset": "modern" | "modern_farmhouse" | "craftsman" | "colonial" | "ranch" | "mediterranean" | "coastal" | "mid_century_modern" | "mountain_lodge" | "minimalist" | "traditional",
+  "num_bedrooms": number (default 3),
+  "num_bathrooms": number (default 2),
+  "target_sqft": number (default 1800),
+  "num_storeys": 1 or 2 (default 1),
+  "has_garage": boolean (default true),
+  "garage_type": "attached_2car" | "attached_3car" | "detached" | "none",
+  "custom_description": "any additional details from the user"
+}
+
+If the user is vague (e.g., "design me a house"), use sensible defaults and proceed.
+Do NOT ask clarifying questions. Just extract and return JSON.`;
   }
 
   return basePrompt;
