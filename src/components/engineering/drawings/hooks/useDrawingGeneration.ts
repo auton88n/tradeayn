@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { validateLayout, errorsToRefinementInstruction } from '../engine/layoutValidator';
 import type { FloorPlanLayout } from '../engine/FloorPlanRenderer';
 
 interface GenerationParams {
@@ -23,6 +24,8 @@ interface RefinementMessage {
   timestamp: Date;
 }
 
+const MAX_AUTO_RETRIES = 1;
+
 export function useDrawingGeneration() {
   const [layout, setLayout] = useState<FloorPlanLayout | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -41,7 +44,46 @@ export function useDrawingGeneration() {
       if (fnError) throw fnError;
 
       if (data?.layout) {
-        setLayout(data.layout);
+        // Run validation
+        const validation = validateLayout(data.layout);
+
+        // Log warnings
+        if (validation.warnings.length > 0) {
+          console.warn('[LayoutValidator] Warnings:', validation.warnings.map(w => w.message));
+        }
+
+        // If blocking errors, attempt one auto-retry
+        if (validation.errors.length > 0) {
+          console.error('[LayoutValidator] Errors found, attempting auto-fix:', validation.errors.map(e => e.message));
+
+          const refinementInstruction = errorsToRefinementInstruction(validation.errors);
+
+          const { data: retryData, error: retryError } = await supabase.functions.invoke('generate-floor-plan-layout', {
+            body: {
+              previous_layout: data.layout,
+              refinement_instruction: refinementInstruction,
+            },
+          });
+
+          if (!retryError && retryData?.layout) {
+            const retryValidation = validateLayout(retryData.layout);
+            if (retryValidation.warnings.length > 0) {
+              console.warn('[LayoutValidator] Retry warnings:', retryValidation.warnings.map(w => w.message));
+            }
+            // Use retry result regardless (it should be better)
+            setLayout(retryValidation.snappedLayout);
+            setConversationHistory([{
+              role: 'assistant',
+              content: `Generated a ${params.style_preset.replace(/_/g, ' ')} floor plan: ${params.num_bedrooms} bed, ${params.num_bathrooms} bath, ~${params.target_sqft} sq ft. (Auto-corrected ${validation.errors.length} issue${validation.errors.length > 1 ? 's' : ''})`,
+              timestamp: new Date(),
+            }]);
+            toast.success('Floor plan generated (with auto-corrections)');
+            return;
+          }
+        }
+
+        // Use snapped layout (either no errors, or retry failed — use original snapped)
+        setLayout(validation.snappedLayout);
         setConversationHistory([{
           role: 'assistant',
           content: `Generated a ${params.style_preset.replace(/_/g, ' ')} floor plan: ${params.num_bedrooms} bed, ${params.num_bathrooms} bath, ~${params.target_sqft} sq ft.`,
@@ -84,7 +126,13 @@ export function useDrawingGeneration() {
       if (fnError) throw fnError;
 
       if (data?.layout) {
-        setLayout(data.layout);
+        const validation = validateLayout(data.layout);
+
+        if (validation.warnings.length > 0) {
+          console.warn('[LayoutValidator] Refinement warnings:', validation.warnings.map(w => w.message));
+        }
+
+        setLayout(validation.snappedLayout);
         setConversationHistory(prev => [...prev, {
           role: 'assistant',
           content: `Layout updated: "${instruction}"`,
