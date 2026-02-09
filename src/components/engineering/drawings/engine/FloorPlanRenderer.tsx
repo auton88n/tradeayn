@@ -127,13 +127,11 @@ function filterOpenConceptWalls(
 
     for (const kitchen of kitchenRooms) {
       for (const living of livingRooms) {
-        // Check if wall sits on the shared boundary between kitchen and living
         const isHorizontal = Math.abs(wall.start_y - wall.end_y) < 0.1;
         const isVertical = Math.abs(wall.start_x - wall.end_x) < 0.1;
 
         if (isHorizontal) {
           const wallY = wall.start_y;
-          // Shared horizontal boundary: one room's bottom = other room's top
           const kBottom = kitchen.y + kitchen.depth;
           const lTop = living.y;
           const kTop = kitchen.y;
@@ -171,6 +169,11 @@ function filterOpenConceptWalls(
   });
 }
 
+// ── Dimension chain offset constants (SVG units from building edge) ─────────
+const DIM_LEVEL_1 = 4;   // Detail segments (closest)
+const DIM_LEVEL_2 = 8;   // Room segments (middle)
+const DIM_LEVEL_3 = 12;  // Overall dimension (outermost)
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
@@ -186,13 +189,13 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
 
   const processedData = useMemo(() => {
     if (!floor) return [];
-    // Filter open concept walls before processing
     const filteredWalls = filterOpenConceptWalls(floor.walls, floor.rooms);
     const segments = processWalls(filteredWalls, floor.doors, floor.windows, scale);
     return resolveIntersections(segments);
   }, [floor, scale]);
 
-  const margin = SHEET.DIMENSION_OFFSET * 2.5 + SHEET.MARGIN;
+  // Margin: outermost dim chain (12) + text clearance (8) + sheet margin
+  const margin = DIM_LEVEL_3 + SHEET.MARGIN + 8;
   const svgWidth = ftToSvg(layout.building.total_width_ft, scale) + margin * 2;
   const svgHeight = ftToSvg(layout.building.total_depth_ft, scale) + margin * 2;
 
@@ -200,8 +203,6 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
 
   const buildingW = ftToSvg(layout.building.total_width_ft, scale);
   const buildingH = ftToSvg(layout.building.total_depth_ft, scale);
-
-  const dimOffset = SHEET.DIMENSION_OFFSET;
 
   return (
     <svg
@@ -359,7 +360,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     x1={ftToSvg(xPos, scale)} y1={0}
                     x2={ftToSvg(nextX, scale)} y2={0}
                     value={span}
-                    offset={dimOffset * 0.35}
+                    offset={DIM_LEVEL_1}
                     side="top"
                   />
                 );
@@ -368,7 +369,6 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
             {/* Level 2: Room segments (middle) */}
             {(() => {
               const sortedX = getUniquePositions(floor.rooms, 'x', layout.building.total_width_ft);
-              // Merge adjacent positions that are less than 3ft apart for cleaner level 2
               const merged: number[] = [sortedX[0]];
               for (let i = 1; i < sortedX.length; i++) {
                 if (sortedX[i] - merged[merged.length - 1] >= 3) {
@@ -388,7 +388,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     x1={ftToSvg(xPos, scale)} y1={0}
                     x2={ftToSvg(nextX, scale)} y2={0}
                     value={span}
-                    offset={dimOffset * 0.75}
+                    offset={DIM_LEVEL_2}
                     side="top"
                   />
                 );
@@ -399,12 +399,11 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
               x1={0} y1={0}
               x2={buildingW} y2={0}
               value={layout.building.total_width_ft}
-              offset={dimOffset * 1.2}
+              offset={DIM_LEVEL_3}
               side="top"
             />
 
             {/* ── BOTTOM ── */}
-            {/* Level 1: Detail segments */}
             {(() => {
               const sortedX = getUniquePositions(floor.rooms, 'x', layout.building.total_width_ft);
               return sortedX.slice(0, -1).map((xPos, i) => {
@@ -417,13 +416,12 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     x1={ftToSvg(xPos, scale)} y1={buildingH}
                     x2={ftToSvg(nextX, scale)} y2={buildingH}
                     value={span}
-                    offset={dimOffset * 0.35}
+                    offset={DIM_LEVEL_1}
                     side="bottom"
                   />
                 );
               });
             })()}
-            {/* Level 2: Room segments */}
             {(() => {
               const sortedX = getUniquePositions(floor.rooms, 'x', layout.building.total_width_ft);
               const merged: number[] = [sortedX[0]];
@@ -445,23 +443,21 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     x1={ftToSvg(xPos, scale)} y1={buildingH}
                     x2={ftToSvg(nextX, scale)} y2={buildingH}
                     value={span}
-                    offset={dimOffset * 0.75}
+                    offset={DIM_LEVEL_2}
                     side="bottom"
                   />
                 );
               });
             })()}
-            {/* Level 3: Overall width */}
             <DimensionLine
               x1={0} y1={buildingH}
               x2={buildingW} y2={buildingH}
               value={layout.building.total_width_ft}
-              offset={dimOffset * 1.2}
+              offset={DIM_LEVEL_3}
               side="bottom"
             />
 
             {/* ── LEFT ── */}
-            {/* Level 1: Detail segments */}
             {(() => {
               const sortedY = getUniquePositions(floor.rooms, 'y', layout.building.total_depth_ft);
               return sortedY.slice(0, -1).map((yPos, i) => {
@@ -474,13 +470,12 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     x1={0} y1={ftToSvg(yPos, scale)}
                     x2={0} y2={ftToSvg(nextY, scale)}
                     value={span}
-                    offset={dimOffset * 0.35}
+                    offset={DIM_LEVEL_1}
                     side="left"
                   />
                 );
               });
             })()}
-            {/* Level 2: Room segments */}
             {(() => {
               const sortedY = getUniquePositions(floor.rooms, 'y', layout.building.total_depth_ft);
               const merged: number[] = [sortedY[0]];
@@ -502,23 +497,21 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     x1={0} y1={ftToSvg(yPos, scale)}
                     x2={0} y2={ftToSvg(nextY, scale)}
                     value={span}
-                    offset={dimOffset * 0.75}
+                    offset={DIM_LEVEL_2}
                     side="left"
                   />
                 );
               });
             })()}
-            {/* Level 3: Overall depth */}
             <DimensionLine
               x1={0} y1={0}
               x2={0} y2={buildingH}
               value={layout.building.total_depth_ft}
-              offset={dimOffset * 1.2}
+              offset={DIM_LEVEL_3}
               side="left"
             />
 
             {/* ── RIGHT ── */}
-            {/* Level 1: Detail segments */}
             {(() => {
               const sortedY = getUniquePositions(floor.rooms, 'y', layout.building.total_depth_ft);
               return sortedY.slice(0, -1).map((yPos, i) => {
@@ -531,13 +524,12 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     x1={buildingW} y1={ftToSvg(yPos, scale)}
                     x2={buildingW} y2={ftToSvg(nextY, scale)}
                     value={span}
-                    offset={dimOffset * 0.35}
+                    offset={DIM_LEVEL_1}
                     side="right"
                   />
                 );
               });
             })()}
-            {/* Level 2: Room segments */}
             {(() => {
               const sortedY = getUniquePositions(floor.rooms, 'y', layout.building.total_depth_ft);
               const merged: number[] = [sortedY[0]];
@@ -559,24 +551,22 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     x1={buildingW} y1={ftToSvg(yPos, scale)}
                     x2={buildingW} y2={ftToSvg(nextY, scale)}
                     value={span}
-                    offset={dimOffset * 0.75}
+                    offset={DIM_LEVEL_2}
                     side="right"
                   />
                 );
               });
             })()}
-            {/* Level 3: Overall depth */}
             <DimensionLine
               x1={buildingW} y1={0}
               x2={buildingW} y2={buildingH}
               value={layout.building.total_depth_ft}
-              offset={dimOffset * 1.2}
+              offset={DIM_LEVEL_3}
               side="right"
             />
 
             {/* ── Wall Thickness Annotations ── */}
             {(() => {
-              // Find first exterior and interior wall midpoints for annotations
               const extWall = floor.walls.find(w => w.type === 'exterior');
               const intWall = floor.walls.find(w => w.type === 'interior' || w.type === 'partition');
               const annotations: React.ReactNode[] = [];
@@ -622,7 +612,6 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     {/* Width dimension near top wall */}
                     <line x1={rx} y1={ry + inset} x2={rx + rw} y2={ry + inset}
                       stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
-                    {/* Tick marks for width */}
                     <line x1={rx} y1={ry + inset - tickLen / 2} x2={rx} y2={ry + inset + tickLen / 2}
                       stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
                     <line x1={rx + rw} y1={ry + inset - tickLen / 2} x2={rx + rw} y2={ry + inset + tickLen / 2}
@@ -635,7 +624,6 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                     {/* Depth dimension near left wall */}
                     <line x1={rx + inset} y1={ry} x2={rx + inset} y2={ry + rd}
                       stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
-                    {/* Tick marks for depth */}
                     <line x1={rx + inset - tickLen / 2} y1={ry} x2={rx + inset + tickLen / 2} y2={ry}
                       stroke={DRAWING_COLORS.MEDIUM_GRAY} strokeWidth={LINE_WEIGHTS.THIN} />
                     <line x1={rx + inset - tickLen / 2} y1={ry + rd} x2={rx + inset + tickLen / 2} y2={ry + rd}
