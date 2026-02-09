@@ -2,7 +2,7 @@
  * FloorPlanRenderer — Core SVG floor plan rendering from structured JSON layout.
  * 
  * Renders walls (with clean intersections), doors, windows, stairs,
- * room labels, and dimension chains.
+ * room labels, fixtures, and dimension chains on all four sides.
  */
 
 import React, { useMemo } from 'react';
@@ -22,13 +22,12 @@ import {
   DimensionLine,
   RoomLabel,
 } from './ArchitecturalSymbols';
+import { RoomFixtureRenderer } from './RoomFixtures';
 import {
   LINE_WEIGHTS,
   DRAWING_COLORS,
-  HATCH_PATTERNS,
   SHEET,
   ftToSvg,
-  inToSvg,
   DEFAULT_SCALE,
   type DrawingScale,
 } from './drawingConstants';
@@ -82,8 +81,26 @@ interface FloorPlanRendererProps {
   scale?: DrawingScale;
   showDimensions?: boolean;
   showLabels?: boolean;
-  showHatching?: boolean;
+  showFixtures?: boolean;
   className?: string;
+}
+
+// ── Helper: compute dimension chain positions ───────────────────────────────
+
+function getUniquePositions(rooms: FloorPlanLayout['floors'][0]['rooms'], axis: 'x' | 'y', totalSize: number): number[] {
+  const positions = new Set<number>();
+  positions.add(0);
+  positions.add(totalSize);
+  for (const room of rooms) {
+    if (axis === 'x') {
+      positions.add(room.x);
+      positions.add(room.x + room.width);
+    } else {
+      positions.add(room.y);
+      positions.add(room.y + room.depth);
+    }
+  }
+  return Array.from(positions).sort((a, b) => a - b);
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -94,25 +111,25 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
   scale = DEFAULT_SCALE,
   showDimensions = true,
   showLabels = true,
-  showHatching = true,
+  showFixtures = true,
   className,
 }) => {
   const floor = layout.floors.find(f => f.level === floorLevel) ?? layout.floors[0];
 
-  // Process walls with intersection cleanup — must be before any early return
   const processedData = useMemo(() => {
     if (!floor) return [];
     const segments = processWalls(floor.walls, floor.doors, floor.windows, scale);
-    const resolved = resolveIntersections(segments);
-    return resolved;
+    return resolveIntersections(segments);
   }, [floor, scale]);
 
-  // Calculate SVG viewbox
   const margin = SHEET.DIMENSION_OFFSET * 2 + SHEET.MARGIN;
   const svgWidth = ftToSvg(layout.building.total_width_ft, scale) + margin * 2;
   const svgHeight = ftToSvg(layout.building.total_depth_ft, scale) + margin * 2;
 
   if (!floor) return null;
+
+  const buildingW = ftToSvg(layout.building.total_width_ft, scale);
+  const buildingH = ftToSvg(layout.building.total_depth_ft, scale);
 
   return (
     <svg
@@ -121,44 +138,26 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
       xmlns="http://www.w3.org/2000/svg"
       style={{ background: DRAWING_COLORS.WHITE }}
     >
-      {/* Hatch pattern definitions */}
-      <defs>
-        {Object.values(HATCH_PATTERNS).map(pattern => (
-          <pattern
-            key={pattern.id}
-            id={pattern.id}
-            patternUnits="userSpaceOnUse"
-            width={pattern.width}
-            height={pattern.height}
-          >
-            <g dangerouslySetInnerHTML={{ __html: pattern.content }} />
-          </pattern>
-        ))}
-      </defs>
-
-      {/* Offset everything by margin */}
       <g transform={`translate(${margin}, ${margin})`}>
-        {/* ── Walls ──────────────────────────────────────────── */}
+        {/* ── Walls (solid fill — Fix 11) ──────────────────────── */}
         <g id="layer-walls">
           {processedData.map(segment => {
             const paths = wallToSvgPaths(segment);
             const strokeWeight = segment.type === 'exterior'
               ? LINE_WEIGHTS.CUT_LINE
               : LINE_WEIGHTS.OUTLINE;
+            const fillColor = segment.type === 'exterior'
+              ? DRAWING_COLORS.BLACK
+              : DRAWING_COLORS.DARK_GRAY;
 
             return paths.map((pathData, i) => (
-              <g key={`${segment.wallId}-${i}`}>
-                {/* Fill */}
-                <path
-                  d={pathData}
-                  fill={showHatching && segment.type === 'exterior'
-                    ? `url(#${HATCH_PATTERNS.CONCRETE.id})`
-                    : DRAWING_COLORS.BLACK
-                  }
-                  stroke={DRAWING_COLORS.BLACK}
-                  strokeWidth={strokeWeight}
-                />
-              </g>
+              <path
+                key={`${segment.wallId}-${i}`}
+                d={pathData}
+                fill={fillColor}
+                stroke={DRAWING_COLORS.BLACK}
+                strokeWidth={strokeWeight}
+              />
             ));
           })}
         </g>
@@ -225,11 +224,30 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
           </g>
         )}
 
+        {/* ── Room Fixtures (Fix 12) ─────────────────────────── */}
+        {showFixtures && (
+          <g id="layer-fixtures">
+            {floor.rooms
+              .filter(r => r.type !== 'closet' && r.type !== 'hallway' && r.type !== 'entry' && r.type !== 'stairwell')
+              .map(room => (
+                <RoomFixtureRenderer
+                  key={`fix-${room.id}`}
+                  roomType={room.type}
+                  roomName={room.name}
+                  x={ftToSvg(room.x, scale)}
+                  y={ftToSvg(room.y, scale)}
+                  width={ftToSvg(room.width, scale)}
+                  depth={ftToSvg(room.depth, scale)}
+                />
+              ))}
+          </g>
+        )}
+
         {/* ── Room Labels ────────────────────────────────────── */}
         {showLabels && (
           <g id="layer-labels">
             {floor.rooms
-              .filter(r => r.type !== 'closet' && r.type !== 'hallway')
+              .filter(r => r.type !== 'closet')
               .map(room => (
                 <RoomLabel
                   key={room.id}
@@ -243,53 +261,29 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
           </g>
         )}
 
-        {/* ── Exterior Dimensions ────────────────────────────── */}
+        {/* ── Exterior Dimensions (all 4 sides — Fix 2) ──────── */}
         {showDimensions && (
           <g id="layer-dimensions">
-            {/* Overall width - top */}
+            {/* TOP — Overall width */}
             <DimensionLine
-              x1={0}
-              y1={0}
-              x2={ftToSvg(layout.building.total_width_ft, scale)}
-              y2={0}
+              x1={0} y1={0}
+              x2={buildingW} y2={0}
               value={layout.building.total_width_ft}
               offset={SHEET.DIMENSION_OFFSET}
               side="top"
             />
-            {/* Overall depth - left */}
-            <DimensionLine
-              x1={0}
-              y1={0}
-              x2={0}
-              y2={ftToSvg(layout.building.total_depth_ft, scale)}
-              value={layout.building.total_depth_ft}
-              offset={SHEET.DIMENSION_OFFSET}
-              side="left"
-            />
-
-            {/* Room dimensions - inner chain (simplified: show each room's width along top) */}
+            {/* TOP — Room segments */}
             {(() => {
-              // Find unique X positions for vertical walls to create dimension chain
-              const xPositions = new Set<number>();
-              xPositions.add(0);
-              xPositions.add(layout.building.total_width_ft);
-              for (const room of floor.rooms) {
-                xPositions.add(room.x);
-                xPositions.add(room.x + room.width);
-              }
-              const sortedX = Array.from(xPositions).sort((a, b) => a - b);
-
-              return sortedX.slice(0, -1).map((x, i) => {
+              const sortedX = getUniquePositions(floor.rooms, 'x', layout.building.total_width_ft);
+              return sortedX.slice(0, -1).map((xPos, i) => {
                 const nextX = sortedX[i + 1];
-                const span = nextX - x;
-                if (span < 2) return null; // Skip tiny segments
+                const span = nextX - xPos;
+                if (span < 2) return null;
                 return (
                   <DimensionLine
-                    key={`dim-x-${i}`}
-                    x1={ftToSvg(x, scale)}
-                    y1={0}
-                    x2={ftToSvg(nextX, scale)}
-                    y2={0}
+                    key={`dim-top-${i}`}
+                    x1={ftToSvg(xPos, scale)} y1={0}
+                    x2={ftToSvg(nextX, scale)} y2={0}
                     value={span}
                     offset={SHEET.DIMENSION_OFFSET / 2}
                     side="top"
@@ -297,6 +291,52 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
                 );
               });
             })()}
+
+            {/* BOTTOM — Overall width */}
+            <DimensionLine
+              x1={0} y1={buildingH}
+              x2={buildingW} y2={buildingH}
+              value={layout.building.total_width_ft}
+              offset={SHEET.DIMENSION_OFFSET}
+              side="bottom"
+            />
+
+            {/* LEFT — Overall depth */}
+            <DimensionLine
+              x1={0} y1={0}
+              x2={0} y2={buildingH}
+              value={layout.building.total_depth_ft}
+              offset={SHEET.DIMENSION_OFFSET}
+              side="left"
+            />
+            {/* LEFT — Room segments */}
+            {(() => {
+              const sortedY = getUniquePositions(floor.rooms, 'y', layout.building.total_depth_ft);
+              return sortedY.slice(0, -1).map((yPos, i) => {
+                const nextY = sortedY[i + 1];
+                const span = nextY - yPos;
+                if (span < 2) return null;
+                return (
+                  <DimensionLine
+                    key={`dim-left-${i}`}
+                    x1={0} y1={ftToSvg(yPos, scale)}
+                    x2={0} y2={ftToSvg(nextY, scale)}
+                    value={span}
+                    offset={SHEET.DIMENSION_OFFSET / 2}
+                    side="left"
+                  />
+                );
+              });
+            })()}
+
+            {/* RIGHT — Overall depth */}
+            <DimensionLine
+              x1={buildingW} y1={0}
+              x2={buildingW} y2={buildingH}
+              value={layout.building.total_depth_ft}
+              offset={SHEET.DIMENSION_OFFSET}
+              side="right"
+            />
           </g>
         )}
       </g>

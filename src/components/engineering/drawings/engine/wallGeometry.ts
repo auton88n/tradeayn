@@ -229,13 +229,11 @@ function miterLCorner(
   }
 }
 
-/** Handle a T-junction: the through-wall continues, butting wall stops at its face */
+/** Handle a T-junction: the through-wall continues, butting wall stops at its face.
+ *  Direction-aware: determines which face of the through-wall the butting wall should trim to. */
 function handleTJunction(
   connected: Array<{ segment: WallSegment; endType: 'start' | 'end' }>
 ): void {
-  // Find the through-wall (the one with same orientation appearing twice, or the longest)
-  // Simpler heuristic: the wall whose neither start nor end is at this junction is through
-  // Actually: 2 walls of same orientation = through-wall, 1 perpendicular = butting
   const horiz = connected.filter(c => c.segment.orientation === 'horizontal');
   const vert = connected.filter(c => c.segment.orientation === 'vertical');
 
@@ -252,29 +250,59 @@ function handleTJunction(
     return; // Ambiguous, skip
   }
 
-  // Trim the butting wall to stop at the through-wall's near face
   const tSeg = throughWalls[0].segment;
   const bSeg = buttingWall.segment;
   const bEnd = buttingWall.endType;
 
   if (bSeg.orientation === 'vertical') {
     // Butting wall is vertical, through-wall is horizontal
-    // Trim vertical wall to stop at horizontal wall's edge
-    if (bEnd === 'end') {
-      bSeg.bottomLeft.y = tSeg.topLeft.y;
-      bSeg.bottomRight.y = tSeg.topLeft.y;
+    // Determine if butting wall approaches from above or below
+    const buttCenter = bEnd === 'end' ? bSeg.end.y : bSeg.start.y;
+    const throughCenter = tSeg.start.y;
+    
+    if (buttCenter >= throughCenter) {
+      // Butting wall comes from above (its end/start is at/below through-wall)
+      // Trim to top face of through-wall
+      if (bEnd === 'end') {
+        bSeg.bottomLeft.y = tSeg.topLeft.y;
+        bSeg.bottomRight.y = tSeg.topLeft.y;
+      } else {
+        bSeg.topLeft.y = tSeg.topLeft.y;
+        bSeg.topRight.y = tSeg.topLeft.y;
+      }
     } else {
-      bSeg.topLeft.y = tSeg.bottomLeft.y;
-      bSeg.topRight.y = tSeg.bottomLeft.y;
+      // Butting wall comes from below — trim to bottom face
+      if (bEnd === 'end') {
+        bSeg.bottomLeft.y = tSeg.bottomLeft.y;
+        bSeg.bottomRight.y = tSeg.bottomLeft.y;
+      } else {
+        bSeg.topLeft.y = tSeg.bottomLeft.y;
+        bSeg.topRight.y = tSeg.bottomLeft.y;
+      }
     }
   } else {
     // Butting wall is horizontal, through-wall is vertical
-    if (bEnd === 'end') {
-      bSeg.topRight.x = tSeg.topLeft.x;
-      bSeg.bottomRight.x = tSeg.topLeft.x;
+    const buttCenter = bEnd === 'end' ? bSeg.end.x : bSeg.start.x;
+    const throughCenter = tSeg.start.x;
+    
+    if (buttCenter >= throughCenter) {
+      // Butting wall comes from left — trim to left face
+      if (bEnd === 'end') {
+        bSeg.topRight.x = tSeg.topLeft.x;
+        bSeg.bottomRight.x = tSeg.topLeft.x;
+      } else {
+        bSeg.topLeft.x = tSeg.topLeft.x;
+        bSeg.bottomLeft.x = tSeg.topLeft.x;
+      }
     } else {
-      bSeg.topLeft.x = tSeg.topRight.x;
-      bSeg.bottomLeft.x = tSeg.topRight.x;
+      // Butting wall comes from right — trim to right face
+      if (bEnd === 'end') {
+        bSeg.topRight.x = tSeg.topRight.x;
+        bSeg.bottomRight.x = tSeg.topRight.x;
+      } else {
+        bSeg.topLeft.x = tSeg.topRight.x;
+        bSeg.bottomLeft.x = tSeg.topRight.x;
+      }
     }
   }
 }
