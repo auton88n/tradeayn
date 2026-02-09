@@ -1,130 +1,158 @@
 
+# Implement Floor Plan Generation in AYN Chat
 
-# Embed Full Architectural Knowledge Base into AI System Prompt
+## Summary
 
-## What This Does
+Wire up AYN's dashboard chat so users can request floor plans conversationally. AYN detects the intent, extracts parameters, calls the existing `generate-floor-plan-layout` edge function, renders an SVG server-side, uploads it to Supabase Storage, and returns a download link -- just like PDF/Excel documents work today.
 
-Instead of splitting work between AI and client code, we give the AI the complete knowledge base you provided -- all 6 parts -- so it generates perfectly proportioned, code-compliant floor plans with correct walls, doors, windows, and room relationships on the first try.
+## Changes
 
-The current system prompt is ~470 lines and covers basics. The new prompt will be ~900 lines and include everything from your knowledge base:
+### 1. Intent Detection -- Add `floor_plan` Keywords
 
-- Part 1: Design Patterns (privacy gradient, sunlight rules, intimacy zones, entry sequence, adjacency matrix)
-- Part 2: Drawing Standards (line types, weights, wall representation, symbols, dimensions, title block)
-- Part 3: Room Size Standards (exact min/typical/generous for every room type, kitchen work triangle, bathroom clearances)
-- Part 4: Construction Standards (wall thicknesses, all door sizes, all window sizes with sill heights, stair dimensions, ceiling heights)
-- Part 5: Building Proportion Rules (envelope ratios, room allocation percentages, SF by bedroom count)
-- Part 6: Architectural Style Guidelines (10+ styles with layout characteristics)
+**File: `supabase/functions/ayn-unified/intentDetector.ts`**
 
-## Key Improvements Over Current Prompt
+Add a new `floorPlanKeywords` array before the existing keyword checks (must be checked BEFORE `engineeringKeywords` since "design" overlaps):
 
-1. **Privacy Gradient** -- currently missing. New prompt teaches the AI that rooms go Public (front) to Private (back), with the exact sequence: Entry, Living/Dining, Kitchen, Hallway, Kids Bedrooms, Master Suite
+- English: "floor plan", "house plan", "home layout", "design a house", "design me a home", "design a home", "architectural drawing", "home design", "house design", "design a floor plan"
+- Arabic: "مخطط", "تصميم بيت", "تصميم منزل", "رسم معماري", "مخطط طابق", "تصميم دار"
+- French: "plan de maison", "plan d'etage", "concevoir une maison"
 
-2. **Sunlight Orientation** -- currently missing. New prompt includes the direction table (East=kitchen morning, South=living midday, West=dining evening, North=bathrooms/garage)
+Returns `'floor_plan'` intent.
 
-3. **Complete Adjacency Matrix** -- current prompt has basic rules. New prompt has the full 14-row adjacency table with MUST/SHOULD/MUST NOT relationships
+**File: `src/hooks/useMessages.ts`**
 
-4. **Exact Room Sizes with Max Aspect Ratios** -- current prompt has sizes but no max aspect. New prompt adds the 1:1.3, 1:1.5 etc. limits per room type
+Add floor plan detection in the client-side `detectIntent()` function (around line 304-322):
+- Add regex: `/floor plan|house plan|home layout|design a house|design me a|مخطط|تصميم بيت|تصميم منزل|plan de maison/`
+- Returns `'floor_plan'`
+- Add `'floor_plan'` to the `requiresNonStreaming` array (line 327)
+- Add a `isGeneratingFloorPlan` visual state similar to `isGeneratingDocument`
 
-5. **Full Door Size Table** -- current has basics. New adds bifold closet doors, pocket doors, sliding glass exact sizes, garage overhead doors
+### 2. System Prompt -- Teach AYN About Floor Plans
 
-6. **Full Window Size Table with Sill Heights** -- current has ranges. New has exact per-room sill heights (kitchen=42", bathroom=48-60", bedroom=24-36") and egress requirements (5.7 SF opening, max 44" sill)
+**File: `supabase/functions/ayn-unified/systemPrompts.ts`**
 
-7. **Ceiling Height Variety** -- currently missing. New prompt teaches 9-10' for public, 8' for bedrooms, 7' min for baths
+Two changes:
 
-8. **Kitchen Work Triangle** -- more detail: 4-9' legs, 12-26' perimeter, no leg crosses walkway
-
-9. **Back-to-back Plumbing** -- current has basic rule. New adds stacking rule for multi-story and specific plumbing wall requirements
-
-10. **Entry Sequence** -- new: two entries (formal front + daily garage/mudroom), both must work independently
-
-11. **Building Proportion Rules** -- new: room allocation percentages (30-40% public, 30-35% private, 10-15% service, 8-12% circulation), SF by bedroom count
-
-12. **Style-specific Guidelines** -- expanded from 8 styles to 11, with typical SF ranges
-
-## Post-Generation Validation (Client-Side)
-
-Add a `layoutValidator.ts` that runs after the AI returns data, catching any remaining issues before rendering:
-
-- Room overlap detection (no two rooms should intersect)
-- All rooms fit within building envelope
-- Room aspect ratios within limits
-- Total room area approximately matches target SF
-- Adjacency violations (garage next to bedroom, etc.)
-- Missing doors (every room needs at least one)
-- Wall endpoint alignment (snap to 0.5ft grid if AI drifted)
-
-This acts as a safety net -- the AI should produce correct output, but the validator catches edge cases.
-
-## Technical Changes
-
-### 1. Edge Function: Replace System Prompt (`supabase/functions/generate-floor-plan-layout/index.ts`)
-
-Replace the current `SYSTEM_PROMPT` with the complete knowledge base. The prompt structure will be:
-
-```text
-SECTION 1: DESIGN PATTERNS
-  1.1 Privacy Gradient
-  1.2 Indoor Sunlight (direction table)
-  1.3 Common Areas at Heart
-  1.4 Couple's Realm
-  1.5 Room of One's Own
-  1.6 Sequence of Sitting Spaces
-  1.7 Entrance Transition (street > porch > foyer > living)
-  1.8 Three-Zone Design (public/private/service)
-  1.9 Short Passages (hallway < 10% of SF)
-  1.10 Ceiling Height Variety
-  1.11 Kitchen Work Triangle (4-9' legs, 12-26' total)
-  1.12 Back-to-back Plumbing
-  1.13 Entry Sequence (front formal + daily garage)
-  1.14 Full Adjacency Matrix (14 pairs)
-
-SECTION 2: ROOM SIZE STANDARDS
-  Complete table with Min/Typical/Generous/Max Aspect for all room types
-  Kitchen work triangle details
-  Bathroom clearance rules
-
-SECTION 3: CONSTRUCTION STANDARDS
-  3.1 Wall thicknesses (exterior 6.5", interior 4.5", plumbing 6.5")
-  3.2 Full door size table (front 36", interior 32", bath 30", closet 24-30", sliding 72-96", garage overhead 96/192")
-  3.3 Full window size table with sill heights per room type
-  3.4 Stair dimensions (IRC + NBC)
-  3.5 Ceiling heights per room type
-
-SECTION 4: BUILDING PROPORTION RULES
-  4.1 Envelope aspect ratios
-  4.2 Room allocation percentages
-  4.3 SF by bedroom count table
-
-SECTION 5: ARCHITECTURAL STYLE GUIDELINES
-  11 styles with typical SF, layout, and character rules
-
-SECTION 6: GENERATION ALGORITHM (7 steps + 14-point validation)
-
-SECTION 7: COORDINATE + WALL RULES
-  0.5ft grid, wall dedup, door clearance, open concept
+a) Update "WHAT YOU CAN DO DIRECTLY" section (line 48-53) to add:
+```
+- Floor plan generation (architectural drawings with rooms, walls, doors, windows -- ask user for bedrooms, bathrooms, style, and target square footage)
 ```
 
-### 2. New File: Layout Validator (`src/components/engineering/drawings/engine/layoutValidator.ts`)
+b) Add a new `floor_plan` intent block (after the `document` block, around line 158):
+```
+FLOOR PLAN PARAMETER EXTRACTION MODE:
+Extract these parameters from the user's request. Respond ONLY with valid JSON:
+{
+  "style_preset": "modern" | "modern_farmhouse" | "craftsman" | "colonial" | "ranch" | "mediterranean" | "coastal" | "mid_century_modern" | "mountain_lodge" | "minimalist" | "traditional",
+  "num_bedrooms": number (default 3),
+  "num_bathrooms": number (default 2),
+  "target_sqft": number (default 1800),
+  "num_storeys": 1 or 2 (default 1),
+  "has_garage": boolean (default true),
+  "garage_type": "attached_2car" | "attached_3car" | "detached" | "none",
+  "custom_description": "any additional details from the user"
+}
 
-Post-generation validation that runs before rendering:
+If the user is vague (e.g., "design me a house"), use sensible defaults and proceed.
+```
 
-- `validateRoomOverlaps(rooms)` -- check no two rooms share interior area
-- `validateBuildingEnvelope(rooms, building)` -- all rooms within total_width x total_depth
-- `validateAspectRatios(rooms)` -- per room type limits
-- `validateAdjacency(rooms)` -- MUST NOT pairs aren't adjacent
-- `snapCoordinates(layout)` -- round all coordinates to nearest 0.5ft
-- `validateDoors(doors, walls, rooms)` -- every room accessible
-- Returns warnings array (non-blocking) and errors array (blocking)
+### 3. Floor Plan Handler in `ayn-unified/index.ts`
 
-### 3. Updated Hook: Run Validator (`src/components/engineering/drawings/hooks/useDrawingGeneration.ts`)
+**File: `supabase/functions/ayn-unified/index.ts`**
 
-After receiving AI response, run validator. If errors found, auto-retry with refinement instruction describing the specific violations. If only warnings, render with console warnings.
+Add a new `floor_plan` intent block after the `document` block (after line 814), modeled on the document flow:
 
-## Files Modified
+1. Check premium tier (same as document -- free users get upgrade prompt, admins bypass)
+2. Call LLM with the `floor_plan` system prompt to extract params JSON from user message
+3. Parse the JSON params
+4. Call `generate-floor-plan-layout` internally via fetch (same pattern as `generate-document` call on line 735)
+5. If layout JSON returned successfully, call `render-floor-plan-svg` to get SVG string
+6. Upload SVG to `floor-plans` storage bucket using the service client
+7. Get public URL
+8. Return response with `documentUrl`, `documentName`, `documentType: 'svg'`
+
+Also add `floor_plan` to `FALLBACK_CHAINS` (same models as engineering).
+
+Credit cost: 35 credits per floor plan (between PDF at 30 and the complexity involved).
+
+### 4. New Edge Function: `render-floor-plan-svg`
+
+**File: `supabase/functions/render-floor-plan-svg/index.ts`**
+
+A server-side SVG renderer that takes layout JSON and produces an SVG string. This replicates the core rendering logic from `FloorPlanRenderer.tsx` but outputs raw SVG XML without React/DOM.
+
+The function will:
+- Accept layout JSON via POST body
+- Process walls using the same geometry logic (simplified for server-side -- straight segments, thickness offsets)
+- Render room rectangles with labels and area text
+- Render wall segments as filled rectangles (exterior hatched, interior solid)
+- Render door symbols (line + arc) at opening positions
+- Render window symbols (three parallel lines) at opening positions
+- Render dimension chains on all four sides
+- Include a title block at the bottom
+- Return the complete SVG as a string
+
+Scale: 1/4" = 1'-0" (1:48), targeting a 36"x24" sheet (ARCH D).
+
+Drawing constants reused from `drawingConstants.ts` (hardcoded in the edge function since it can't import from `src/`).
+
+**File: `supabase/config.toml`** -- Add entry:
+```toml
+[functions.render-floor-plan-svg]
+verify_jwt = false
+```
+
+### 5. Storage Bucket for Floor Plans
+
+**Database migration:**
+```sql
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('floor-plans', 'floor-plans', true);
+
+CREATE POLICY "Authenticated users can upload floor plans"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'floor-plans');
+
+CREATE POLICY "Public can read floor plans"
+ON storage.objects FOR SELECT TO public
+USING (bucket_id = 'floor-plans');
+
+CREATE POLICY "Users can delete own floor plans"
+ON storage.objects FOR DELETE TO authenticated
+USING (bucket_id = 'floor-plans' AND (storage.foldername(name))[1] = auth.uid()::text);
+```
+
+Files will be stored as `{userId}/{timestamp}-{style}.svg`.
+
+### 6. Client-Side Response Handling
+
+**File: `src/hooks/useMessages.ts`**
+
+The existing non-streaming response handler (lines 537-596) already handles `documentUrl` / `documentName` / `documentType` and renders `DocumentDownloadButton`. SVG files will work automatically through this path since:
+- `documentAttachment` is created from `webhookData.documentUrl` (line 574)
+- The `DocumentDownloadButton` component handles any file type generically
+
+The only addition needed is the visual indicator state for "Generating floor plan..." similar to the document generation indicator.
+
+## File Summary
 
 | File | Action |
 |------|--------|
-| `supabase/functions/generate-floor-plan-layout/index.ts` | Replace system prompt with full knowledge base |
-| `src/components/engineering/drawings/engine/layoutValidator.ts` | Create -- post-generation validation |
-| `src/components/engineering/drawings/hooks/useDrawingGeneration.ts` | Update -- run validator, auto-retry on errors |
+| `supabase/functions/ayn-unified/intentDetector.ts` | Add floor_plan keywords |
+| `supabase/functions/ayn-unified/systemPrompts.ts` | Add floor plan capability + intent prompt |
+| `supabase/functions/ayn-unified/index.ts` | Add floor_plan handler block + fallback chain |
+| `supabase/functions/render-floor-plan-svg/index.ts` | **New** -- server-side SVG renderer |
+| `supabase/config.toml` | Add render-floor-plan-svg entry |
+| `src/hooks/useMessages.ts` | Add floor_plan intent detection + visual state |
+| Database migration | Create floor-plans storage bucket + RLS policies |
 
+## Build Order
+
+1. Storage bucket migration (prerequisite for uploads)
+2. `render-floor-plan-svg` edge function (new file)
+3. `intentDetector.ts` (add keywords)
+4. `systemPrompts.ts` (add capability + prompt)
+5. `ayn-unified/index.ts` (add handler + fallback chain)
+6. `config.toml` (add function entry)
+7. `useMessages.ts` (client-side intent + visual state)
+8. Deploy edge functions
