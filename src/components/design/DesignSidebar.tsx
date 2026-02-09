@@ -37,13 +37,13 @@ const designTools: DesignToolOption[] = [
     icon: ClipboardCheck,
     gradient: 'from-teal-500 to-cyan-500',
   },
-  {
-    id: 'parking',
-    title: 'Car Parking Designer',
-    shortTitle: 'Parking',
-    icon: Car,
-    gradient: 'from-indigo-500 to-violet-500',
-  },
+  // {
+  //   id: 'parking',
+  //   title: 'Car Parking Designer',
+  //   shortTitle: 'Parking',
+  //   icon: Car,
+  //   gradient: 'from-indigo-500 to-violet-500',
+  // },
 ];
 
 interface DesignSidebarProps {
