@@ -7,7 +7,8 @@ import {
   Users, 
   Shield, 
   Settings, 
-  DollarSign, 
+  DollarSign,
+  FileCheck,
   Gauge, 
   Bot, 
   FlaskConical,
@@ -42,6 +43,7 @@ export type AdminTabId =
   | 'beta-feedback'
   | 'message-feedback'
   | 'twitter-marketing'
+  | 'terms-consent'
   | 'ayn-logs';
 
 interface AdminSection {
@@ -60,6 +62,7 @@ const mainSections: AdminSection[] = [
   { id: 'applications', title: 'Applications', shortTitle: 'App', icon: FileText, gradient: 'from-amber-500 to-orange-500', adminOnly: false, hasBadge: true },
   { id: 'support', title: 'Support', shortTitle: 'Sup', icon: MessageSquare, gradient: 'from-purple-500 to-pink-500', adminOnly: false },
   { id: 'users', title: 'Users', shortTitle: 'Usr', icon: Users, gradient: 'from-rose-500 to-red-500', adminOnly: true },
+  { id: 'terms-consent', title: 'Terms Consent', shortTitle: 'Trms', icon: FileCheck, gradient: 'from-teal-500 to-emerald-500', adminOnly: true },
   { id: 'rate-limits', title: 'Rate Limits', shortTitle: 'Rate', icon: Shield, gradient: 'from-violet-500 to-purple-500', adminOnly: true },
   { id: 'settings', title: 'Settings', shortTitle: 'Set', icon: Settings, gradient: 'from-slate-500 to-gray-500', adminOnly: true },
 ];
