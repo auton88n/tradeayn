@@ -1,90 +1,83 @@
 
-# Fix Email Subject Parsing and AI Tone
 
-## Problem 1: Subject Gets Mangled
+# Fix Email Subject Leak and Body Quality
 
-The email action format is `[ACTION:send_email:to:subject:body]` and the parser splits on `:` (colon). If the AI writes a colon anywhere in the subject or body, it breaks the parsing -- the subject gets mixed with the body, producing garbage like "your automation / AYN:Hey,".
+## Problems
 
-**Fix in `index.ts` (action parser, lines 699-704):**
-- Change the parser to only split on the FIRST 3 colons, so everything after the third colon becomes the body (even if it contains more colons).
-- Also clean the subject: strip any leftover slashes, "AYN:" prefixes, or junk that the AI sometimes prepends.
+1. **Subject leaks into body** -- The email shows "your automation:Hey," as the first line. The AI writes the subject with a colon (e.g., `your automation:Hey`), and the parser splits it wrong, so part of the subject ends up in the body.
+2. **Banned words still used** -- "bespoke" and "streamline" appear in the body. The AI is ignoring the rules.
+3. **Fallback subject "Hey from AYN"** -- Unprofessional. Should be something like "Quick question".
 
-**Fix in `index.ts` (system prompt, line 122):**
-- Update the action format documentation to explicitly tell the AI: "The subject must be a clean, short, human-sounding email subject line. No colons, no slashes, no brand prefixes."
+## Root Cause
 
-## Problem 2: AI Writes Like a Robot
+The action format `[ACTION:send_email:to:subject:body]` uses colons as delimiters. The AI writes subjects containing colons, and the parser splits on the wrong colon. The body then starts with leftover subject text like "Hey,".
 
-Em-dashes, words like "bespoke", overly polished corporate language -- it screams AI. The email body needs to sound like a real person typed it quickly.
-
-**Fix in `index.ts` (EMAIL RULES, lines 103-106):**
-Add specific writing style rules:
-- Never use em-dashes. Use commas or periods instead.
-- Never use words like "bespoke", "leverage", "synergy", "streamline", "delighted".
-- Write like a real person sending a quick business email -- casual but professional.
-- Keep sentences short and direct. No filler phrases.
-- The subject line should be casual and short (3-6 words), like a human would write. Examples: "Quick question", "Saw your work", "Hey from AYN". Never include brand names or slashes in subjects.
-
-## Problem 3: Subject Cleanup in Code
-
-**Fix in `commands.ts` (line 438):**
-Add a cleanup step for the subject after parsing:
-- Strip any "AYN:" or "AYN /" prefixes
-- Remove em-dashes
-- Trim extra whitespace
-- Cap subject length to prevent overly long subjects
-
-## Technical Details
-
-### File: `supabase/functions/ayn-telegram-webhook/index.ts`
-
-1. **Action parser fix (lines 699-703):** Change from `params.split(':')` with destructuring to a smarter split that only takes the first 2 colons as delimiters:
-
-```typescript
-case 'send_email': {
-  const firstColon = params.indexOf(':');
-  if (firstColon === -1) return null;
-  const to = params.slice(0, firstColon);
-  const rest = params.slice(firstColon + 1);
-  const secondColon = rest.indexOf(':');
-  if (secondColon === -1) return null;
-  const subject = rest.slice(0, secondColon);
-  const body = rest.slice(secondColon + 1);
-  return await cmdEmail(`/email ${to} ${subject} | ${body}`, supabase);
-}
-```
-
-2. **System prompt update (lines 103-106):** Expand EMAIL RULES:
-
-```
-EMAIL RULES:
-- NEVER use em-dashes (--). Use commas or periods.
-- NEVER use words: "bespoke", "leverage", "synergy", "streamline", "delighted", "thrilled".
-- Write like a real human typing a quick email. Short sentences. No filler.
-- Subject lines: casual, 3-6 words, lowercase feel. Examples: "quick question", "saw your work", "idea for you". No colons, slashes, or brand names in subjects.
-- No signature or sign-off in the body. The system adds it automatically.
-- Body content only. Professional but conversational.
-```
-
-3. **Action format docs (line 122):** Add a note about subject formatting:
-
-```
-- [ACTION:send_email:to:subject:body] -- Send email (subject must be short, no colons)
-```
+## Changes
 
 ### File: `supabase/functions/ayn-telegram-webhook/commands.ts`
 
-4. **Subject cleanup (after line 438):** Add sanitization:
+**1. Strip leaked subject text from body start**
+
+After parsing, clean the body to remove any leftover "Hey," or greeting that got concatenated:
 
 ```typescript
-// Clean up AI-generated subject
-let cleanSubject = subject
-  .replace(/^(?:AYN|ayn)\s*[:/\-]\s*/i, '')  // Remove "AYN:" or "AYN /" prefix
-  .replace(/—/g, '-')                          // Replace em-dashes
-  .replace(/\s+/g, ' ')                        // Collapse whitespace
-  .trim();
-if (!cleanSubject) cleanSubject = 'Hey from AYN';
+// Remove subject text that leaked into body start (e.g., "your automation:Hey,")
+let cleanBody = body
+  .replace(/^[^,.:!?]*:\s*/i, '')  // Remove "something:" prefix if present
+  .replace(/\\n/g, '\n')
+  .replace(/\n/g, '<br>');
 ```
 
+**2. Change fallback subject**
+
+Replace "Hey from AYN" with "Quick question":
+
+```typescript
+if (!cleanSubject) cleanSubject = 'Quick question';
+```
+
+### File: `supabase/functions/ayn-telegram-webhook/index.ts`
+
+**3. Strengthen the prompt rules to prevent banned words and colons**
+
+Update the EMAIL RULES and action format to be more forceful:
+
+```
+EMAIL RULES:
+- ABSOLUTELY ZERO colons (:) in subject lines. This breaks the email system.
+- NEVER use: "bespoke", "leverage", "synergy", "streamline", "delighted", "thrilled", "excited to", "I'd love to", "off-the-shelf", "heavy lifting".
+- No em-dashes. No hyphens between phrases. Use periods or commas.
+- Write exactly like a founder sending a quick 3-sentence email from their phone. Casual. Direct. No fluff.
+- Subject: 2-5 words, no punctuation, no brand. Examples: "quick question", "saw your project", "idea for you"
+- Body: 2-4 short sentences max. No corporate speak. Say what you do in plain words.
+- NO signature, NO sign-off, NO "Best", NO "Cheers". System handles that.
+```
+
+**4. Also add body cleanup in `commands.ts` to programmatically strip banned words**
+
+As a safety net, replace any remaining banned words in the body:
+
+```typescript
+// Programmatically replace banned words the AI might still use
+cleanBody = cleanBody
+  .replace(/\bbespoke\b/gi, 'custom')
+  .replace(/\bstreamline\b/gi, 'simplify')
+  .replace(/\bleverage\b/gi, 'use')
+  .replace(/\bsynergy\b/gi, 'teamwork')
+  .replace(/\boff.the.shelf\b/gi, 'generic')
+  .replace(/\bheavy lifting\b/gi, 'hard work');
+```
+
+## Summary
+
+| Issue | Fix |
+|-------|-----|
+| Subject leaks into body ("your automation:Hey,") | Strip "prefix:" patterns from body start |
+| Fallback subject "Hey from AYN" | Change to "Quick question" |
+| Banned words still used (bespoke, streamline) | Stronger prompt rules + programmatic replacement |
+| AI ignores subject format rules | More forceful prompt wording about no colons |
+
 ## Files Changed
-- `supabase/functions/ayn-telegram-webhook/index.ts` -- Parser fix + prompt update
-- `supabase/functions/ayn-telegram-webhook/commands.ts` -- Subject sanitization
+- `supabase/functions/ayn-telegram-webhook/commands.ts` -- Body cleanup, banned word replacement, fallback subject
+- `supabase/functions/ayn-telegram-webhook/index.ts` -- Stronger email prompt rules
+
