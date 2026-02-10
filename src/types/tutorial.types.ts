@@ -38,12 +38,6 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     icon: 'MessageSquare',
   },
   {
-    id: 'documents',
-    title: 'Generate Documents',
-    description: 'AYN creates stunning PDFs and Excel files. Just ask!',
-    icon: 'FileText',
-  },
-  {
     id: 'files',
     title: 'Upload & Analyze Files',
     description: 'Upload documents or images using the + button for analysis.',
@@ -58,8 +52,14 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'engineering',
     title: 'Engineering Tools',
-    description: 'Access 6 professional calculators with 3D visualization and AI analysis.',
+    description: 'Access 6 structural calculators: Beam, Column, Slab, Foundation, Retaining Wall, and AI Grading.',
     icon: 'HardHat',
+  },
+  {
+    id: 'compliance',
+    title: 'Code Compliance',
+    description: 'Check designs against IRC 2024 and NBC 2025 building codes with our compliance wizard.',
+    icon: 'ClipboardCheck',
   },
   {
     id: 'navigation',
