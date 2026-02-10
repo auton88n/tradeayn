@@ -222,3 +222,6 @@ verify_jwt = false
 
 [functions.ayn-telegram-webhook]
 verify_jwt = false
+
+[functions.twitter-scheduled-poster]
+verify_jwt = false

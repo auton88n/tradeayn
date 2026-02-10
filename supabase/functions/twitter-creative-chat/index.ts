@@ -7,77 +7,58 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `you are ayn -- the creative director, marketing strategist, and sales expert for AYN, an AI engineering platform. you help create stunning marketing visuals and craft high-conversion campaigns for social media (Twitter/X, Instagram).
+const SYSTEM_PROMPT = `you are ayn -- not a chatbot, not an assistant. you're the creative director, head of marketing, and chief strategist for AYN, an AI engineering platform. you have OPINIONS and you push back when ideas are weak.
 
 ## your personality
-- casual, lowercase, no corporate speak
-- confident and creative -- you have strong opinions about design AND marketing strategy
-- concise -- don't write essays, keep responses short and punchy
-- use "hey", "nice", "got it", "love that" naturally
-- you think like a CMO who also happens to be a world-class designer
+- sharp, opinionated, lowercase, zero corporate BS
+- you don't ask "what would you like?" -- you propose bold ideas and defend them
+- when a hook is weak you say "that hook is weak, try this instead" and give a better one
+- you think 3 moves ahead: this tweet → the reply bait → the follow-up thread
+- you reference what worked before ("your last authority tweet got 2x engagement, let's double down")
+- you're funny when it fits, brutal when needed, always strategic
+- NEVER use: "great idea!", "sure thing!", "happy to help!" -- you're a creative director, not a helpdesk
 
 ## your expertise
+- audience psychology: engineers want precision, business owners want ROI, students want learning
+- hook mastery: first 7 words decide everything. you obsess over this.
+- content architecture: threads > single tweets for thought leadership. carousels > single images.
+- timing strategy: you know when to post based on audience behavior
+- competitive positioning: you analyze competitors and find angles they're missing
+- brand consistency: every piece should feel unmistakably AYN
 
-### marketing strategist
-- you understand audience targeting, hook psychology, CTA optimization
-- you know what makes people stop scrolling: contrast, bold statements, emotional triggers
-- you suggest marketing angles based on the content -- not just pretty pictures
-- you recommend A/B testing ideas: "try one with a question hook vs a bold claim"
+## what AYN does
+AI engineering consultant: structural calcs (ACI 318, SBC, IBC), AI floor plans, code compliance, PDF/Excel reports, Arabic+English, site grading, cost estimation, real-time engineering chat.
 
-### sales copywriter
-- you know the AIDA framework (Attention → Interest → Desire → Action)
-- you use PAS (Problem → Agitation → Solution) when it fits
-- you understand social proof, urgency, scarcity, and authority signals
-- first 7 words matter most -- you obsess over hooks
+## campaign mode
+when asked to "plan my week" or "campaign", generate a 5-7 tweet content calendar as JSON:
+[CAMPAIGN_PLAN]
+[{"day":"Mon","content":"tweet text","content_type":"value","target_audience":"engineer","strategy":"authority","scheduled_time":"09:00"},...]
 
-### brand consultant
-- when given a URL to scan via [SCAN_URL], you analyze the competitor/brand and suggest positioning
-- you understand brand differentiation and can recommend visual strategies
-- you know color psychology: blue = trust, red = urgency, green = growth, black = luxury, orange = energy
+## thread mode
+when asked for a thread, generate 3-5 connected tweets as JSON:
+[THREAD]
+[{"order":1,"content":"hook tweet","role":"hook"},{"order":2,"content":"expansion","role":"expand"},...]
 
-### design director
-- strong opinions on composition, color theory, typography hierarchy
-- platform-specific best practices:
-  - Twitter/X: bold text, high contrast, square or 16:9, punchy headlines
-  - Instagram: lifestyle, aspirational, carousel-friendly, vertical for stories
-- you know when to use whitespace vs density, when to go minimal vs maximalist
-
-## your job
-1. understand what the user wants -- ask 1-2 smart clarifying questions about their GOAL (not just aesthetics)
-2. suggest a marketing angle or strategy before jumping to visuals
-3. when you have enough info, generate the image
-4. after generating, suggest next steps: "want me to create an A/B variant?" or "i can make a thread visual too"
-
-## how to generate images
-when generating, create a detailed image prompt internally. the image should be:
-- 1080x1080 professional social media graphic (or 1200x675 for Twitter cards)
-- clean, modern, polished design
-- text should be legible and well-spaced
-- suitable for the target platform
-
-IMPORTANT: when you decide to generate an image, your response MUST start with [GENERATE_IMAGE] followed by the image prompt on the next line, then your message to the user after a blank line.
-
-example:
-[GENERATE_IMAGE]
-Create a professional 1080x1080 social media image with dark navy background, subtle grid lines, white text saying "Build smarter with AI", blue accent (#0EA5E9) highlights, AYN eye logo watermark in bottom-right corner, clean sans-serif typography, generous whitespace
-
-nice -- here's your dark techy creative with the hook front and center. the contrast ratio is high so it'll pop in feeds. want me to make an A/B variant with a question hook instead?
+## image generation
+when generating, your response MUST start with [GENERATE_IMAGE] followed by the prompt, then your message after a blank line. BE SPECIFIC about brand standards:
+- minimalist white background OR dark navy
+- elegant small-scale typography (~30% of image)
+- AYN eye symbol watermark corner
+- electric blue (#0EA5E9) highlights on key words
+- subtle light gray engineering grid/blueprint lines
+- clean sans-serif (Inter), generous whitespace
 
 ## URL scanning
-when the user mentions a URL and wants brand analysis, respond with:
+when the user mentions a URL for brand analysis:
 [SCAN_URL]
 the_url_here
 
-i'll scan that site and extract their brand DNA -- colors, typography, tone, everything. then we can use it to create matching visuals or competitive counter-positioning.
-
-## brand context
-when brand_kit data is provided, USE it:
-- reference the brand colors by name and hex
-- maintain typography consistency
-- echo the tagline and traits in your suggestions
-
-if the user asks for changes to an existing image, generate a new one with the modifications.
-if the user is just chatting or asking questions, respond normally WITHOUT [GENERATE_IMAGE] or [SCAN_URL].`;
+## rules
+- use brand kit data when provided -- reference colors by name, maintain consistency
+- reference recent tweet performance when available
+- push for threads and campaigns, not one-off tweets
+- suggest A/B variants proactively
+- if the user is vague, propose 2-3 specific directions instead of asking open questions`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -85,7 +66,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, post_id, tweet_text, brand_kit } = await req.json();
+    const { messages, post_id, tweet_text, brand_kit, mode } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "messages array is required" }), {
@@ -101,14 +82,34 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Build context additions
-    let contextAdditions = "";
-    if (tweet_text) contextAdditions += `\n\nthe current tweet text is: "${tweet_text}"`;
-    if (brand_kit) {
-      contextAdditions += `\n\nbrand kit context:\n- colors: ${JSON.stringify(brand_kit.colors)}\n- tagline: "${brand_kit.tagline}"\n- traits: ${brand_kit.traits?.join(", ")}`;
+    // Memory: inject recent tweets + engagement data
+    let memoryContext = "";
+    const { data: recentTweets } = await supabase
+      .from("twitter_posts")
+      .select("content, status, psychological_strategy, content_type, target_audience, quality_score, impressions, likes, retweets, replies, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (recentTweets?.length) {
+      memoryContext += "\n\n## RECENT PERFORMANCE (use this to inform strategy)\n";
+      recentTweets.forEach((t: Record<string, unknown>, i: number) => {
+        const engagement = [t.impressions && `${t.impressions} impressions`, t.likes && `${t.likes} likes`, t.retweets && `${t.retweets} RTs`].filter(Boolean).join(", ");
+        memoryContext += `${i + 1}. "${(t.content as string)?.substring(0, 80)}..." [${t.status}] ${t.content_type || ""} → ${t.target_audience || "general"}${engagement ? ` | ${engagement}` : ""}\n`;
+      });
     }
 
-    // Get AYN's text response
+    // Inject brand kit
+    if (brand_kit) {
+      memoryContext += `\n\n## BRAND KIT (always use these)\n- Colors: ${JSON.stringify(brand_kit.colors)}\n- Tagline: "${brand_kit.tagline}"\n- Traits: ${brand_kit.traits?.join(", ")}`;
+    }
+
+    if (tweet_text) memoryContext += `\n\n## CURRENT TWEET\n"${tweet_text}"`;
+
+    // Time awareness
+    const now = new Date();
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    memoryContext += `\n\n## CONTEXT\nToday: ${days[now.getUTCDay()]}, ${now.toISOString().split("T")[0]}. Consider posting timing for Middle East (GMT+3) and global audiences.`;
+
     const chatResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -118,7 +119,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT + contextAdditions },
+          { role: "system", content: SYSTEM_PROMPT + memoryContext },
           ...messages,
         ],
       }),
@@ -127,14 +128,12 @@ serve(async (req) => {
     if (!chatResponse.ok) {
       if (chatResponse.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded, try again later" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (chatResponse.status === 402) {
         return new Response(JSON.stringify({ error: "AI credits exhausted" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errText = await chatResponse.text();
@@ -144,52 +143,71 @@ serve(async (req) => {
 
     const chatData = await chatResponse.json();
     const fullResponse = chatData.choices?.[0]?.message?.content || "";
-
     console.log("AYN response:", fullResponse.substring(0, 200));
 
-    // Check if AYN wants to scan a URL
-    if (fullResponse.startsWith("[SCAN_URL]")) {
-      const lines = fullResponse.split("\n");
-      const urlLine = lines[1]?.trim();
-      const messageLines = lines.slice(2).filter((l: string) => l.trim() !== "");
-      const userMessage = messageLines.join("\n").trim() || "scanning that site now...";
-
+    // Campaign plan response
+    if (fullResponse.includes("[CAMPAIGN_PLAN]")) {
+      const parts = fullResponse.split("[CAMPAIGN_PLAN]");
+      const message = parts[0].trim();
+      const jsonPart = parts[1]?.trim();
+      let plan = [];
+      try {
+        const cleaned = jsonPart?.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        plan = JSON.parse(cleaned || "[]");
+      } catch { console.error("Failed to parse campaign plan"); }
       return new Response(
-        JSON.stringify({ type: "scan_url", message: userMessage, scan_url: urlLine }),
+        JSON.stringify({ type: "campaign_plan", message: message || "here's your content calendar for the week:", plan }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Check if AYN wants to generate an image
+    // Thread response
+    if (fullResponse.includes("[THREAD]")) {
+      const parts = fullResponse.split("[THREAD]");
+      const message = parts[0].trim();
+      const jsonPart = parts[1]?.trim();
+      let thread = [];
+      try {
+        const cleaned = jsonPart?.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        thread = JSON.parse(cleaned || "[]");
+      } catch { console.error("Failed to parse thread"); }
+      return new Response(
+        JSON.stringify({ type: "thread", message: message || "here's your thread:", thread }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // URL scan
+    if (fullResponse.startsWith("[SCAN_URL]")) {
+      const lines = fullResponse.split("\n");
+      const urlLine = lines[1]?.trim();
+      const messageLines = lines.slice(2).filter((l: string) => l.trim() !== "");
+      return new Response(
+        JSON.stringify({ type: "scan_url", message: messageLines.join("\n").trim() || "scanning that site now...", scan_url: urlLine }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Image generation
     if (fullResponse.startsWith("[GENERATE_IMAGE]")) {
       const lines = fullResponse.split("\n");
       const promptLines: string[] = [];
       const messageLines: string[] = [];
       let pastPrompt = false;
-
       for (let i = 1; i < lines.length; i++) {
         if (!pastPrompt) {
-          if (lines[i].trim() === "") {
-            pastPrompt = true;
-          } else {
-            promptLines.push(lines[i]);
-          }
+          if (lines[i].trim() === "") pastPrompt = true;
+          else promptLines.push(lines[i]);
         } else {
           messageLines.push(lines[i]);
         }
       }
-
       const imagePrompt = promptLines.join("\n").trim();
-      const userMessage = messageLines.join("\n").trim() || "here's your creative! want me to tweak anything?";
-
-      console.log("Generating image with prompt:", imagePrompt.substring(0, 100));
+      const userMessage = messageLines.join("\n").trim() || "here's your creative. want me to tweak anything?";
 
       const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "google/gemini-3-pro-image-preview",
           messages: [{ role: "user", content: imagePrompt }],
@@ -198,73 +216,32 @@ serve(async (req) => {
       });
 
       if (!imageResponse.ok) {
-        if (imageResponse.status === 429) {
-          return new Response(JSON.stringify({ error: "Rate limit exceeded during image generation" }), {
-            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        if (imageResponse.status === 402) {
-          return new Response(JSON.stringify({ error: "AI credits exhausted" }), {
-            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        const errText = await imageResponse.text();
-        console.error("Image generation error:", imageResponse.status, errText);
-        return new Response(
-          JSON.stringify({ type: "text", message: "hmm, image generation failed. let me try again -- just say 'retry' or describe what you want differently." }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        if (imageResponse.status === 429) return new Response(JSON.stringify({ error: "Rate limit exceeded during image generation" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (imageResponse.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ type: "text", message: "image generation failed. describe what you want differently and i'll retry." }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       const imageData = await imageResponse.json();
       const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
       if (!imageUrl) {
-        return new Response(
-          JSON.stringify({ type: "text", message: "the image didn't come through. try describing what you want again and i'll regenerate." }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ type: "text", message: "the image didn't come through. try again with a different description." }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // Upload to storage
       const base64Match = imageUrl.match(/^data:image\/(\w+);base64,(.+)$/);
       if (!base64Match) throw new Error("Invalid image format");
-
       const imageFormat = base64Match[1];
-      const base64Data = base64Match[2];
-      const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+      const binaryData = Uint8Array.from(atob(base64Match[2]), (c) => c.charCodeAt(0));
       const filename = `creative-${post_id || "standalone"}-${Date.now()}.${imageFormat}`;
 
-      console.log("Uploading creative:", filename, "size:", binaryData.length);
+      const { error: uploadError } = await supabase.storage.from("generated-images").upload(filename, binaryData, { contentType: `image/${imageFormat}`, upsert: false });
+      if (uploadError) throw new Error("Failed to upload image");
 
-      const { error: uploadError } = await supabase.storage
-        .from("generated-images")
-        .upload(filename, binaryData, {
-          contentType: `image/${imageFormat}`,
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw new Error("Failed to upload image");
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from("generated-images")
-        .getPublicUrl(filename);
-
+      const { data: publicUrlData } = supabase.storage.from("generated-images").getPublicUrl(filename);
       const permanentUrl = publicUrlData.publicUrl;
 
       if (post_id) {
-        const { error: updateError } = await supabase
-          .from("twitter_posts")
-          .update({ image_url: permanentUrl })
-          .eq("id", post_id);
-
-        if (updateError) console.error("DB update error:", updateError);
+        await supabase.from("twitter_posts").update({ image_url: permanentUrl }).eq("id", post_id);
       }
-
-      console.log("Creative generated:", permanentUrl);
 
       return new Response(
         JSON.stringify({ type: "image", message: userMessage, image_url: permanentUrl, filename }),
@@ -272,7 +249,6 @@ serve(async (req) => {
       );
     }
 
-    // Text-only response
     return new Response(
       JSON.stringify({ type: "text", message: fullResponse }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
