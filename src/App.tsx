@@ -40,7 +40,8 @@ const Ticketing = lazy(() => import("./pages/services/Ticketing"));
 const TicketingApply = lazy(() => import("./pages/services/TicketingApply"));
 const Support = lazy(() => import("./pages/Support"));
 const Engineering = lazy(() => import("./pages/EngineeringWorkspacePage"));
-const Design = lazy(() => import("./pages/DesignWorkspacePage"));
+// const Design = lazy(() => import("./pages/DesignWorkspacePage"));
+const Compliance = lazy(() => import("./pages/CompliancePage"));
 const AIGradingDesigner = lazy(() => import("./pages/AIGradingDesigner"));
 const CivilEngineering = lazy(() => import("./pages/services/CivilEngineering"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -91,7 +92,8 @@ const AnimatedRoutes = () => {
       <Route path="/services/ticketing/apply" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><TicketingApply /></PageTransition></Suspense>} />
       <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
       <Route path="/engineering" element={<Suspense fallback={<EngineeringSkeleton />}><PageTransition><Engineering /></PageTransition></Suspense>} />
-      <Route path="/design" element={<Suspense fallback={<EngineeringSkeleton />}><PageTransition><Design /></PageTransition></Suspense>} />
+      {/* <Route path="/design" element={<Suspense fallback={<EngineeringSkeleton />}><PageTransition><Design /></PageTransition></Suspense>} /> */}
+      <Route path="/compliance" element={<Suspense fallback={<EngineeringSkeleton />}><PageTransition><Compliance /></PageTransition></Suspense>} />
       <Route path="/engineering/grading" element={<Suspense fallback={<EngineeringSkeleton />}><PageTransition><AIGradingDesigner /></PageTransition></Suspense>} />
       <Route path="/services/civil-engineering" element={<Suspense fallback={<ServicePageSkeleton />}><PageTransition><CivilEngineering /></PageTransition></Suspense>} />
       <Route path="/approval-result" element={<PageTransition><ApprovalResult /></PageTransition>} />

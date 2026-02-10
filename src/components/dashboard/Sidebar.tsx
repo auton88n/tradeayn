@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Calculator, Monitor, Ruler } from 'lucide-react';
+import { Plus, LogOut, Trash2, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Calculator, Monitor, ClipboardCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
@@ -419,32 +419,32 @@ export const Sidebar = ({
                 Eng
               </Button>
               
-              {/* Design Studio Button */}
+              {/* Compliance Button */}
               <Button 
                 onClick={() => {
                   if (isMobile) {
                     toast({
                       title: 'Larger Screen Required',
-                      description: 'Design tools require a tablet or desktop for the best experience.',
+                      description: 'Compliance tools require a tablet or desktop for the best experience.',
                       action: (
-                        <Monitor className="w-5 h-5 text-violet-500" />
+                        <Monitor className="w-5 h-5 text-teal-500" />
                       ),
                     });
                   } else {
-                    navigate('/design');
+                    navigate('/compliance');
                   }
                 }}
                 className={cn(
                   "flex-1 h-9 rounded-lg gap-1.5",
-                  "bg-gradient-to-r from-violet-600 to-purple-600",
-                  "hover:from-violet-500 hover:to-purple-500",
+                  "bg-gradient-to-r from-teal-600 to-cyan-600",
+                  "hover:from-teal-500 hover:to-cyan-500",
                   "text-white text-sm font-medium",
                   "transition-colors duration-150",
                   "border-0"
                 )}
               >
-                <Ruler className="w-4 h-4" />
-                Design
+                <ClipboardCheck className="w-4 h-4" />
+                Compliance
               </Button>
             </div>
           </SidebarGroupContent>
