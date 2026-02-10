@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Sparkles, Send, RefreshCw, Loader2, Clock, CheckCircle, XCircle, 
-  Brain, Target, BarChart3, Trash2, Edit3
+  Brain, Target, BarChart3, Trash2, Edit3, Camera, Download, X
 } from 'lucide-react';
 
 interface TwitterPost {
@@ -23,6 +24,7 @@ interface TwitterPost {
   error_message: string | null;
   posted_at: string | null;
   created_at: string;
+  image_url: string | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -44,10 +46,12 @@ export const TwitterMarketingPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPosting, setIsPosting] = useState<string | null>(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [filterContentType, setFilterContentType] = useState<string>('all');
   const [filterAudience, setFilterAudience] = useState<string>('all');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -140,6 +144,27 @@ export const TwitterMarketingPanel = () => {
       toast.success('Tweet updated');
     } catch {
       toast.error('Failed to update');
+    }
+  };
+
+  const handleGenerateImage = async (post: TwitterPost) => {
+    setIsGeneratingImage(post.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('twitter-generate-image', {
+        body: { post_id: post.id, tweet_text: post.content },
+      });
+      if (error) throw error;
+      if (data?.image_url) {
+        setPosts((prev) =>
+          prev.map((p) => (p.id === post.id ? { ...p, image_url: data.image_url } : p))
+        );
+        toast.success('Brand image generated!');
+      }
+    } catch (err) {
+      console.error('Image generation error:', err);
+      toast.error('Failed to generate image');
+    } finally {
+      setIsGeneratingImage(null);
     }
   };
 
@@ -271,7 +296,7 @@ export const TwitterMarketingPanel = () => {
                           maxLength={280}
                         />
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs ${editContent.length > 280 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                          <span className={`text-xs ${editContent.length > 280 ? 'text-destructive' : 'text-muted-foreground'}`}>
                             {editContent.length}/280
                           </span>
                           <Button size="sm" onClick={() => handleSaveEdit(post.id)}>Save</Button>
@@ -280,6 +305,16 @@ export const TwitterMarketingPanel = () => {
                       </div>
                     ) : (
                       <p className="text-sm leading-relaxed">{post.content}</p>
+                    )}
+
+                    {/* Image Preview */}
+                    {post.image_url && (
+                      <button
+                        onClick={() => setPreviewImage(post.image_url)}
+                        className="block rounded-lg overflow-hidden border border-border hover:opacity-90 transition-opacity w-fit"
+                      >
+                        <img src={post.image_url} alt="Brand image" className="w-40 h-40 object-cover" loading="lazy" />
+                      </button>
                     )}
 
                     {/* Quality Scores */}
@@ -296,7 +331,7 @@ export const TwitterMarketingPanel = () => {
 
                     {/* Error */}
                     {post.error_message && (
-                      <p className="text-xs text-red-500">{post.error_message}</p>
+                      <p className="text-xs text-destructive">{post.error_message}</p>
                     )}
                   </div>
 
@@ -327,6 +362,20 @@ export const TwitterMarketingPanel = () => {
                         >
                           <Edit3 className="w-3 h-3" />
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleGenerateImage(post)}
+                          disabled={isGeneratingImage === post.id}
+                          className="gap-1"
+                        >
+                          {isGeneratingImage === post.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Camera className="w-3 h-3" />
+                          )}
+                          {post.image_url ? 'Regen' : 'Image'}
+                        </Button>
                       </>
                     )}
                     <Button
@@ -344,6 +393,24 @@ export const TwitterMarketingPanel = () => {
           ))}
         </div>
       )}
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+        <DialogContent className="max-w-lg p-2">
+          {previewImage && (
+            <div className="space-y-2">
+              <img src={previewImage} alt="Brand image preview" className="w-full rounded-lg" />
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <a href={previewImage} download target="_blank" rel="noopener noreferrer">
+                    <Download className="w-3 h-3 mr-1" /> Download
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

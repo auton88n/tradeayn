@@ -2398,6 +2398,7 @@ export type Database = {
           created_by: string | null
           error_message: string | null
           id: string
+          image_url: string | null
           posted_at: string | null
           psychological_strategy: string | null
           quality_score: Json | null
@@ -2413,6 +2414,7 @@ export type Database = {
           created_by?: string | null
           error_message?: string | null
           id?: string
+          image_url?: string | null
           posted_at?: string | null
           psychological_strategy?: string | null
           quality_score?: Json | null
@@ -2428,6 +2430,7 @@ export type Database = {
           created_by?: string | null
           error_message?: string | null
           id?: string
+          image_url?: string | null
           posted_at?: string | null
           psychological_strategy?: string | null
           quality_score?: Json | null

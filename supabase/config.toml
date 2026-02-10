@@ -201,3 +201,6 @@ verify_jwt = false
 
 [functions.twitter-auto-market]
 verify_jwt = false
+
+[functions.twitter-generate-image]
+verify_jwt = false

@@ -1,0 +1,1 @@
+ALTER TABLE public.twitter_posts ADD COLUMN image_url TEXT;
