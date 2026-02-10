@@ -71,7 +71,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Handle quick commands
-    const commandResponse = await handleCommand(userText, supabase);
+    const commandResponse = await handleCommand(userText, supabase, supabaseUrl, supabaseKey, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID);
     if (commandResponse) {
       await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, commandResponse);
       return new Response('OK', { status: 200 });
@@ -80,16 +80,8 @@ serve(async (req) => {
     // Gather system context for AI
     const context = await gatherSystemContext(supabase);
 
-    // Get recent conversation from ayn_mind for memory
-    const { data: recentThoughts } = await supabase
-      .from('ayn_mind')
-      .select('type, content, created_at')
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    const memoryContext = recentThoughts?.length
-      ? `\nMy recent thoughts:\n${recentThoughts.map(t => `- [${t.type}] ${t.content}`).join('\n')}`
-      : '';
+    // FIX 5: Get real conversation history for memory
+    const conversationHistory = await getConversationHistory(supabase);
 
     // Sanitize input
     const sanitizedInput = sanitizeUserPrompt(userText);
@@ -101,12 +93,28 @@ serve(async (req) => {
       });
     }
 
-    // Call AI
+    // Call AI with conversation history
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, "⚠️ My AI brain isn't configured. Check LOVABLE_API_KEY.");
       return new Response('OK', { status: 200 });
     }
+
+    // Build messages array with history
+    const messages: Array<{ role: string; content: string }> = [
+      { role: 'system', content: AYN_PERSONALITY + INJECTION_GUARD },
+    ];
+
+    // Add conversation history
+    for (const turn of conversationHistory) {
+      messages.push(turn);
+    }
+
+    // Add current message with system context
+    messages.push({
+      role: 'user',
+      content: `System status:\n${JSON.stringify(context, null, 2)}\n\nAdmin says: ${sanitizedInput}`,
+    });
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -116,13 +124,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'google/gemini-3-flash-preview',
-        messages: [
-          { role: 'system', content: AYN_PERSONALITY + INJECTION_GUARD },
-          {
-            role: 'user',
-            content: `System status:\n${JSON.stringify(context, null, 2)}${memoryContext}\n\nAdmin says: ${sanitizedInput}`,
-          },
-        ],
+        messages,
       }),
     });
 
@@ -155,13 +157,21 @@ serve(async (req) => {
 
     await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, cleanReply);
 
-    // Log this exchange to ayn_mind
-    await supabase.from('ayn_mind').insert({
-      type: 'observation',
-      content: `Admin asked: "${userText.slice(0, 100)}". I replied.`,
-      context: { admin_message: userText.slice(0, 200), actions: executedActions },
-      shared_with_admin: true,
-    });
+    // Log BOTH the admin message and AYN's reply for conversation memory
+    await supabase.from('ayn_mind').insert([
+      {
+        type: 'telegram_admin',
+        content: userText.slice(0, 500),
+        context: { source: 'telegram' },
+        shared_with_admin: true,
+      },
+      {
+        type: 'telegram_ayn',
+        content: cleanReply.slice(0, 500),
+        context: { source: 'telegram', actions: executedActions },
+        shared_with_admin: true,
+      },
+    ]);
 
     return new Response('OK', { status: 200 });
   } catch (error) {
@@ -170,9 +180,52 @@ serve(async (req) => {
   }
 });
 
-// --- Quick commands ---
-async function handleCommand(text: string, supabase: ReturnType<typeof createClient>): Promise<string | null> {
+// --- FIX 5: Build conversation history from ayn_mind ---
+async function getConversationHistory(supabase: ReturnType<typeof createClient>) {
+  const { data: exchanges } = await supabase
+    .from('ayn_mind')
+    .select('type, content, created_at')
+    .in('type', ['telegram_admin', 'telegram_ayn'])
+    .order('created_at', { ascending: true })
+    .limit(20); // last 10 exchanges = 20 entries
+
+  if (!exchanges?.length) return [];
+
+  const messages: Array<{ role: string; content: string }> = [];
+  for (const entry of exchanges) {
+    if (entry.type === 'telegram_admin') {
+      messages.push({ role: 'user', content: entry.content });
+    } else if (entry.type === 'telegram_ayn') {
+      messages.push({ role: 'assistant', content: entry.content });
+    }
+  }
+
+  return messages;
+}
+
+// --- Quick commands (FIX 6: expanded) ---
+async function handleCommand(
+  text: string,
+  supabase: ReturnType<typeof createClient>,
+  supabaseUrl: string,
+  supabaseKey: string,
+  telegramToken: string,
+  chatId: string,
+): Promise<string | null> {
   const cmd = text.toLowerCase();
+
+  if (cmd === '/help') {
+    return `🤖 AYN Commands:
+/health — System health check
+/tickets — Open/pending ticket counts
+/stats — User stats
+/errors — Recent error details
+/think — Force a thinking cycle
+/unblock [user_id] — Unblock a user
+/help — This message
+
+Or just chat with me naturally!`;
+  }
 
   if (cmd === '/health') {
     const now24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -204,6 +257,43 @@ async function handleCommand(text: string, supabase: ReturnType<typeof createCli
       supabase.from('access_grants').select('*', { count: 'exact', head: true }).eq('is_active', true),
     ]);
     return `👥 Users: ${active || 0} active / ${total || 0} total`;
+  }
+
+  if (cmd === '/errors') {
+    const { data: recentErrors } = await supabase
+      .from('error_logs')
+      .select('error_message, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (!recentErrors?.length) return '✅ No recent errors!';
+
+    const errorList = recentErrors.map((e, i) => {
+      const ago = Math.round((Date.now() - new Date(e.created_at!).getTime()) / 60000);
+      return `${i + 1}. ${e.error_message.slice(0, 80)} (${ago}m ago)`;
+    }).join('\n');
+    return `⚠️ Recent Errors:\n${errorList}`;
+  }
+
+  if (cmd === '/think') {
+    // Trigger proactive loop
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/ayn-proactive-loop`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      return '🧠 Running a thinking cycle now... I\'ll message you if I find anything interesting.';
+    } catch {
+      return '❌ Failed to trigger thinking cycle.';
+    }
+  }
+
+  if (cmd.startsWith('/unblock ')) {
+    const userId = text.slice(9).trim();
+    if (!userId) return '❌ Usage: /unblock [user_id]';
+    await supabase.from('api_rate_limits').update({ blocked_until: null }).eq('user_id', userId);
+    return `✅ Unblocked user ${userId.slice(0, 8)}...`;
   }
 
   return null;
@@ -285,7 +375,6 @@ async function executeAction(
 
 // --- Send Telegram message ---
 async function sendTelegramMessage(token: string, chatId: string, text: string) {
-  // Truncate to Telegram limit
   const truncated = text.length > 4000 ? text.slice(0, 3990) + '\n...truncated' : text;
 
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
