@@ -195,3 +195,9 @@ verify_jwt = false
 
 [functions.render-floor-plan-svg]
 verify_jwt = false
+
+[functions.twitter-post]
+verify_jwt = false
+
+[functions.twitter-auto-market]
+verify_jwt = false
