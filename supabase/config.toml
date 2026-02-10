@@ -207,3 +207,6 @@ verify_jwt = false
 
 [functions.twitter-creative-chat]
 verify_jwt = false
+
+[functions.twitter-brand-scan]
+verify_jwt = false

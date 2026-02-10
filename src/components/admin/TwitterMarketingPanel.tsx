@@ -12,7 +12,7 @@ import {
   Sparkles, Send, RefreshCw, Loader2, Clock, CheckCircle, XCircle,
   Brain, Target, BarChart3, Trash2, Edit3, Camera, Download
 } from 'lucide-react';
-import { BrandKit } from './marketing/BrandKit';
+import { BrandKit, type BrandKitState } from './marketing/BrandKit';
 import { CreativeEditor } from './marketing/CreativeEditor';
 import { CampaignGallery } from './marketing/CampaignGallery';
 
@@ -57,6 +57,7 @@ export const TwitterMarketingPanel = () => {
   const [filterAudience, setFilterAudience] = useState<string>('all');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [creativeEditorPost, setCreativeEditorPost] = useState<TwitterPost | null>(null);
+  const [brandKit, setBrandKit] = useState<BrandKitState | null>(null);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -185,7 +186,7 @@ export const TwitterMarketingPanel = () => {
 
         {/* Creative Studio Tab */}
         <TabsContent value="studio" className="space-y-4 mt-4">
-          <BrandKit />
+          <BrandKit onBrandKitChange={setBrandKit} />
 
           {/* Generate Controls */}
           <Card>
@@ -327,6 +328,7 @@ export const TwitterMarketingPanel = () => {
           tweetText={creativeEditorPost.content}
           postId={creativeEditorPost.id}
           onImageGenerated={(url) => handleImageGenerated(creativeEditorPost.id, url)}
+          brandKit={brandKit}
         />
       )}
 
