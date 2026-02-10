@@ -13,7 +13,7 @@ import {
   Brain, Target, BarChart3, Trash2, Edit3, Camera, Download
 } from 'lucide-react';
 import { BrandKit } from './marketing/BrandKit';
-import { CreativeEditor, type CreativeParams } from './marketing/CreativeEditor';
+import { CreativeEditor } from './marketing/CreativeEditor';
 import { CampaignGallery } from './marketing/CampaignGallery';
 
 interface TwitterPost {
@@ -148,37 +148,12 @@ export const TwitterMarketingPanel = () => {
     }
   };
 
-  const handleGenerateImage = async (post: TwitterPost, params?: CreativeParams) => {
-    setIsGeneratingImage(post.id);
-    try {
-      const { data, error } = await supabase.functions.invoke('twitter-generate-image', {
-        body: {
-          post_id: post.id,
-          tweet_text: post.content,
-          ...(params && {
-            background_color: params.background_color,
-            header_text: params.header_text,
-            accent_color: params.accent_color,
-            include_logo: params.include_logo,
-            cta_text: params.cta_text,
-          }),
-        },
-      });
-      if (error) throw error;
-      if (data?.image_url) {
-        setPosts((prev) =>
-          prev.map((p) => (p.id === post.id ? { ...p, image_url: data.image_url } : p))
-        );
-        if (creativeEditorPost?.id === post.id) {
-          setCreativeEditorPost({ ...post, image_url: data.image_url });
-        }
-        toast.success('Brand image generated!');
-      }
-    } catch (err) {
-      console.error('Image generation error:', err);
-      toast.error('Failed to generate image');
-    } finally {
-      setIsGeneratingImage(null);
+  const handleImageGenerated = (postId: string, imageUrl: string) => {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, image_url: imageUrl } : p))
+    );
+    if (creativeEditorPost?.id === postId) {
+      setCreativeEditorPost((prev) => prev ? { ...prev, image_url: imageUrl } : null);
     }
   };
 
@@ -350,8 +325,8 @@ export const TwitterMarketingPanel = () => {
           onOpenChange={(open) => !open && setCreativeEditorPost(null)}
           imageUrl={creativeEditorPost.image_url}
           tweetText={creativeEditorPost.content}
-          isGenerating={isGeneratingImage === creativeEditorPost.id}
-          onGenerate={(params) => handleGenerateImage(creativeEditorPost, params)}
+          postId={creativeEditorPost.id}
+          onImageGenerated={(url) => handleImageGenerated(creativeEditorPost.id, url)}
         />
       )}
 
