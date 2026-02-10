@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
+import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -322,8 +323,9 @@ Response format:
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ answer: 'AI service temporarily unavailable. Please try again later or create a support ticket.', needsHumanSupport: true }), {
-          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        await activateMaintenanceMode(supabase, 'AI credits exhausted (402 from support-bot)');
+        return new Response(JSON.stringify({ answer: 'Our service is temporarily unavailable. Please try again later.', needsHumanSupport: true }), {
+          status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
       throw new Error(`AI gateway error: ${response.status}`);

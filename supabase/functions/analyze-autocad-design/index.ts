@@ -1,5 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -412,7 +414,12 @@ Return ONLY valid JSON (no markdown) with this structure:
               designRating = aiOptimizations.designRating || 5;
             }
           } else {
-            console.error('AI gateway error:', await response.text());
+            const errText = await response.text();
+            console.error('AI gateway error:', errText);
+            if (response.status === 402) {
+              const supabase2 = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+              await activateMaintenanceMode(supabase2, 'AI credits exhausted (402 from analyze-autocad-design)');
+            }
           }
         } catch (aiError) {
           console.error('AI analysis error:', aiError);

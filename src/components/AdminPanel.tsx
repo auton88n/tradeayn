@@ -26,6 +26,7 @@ import { CreditGiftHistory } from '@/components/admin/CreditGiftHistory';
 import { BetaFeedbackViewer } from '@/components/admin/BetaFeedbackViewer';
 import { MessageFeedbackViewer } from '@/components/admin/MessageFeedbackViewer';
 import { TwitterMarketingPanel } from '@/components/admin/TwitterMarketingPanel';
+import { AYNActivityLog } from '@/components/admin/AYNActivityLog';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
 
@@ -445,6 +446,7 @@ export const AdminPanel = ({
                     {activeTab === 'message-feedback' && <MessageFeedbackViewer />}
                     {activeTab === 'test-results' && <TestResultsDashboard />}
                     {activeTab === 'twitter-marketing' && <TwitterMarketingPanel />}
+                    {activeTab === 'ayn-logs' && <AYNActivityLog />}
                   </ErrorBoundary>
                 </motion.div>
               </AnimatePresence>

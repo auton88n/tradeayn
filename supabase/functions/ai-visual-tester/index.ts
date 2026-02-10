@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -217,11 +218,15 @@ Be strict but fair - only report genuine issues that affect user experience.`
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`AI Vision error: ${response.status} - ${errorText}`);
+      if (response.status === 402) {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+        await activateMaintenanceMode(supabase, 'AI credits exhausted (402 from ai-visual-tester)');
+      }
       return [{
         type: 'content',
         severity: 'low',
-        description: `AI analysis failed: ${response.status}${response.status === 429 ? ' (rate limited)' : response.status === 402 ? ' (credits exhausted)' : ''}`,
-        suggestion: response.status === 429 ? 'Wait a moment and retry' : response.status === 402 ? 'Add AI credits' : 'Check API configuration'
+        description: `AI analysis failed: ${response.status}${response.status === 429 ? ' (rate limited)' : response.status === 402 ? ' (maintenance activated)' : ''}`,
+        suggestion: response.status === 429 ? 'Wait a moment and retry' : response.status === 402 ? 'Credits exhausted - maintenance activated' : 'Check API configuration'
       }];
     }
 

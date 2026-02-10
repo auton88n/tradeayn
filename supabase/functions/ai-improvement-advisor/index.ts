@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,7 +63,9 @@ async function callAI(prompt: string): Promise<string> {
     }
     if (response.status === 402) {
       console.error('AI credits exhausted');
-      return 'AI analysis unavailable - credits exhausted. Please add credits to continue.';
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+      await activateMaintenanceMode(supabase, 'AI credits exhausted (402 from ai-improvement-advisor)');
+      return 'Service temporarily unavailable. Please try again later.';
     }
     
     if (response.ok) {

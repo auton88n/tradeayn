@@ -4,6 +4,7 @@ import { detectResponseEmotion, detectLanguage } from "./emotionDetector.ts";
 import { detectIntent } from "./intentDetector.ts";
 import { buildSystemPrompt } from "./systemPrompts.ts";
 import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
+import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -161,7 +162,9 @@ async function callLLM(
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Lovable API error ${response.status}: ${errorText}`);
+      const err = new Error(`Lovable API error ${response.status}: ${errorText}`);
+      (err as any).status = response.status;
+      throw err;
     }
 
     if (stream) {
@@ -204,7 +207,9 @@ async function callLLM(
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`OpenRouter API error ${response.status}: ${errorText}`);
+      const err = new Error(`OpenRouter API error ${response.status}: ${errorText}`);
+      (err as any).status = response.status;
+      throw err;
     }
 
     if (stream) {
@@ -280,7 +285,11 @@ async function callWithFallback(
       }
       
       if (i === chain.length - 1) {
-        // All models failed
+        // All models failed - check if any was a 402 (credits exhausted)
+        const is402 = (error as any)?.status === 402 || (error instanceof Error && error.message.includes('402'));
+        if (is402) {
+          await activateMaintenanceMode(supabase, `All AI models failed with 402 (credits exhausted) for intent: ${intent}`);
+        }
         throw new Error(`All models failed for ${intent}. Last error: ${error instanceof Error ? error.message : 'Unknown'}`);
       }
     }
