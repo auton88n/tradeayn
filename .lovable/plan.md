@@ -1,196 +1,100 @@
 
-# AYN Proactive Communication: Telegram Bridge + Auto-Reply + Self-Initiated Actions
+# Make AYN Alive: Autonomous Mind + Telegram Two-Way Chat
 
-## What This Does
+Right now, AYN is **one-directional** — he only talks when you ask him something. He can't reply to your Telegram messages, he doesn't think on his own, and he doesn't initiate conversations. This plan fixes all three.
 
-AYN becomes proactive -- he doesn't wait for you to ask. He monitors what's happening, replies to users on his own, and sends you updates on Telegram in real time. Think of it as AYN having a direct line to your pocket.
+---
 
-## Three Core Capabilities
+## What Changes
 
-### 1. Telegram Bridge -- AYN Talks to You On-the-Go
+### 1. Telegram Webhook — AYN Reads Your Messages
+A new edge function `ayn-telegram-webhook` that receives incoming Telegram messages from you and lets AYN respond intelligently.
 
-A new edge function `ayn-telegram-notify` that AYN (and other functions) call to send you messages on Telegram whenever something important happens:
+- Register the function as a Telegram Bot webhook (so Telegram forwards your messages to it)
+- When you text AYN on Telegram, the function:
+  - Verifies the message is from your chat ID (security)
+  - Feeds it to the AI with full system context (same as admin-ai-assistant)
+  - Sends the AI response back to Telegram
+  - Executes any actions AYN suggests (unblock user, run tests, etc.)
+- Supports commands like `/health`, `/tickets`, `/stats` for quick checks
 
-- New support ticket arrives -- AYN sends you a summary + suggested reply
-- A user is stuck or frustrated -- AYN flags it
-- Marketing tweet performed well (or flopped) -- AYN reports
-- Error rate spikes -- AYN warns you
-- AYN has an idea -- he messages you ("hey, I noticed beam calculator usage tripled this week. should I write a tweet about it?")
-- AYN found something wrong in the app -- he tells you what and suggests a fix
+### 2. AYN's Brain — Autonomous Thinking Loop
+Upgrade the `ayn-proactive-loop` so AYN doesn't just report — he **thinks, decides, and initiates**.
 
-**Setup**: You'll need to create a Telegram bot (via @BotFather) and add the `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` secrets. The function itself is simple -- it just calls `https://api.telegram.org/bot<token>/sendMessage`.
+New database table `ayn_mind` to store:
+- AYN's current thoughts and observations
+- Ideas he wants to share with you
+- Tasks he assigned himself
+- His "mood" based on system health
 
-### 2. Auto-Reply to Support Tickets -- AYN Handles First Response
+The upgraded proactive loop will:
+- Compare current metrics with previous runs to detect **trends** (not just snapshots)
+- Generate **original thoughts** like "user signups dropped 30% this week, should we check onboarding?"
+- Initiate Telegram conversations when something interesting happens (not just digests)
+- Track what he already told you to avoid repeating himself
 
-A new edge function `ayn-auto-reply` that gets triggered when a new support ticket is created. AYN:
+### 3. Scheduled Heartbeat — AYN Runs Automatically
+Set up a cron job so the proactive loop runs every 6 hours without anyone triggering it. AYN wakes up, scans everything, thinks, and messages you if something is worth sharing.
 
-1. Reads the ticket content
-2. Checks the FAQ database for matching answers
-3. Generates a helpful, personalized first response using AI
-4. Sends the reply as an AI bot message on the ticket
-5. Notifies you on Telegram: "New ticket from [user] about [topic]. I replied with [summary]. Need your input? [Yes/No]"
-6. If the ticket is complex or AYN isn't confident, he escalates: "This one needs you. Here's what I think..."
+---
 
-### 3. Proactive Insights Loop -- AYN Initiates Actions
+## Architecture
 
-A new edge function `ayn-proactive-loop` that can be triggered on a schedule (or manually). AYN:
+```text
+You (Telegram) ──message──> ayn-telegram-webhook ──> AI + System Context ──> Reply to Telegram
+                                                                          ──> Execute actions
 
-1. Scans system health (errors, failures, slow responses)
-2. Checks for unanswered support tickets older than 4 hours
-3. Reviews marketing performance (which tweets worked, which didn't)
-4. Looks at user engagement patterns
-5. Generates actionable insights
-6. Sends everything to you via Telegram with suggested actions
-7. Can auto-execute low-risk actions (like drafting a tweet, replying to simple tickets)
+Every 6 hours:
+  cron ──> ayn-proactive-loop ──> Scan system
+                               ──> Compare with previous (ayn_mind table)
+                               ──> Generate thoughts
+                               ──> Send interesting findings to Telegram
+                               ──> Log to ayn_mind
+```
+
+---
 
 ## Technical Details
 
-### New Secrets Required
+### New Edge Function: `ayn-telegram-webhook`
+- `verify_jwt = false` (Telegram sends webhooks directly)
+- Security: validates `chat_id` matches `TELEGRAM_CHAT_ID` secret
+- Uses the same AI model and system context as `admin-ai-assistant`
+- Supports text messages and `/commands`
+- Responds in AYN's casual personality style
 
-| Secret | Purpose |
-|--------|---------|
-| `TELEGRAM_BOT_TOKEN` | Your Telegram bot token from @BotFather |
-| `TELEGRAM_CHAT_ID` | Your personal Telegram chat ID (so AYN knows where to message you) |
+### New Database Table: `ayn_mind`
+| Column | Type | Purpose |
+|--------|------|---------|
+| id | UUID | Primary key |
+| type | text | thought, observation, idea, task, mood |
+| content | text | What AYN is thinking |
+| context | jsonb | Related metrics/data |
+| shared_with_admin | boolean | Whether he already told you |
+| created_at | timestamp | When he thought of it |
 
-### Files to Create
+### Upgraded `ayn-proactive-loop`
+- Reads previous `ayn_mind` entries to avoid repeating
+- Detects metric trends by comparing with last run
+- Generates 1-2 original thoughts per cycle
+- Only messages you on Telegram when something is genuinely interesting or actionable
+- Saves all observations to `ayn_mind`
 
-| File | Purpose |
-|------|---------|
-| `supabase/functions/ayn-telegram-notify/index.ts` | Core Telegram messaging function -- other functions call this to reach you |
-| `supabase/functions/ayn-auto-reply/index.ts` | Listens for new tickets, generates AI reply, sends it, notifies you |
-| `supabase/functions/ayn-proactive-loop/index.ts` | Scheduled scan of system health, tickets, marketing -- sends digest to Telegram |
+### Cron Job (pg_cron)
+- Runs `ayn-proactive-loop` every 6 hours
+- Uses `pg_net` to call the edge function
 
-### Files to Modify
+### Telegram Bot Webhook Registration
+- One-time setup: call Telegram's `setWebhook` API to point to `ayn-telegram-webhook`
+- Will provide the registration command after deployment
 
-| File | Change |
-|------|--------|
-| `supabase/functions/admin-ai-assistant/index.ts` | Add new actions: `[ACTION:telegram_me:message]`, `[ACTION:auto_reply_ticket:ticket_id]` |
-| `supabase/functions/send-ticket-notification/index.ts` | After sending email, also trigger `ayn-auto-reply` for first AI response |
-| `supabase/functions/twitter-auto-market/index.ts` | After posting, notify admin via Telegram with performance preview |
-| `supabase/config.toml` | Register 3 new functions |
+---
 
-### Telegram Notify Function Architecture
+## What AYN Will Be Able to Do After This
 
-```text
-Any AYN function (support, marketing, admin, errors)
-      |
-      v
-ayn-telegram-notify edge function
-      |
-      +-- Formats message with context + emoji indicators
-      |     - Support ticket: ticket icon + summary + suggested reply
-      |     - Marketing: chart icon + tweet preview + engagement
-      |     - Error: warning icon + error details + suggested fix
-      |     - Idea: lightbulb icon + proposal + action buttons
-      |
-      +-- Calls Telegram Bot API: POST /sendMessage
-      |     - chat_id: TELEGRAM_CHAT_ID
-      |     - text: formatted message (Markdown)
-      |     - parse_mode: "Markdown"
-      |
-      +-- Logs notification to DB for audit trail
-```
-
-### Auto-Reply Flow
-
-```text
-User submits support ticket
-      |
-      v
-send-ticket-notification (existing -- sends email)
-      |
-      +-- Also calls ayn-auto-reply
-            |
-            +-- 1. Read ticket content + category + priority
-            |
-            +-- 2. Search FAQ database for relevant answers
-            |
-            +-- 3. Call AI with ticket + FAQs + AYN personality
-            |       "Generate a helpful first response. If you're
-            |        not confident (score < 7), flag for human review."
-            |
-            +-- 4. If confident: Post reply as AI bot message
-            |      If not: Skip reply, just notify admin
-            |
-            +-- 5. Telegram notify admin:
-                    "New ticket: [subject]
-                     From: [user]
-                     Priority: [level]
-                     My reply: [summary]
-                     Confidence: [high/medium/low]
-                     [Link to ticket]"
-```
-
-### Proactive Loop Logic
-
-```text
-ayn-proactive-loop (triggered on schedule or manually)
-      |
-      +-- 1. Check unanswered tickets (> 4 hours old)
-      |       -> Auto-reply if simple, notify if complex
-      |
-      +-- 2. Check system health
-      |       -> Error rate, LLM failures, rate limit blocks
-      |       -> Alert if anything abnormal
-      |
-      +-- 3. Check marketing performance
-      |       -> Compare last 7 days vs previous 7 days
-      |       -> Suggest content strategy adjustments
-      |
-      +-- 4. Check user patterns
-      |       -> Heavy free users (upgrade candidates)
-      |       -> Inactive users (re-engagement needed)
-      |
-      +-- 5. Generate digest message for Telegram
-      |
-      +-- 6. If AYN found fixable issues, suggest specific actions
-            -> "I noticed 3 users hit the same error in PDF generation.
-                Want me to draft a status update?"
-```
-
-### Admin AI Assistant Upgrades
-
-New actions added to the system prompt so AYN can self-initiate:
-
-- `[ACTION:telegram_me:message]` -- Send admin a Telegram message
-- `[ACTION:auto_reply_ticket:ticket_id]` -- Generate and send AI reply to a ticket  
-- `[ACTION:draft_tweet:topic]` -- Draft a marketing tweet about a topic
-- `[ACTION:scan_health:full]` -- Run a full system health check
-- `[ACTION:suggest_improvement:description]` -- Log a product improvement idea
-
-### Message Format Examples
-
-**Support Ticket Notification (Telegram):**
-```
-🎫 *New Support Ticket*
-From: Ahmad (ahmad@example.com)
-Priority: High
-Subject: PDF generation not working
-
-*My reply:* "Hey Ahmad! Sorry about that. PDF generation needs a Pro subscription — looks like you're on Free. Want me to help you upgrade?"
-
-Confidence: High
-```
-
-**Proactive Insight (Telegram):**
-```
-💡 *AYN Daily Insight*
-
-📊 System Health: 94%
-🎫 3 open tickets (1 needs you)
-📈 Tweet "Most engineers waste 2hrs..." got 1.2k impressions
-⚠️ 2 LLM failures in last 6 hours (timeout)
-
-*Suggestion:* Beam calculator usage is up 40% this week. Want me to draft a tweet about it?
-```
-
-**Error Alert (Telegram):**
-```
-⚠️ *Alert: Error Spike Detected*
-
-PDF generation failed 5 times in the last hour.
-Error: "Timeout waiting for document render"
-Affected users: 3
-
-*My suggestion:* This might be a memory issue with large documents. Should I investigate?
-```
+- **Reply to your Telegram messages** with full system awareness
+- **Start conversations** when he notices something ("hey, 3 tickets have been sitting for 8 hours")
+- **Think independently** and log observations ("beam calculator usage spiked 400% today — maybe we should feature it")
+- **Remember what he told you** so he doesn't repeat himself
+- **Run on autopilot** every 6 hours without you triggering anything
+- **Execute actions** from Telegram (you text "unblock users" and he does it)
