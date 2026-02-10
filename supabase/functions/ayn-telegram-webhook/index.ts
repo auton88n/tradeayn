@@ -199,12 +199,14 @@ serve(async (req) => {
     }
 
     const userText = message.text.trim();
+    console.log('[AYN-WEBHOOK] Message received:', userText.slice(0, 100));
 
     // All messages go through the AI — no slash command interception
 
     // Gather system context for AI
     const context = await gatherSystemContext(supabase);
     const conversationHistory = await getConversationHistory(supabase);
+    console.log('[AYN-MEMORY] Loaded conversation history:', conversationHistory.length, 'entries');
 
     // Sanitize input
     let sanitizedInput = sanitizeUserPrompt(userText);
@@ -248,10 +250,18 @@ serve(async (req) => {
           await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, confirmMsg);
           
           // Log both sides
-          await supabase.from('ayn_mind').insert([
-            { type: 'telegram_admin', content: userText.slice(0, 2000), context: { source: 'telegram' }, shared_with_admin: true },
-            { type: 'telegram_ayn', content: confirmMsg.slice(0, 2000), context: { source: 'telegram', actions: [actionResult], pending_action: null }, shared_with_admin: true },
+          console.log('[AYN-MEMORY] Saving auto-confirm exchange...');
+          const { error: confirmInsertErr } = await supabase.from('ayn_mind').insert([
+            { type: 'telegram_admin', content: userText.slice(0, 4000), context: { source: 'telegram' }, shared_with_admin: true },
+            { type: 'telegram_ayn', content: confirmMsg.slice(0, 4000), context: { source: 'telegram', actions: [actionResult], pending_action: null }, shared_with_admin: true },
           ]);
+          if (confirmInsertErr) {
+            console.error('[AYN-MEMORY] Batch insert failed for confirm:', confirmInsertErr.message);
+            await supabase.from('ayn_mind').insert({ type: 'telegram_admin', content: userText.slice(0, 4000), context: { source: 'telegram' }, shared_with_admin: true });
+            await supabase.from('ayn_mind').insert({ type: 'telegram_ayn', content: confirmMsg.slice(0, 4000), context: { source: 'telegram', actions: [actionResult], pending_action: null }, shared_with_admin: true });
+          } else {
+            console.log('[AYN-MEMORY] Auto-confirm exchange saved successfully');
+          }
           
           return new Response('OK', { status: 200 });
         } catch (e) {
@@ -370,10 +380,24 @@ serve(async (req) => {
       };
     }
 
-    await supabase.from('ayn_mind').insert([
-      { type: 'telegram_admin', content: userText.slice(0, 2000), context: { source: 'telegram' }, shared_with_admin: true },
-      { type: 'telegram_ayn', content: cleanReply.slice(0, 2000), context: { source: 'telegram', actions: executedActions, pending_action: pendingAction }, shared_with_admin: true },
+    console.log('[AYN-MEMORY] Saving conversation exchange...');
+    console.log('[AYN-MEMORY] Admin msg length:', userText.length, '| AYN reply length:', cleanReply.length);
+    const { error: mainInsertErr } = await supabase.from('ayn_mind').insert([
+      { type: 'telegram_admin', content: userText.slice(0, 4000), context: { source: 'telegram' }, shared_with_admin: true },
+      { type: 'telegram_ayn', content: cleanReply.slice(0, 4000), context: { source: 'telegram', actions: executedActions, pending_action: pendingAction }, shared_with_admin: true },
     ]);
+    if (mainInsertErr) {
+      console.error('[AYN-MEMORY] Batch insert FAILED:', mainInsertErr.message);
+      // Fallback: try individual inserts
+      const { error: e1 } = await supabase.from('ayn_mind').insert({ type: 'telegram_admin', content: userText.slice(0, 4000), context: { source: 'telegram' }, shared_with_admin: true });
+      if (e1) console.error('[AYN-MEMORY] Individual admin insert failed:', e1.message);
+      else console.log('[AYN-MEMORY] Individual admin insert OK');
+      const { error: e2 } = await supabase.from('ayn_mind').insert({ type: 'telegram_ayn', content: cleanReply.slice(0, 4000), context: { source: 'telegram', actions: executedActions, pending_action: pendingAction }, shared_with_admin: true });
+      if (e2) console.error('[AYN-MEMORY] Individual AYN insert failed:', e2.message);
+      else console.log('[AYN-MEMORY] Individual AYN insert OK');
+    } else {
+      console.log('[AYN-MEMORY] Conversation saved successfully');
+    }
 
     if (executedActions.length > 0) {
       await logAynActivity(supabase, 'ai_chat_actions', `Executed ${executedActions.length} action(s) during chat`, {
@@ -453,10 +477,18 @@ async function handlePhoto(
       triggered_by: 'telegram_photo',
     });
 
-    await supabase.from('ayn_mind').insert([
-      { type: 'telegram_admin', content: `[Photo] ${caption.slice(0, 400)}`, context: { source: 'telegram', type: 'photo' }, shared_with_admin: true },
-      { type: 'telegram_ayn', content: analysis.slice(0, 500), context: { source: 'telegram', type: 'vision_response' }, shared_with_admin: true },
+    console.log('[AYN-MEMORY] Saving photo exchange...');
+    const { error: photoInsertErr } = await supabase.from('ayn_mind').insert([
+      { type: 'telegram_admin', content: `[Photo] ${caption.slice(0, 4000)}`, context: { source: 'telegram', type: 'photo' }, shared_with_admin: true },
+      { type: 'telegram_ayn', content: analysis.slice(0, 4000), context: { source: 'telegram', type: 'vision_response' }, shared_with_admin: true },
     ]);
+    if (photoInsertErr) {
+      console.error('[AYN-MEMORY] Photo batch insert failed:', photoInsertErr.message);
+      await supabase.from('ayn_mind').insert({ type: 'telegram_admin', content: `[Photo] ${caption.slice(0, 4000)}`, context: { source: 'telegram', type: 'photo' }, shared_with_admin: true });
+      await supabase.from('ayn_mind').insert({ type: 'telegram_ayn', content: analysis.slice(0, 4000), context: { source: 'telegram', type: 'vision_response' }, shared_with_admin: true });
+    } else {
+      console.log('[AYN-MEMORY] Photo exchange saved successfully');
+    }
 
     return analysis;
   } catch (e) {
@@ -516,7 +548,7 @@ async function getConversationHistory(supabase: any) {
     .select('type, content, context, created_at')
     .in('type', ['telegram_admin', 'telegram_ayn'])
     .order('created_at', { ascending: true })
-    .limit(40);
+    .limit(80);
 
   if (!exchanges?.length) return [];
 
