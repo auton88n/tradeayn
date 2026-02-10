@@ -59,8 +59,8 @@ export const CreativeEditor = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl p-0 overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-5 min-h-[540px]">
+      <DialogContent className="max-w-5xl max-h-[85vh] p-0 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-5 h-[85vh] max-h-[700px]">
           {/* Left: Preview (3/5) */}
           <div className="md:col-span-3 bg-muted/20 flex items-center justify-center p-8 border-r">
             {imageUrl ? (
@@ -88,7 +88,7 @@ export const CreativeEditor = ({
           </div>
 
           {/* Right: Controls (2/5) */}
-          <div className="md:col-span-2 flex flex-col">
+          <div className="md:col-span-2 flex flex-col overflow-hidden">
             <div className="p-5 border-b">
               <h3 className="font-bold text-lg">Edit Creative</h3>
               <p className="text-xs text-muted-foreground mt-0.5">Customize your branded image</p>
@@ -194,7 +194,7 @@ export const CreativeEditor = ({
             </ScrollArea>
 
             {/* Action Buttons */}
-            <div className="p-5 border-t space-y-2">
+            <div className="p-5 border-t space-y-2 shrink-0">
               <Button
                 onClick={() => onGenerate(params)}
                 disabled={isGenerating}
