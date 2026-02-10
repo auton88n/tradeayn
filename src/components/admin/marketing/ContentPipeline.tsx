@@ -4,12 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import {
-  Send, Trash2, Edit3, Clock, CheckCircle, XCircle, Brain, Target,
-  Loader2, Sparkles, Calendar, BarChart3, RefreshCw, Camera
+  Send, Trash2, Edit3, Clock, CheckCircle, XCircle,
+  Loader2, Sparkles, Calendar as CalendarIcon, BarChart3, RefreshCw, Camera, Target,
+  AlertCircle, Plus
 } from 'lucide-react';
+import { BarChart, Bar, ResponsiveContainer } from 'recharts';
 
 interface TwitterPost {
   id: string;
@@ -33,16 +39,106 @@ interface TwitterPost {
   replies: number | null;
 }
 
-const statusConfig: Record<string, { icon: typeof Clock; color: string; label: string }> = {
-  draft: { icon: Clock, color: 'bg-amber-500/10 text-amber-600 border-amber-500/20', label: 'Drafts' },
-  scheduled: { icon: Calendar, color: 'bg-blue-500/10 text-blue-600 border-blue-500/20', label: 'Scheduled' },
-  posted: { icon: CheckCircle, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', label: 'Posted' },
-  failed: { icon: XCircle, color: 'bg-red-500/10 text-red-600 border-red-500/20', label: 'Failed' },
+const statusConfig: Record<string, { icon: typeof Clock; color: string; label: string; emptyText: string; emptyAction: string }> = {
+  draft: { icon: Clock, color: 'text-amber-600', label: 'Drafts', emptyText: 'No drafts yet', emptyAction: 'Generate your first tweet' },
+  scheduled: { icon: CalendarIcon, color: 'text-blue-600', label: 'Scheduled', emptyText: 'Nothing scheduled', emptyAction: 'Schedule a draft' },
+  posted: { icon: CheckCircle, color: 'text-emerald-600', label: 'Posted', emptyText: 'No posts yet', emptyAction: 'Post a draft to X' },
 };
+
+// Tiny sparkline for engagement
+const EngagementSparkline = ({ post }: { post: TwitterPost }) => {
+  const data = [
+    { name: '👁', value: post.impressions || 0 },
+    { name: '♥', value: (post.likes || 0) * 10 },
+    { name: '🔄', value: (post.retweets || 0) * 20 },
+    { name: '💬', value: (post.replies || 0) * 15 },
+  ];
+  const hasData = data.some(d => d.value > 0);
+  if (!hasData) return null;
+
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <div className="w-16 h-6">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data}>
+            <Bar dataKey="value" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+        <span>👁 {post.impressions?.toLocaleString() || 0}</span>
+        <span>♥ {post.likes || 0}</span>
+        <span>🔄 {post.retweets || 0}</span>
+      </div>
+    </div>
+  );
+};
+
+// Character count ring
+const CharCount = ({ count }: { count: number }) => {
+  const max = 280;
+  const pct = Math.min(count / max, 1);
+  const isOver = count > max;
+  const radius = 8;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - pct * circumference;
+
+  return (
+    <div className="relative w-5 h-5 flex items-center justify-center">
+      <svg className="w-5 h-5 -rotate-90" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="2" />
+        <circle cx="10" cy="10" r={radius} fill="none" stroke={isOver ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'} strokeWidth="2" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
+      </svg>
+      {isOver && <span className="absolute text-[7px] font-bold text-destructive">{max - count}</span>}
+    </div>
+  );
+};
+
+// Thread connector
+const ThreadConnector = ({ isFirst, isLast }: { isFirst: boolean; isLast: boolean }) => (
+  <div className="absolute -left-3 top-0 bottom-0 w-4 flex flex-col items-center">
+    {!isFirst && <div className="w-0.5 flex-1 bg-primary/20" />}
+    <div className="w-2 h-2 rounded-full bg-primary/40 border-2 border-primary shrink-0" />
+    {!isLast && <div className="w-0.5 flex-1 bg-primary/20" />}
+  </div>
+);
 
 interface ContentPipelineProps {
   onOpenCreativeEditor?: (post: TwitterPost) => void;
 }
+
+// Schedule popover component
+const SchedulePopover = ({ post, onSchedule }: { post: TwitterPost; onSchedule: (post: TwitterPost, date: string) => void }) => {
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [time, setTime] = useState('09:00');
+  const [open, setOpen] = useState(false);
+
+  const handleSchedule = () => {
+    if (!date) return;
+    const [h, m] = time.split(':').map(Number);
+    const scheduled = new Date(date);
+    scheduled.setHours(h, m, 0, 0);
+    onSchedule(post, scheduled.toISOString());
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1">
+          <CalendarIcon className="w-2.5 h-2.5" /> Schedule
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-3 space-y-3" align="start">
+        <Calendar mode="single" selected={date} onSelect={setDate} className="p-0 pointer-events-auto" disabled={(d: Date) => d < new Date()} />
+        <div className="flex items-center gap-2">
+          <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-8 text-xs w-28" />
+          <Button size="sm" className="h-8 text-xs" onClick={handleSchedule} disabled={!date}>Confirm</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) => {
   const [posts, setPosts] = useState<TwitterPost[]>([]);
@@ -97,11 +193,17 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
     finally { setIsPosting(null); }
   };
 
+  const handleRetry = async (post: TwitterPost) => {
+    await supabase.from('twitter_posts').update({ status: 'draft', error_message: null }).eq('id', post.id);
+    toast.success('Moved back to drafts');
+    fetchPosts();
+  };
+
   const handleSchedule = async (post: TwitterPost, scheduledAt: string) => {
     try {
       const { error } = await supabase.from('twitter_posts').update({ status: 'scheduled', scheduled_at: scheduledAt }).eq('id', post.id);
       if (error) throw error;
-      toast.success('Scheduled!');
+      toast.success(`Scheduled for ${format(new Date(scheduledAt), 'MMM d, h:mm a')}`);
       fetchPosts();
     } catch { toast.error('Failed to schedule'); }
   };
@@ -126,18 +228,47 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
     } catch { toast.error('Failed to update'); }
   };
 
+  // Group threads together
+  const groupPosts = (statusPosts: TwitterPost[]) => {
+    const threads = new Map<string, TwitterPost[]>();
+    const singles: TwitterPost[] = [];
+
+    statusPosts.forEach(p => {
+      if (p.thread_id) {
+        const existing = threads.get(p.thread_id) || [];
+        existing.push(p);
+        threads.set(p.thread_id, existing);
+      } else {
+        singles.push(p);
+      }
+    });
+
+    // Sort thread posts by order
+    threads.forEach(posts => posts.sort((a, b) => (a.thread_order || 0) - (b.thread_order || 0)));
+
+    return { threads, singles };
+  };
+
   const columns: { status: string; posts: TwitterPost[] }[] = [
     { status: 'draft', posts: posts.filter(p => p.status === 'draft') },
     { status: 'scheduled', posts: posts.filter(p => p.status === 'scheduled') },
     { status: 'posted', posts: posts.filter(p => p.status === 'posted') },
   ];
 
-  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+  // Failed posts
+  const failedPosts = posts.filter(p => p.status === 'failed');
+
+  if (isLoading) return (
+    <div className="flex flex-col items-center justify-center py-16 gap-3">
+      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground">Loading pipeline...</p>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
       {/* Generate controls */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-muted/20 border border-border/50">
         <Select value={filterContentType} onValueChange={setFilterContentType}>
           <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue placeholder="Type" /></SelectTrigger>
           <SelectContent>
@@ -158,6 +289,9 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
             <SelectItem value="general">General</SelectItem>
           </SelectContent>
         </Select>
+
+        <div className="h-5 w-px bg-border/50 mx-1" />
+
         <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={() => handleGenerate('single')} disabled={isGenerating}>
           {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Tweet
         </Button>
@@ -167,91 +301,100 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
         <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => handleGenerate('campaign')} disabled={isGenerating}>
           📅 Campaign
         </Button>
-        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 ml-auto" onClick={fetchPosts}>
-          <RefreshCw className="w-3 h-3" />
+        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 ml-auto" onClick={fetchPosts} title="Refresh">
+          <RefreshCw className="w-3.5 h-3.5" />
         </Button>
       </div>
+
+      {/* Failed posts alert */}
+      {failedPosts.length > 0 && (
+        <div className="flex items-start gap-3 p-3 rounded-xl border border-destructive/30 bg-destructive/5">
+          <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-destructive">{failedPosts.length} failed post{failedPosts.length > 1 ? 's' : ''}</p>
+            <div className="mt-1.5 space-y-1.5">
+              {failedPosts.map(post => (
+                <div key={post.id} className="flex items-center gap-2">
+                  <p className="text-[11px] text-muted-foreground truncate flex-1">{post.content.slice(0, 60)}...</p>
+                  <Button size="sm" variant="outline" className="h-5 text-[9px] px-2" onClick={() => handleRetry(post)}>Retry</Button>
+                  <Button size="sm" variant="ghost" className="h-5 w-5 p-0 text-destructive" onClick={() => handleDelete(post.id)}>
+                    <Trash2 className="w-2.5 h-2.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Kanban columns */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {columns.map(({ status, posts: colPosts }) => {
           const config = statusConfig[status];
           const Icon = config.icon;
+          const { threads, singles } = groupPosts(colPosts);
+
           return (
             <div key={status} className="space-y-2">
               <div className="flex items-center gap-2 px-1">
-                <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                <Icon className={`w-3.5 h-3.5 ${config.color}`} />
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{config.label}</h3>
                 <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-auto">{colPosts.length}</Badge>
               </div>
-              <div className="space-y-2 min-h-[100px]">
-                {colPosts.map(post => (
-                  <Card key={post.id} className="group">
-                    <CardContent className="p-3 space-y-2">
-                      {editingId === post.id ? (
-                        <div className="space-y-1.5">
-                          <Textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} className="min-h-[60px] text-xs" maxLength={280} />
-                          <div className="flex items-center gap-1.5">
-                            <span className={`text-[10px] ${editContent.length > 280 ? 'text-destructive' : 'text-muted-foreground'}`}>{editContent.length}/280</span>
-                            <Button size="sm" className="h-6 text-[10px]" onClick={() => handleSaveEdit(post.id)}>Save</Button>
-                            <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setEditingId(null)}>Cancel</Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-xs leading-relaxed">{post.content}</p>
-                      )}
 
-                      {post.image_url && (
-                        <img src={post.image_url} alt="" className="w-full rounded-lg aspect-video object-cover" loading="lazy" />
-                      )}
-
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {post.content_type && <Badge variant="secondary" className="text-[9px] h-4 px-1">{post.content_type}</Badge>}
-                        {post.target_audience && <Badge variant="secondary" className="text-[9px] h-4 px-1"><Target className="w-2 h-2 mr-0.5" />{post.target_audience}</Badge>}
-                        {post.thread_id && <Badge variant="secondary" className="text-[9px] h-4 px-1">🧵 {post.thread_order}</Badge>}
-                        {post.scheduled_at && <span className="text-[9px] text-muted-foreground ml-auto">{new Date(post.scheduled_at).toLocaleString()}</span>}
-                        {post.impressions != null && (
-                          <span className="text-[9px] text-muted-foreground ml-auto flex items-center gap-1">
-                            <BarChart3 className="w-2 h-2" /> {post.impressions}
-                          </span>
-                        )}
+              <div className="space-y-2 min-h-[120px]">
+                {/* Thread groups */}
+                {Array.from(threads.entries()).map(([threadId, threadPosts]) => (
+                  <div key={threadId} className="relative pl-5 space-y-1.5">
+                    <Badge variant="outline" className="text-[9px] h-4 px-1.5 mb-1">🧵 Thread · {threadPosts.length} tweets</Badge>
+                    {threadPosts.map((post, idx) => (
+                      <div key={post.id} className="relative">
+                        <ThreadConnector isFirst={idx === 0} isLast={idx === threadPosts.length - 1} />
+                        <PostCard
+                          post={post}
+                          editingId={editingId}
+                          editContent={editContent}
+                          isPosting={isPosting}
+                          setEditingId={setEditingId}
+                          setEditContent={setEditContent}
+                          handleSaveEdit={handleSaveEdit}
+                          handlePost={handlePost}
+                          handleSchedule={handleSchedule}
+                          handleDelete={handleDelete}
+                          onOpenCreativeEditor={onOpenCreativeEditor}
+                        />
                       </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {post.status === 'draft' && (
-                          <>
-                            <Button size="sm" className="h-6 text-[10px] gap-1" onClick={() => handlePost(post)} disabled={isPosting === post.id}>
-                              {isPosting === post.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Send className="w-2.5 h-2.5" />} Post
-                            </Button>
-                            <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1" onClick={() => {
-                              const tomorrow = new Date();
-                              tomorrow.setDate(tomorrow.getDate() + 1);
-                              tomorrow.setHours(9, 0, 0, 0);
-                              handleSchedule(post, tomorrow.toISOString());
-                            }}>
-                              <Calendar className="w-2.5 h-2.5" /> Schedule
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { setEditingId(post.id); setEditContent(post.content); }}>
-                              <Edit3 className="w-2.5 h-2.5" />
-                            </Button>
-                            {onOpenCreativeEditor && (
-                              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onOpenCreativeEditor(post)}>
-                                <Camera className="w-2.5 h-2.5" />
-                              </Button>
-                            )}
-                          </>
-                        )}
-                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive ml-auto" onClick={() => handleDelete(post.id)}>
-                          <Trash2 className="w-2.5 h-2.5" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    ))}
+                  </div>
                 ))}
+
+                {/* Single posts */}
+                {singles.map(post => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    editingId={editingId}
+                    editContent={editContent}
+                    isPosting={isPosting}
+                    setEditingId={setEditingId}
+                    setEditContent={setEditContent}
+                    handleSaveEdit={handleSaveEdit}
+                    handlePost={handlePost}
+                    handleSchedule={handleSchedule}
+                    handleDelete={handleDelete}
+                    onOpenCreativeEditor={onOpenCreativeEditor}
+                  />
+                ))}
+
                 {colPosts.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-border p-4 text-center text-[11px] text-muted-foreground">
-                    No {config.label.toLowerCase()}
+                  <div className="rounded-xl border border-dashed border-border/50 p-6 text-center space-y-2">
+                    <Icon className="w-5 h-5 text-muted-foreground/30 mx-auto" />
+                    <p className="text-[11px] text-muted-foreground">{config.emptyText}</p>
+                    {status === 'draft' && (
+                      <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => handleGenerate('single')} disabled={isGenerating}>
+                        <Plus className="w-3 h-3" /> {config.emptyAction}
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -262,3 +405,89 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
     </div>
   );
 };
+
+// Extracted PostCard component
+interface PostCardProps {
+  post: TwitterPost;
+  editingId: string | null;
+  editContent: string;
+  isPosting: string | null;
+  setEditingId: (id: string | null) => void;
+  setEditContent: (content: string) => void;
+  handleSaveEdit: (id: string) => void;
+  handlePost: (post: TwitterPost) => void;
+  handleSchedule: (post: TwitterPost, date: string) => void;
+  handleDelete: (id: string) => void;
+  onOpenCreativeEditor?: (post: TwitterPost) => void;
+}
+
+const PostCard = ({
+  post, editingId, editContent, isPosting,
+  setEditingId, setEditContent, handleSaveEdit, handlePost, handleSchedule, handleDelete,
+  onOpenCreativeEditor,
+}: PostCardProps) => (
+  <Card className="group hover:shadow-md transition-shadow">
+    <CardContent className="p-3 space-y-2">
+      {editingId === post.id ? (
+        <div className="space-y-1.5">
+          <Textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} className="min-h-[60px] text-xs resize-none" maxLength={300} />
+          <div className="flex items-center gap-1.5">
+            <CharCount count={editContent.length} />
+            <span className={`text-[10px] ${editContent.length > 280 ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>{editContent.length}/280</span>
+            <div className="ml-auto flex gap-1">
+              <Button size="sm" className="h-6 text-[10px]" onClick={() => handleSaveEdit(post.id)}>Save</Button>
+              <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setEditingId(null)}>Cancel</Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start gap-2">
+          <p className="text-xs leading-relaxed flex-1">{post.content}</p>
+          <CharCount count={post.content.length} />
+        </div>
+      )}
+
+      {post.image_url && (
+        <img src={post.image_url} alt="" className="w-full rounded-lg aspect-video object-cover" loading="lazy" />
+      )}
+
+      <div className="flex items-center gap-1 flex-wrap">
+        {post.content_type && <Badge variant="secondary" className="text-[9px] h-4 px-1">{post.content_type}</Badge>}
+        {post.target_audience && <Badge variant="secondary" className="text-[9px] h-4 px-1"><Target className="w-2 h-2 mr-0.5" />{post.target_audience}</Badge>}
+        {post.thread_id && <Badge variant="outline" className="text-[9px] h-4 px-1">#{post.thread_order}</Badge>}
+        {post.scheduled_at && (
+          <span className="text-[9px] text-muted-foreground ml-auto flex items-center gap-1">
+            <CalendarIcon className="w-2 h-2" />
+            {format(new Date(post.scheduled_at), 'MMM d, h:mm a')}
+          </span>
+        )}
+      </div>
+
+      {/* Engagement sparkline for posted */}
+      {post.status === 'posted' && <EngagementSparkline post={post} />}
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {post.status === 'draft' && (
+          <>
+            <Button size="sm" className="h-6 text-[10px] gap-1" onClick={() => handlePost(post)} disabled={isPosting === post.id}>
+              {isPosting === post.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Send className="w-2.5 h-2.5" />} Post
+            </Button>
+            <SchedulePopover post={post} onSchedule={handleSchedule} />
+            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { setEditingId(post.id); setEditContent(post.content); }}>
+              <Edit3 className="w-2.5 h-2.5" />
+            </Button>
+            {onOpenCreativeEditor && (
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onOpenCreativeEditor(post)}>
+                <Camera className="w-2.5 h-2.5" />
+              </Button>
+            )}
+          </>
+        )}
+        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive ml-auto" onClick={() => handleDelete(post.id)}>
+          <Trash2 className="w-2.5 h-2.5" />
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);

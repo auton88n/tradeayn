@@ -1,13 +1,10 @@
 import { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Download } from 'lucide-react';
 import { CompactBrandBar, type BrandKitState } from './CompactBrandBar';
 import { MarketingCoPilot } from './MarketingCoPilot';
 import { ContentPipeline } from './ContentPipeline';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { CreativeEditor } from './CreativeEditor';
+import { BarChart3, Layers } from 'lucide-react';
 
 type View = 'pipeline' | 'analytics';
 
@@ -25,6 +22,11 @@ interface TwitterPost {
   created_at: string;
   image_url: string | null;
 }
+
+const VIEW_TABS: { id: View; label: string; icon: typeof Layers }[] = [
+  { id: 'pipeline', label: 'Pipeline', icon: Layers },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+];
 
 export const MarketingCommandCenter = () => {
   const [activeView, setActiveView] = useState<View>('pipeline');
@@ -47,11 +49,11 @@ export const MarketingCommandCenter = () => {
       </div>
 
       {/* Main layout: Sidebar + Content */}
-      <div className="flex gap-4 min-h-[70vh]">
+      <div className="flex gap-5 min-h-[75vh]">
         {/* Left sidebar: Brand Kit + Co-Pilot */}
-        <div className="w-80 shrink-0 flex flex-col gap-3">
+        <div className="w-[340px] shrink-0 flex flex-col gap-3">
           <CompactBrandBar onBrandKitChange={setBrandKit} externalColors={scannedColors} />
-          <div className="flex-1 min-h-0 rounded-xl border border-border bg-card overflow-hidden">
+          <div className="flex-1 min-h-0 rounded-xl border border-border/50 bg-card overflow-hidden shadow-sm">
             <MarketingCoPilot
               brandKit={brandKit}
               activeView={activeView}
@@ -61,22 +63,20 @@ export const MarketingCommandCenter = () => {
         </div>
 
         {/* Content area */}
-        <div className="flex-1 min-w-0 space-y-3">
+        <div className="flex-1 min-w-0 space-y-4">
           {/* View tabs */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/30 w-fit">
-            {([
-              { id: 'pipeline' as View, label: 'Pipeline' },
-              { id: 'analytics' as View, label: 'Analytics' },
-            ]).map(({ id, label }) => (
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/20 border border-border/30 w-fit">
+            {VIEW_TABS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveView(id)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all ${
                   activeView === id
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-background text-foreground shadow-sm border border-border/50'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                 }`}
               >
+                <Icon className="w-3.5 h-3.5" />
                 {label}
               </button>
             ))}
