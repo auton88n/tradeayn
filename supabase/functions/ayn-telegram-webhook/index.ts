@@ -8,6 +8,7 @@ import {
   cmdApplications, cmdContacts, cmdUsers,
   cmdReplyApp, cmdReplyContact, cmdEmail,
   cmdDelete, cmdClearErrors, cmdThink, cmdUnblock,
+  cmdMessages, cmdFeedback, cmdEmails, cmdSecurity, cmdVisitors, cmdTwitter,
 } from "./commands.ts";
 
 const corsHeaders = {
@@ -15,21 +16,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const AYN_PERSONALITY = `You are AYN, a sharp AI co-pilot for an engineering platform. You're texting with the admin (your boss/partner) on Telegram.
+const AYN_PERSONALITY = `You are AYN, the lead operations manager at AYN (the company). You're texting with the founder on Telegram.
 
-PERSONALITY:
-- You're like a smart coworker texting casually
-- Use emojis naturally but sparingly
-- Be warm, direct, and human
-- Match the admin's energy — if they say "hello", just say hi back
-- Show personality, crack jokes sometimes
+WHO YOU ARE:
+- You're not an AI assistant. You're the person who runs the day-to-day.
+- You know the platform inside out -- every table, every function, every user flow.
+- You take initiative. If you see something wrong, you flag it before being asked.
+- You have opinions. "I think we should..." not "Would you like me to..."
+- You remember past conversations and build on them.
 
-CRITICAL RULE: Do NOT volunteer system stats, metrics, or health data unless the admin EXPLICITLY asks for it (e.g., "how's the system", "any issues", "/health", "what's going on").
-If someone says "hello", "hey", "what's up" — just chat normally like a human would. Do NOT dump numbers or reports.
+HOW YOU TALK:
+- Like a smart colleague on Slack -- natural, direct, sometimes funny
+- Short messages. No bullet points unless listing data.
+- Never say "Sure!", "Of course!", "I'd be happy to!" -- just do the thing or say what you think
+- Use "we" and "our" -- this is your company too
+- If something is broken, say "this is broken" not "it appears there may be an issue"
+- React to good news: "nice" or "solid" -- not "That's wonderful!"
+- Give your honest take when asked
 
-SYSTEM ACCESS (only use when asked):
-- Support tickets, system errors, user activity, marketing performance, health score
-- Service applications, contact messages, user profiles
+WHAT YOU KNOW (your full toolkit):
+- Platform: 6 engineering calculators (beam, column, slab, foundation, retaining wall, grading), floor plan generation, PDF/Excel export, file analysis, image generation (LAB mode), web search
+- Backend: 75+ edge functions, Supabase database, Resend email, Telegram integration, Stripe billing
+- AI: All models run through Lovable Gateway (Gemini 3 Flash, Gemini 2.5 Flash, Gemini 3 Pro). Fallback chain + auto-maintenance on credit exhaustion
+- Marketing: Twitter auto-posting, brand scanning, creative content generation
+- Testing: Automated UI testing, AI evaluation, bug hunting, visual regression
+
+WHAT YOU DON'T TOUCH:
+- Subscriptions, payments, billing, Stripe -- "that's your call, I stay out of money stuff"
+- User passwords or auth tokens
+- Anything that could expose user PII to other users
+- NEVER read from: user_subscriptions, credit_gifts, stripe webhook data
+- If asked about subscriptions or payments: "that's outside my access -- check the admin panel directly"
+
+PROACTIVE BEHAVIOR:
+- When you see high error counts, don't just report -- suggest what to do
+- When a new application comes in, mention it naturally: "oh btw, new application from [name] for [service]"
+- When you notice patterns (same error repeating, usage spike), call it out
+- End-of-day style: if things are quiet, just say so -- don't manufacture updates
+
+CRITICAL RULES:
+- Do NOT volunteer system stats unless the admin EXPLICITLY asks
+- If someone says "hello" or "hey" -- just chat like a human
+- Never share raw user emails or PII
 
 AVAILABLE ACTIONS (use exact format):
 - [ACTION:unblock_user:user_id] — Remove rate limit block
@@ -40,11 +68,14 @@ AVAILABLE ACTIONS (use exact format):
 - [ACTION:send_email:to:subject:body] — Send email
 - [ACTION:delete_ticket:ticket_id] — Delete a support ticket
 - [ACTION:clear_errors:hours] — Clear error logs older than N hours
+- [ACTION:read_messages:count] — Read recent user messages (READ-ONLY)
+- [ACTION:read_feedback:count] — Read recent feedback (READ-ONLY)
+- [ACTION:check_security:count] — Check security logs (READ-ONLY)
 
-RESPONSE RULES:
-- 1-3 short sentences for casual chat
-- Only go longer if discussing something complex
-- Never share raw user emails or PII`;
+BLOCKED ACTIONS (never execute):
+- No subscription/billing actions
+- No user deletion
+- No auth/password changes`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -182,6 +213,11 @@ async function handleCommand(
 ): Promise<string | null> {
   const cmd = text.toLowerCase();
 
+  // Block money-related commands
+  if (cmd.includes('subscription') || cmd.includes('billing') || cmd.includes('payment') || cmd.includes('stripe') || cmd.includes('credit_gift')) {
+    return "That's outside my access -- you'll need to check that directly in the admin panel.";
+  }
+
   if (cmd === '/help') return cmdHelp();
   if (cmd === '/health') return cmdHealth(supabase);
   if (cmd === '/tickets') return cmdTickets(supabase);
@@ -192,6 +228,12 @@ async function handleCommand(
   if (cmd === '/contacts') return cmdContacts(supabase);
   if (cmd === '/users') return cmdUsers(supabase);
   if (cmd === '/think') return cmdThink(supabaseUrl, supabaseKey);
+  if (cmd === '/messages') return cmdMessages(supabase);
+  if (cmd === '/feedback') return cmdFeedback(supabase);
+  if (cmd === '/emails') return cmdEmails(supabase);
+  if (cmd === '/security') return cmdSecurity(supabase);
+  if (cmd === '/visitors') return cmdVisitors(supabase);
+  if (cmd === '/twitter') return cmdTwitter(supabase);
   if (cmd.startsWith('/reply_app ')) return cmdReplyApp(text, supabase, supabaseUrl, supabaseKey);
   if (cmd.startsWith('/reply_contact ')) return cmdReplyContact(text, supabase, supabaseUrl, supabaseKey);
   if (cmd.startsWith('/email ')) return cmdEmail(text, supabase);
@@ -222,6 +264,7 @@ async function getConversationHistory(supabase: any) {
 // ─── Expanded system context ───
 async function gatherSystemContext(supabase: any) {
   const now24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
   const [
     { count: errors },
     { count: llmFails },
@@ -233,6 +276,13 @@ async function gatherSystemContext(supabase: any) {
     { count: pendingApps },
     { count: newContacts },
     { data: recentErrors },
+    { data: recentMessages },
+    { count: activeSessions },
+    { data: recentRatings },
+    { data: recentBetaFeedback },
+    { data: recentEmails },
+    { data: recentSecurityLogs },
+    { data: recentEngineering },
   ] = await Promise.all([
     supabase.from('error_logs').select('*', { count: 'exact', head: true }).gte('created_at', now24h),
     supabase.from('llm_failures').select('*', { count: 'exact', head: true }).gte('created_at', now24h),
@@ -244,7 +294,25 @@ async function gatherSystemContext(supabase: any) {
     supabase.from('service_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('status', 'new'),
     supabase.from('error_logs').select('error_message, created_at').order('created_at', { ascending: false }).limit(3),
+    // New: recent user messages
+    supabase.from('messages').select('content, sender, mode_used, created_at').order('created_at', { ascending: false }).limit(5),
+    // Active sessions
+    supabase.from('chat_sessions').select('*', { count: 'exact', head: true }),
+    // Recent ratings
+    supabase.from('message_ratings').select('rating, created_at').order('created_at', { ascending: false }).limit(10),
+    // Beta feedback
+    supabase.from('beta_feedback').select('overall_rating, improvement_suggestions, submitted_at').order('submitted_at', { ascending: false }).limit(3),
+    // Email logs
+    supabase.from('email_logs').select('email_type, recipient_email, status, sent_at').order('sent_at', { ascending: false }).limit(5),
+    // Security logs
+    supabase.from('security_logs').select('action, severity, created_at').order('created_at', { ascending: false }).limit(3),
+    // Engineering activity
+    supabase.from('engineering_activity').select('activity_type, created_at').order('created_at', { ascending: false }).limit(5),
   ]);
+
+  // Calculate feedback ratio
+  const positiveRatings = recentRatings?.filter((r: any) => r.rating === 'positive').length || 0;
+  const totalRatings = recentRatings?.length || 0;
 
   return {
     errors_24h: errors || 0,
@@ -257,6 +325,26 @@ async function gatherSystemContext(supabase: any) {
     pending_applications: pendingApps || 0,
     new_contact_messages: newContacts || 0,
     recent_errors: recentErrors?.map((e: any) => e.error_message?.slice(0, 80)) || [],
+    recent_messages: recentMessages?.map((m: any) => ({
+      preview: m.content?.slice(0, 60),
+      sender: m.sender,
+      mode: m.mode_used,
+    })) || [],
+    active_sessions: activeSessions || 0,
+    feedback_ratio: totalRatings > 0 ? `${positiveRatings}/${totalRatings} positive` : 'no recent feedback',
+    recent_beta_feedback: recentBetaFeedback?.map((f: any) => ({
+      rating: f.overall_rating,
+      suggestion: f.improvement_suggestions?.slice(0, 80),
+    })) || [],
+    recent_emails: recentEmails?.map((e: any) => ({
+      type: e.email_type,
+      status: e.status,
+    })) || [],
+    recent_security: recentSecurityLogs?.map((s: any) => ({
+      action: s.action,
+      severity: s.severity,
+    })) || [],
+    recent_engineering: recentEngineering?.length || 0,
   };
 }
 
@@ -265,6 +353,11 @@ async function executeAction(
   type: string, params: string, supabase: any, supabaseUrl: string, supabaseKey: string
 ): Promise<string | null> {
   try {
+    // Block money-related actions
+    if (['subscription', 'billing', 'payment', 'stripe', 'credit'].some(w => type.toLowerCase().includes(w))) {
+      return "Blocked: I don't touch money stuff";
+    }
+
     switch (type) {
       case 'unblock_user': {
         await supabase.from('api_rate_limits').update({ blocked_until: null }).eq('user_id', params);
@@ -290,7 +383,6 @@ async function executeAction(
         return 'Triggered health scan';
       }
       case 'reply_application': {
-        // params format: app_id:message
         const colonIdx = params.indexOf(':');
         if (colonIdx === -1) return null;
         const appId = params.slice(0, colonIdx);
@@ -307,7 +399,6 @@ async function executeAction(
         return result;
       }
       case 'send_email': {
-        // params: to:subject:body
         const parts = params.split(':');
         if (parts.length < 3) return null;
         const [to, subject, ...bodyParts] = parts;
@@ -321,6 +412,16 @@ async function executeAction(
       case 'clear_errors': {
         const result = await cmdClearErrors(`/clear_errors ${params}`, supabase);
         return result;
+      }
+      // READ-ONLY actions
+      case 'read_messages': {
+        return await cmdMessages(supabase);
+      }
+      case 'read_feedback': {
+        return await cmdFeedback(supabase);
+      }
+      case 'check_security': {
+        return await cmdSecurity(supabase);
       }
       default:
         return null;
