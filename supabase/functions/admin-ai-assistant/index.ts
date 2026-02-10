@@ -34,6 +34,11 @@ AVAILABLE ACTIONS (use exact format):
 - [ACTION:refresh_stats] - Refresh system metrics
 - [ACTION:view_section:section_name] - Navigate to admin section (users, llm, tests, security, support)
 - [ACTION:clear_failures:hours] - Clear old failure logs
+- [ACTION:telegram_me:message] - Send admin a Telegram message right now
+- [ACTION:auto_reply_ticket:ticket_id] - Generate and send AI reply to a support ticket
+- [ACTION:draft_tweet:topic] - Draft a marketing tweet about a specific topic
+- [ACTION:scan_health:full] - Run a full proactive system health check
+- [ACTION:suggest_improvement:description] - Log a product improvement idea
 
 RESPONSE GUIDELINES:
 - Use markdown formatting for clarity (tables, lists, code blocks)

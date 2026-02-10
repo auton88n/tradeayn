@@ -210,3 +210,12 @@ verify_jwt = false
 
 [functions.twitter-brand-scan]
 verify_jwt = false
+
+[functions.ayn-telegram-notify]
+verify_jwt = false
+
+[functions.ayn-auto-reply]
+verify_jwt = false
+
+[functions.ayn-proactive-loop]
+verify_jwt = false

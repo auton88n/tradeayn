@@ -180,6 +180,30 @@ Return ONLY valid JSON matching the specified format. No markdown, no code block
       );
     }
 
+    // Notify admin via Telegram about new marketing content
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/ayn-telegram-notify`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "marketing",
+          title: auto_post ? "Tweet Auto-Posted" : "New Tweet Drafted",
+          message: `"${tweetData.content.substring(0, 200)}${tweetData.content.length > 200 ? '...' : ''}"`,
+          priority: "low",
+          details: {
+            strategy: tweetData.psychological_strategy || "N/A",
+            audience: tweetData.target_audience || "general",
+            content_type: tweetData.content_type || "value",
+          },
+        }),
+      });
+    } catch (telegramErr) {
+      console.error("Telegram notify failed (non-blocking):", telegramErr);
+    }
+
     return new Response(JSON.stringify(savedPost), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
