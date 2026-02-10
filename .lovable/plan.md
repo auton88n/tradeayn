@@ -1,49 +1,31 @@
 
 
-# Fix: Resend Inbound Webhook Payload Parsing
+# Fix: Use Correct Resend API Endpoint for Received Emails
 
 ## Problem
 
-Resend sends inbound email webhooks in this format:
+The webhook correctly receives the `email_id` from Resend, but the code fetches the email body from the wrong endpoint:
 
-```text
-{
-  "created_at": "...",
-  "type": "email.received",
-  "data": {
-    "from": "crossmint7@gmail.com",
-    "to": ["info@mail.aynn.io"],
-    "subject": "Re: quick question",
-    "text": "...",
-    "html": "...",
-    "headers": [...]
-  }
-}
-```
+- Current (wrong): `https://api.resend.com/emails/${email_id}`
+- Correct: `https://api.resend.com/emails/receiving/${email_id}`
 
-The current code destructures directly from the top-level payload, but the actual email fields are nested inside `payload.data`. This causes `from` to be `undefined`, returning a 400 "No from email" error.
+The `/emails/:id` endpoint is for retrieving **sent** emails. For **inbound/received** emails, Resend uses `/emails/receiving/:id`. This is why the body comes back empty.
 
 ## Fix
 
 ### File: `supabase/functions/resend-inbound-webhook/index.ts`
 
-Extract email fields from `payload.data` instead of the top-level payload:
-
-```typescript
-const payload = await req.json();
-const emailData = payload.data || payload; // fallback for safety
-
-const {
-  from: fromRaw,
-  to: toRaw,
-  subject,
-  text: bodyText,
-  html: bodyHtml,
-  headers: emailHeaders,
-} = emailData;
+Change line 37 from:
+```
+const emailRes = await fetch(`https://api.resend.com/emails/${email_id}`, {
+```
+to:
+```
+const emailRes = await fetch(`https://api.resend.com/emails/receiving/${email_id}`, {
 ```
 
-This single change fixes the entire issue. The rest of the function (lead matching, Telegram notification, activity logging) will work as-is once the fields are correctly extracted.
+One-line change. Everything else (parsing, storage, Telegram notification) stays the same.
 
 ## Files Changed
-- `supabase/functions/resend-inbound-webhook/index.ts` -- Extract from `payload.data` instead of top-level
+- `supabase/functions/resend-inbound-webhook/index.ts` -- Fix API endpoint path
+
