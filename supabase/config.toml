@@ -228,3 +228,6 @@ verify_jwt = false
 
 [functions.twitter-scheduled-poster]
 verify_jwt = false
+
+[functions.resend-inbound-webhook]
+verify_jwt = false
