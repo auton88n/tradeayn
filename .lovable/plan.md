@@ -1,58 +1,81 @@
 
+# AYN Mind -- Suggestions and Memory Dashboard for Admin
 
-# Strengthen User Deletion Protection for AYN on Telegram
+## Overview
 
-## Current State
+Add a new admin tab called "AYN Mind" that shows AYN's observations, improvement ideas, thoughts, trends, and mood -- all pulled from the existing `ayn_mind` database table that is already being populated by the proactive loop and Telegram webhook.
 
-AYN already has these protections:
-- The system prompt says "No user deletion" in BLOCKED ACTIONS
-- There is **no** `delete_user` action handler in the code — AYN literally cannot execute user deletion
-- Admin users are additionally protected by the `isAdminUser` guard
+This gives you a window into what AYN is thinking, what it has observed across the platform, and its suggestions for improvements -- all in one place.
 
-So AYN cannot currently delete users. But the prompt wording is vague — let's make it crystal clear.
+## What Already Exists
 
-## Changes
+- **`ayn_mind` table** -- already in the database with 45+ entries across types: `observation` (20), `mood` (13), `idea` (6), `thought` (3), `trend` (3), plus `telegram_admin` and `telegram_ayn` conversation logs
+- **Proactive loop** (`ayn-proactive-loop`) -- already writes observations, ideas, moods, and trends to `ayn_mind`
+- **Telegram webhook** -- already logs conversations to `ayn_mind`
 
-### File: `supabase/functions/ayn-telegram-webhook/index.ts`
+## What We Will Build
 
-Update the BLOCKED ACTIONS section (line 110-116) to be more explicit:
+### New Component: `src/components/admin/AYNMindDashboard.tsx`
 
-**Before:**
+A dashboard with:
+
+1. **AYN's Current Status** -- mood indicator and latest observation summary at the top
+2. **Improvement Suggestions** -- filtered view of `type = 'idea'` entries, showing AYN's actionable suggestions with context data
+3. **Observations** -- filtered view of `type = 'observation'` entries showing platform health snapshots (user counts, error counts, health scores)
+4. **Thoughts** -- `type = 'thought'` entries showing AYN's strategic thinking
+5. **Trends** -- `type = 'trend'` entries showing patterns AYN has noticed
+6. **Filter tabs** -- filter by type (All, Ideas, Observations, Thoughts, Trends, Mood)
+7. **Real-time updates** -- subscribe to `ayn_mind` table changes for live updates
+8. **Context expansion** -- click to expand and see the full JSON context data attached to each entry
+
+### Sidebar Addition: `src/components/admin/AdminSidebar.tsx`
+
+- Add `'ayn-mind'` to the `AdminTabId` type
+- Add a new sidebar item in the AI Tools section with a Brain icon and gradient
+
+### Admin Panel Wiring: `src/components/AdminPanel.tsx`
+
+- Import and render `AYNMindDashboard` when `activeTab === 'ayn-mind'`
+
+## Technical Details
+
+### AYNMindDashboard Component Structure
+
+```text
++------------------------------------------+
+| AYN's Mind                               |
++------------------------------------------+
+| [Mood: happy]  Health: 97%  Active: 9    |
++------------------------------------------+
+| Filter: [All] [Ideas] [Observations]     |
+|         [Thoughts] [Trends] [Mood]       |
++------------------------------------------+
+| [Idea] Analyze 10 errors to identify     |
+|        if from rate-limited user...       |
+|        Context: { errors: 10, ... }      |
+|------------------------------------------|
+| [Thought] Target 5 inactive users with   |
+|           feature update notification...  |
+|        Context: { active: 9, total: 14 } |
+|------------------------------------------|
+| [Observation] System check: health 97%,  |
+|              10 errors, 1 open ticket...  |
+|        Context: { health_score: 97 }     |
++------------------------------------------+
 ```
-BLOCKED ACTIONS (never execute):
-- No subscription/billing actions
-- No user deletion
-- No auth/password changes
-```
 
-**After:**
-```
-BLOCKED ACTIONS (never execute):
-- No subscription/billing actions
-- No removing users from the system — never delete user accounts, auth records, or profiles
-- No auth/password changes
-```
+### Data Flow
 
-Also update the `WHAT YOU DON'T TOUCH` section (line 47-50) to explicitly mention user removal:
+- Query `ayn_mind` table filtered by type, ordered by `created_at DESC`
+- Real-time subscription for new entries via Supabase channels
+- Each entry displays: type badge, content, timestamp, expandable context
 
-**Before:**
-```
-WHAT YOU DON'T TOUCH:
-- ADMIN USERS ARE UNTOUCHABLE...
-- Subscriptions, payments, billing...
-- User passwords or auth tokens
-```
+### Files to Create/Modify
 
-**After:**
-```
-WHAT YOU DON'T TOUCH:
-- ADMIN USERS ARE UNTOUCHABLE...
-- NEVER remove or delete any user from the system — no account deletion, no auth record removal, no profile wiping
-- Subscriptions, payments, billing...
-- User passwords or auth tokens
-```
+| File | Action |
+|------|--------|
+| `src/components/admin/AYNMindDashboard.tsx` | **Create** -- main dashboard component |
+| `src/components/admin/AdminSidebar.tsx` | **Modify** -- add `'ayn-mind'` tab |
+| `src/components/AdminPanel.tsx` | **Modify** -- import and render new component |
 
-This makes it clear across two sections of the prompt that AYN cannot remove anyone from the system — not just admins, but all users.
-
-No code handler changes needed since no `delete_user` action exists.
-
+No database changes needed -- the `ayn_mind` table and its data pipeline already exist and are working.
