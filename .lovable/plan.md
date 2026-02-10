@@ -1,70 +1,74 @@
 
 
-# Fix AYN's Memory + Make Conversations Flow Naturally
+# Fix AYN's Memory — Messages Aren't Being Saved At All
 
-## What's Breaking (from your screenshot)
+## The Real Problem
 
-AYN drafts an email, asks "Should I go ahead?", you say "Confirm send it" — and AYN replies "I don't have a pending email." Two problems cause this:
+Looking at the database, there are **zero** `telegram_admin` or `telegram_ayn` entries in the `ayn_mind` table. AYN literally has no conversation history. Every message is a fresh start with zero context. This is why AYN "forgets" — it's not a truncation issue, the messages are never saved (or silently fail to save).
 
-1. AYN's replies are chopped to 500 characters when saved. The email draft is easily 1500+ chars, so by the time AYN reads its own history next turn, the draft and the "Should I go ahead?" question are gone.
-2. The "pending action" flag just says "awaiting_confirmation" but doesn't store WHICH lead or WHAT action to run. So even if AYN knows it asked something, it can't act on it.
+The `ayn_mind` table only has entries of types: `observation`, `mood`, `idea`, `thought`, `trend` — all from the proactive loop. Nothing from Telegram chats.
+
+## Root Cause
+
+The insert on line 373 is a batch insert of two rows. If this fails silently (Supabase returns an error but the code doesn't check it), all conversations vanish. The code does `await supabase.from('ayn_mind').insert([...])` but never checks the result for errors.
 
 ## Changes
 
 ### File: `supabase/functions/ayn-telegram-webhook/index.ts`
 
-**1. Increase message storage from 500 to 2000 characters (line 292-293)**
+**1. Add error checking and fallback on ALL ayn_mind inserts (lines 373-376, 251-254, 456-459)**
 
-Both admin messages and AYN replies get saved truncated. Bump to 2000 so email drafts survive in history.
+Replace fire-and-forget inserts with error-checked inserts. If the batch insert fails, retry with individual inserts. Log any errors so we can see what's happening:
 
-**2. Store actionable data in pending_action (line 284-293)**
+```typescript
+// Instead of:
+await supabase.from('ayn_mind').insert([...]);
 
-Instead of just `"awaiting_confirmation"`, extract the lead_id from executed actions and store:
-```
-{
-  type: "awaiting_confirmation",
-  action: "send_outreach",
-  lead_id: "abc-123",
-  summary: "Send outreach email to Crossmint"
+// Do:
+const { error: insertErr } = await supabase.from('ayn_mind').insert([
+  { type: 'telegram_admin', content: userText.slice(0, 4000), ... },
+  { type: 'telegram_ayn', content: cleanReply.slice(0, 4000), ... },
+]);
+if (insertErr) {
+  console.error('ayn_mind batch insert failed:', insertErr.message);
+  // Fallback: try individual inserts
+  await supabase.from('ayn_mind').insert({ type: 'telegram_admin', ... });
+  await supabase.from('ayn_mind').insert({ type: 'telegram_ayn', ... });
 }
 ```
 
-This is done by parsing the executed actions array for draft_outreach or send_email results, and pulling the lead_id from the action parameters.
+**2. Increase ALL storage limits to 4000 characters**
 
-**3. Auto-execute confirmations (before AI call, around line 224)**
+Every `.slice(0, 2000)` becomes `.slice(0, 4000)`. This applies to:
+- Main conversation insert (line 374-375)
+- Auto-execute confirmation insert (line 252-253)  
+- Photo/vision insert (line 457-458)
 
-Add a check: if the user's message matches a confirmation pattern ("yes", "go ahead", "confirm", "send it", "do it") AND the most recent `ayn_mind` entry has a `pending_action` with a stored action and lead_id -- skip the AI call entirely and execute the pending action directly. Then respond with the result.
+**3. Increase conversation history window from 40 to 80 messages (line 519)**
 
-This is the real fix: instead of hoping the AI "remembers", we programmatically catch confirmations and run them.
+Change `.limit(40)` to `.limit(80)` so AYN can look further back in conversation history.
 
-**4. Enrich conversation history with pending context (line 441-446)**
+**4. Add debug logging throughout**
 
-When building history and a message has `pending_action` with details, append:
-```
-[PENDING: Waiting for confirmation to send outreach to CompanyName (lead_id: abc-123)]
-```
+Add `console.log` statements at key points so we can trace exactly what happens:
+- When a message is received
+- When conversation history is loaded (how many entries found)
+- When the AI response is received
+- When the insert succeeds or fails
 
-So even if the AI path is used, the model can see exactly what's pending.
+This will show up in the edge function logs and help diagnose if the problem persists.
 
-### File: `supabase/functions/ayn-sales-outreach/index.ts`
+**5. Photo message storage — also increase to 4000 (line 458)**
 
-**5. Ban "AYN Team" signatures (line 231)**
+The vision response insert also uses `.slice(0, 500)` — bump it to 4000 for consistency.
 
-Add explicit rule to the drafting prompt: "NEVER sign as 'AYN Team', 'The AYN Team', or 'Best, AYN Team'. Always use a personal name + role like 'Sarah, Sales @ AYN'."
+## Summary
 
-## What stays the same
+| Fix | What |
+|-----|------|
+| Error-checked inserts with fallback | Messages actually get saved to the database |
+| 4000 char storage | Full email drafts, long conversations preserved |
+| 80 message history window | Deeper conversation context |
+| Debug logging | Can see what's happening in edge function logs |
 
-- The personality prompt, tone, and dynamic role system -- already good from last update
-- Reply-to-message handling -- already working
-- All sales pipeline logic, SMTP sending, follow-up rules -- unchanged
-
-## Technical Summary
-
-| Fix | Where | What |
-|-----|-------|------|
-| Storage 500 to 2000 chars | webhook line 292-293 | Drafts survive in history |
-| Actionable pending_action | webhook line 284-293 | Stores lead_id + action type |
-| Auto-execute confirmations | webhook ~line 224 | Catches "yes"/"confirm" and runs pending action |
-| Richer history context | webhook line 441-446 | AI sees what's pending |
-| Ban "AYN Team" signature | sales-outreach line 231 | Personal sign-offs only |
-
+The core fix is making the insert reliable. Everything else (pending actions, confirmation detection) already works in the code — it just needs the conversation history to actually exist in the database.
