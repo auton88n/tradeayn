@@ -2390,6 +2390,54 @@ export type Database = {
           },
         ]
       }
+      twitter_posts: {
+        Row: {
+          content: string
+          content_type: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          posted_at: string | null
+          psychological_strategy: string | null
+          quality_score: Json | null
+          status: string
+          target_audience: string | null
+          tweet_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          content_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          posted_at?: string | null
+          psychological_strategy?: string | null
+          quality_score?: Json | null
+          status?: string
+          target_audience?: string | null
+          tweet_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          content_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          posted_at?: string | null
+          psychological_strategy?: string | null
+          quality_score?: Json | null
+          status?: string
+          target_audience?: string | null
+          tweet_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       usage_logs: {
         Row: {
           action_type: string
