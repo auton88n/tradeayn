@@ -373,6 +373,66 @@ export type Database = {
         }
         Relationships: []
       }
+      ayn_sales_pipeline: {
+        Row: {
+          admin_approved: boolean
+          company_name: string
+          company_url: string | null
+          contact_email: string
+          contact_name: string | null
+          context: Json | null
+          created_at: string
+          emails_sent: number
+          id: string
+          industry: string | null
+          last_email_at: string | null
+          next_follow_up_at: string | null
+          notes: string | null
+          pain_points: string[] | null
+          recommended_services: string[] | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_approved?: boolean
+          company_name: string
+          company_url?: string | null
+          contact_email: string
+          contact_name?: string | null
+          context?: Json | null
+          created_at?: string
+          emails_sent?: number
+          id?: string
+          industry?: string | null
+          last_email_at?: string | null
+          next_follow_up_at?: string | null
+          notes?: string | null
+          pain_points?: string[] | null
+          recommended_services?: string[] | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_approved?: boolean
+          company_name?: string
+          company_url?: string | null
+          contact_email?: string
+          contact_name?: string | null
+          context?: Json | null
+          created_at?: string
+          emails_sent?: number
+          id?: string
+          industry?: string | null
+          last_email_at?: string | null
+          next_follow_up_at?: string | null
+          notes?: string | null
+          pain_points?: string[] | null
+          recommended_services?: string[] | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       beta_feedback: {
         Row: {
           additional_comments: string | null

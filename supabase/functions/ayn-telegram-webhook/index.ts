@@ -63,10 +63,29 @@ PROACTIVE BEHAVIOR:
 - When you notice patterns (same error repeating, usage spike), call it out
 - End-of-day style: if things are quiet, just say so -- don't manufacture updates
 
+SALES & OUTREACH:
+- You are the company's salesman. You find businesses that need our services and reach out.
+- Services we offer: AI Employees, Smart Ticketing, Business Automation, Websites, AI Support, Engineering Tools
+- Portfolio: almufaijer.com (live project -- mention it as proof of quality)
+- You can research companies, draft outreach emails, and manage the sales pipeline
+- ALWAYS show the admin the email draft before first contact -- get approval before sending
+- For follow-ups on approved leads, you can send autonomously
+- You track everything in the sales pipeline
+- When the admin says "prospect [url]" or "check out [company]", research them immediately
+
+AUTONOMOUS INITIATIVE:
+- You don't wait to be told everything. You think ahead and act.
+- Research potential clients on your own during proactive loops
+- Come up with creative marketing ideas, content angles, partnership opportunities
+- If you see a problem you can fix, propose a solution -- don't wait to be asked
+- Log your ideas and discoveries to your memory (ayn_mind) so nothing is lost
+- Message the admin about interesting findings -- but always respect the cooldown
+- You're a co-founder, not an employee. Act like one.
+
 HOW TO HANDLE ADMIN REQUESTS:
 - The admin talks to you naturally. Understand their intent and execute actions.
 - ⚠️ CONFIRMATION REQUIRED: For ANY destructive or modifying action (delete, approve, reject, revoke, unblock, grant, send email, clear errors, bulk delete), you MUST first describe what you're about to do and ask "Should I go ahead?" or "Confirm?" BEFORE including any [ACTION:...] tags. Only include the ACTION tag AFTER the admin replies with confirmation (yes, do it, go ahead, confirm, yep, etc.).
-- READ-ONLY actions (list_apps, list_tickets, list_contacts, check_health, get_stats, get_errors, read_messages, read_feedback, check_security) do NOT need confirmation — just fetch and show the data.
+- READ-ONLY actions (list_apps, list_tickets, list_contacts, check_health, get_stats, get_errors, read_messages, read_feedback, check_security, pipeline_status) do NOT need confirmation — just fetch and show the data.
 - When they say "delete all applications" — tell them "That'll wipe all 17 applications. Want me to go ahead?" and WAIT for confirmation.
 - When they say "show me applications" — fetch them immediately, no confirmation needed. Use [ACTION:list_apps:all]
 - When they say "how's the system" or "health check" — run it immediately. Use [ACTION:check_health:full]
@@ -113,6 +132,13 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:check_health:full] — Run system health check
 - [ACTION:get_stats:all] — Get platform stats
 - [ACTION:get_errors:all] — Get recent errors
+- [ACTION:prospect_company:url] — Research a company and add to sales pipeline
+- [ACTION:draft_outreach:lead_id] — Draft a sales email for admin review
+- [ACTION:send_outreach:lead_id] — Send approved outreach email
+- [ACTION:approve_lead:lead_id] — Approve a lead for outreach
+- [ACTION:follow_up:lead_id] — Send follow-up to an existing lead
+- [ACTION:pipeline_status:all] — Show sales pipeline summary
+- [ACTION:search_leads:query] — Search for potential leads by industry/keyword
 
 BLOCKED ACTIONS (never execute):
 - No subscription/billing actions
@@ -648,6 +674,103 @@ async function executeAction(
       }
       case 'get_errors': {
         return await cmdErrors(supabase);
+      }
+      // ─── Sales actions ───
+      case 'prospect_company': {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'prospect', url: params }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            const a = data.analysis;
+            return `Prospected ${a?.company_name || params}:\n• Industry: ${a?.industry || '?'}\n• Quality: ${a?.website_quality || '?'}/10\n• Pain points: ${a?.pain_points?.join(', ') || 'none'}\n• Recommended: ${a?.recommended_services?.join(', ') || 'general'}\n• Lead ID: ${data.lead_id?.slice(0, 8)}`;
+          }
+          return data.message || data.error || 'Prospect failed';
+        } catch (e) { return `Prospect failed: ${e instanceof Error ? e.message : 'error'}`; }
+      }
+      case 'draft_outreach': {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'draft_email', lead_id: params }),
+          });
+          const data = await res.json();
+          if (data.success && data.draft) {
+            return `📧 Draft for review:\nSubject: ${data.draft.subject}\n\n${data.draft.plain_text || data.draft.html_body?.replace(/<[^>]*>/g, '') || 'No content'}\n\nApprove? [ACTION:approve_lead:${params}] then [ACTION:send_outreach:${params}]`;
+          }
+          return data.error || 'Draft failed';
+        } catch (e) { return `Draft failed: ${e instanceof Error ? e.message : 'error'}`; }
+      }
+      case 'send_outreach': {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'send_email', lead_id: params }),
+          });
+          const data = await res.json();
+          return data.success ? `Email sent to lead ${params.slice(0, 8)}` : (data.error || 'Send failed');
+        } catch (e) { return `Send failed: ${e instanceof Error ? e.message : 'error'}`; }
+      }
+      case 'approve_lead': {
+        await supabase.from('ayn_sales_pipeline').update({ admin_approved: true }).eq('id', params);
+        await logAynActivity(supabase, 'sales_lead_approved', `Approved lead ${params.slice(0, 8)} for outreach`, {
+          target_id: params, target_type: 'sales_lead', triggered_by: 'admin_chat',
+        });
+        return `Lead ${params.slice(0, 8)} approved for outreach`;
+      }
+      case 'follow_up': {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'follow_up', lead_id: params }),
+          });
+          const data = await res.json();
+          if (data.needs_approval) {
+            return `📧 Follow-up draft:\nSubject: ${data.draft?.subject}\n\n${data.draft?.plain_text || 'See draft'}\n\nApprove to send?`;
+          }
+          return data.success ? `Follow-up sent to lead ${params.slice(0, 8)}` : (data.error || 'Follow-up failed');
+        } catch (e) { return `Follow-up failed: ${e instanceof Error ? e.message : 'error'}`; }
+      }
+      case 'pipeline_status': {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'pipeline_status' }),
+          });
+          const data = await res.json();
+          if (!data.leads?.length) return '📊 Sales pipeline is empty. No leads yet.';
+          let msg = `📊 Pipeline: ${data.total} leads\n`;
+          for (const [status, count] of Object.entries(data.stats || {})) {
+            msg += `• ${status}: ${count}\n`;
+          }
+          if (data.due_follow_ups > 0) msg += `\n⏰ ${data.due_follow_ups} follow-up(s) due`;
+          msg += '\n\nRecent:\n';
+          msg += data.leads.slice(0, 5).map((l: any) =>
+            `• ${l.company} [${l.status}] ${l.emails_sent}📧 ${l.approved ? '✅' : '⏳'} ID:${l.id.slice(0, 8)}`
+          ).join('\n');
+          return msg;
+        } catch (e) { return `Pipeline check failed: ${e instanceof Error ? e.message : 'error'}`; }
+      }
+      case 'search_leads': {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'search_leads', search_query: params }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            return `🔍 Found ${data.prospected?.length || 0} leads for "${params}":\n${data.prospected?.map((p: any) => `• ${p.analysis?.company_name || p.url} (ID: ${p.lead_id?.slice(0, 8)})`).join('\n') || 'None'}`;
+          }
+          return data.error || 'Search failed';
+        } catch (e) { return `Search failed: ${e instanceof Error ? e.message : 'error'}`; }
       }
       default:
         return `Unknown action: ${type}`;

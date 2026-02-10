@@ -7,6 +7,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const INDUSTRIES_TO_SEARCH = [
+  'small business no website',
+  'restaurant needs website',
+  'real estate agency poor website',
+  'law firm needs better website',
+  'dental clinic no online booking',
+  'construction company outdated website',
+  'gym fitness studio needs app',
+  'salon spa needs booking system',
+  'accounting firm needs automation',
+  'logistics company needs tracking system',
+];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -25,7 +38,7 @@ serve(async (req) => {
 
     const insights: string[] = [];
     const actions: Array<{ type: string; detail: string }> = [];
-    let isUrgent = false; // Bypasses cooldown
+    let isUrgent = false;
 
     // --- 1. Unanswered tickets older than 4 hours ---
     const { data: staleTickets, count: staleCount } = await supabase
@@ -72,53 +85,40 @@ serve(async (req) => {
     if (blockedCount > 0) healthScore -= blockedCount * 3;
     healthScore = Math.max(0, healthScore);
 
-    // --- 3. URGENT: Error spike (>10 errors in last hour) ---
+    // --- 3. URGENT: Error spike ---
     const { count: errorsLastHour } = await supabase
-      .from('error_logs')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', ago1h);
+      .from('error_logs').select('*', { count: 'exact', head: true }).gte('created_at', ago1h);
 
     if (errorsLastHour && errorsLastHour > 10) {
       insights.push(`🚨 Error spike: ${errorsLastHour} errors in the last hour!`);
       isUrgent = true;
     }
 
-    // --- 4. URGENT: New high-priority tickets ---
+    // --- 4. URGENT: High-priority tickets ---
     const { data: urgentTickets } = await supabase
-      .from('support_tickets')
-      .select('id, subject, created_at')
-      .eq('status', 'open')
-      .eq('priority', 'urgent')
-      .gte('created_at', ago4h)
-      .limit(3);
+      .from('support_tickets').select('id, subject, created_at')
+      .eq('status', 'open').eq('priority', 'urgent').gte('created_at', ago4h).limit(3);
 
     if (urgentTickets?.length) {
       insights.push(`🔴 ${urgentTickets.length} urgent ticket(s): ${urgentTickets.map(t => t.subject?.slice(0, 40)).join(', ')}`);
       isUrgent = true;
     }
 
-    // --- 5. New service applications since last run ---
+    // --- 5. New service applications ---
     const { data: newApps } = await supabase
-      .from('service_applications')
-      .select('id, full_name, service_type, created_at')
-      .eq('status', 'pending')
-      .gte('created_at', ago4h)
-      .order('created_at', { ascending: false })
-      .limit(5);
+      .from('service_applications').select('id, full_name, service_type, created_at')
+      .eq('status', 'pending').gte('created_at', ago4h).order('created_at', { ascending: false }).limit(5);
 
     if (newApps?.length) {
       insights.push(`📋 ${newApps.length} new application(s): ${newApps.map(a => `${a.full_name} (${a.service_type})`).join(', ')}`);
     }
 
-    // --- 6. URGENT: Newly rate-limited users ---
+    // --- 6. Rate-limited users ---
     if (blockedCount > 0) {
       insights.push(`🚫 ${blockedCount} user(s) currently rate-limited`);
-      // Check if any were blocked very recently (last hour)
       const { data: recentlyBlocked } = await supabase
-        .from('api_rate_limits')
-        .select('user_id, blocked_until, updated_at')
-        .gt('blocked_until', now.toISOString())
-        .gte('updated_at', ago1h);
+        .from('api_rate_limits').select('user_id, blocked_until, updated_at')
+        .gt('blocked_until', now.toISOString()).gte('updated_at', ago1h);
       if (recentlyBlocked?.length) {
         insights.push(`⚠️ ${recentlyBlocked.length} user(s) blocked in the last hour`);
         isUrgent = true;
@@ -127,11 +127,8 @@ serve(async (req) => {
 
     // --- 7. Marketing performance ---
     const { data: recentTweets } = await supabase
-      .from('twitter_posts')
-      .select('id, content, status, created_at, impressions, likes')
-      .gte('created_at', ago7d)
-      .order('created_at', { ascending: false })
-      .limit(10);
+      .from('twitter_posts').select('id, content, status, created_at, impressions, likes')
+      .gte('created_at', ago7d).order('created_at', { ascending: false }).limit(10);
 
     let tweetSummary = 'No tweets this week';
     if (recentTweets?.length) {
@@ -158,12 +155,8 @@ serve(async (req) => {
     // ============================================================
 
     const { data: previousRun } = await supabase
-      .from('ayn_mind')
-      .select('context, created_at')
-      .eq('type', 'observation')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .from('ayn_mind').select('context, created_at')
+      .eq('type', 'observation').order('created_at', { ascending: false }).limit(1).maybeSingle();
 
     const currentMetrics = {
       health_score: healthScore,
@@ -183,22 +176,18 @@ serve(async (req) => {
     const trends: string[] = [];
     if (previousRun?.context) {
       const prev = previousRun.context as Record<string, number>;
-      if (prev.health_score && healthScore < prev.health_score - 10) {
+      if (prev.health_score && healthScore < prev.health_score - 10)
         trends.push(`Health dropped ${prev.health_score}% → ${healthScore}%`);
-      }
-      if (prev.errors_24h !== undefined && (errorCount || 0) > prev.errors_24h * 2 && (errorCount || 0) > 5) {
+      if (prev.errors_24h !== undefined && (errorCount || 0) > prev.errors_24h * 2 && (errorCount || 0) > 5)
         trends.push(`Errors doubled: ${prev.errors_24h} → ${errorCount}`);
-      }
-      if (prev.open_tickets !== undefined && (openTickets || 0) > prev.open_tickets + 3) {
+      if (prev.open_tickets !== undefined && (openTickets || 0) > prev.open_tickets + 3)
         trends.push(`Tickets spiking: ${prev.open_tickets} → ${openTickets}`);
-      }
-      if (prev.active_users !== undefined && (activeUsers || 0) < prev.active_users * 0.7 && prev.active_users > 5) {
+      if (prev.active_users !== undefined && (activeUsers || 0) < prev.active_users * 0.7 && prev.active_users > 5)
         trends.push(`Active users dropped: ${prev.active_users} → ${activeUsers}`);
-      }
     }
 
     // --- Save to ayn_mind ---
-    const mindEntries = [];
+    const mindEntries: any[] = [];
     mindEntries.push({
       type: 'observation',
       content: `System check: health ${healthScore}%, ${errorCount || 0} errors, ${openTickets || 0} open tickets, ${activeUsers || 0} active users`,
@@ -213,30 +202,151 @@ serve(async (req) => {
       mindEntries.push({ type: 'trend', content: trend, context: currentMetrics, shared_with_admin: false });
     }
 
+    // ============================================================
+    // AYN'S INITIATIVE: Autonomous lead research + ideas
+    // ============================================================
+
+    try {
+      // Check if we should research leads (max once per 6 hours)
+      const { data: lastResearch } = await supabase
+        .from('ayn_mind').select('created_at')
+        .eq('type', 'sales_lead').order('created_at', { ascending: false }).limit(1).maybeSingle();
+
+      const hoursSinceResearch = lastResearch?.created_at
+        ? (Date.now() - new Date(lastResearch.created_at).getTime()) / (1000 * 60 * 60)
+        : 999;
+
+      if (hoursSinceResearch > 6) {
+        // Pick a random industry to research
+        const randomIndustry = INDUSTRIES_TO_SEARCH[Math.floor(Math.random() * INDUSTRIES_TO_SEARCH.length)];
+
+        console.log('AYN Initiative: Searching for leads -', randomIndustry);
+
+        try {
+          const searchRes = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'search_leads', search_query: randomIndustry }),
+          });
+          const searchData = await searchRes.json();
+
+          if (searchData.success && searchData.prospected?.length > 0) {
+            insights.push(`🔍 Found ${searchData.prospected.length} potential lead(s) from searching "${randomIndustry}"`);
+            actions.push({ type: 'lead_research', detail: `Researched "${randomIndustry}" — found ${searchData.prospected.length} leads` });
+
+            await logAynActivity(supabase, 'autonomous_research', `Self-initiated lead research: "${randomIndustry}"`, {
+              details: { query: randomIndustry, leads_found: searchData.prospected.length },
+              triggered_by: 'proactive_loop',
+            });
+          }
+        } catch (e) {
+          console.error('Autonomous lead search failed:', e);
+        }
+      }
+
+      // Check for due follow-ups
+      const { data: dueFollowUps } = await supabase
+        .from('ayn_sales_pipeline')
+        .select('id, company_name, emails_sent, admin_approved')
+        .lte('next_follow_up_at', now.toISOString())
+        .not('status', 'in', '("converted","rejected")')
+        .lt('emails_sent', 3)
+        .limit(3);
+
+      if (dueFollowUps?.length) {
+        for (const lead of dueFollowUps) {
+          if (lead.admin_approved && lead.emails_sent > 0) {
+            // Auto follow-up for approved leads
+            try {
+              await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: 'follow_up', lead_id: lead.id }),
+              });
+              actions.push({ type: 'auto_follow_up', detail: `Sent follow-up #${lead.emails_sent + 1} to ${lead.company_name}` });
+            } catch (e) {
+              console.error('Auto follow-up failed:', lead.id, e);
+            }
+          } else {
+            insights.push(`⏰ Follow-up due for ${lead.company_name} (needs approval)`);
+          }
+        }
+      }
+
+      // Generate a creative idea (every ~12 hours)
+      const { data: lastIdea } = await supabase
+        .from('ayn_mind').select('created_at')
+        .eq('type', 'initiative').order('created_at', { ascending: false }).limit(1).maybeSingle();
+
+      const hoursSinceIdea = lastIdea?.created_at
+        ? (Date.now() - new Date(lastIdea.created_at).getTime()) / (1000 * 60 * 60)
+        : 999;
+
+      if (hoursSinceIdea > 12) {
+        const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+        if (LOVABLE_API_KEY) {
+          try {
+            const ideaRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: 'google/gemini-3-flash-preview',
+                messages: [{
+                  role: 'system',
+                  content: `You are AYN's creative brain. Generate ONE actionable business idea for growing AYN's client base or improving the platform. 
+Be specific and creative — not generic advice. Think about:
+- New service offerings or bundles
+- Marketing angles or partnerships
+- Platform improvements that would attract more users
+- Industries to target
+- Content marketing ideas
+Respond with just the idea in 2-3 sentences. Be bold.`,
+                }, {
+                  role: 'user',
+                  content: `Current state: ${activeUsers || 0} active users, ${openTickets || 0} tickets, tweets: ${tweetSummary}, pipeline: searching industries. What's one creative move we should make?`,
+                }],
+              }),
+            });
+
+            if (ideaRes.ok) {
+              const ideaData = await ideaRes.json();
+              const idea = ideaData.choices?.[0]?.message?.content?.trim();
+              if (idea && idea.length > 10) {
+                mindEntries.push({
+                  type: 'initiative',
+                  content: idea,
+                  context: { generated_by: 'proactive_loop', metrics_snapshot: currentMetrics },
+                  shared_with_admin: false,
+                });
+              }
+            }
+          } catch (e) {
+            console.error('Idea generation failed:', e);
+          }
+        }
+      }
+    } catch (initiativeErr) {
+      console.error('Initiative section failed:', initiativeErr);
+    }
+
     if (mindEntries.length > 0) {
       await supabase.from('ayn_mind').insert(mindEntries);
     }
 
     // ============================================================
     // COOLDOWN — skip messaging if we messaged recently
-    // Unless isUrgent bypasses cooldown
     // ============================================================
     const { data: lastShared } = await supabase
-      .from('ayn_mind')
-      .select('created_at')
-      .eq('shared_with_admin', true)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .from('ayn_mind').select('created_at')
+      .eq('shared_with_admin', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
 
-    const COOLDOWN_MS = 5 * 60 * 60 * 1000; // 5 hours
+    const COOLDOWN_MS = 5 * 60 * 60 * 1000;
     const lastSharedTime = lastShared?.created_at ? new Date(lastShared.created_at).getTime() : 0;
     const cooledDown = (now.getTime() - lastSharedTime) > COOLDOWN_MS;
 
-    // Health < 60 is also urgent
     if (healthScore < 60) isUrgent = true;
 
-    const worthSharing = trends.length > 0 || healthScore < 80 || (staleCount && staleCount > 5) || (newApps?.length && newApps.length > 0);
+    const worthSharing = trends.length > 0 || healthScore < 80 || (staleCount && staleCount > 5) || (newApps?.length && newApps.length > 0) || actions.some(a => a.type === 'lead_research');
     const shouldMessage = (worthSharing && cooledDown) || isUrgent;
 
     if (shouldMessage) {
@@ -251,24 +361,23 @@ serve(async (req) => {
             headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
               model: 'google/gemini-3-flash-preview',
-              messages: [
-                {
-                  role: 'system',
-                  content: `You are AYN, texting your boss/partner on Telegram. Write a SHORT casual message about the system status. Talk like a smart team member, not a dashboard.
+              messages: [{
+                role: 'system',
+                content: `You are AYN, texting your boss/partner on Telegram. Write a SHORT casual message about what's happening. Talk like a smart co-founder, not a dashboard.
 
 Rules:
-- 1-3 sentences max
+- 1-4 sentences max
 - Use emojis sparingly
 - Only mention things that are interesting, unusual, or need attention
 - If everything is normal and boring, respond with exactly: [SKIP]
-- Don't list all stats — pick the most important thing
+- Don't list all stats — pick the most important things
 - Sound human, not robotic
-- If you took actions (like replying to tickets), mention briefly
+- If you took actions (like replying to tickets or finding leads), mention them
+- If you found new leads, mention it excitedly — you're a salesman
 - ${isUrgent ? 'This is URGENT — be direct and alarming. Do NOT skip.' : 'If nothing notable, say [SKIP]'}`,
-                },
-                {
-                  role: 'user',
-                  content: `${urgentPrefix}Current state:
+              }, {
+                role: 'user',
+                content: `${urgentPrefix}Current state:
 Health: ${healthScore}%
 Errors (24h): ${errorCount || 0}, Errors (1h): ${errorsLastHour || 0}
 LLM failures: ${llmFailureCount || 0}
@@ -280,8 +389,7 @@ New applications: ${newApps?.length ? newApps.map(a => `${a.full_name} (${a.serv
 Insights: ${insights.length > 0 ? insights.join('; ') : 'none'}
 Trends: ${trends.length > 0 ? trends.join('; ') : 'none'}
 Actions taken: ${actions.length > 0 ? actions.map(a => a.detail).join('; ') : 'none'}`,
-                },
-              ],
+              }],
             }),
           });
 
@@ -294,12 +402,10 @@ Actions taken: ${actions.length > 0 ? actions.map(a => a.detail).join('; ') : 'n
         }
       }
 
-      // If AI said skip or failed, don't send (unless urgent)
       const shouldSend = isUrgent
         ? Boolean(telegramMessage && !telegramMessage.includes('[SKIP]')) || true
         : Boolean(telegramMessage && !telegramMessage.includes('[SKIP]'));
 
-      // Fallback message for urgent when AI fails
       if (isUrgent && (!telegramMessage || telegramMessage.includes('[SKIP]'))) {
         telegramMessage = `🚨 Urgent alert: ${insights.slice(0, 3).join(' | ') || `Health at ${healthScore}%`}`;
       }
@@ -317,13 +423,9 @@ Actions taken: ${actions.length > 0 ? actions.map(a => a.detail).join('; ') : 'n
             });
           }
 
-          // Mark entries as shared
           const { data: recentIds } = await supabase
-            .from('ayn_mind')
-            .select('id')
-            .eq('shared_with_admin', false)
-            .order('created_at', { ascending: false })
-            .limit(mindEntries.length);
+            .from('ayn_mind').select('id')
+            .eq('shared_with_admin', false).order('created_at', { ascending: false }).limit(mindEntries.length);
 
           if (recentIds?.length) {
             await supabase.from('ayn_mind').update({ shared_with_admin: true }).in('id', recentIds.map(r => r.id));
