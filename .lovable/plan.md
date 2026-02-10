@@ -1,100 +1,91 @@
 
-# Make AYN Alive: Autonomous Mind + Telegram Two-Way Chat
+# Fix AYN: Stop Spam + Make Him Actually Chat
 
-Right now, AYN is **one-directional** — he only talks when you ask him something. He can't reply to your Telegram messages, he doesn't think on his own, and he doesn't initiate conversations. This plan fixes all three.
+## Problems Found
 
----
+1. **Infinite ticket loop**: Ticket `917e3fb7` stays `open` forever. Every 6-hour cycle (and every manual trigger), AYN auto-replies to it again and sends you the same "I replied to stale ticket" message. The auto-reply never updates the ticket status.
 
-## What Changes
+2. **Report format, not conversation**: The proactive loop builds a rigid bullet-point digest every time. It doesn't sound like a person texting -- it sounds like a monitoring dashboard.
 
-### 1. Telegram Webhook — AYN Reads Your Messages
-A new edge function `ayn-telegram-webhook` that receives incoming Telegram messages from you and lets AYN respond intelligently.
+3. **No cooldown**: There's no check for "did I already message recently?" so if the loop runs multiple times (e.g., during testing), you get flooded.
 
-- Register the function as a Telegram Bot webhook (so Telegram forwards your messages to it)
-- When you text AYN on Telegram, the function:
-  - Verifies the message is from your chat ID (security)
-  - Feeds it to the AI with full system context (same as admin-ai-assistant)
-  - Sends the AI response back to Telegram
-  - Executes any actions AYN suggests (unblock user, run tests, etc.)
-- Supports commands like `/health`, `/tickets`, `/stats` for quick checks
-
-### 2. AYN's Brain — Autonomous Thinking Loop
-Upgrade the `ayn-proactive-loop` so AYN doesn't just report — he **thinks, decides, and initiates**.
-
-New database table `ayn_mind` to store:
-- AYN's current thoughts and observations
-- Ideas he wants to share with you
-- Tasks he assigned himself
-- His "mood" based on system health
-
-The upgraded proactive loop will:
-- Compare current metrics with previous runs to detect **trends** (not just snapshots)
-- Generate **original thoughts** like "user signups dropped 30% this week, should we check onboarding?"
-- Initiate Telegram conversations when something interesting happens (not just digests)
-- Track what he already told you to avoid repeating himself
-
-### 3. Scheduled Heartbeat — AYN Runs Automatically
-Set up a cron job so the proactive loop runs every 6 hours without anyone triggering it. AYN wakes up, scans everything, thinks, and messages you if something is worth sharing.
+4. **Webhook is working but needs conversation memory**: The webhook logs show AYN DID reply to your messages ("Hello", "So do you work 24hours", etc.), but it sends each message as a single-turn AI call with no chat history -- so AYN has no memory of what you said 2 messages ago.
 
 ---
 
-## Architecture
+## Fixes
 
-```text
-You (Telegram) ──message──> ayn-telegram-webhook ──> AI + System Context ──> Reply to Telegram
-                                                                          ──> Execute actions
+### Fix 1: Stop the Ticket Spam Loop
+**File**: `supabase/functions/ayn-proactive-loop/index.ts`
 
-Every 6 hours:
-  cron ──> ayn-proactive-loop ──> Scan system
-                               ──> Compare with previous (ayn_mind table)
-                               ──> Generate thoughts
-                               ──> Send interesting findings to Telegram
-                               ──> Log to ayn_mind
+After auto-replying to a stale ticket, update its status to `pending` so it's never picked up again:
+```
+await supabase.from('support_tickets')
+  .update({ status: 'pending' })
+  .eq('id', ticket.id);
 ```
 
+### Fix 2: Replace Data Dump with Natural Conversation
+**File**: `supabase/functions/ayn-proactive-loop/index.ts`
+
+Remove the hardcoded `digestParts` bullet-point format (lines 258-275). Instead, pass all metrics/trends/actions to the AI and ask it to write a casual Telegram message like a team member. If nothing is interesting, AYN responds with `[SKIP]` and no message is sent.
+
+### Fix 3: Add Cooldown + Deduplication
+**File**: `supabase/functions/ayn-proactive-loop/index.ts`
+
+Before sending any Telegram message:
+- Check when AYN last messaged you (query `ayn_mind` for last `shared_with_admin = true`)
+- If less than 5 hours ago, skip messaging (still save observations)
+- Compare current metrics hash with last shared metrics -- skip if identical
+
+### Fix 4: Tighten "Worth Sharing" Logic
+**File**: `supabase/functions/ayn-proactive-loop/index.ts`
+
+Change the `worthSharing` condition from:
+```
+trends.length > 0 || healthScore < 80 || staleCount > 2 || actions.length > 0
+```
+To:
+```
+trends.length > 0 || healthScore < 80 || staleCount > 5
+```
+Remove `actions.length > 0` -- auto-replying to a ticket is routine, not newsworthy.
+
+### Fix 5: Add Real Conversation Memory to Telegram Webhook
+**File**: `supabase/functions/ayn-telegram-webhook/index.ts`
+
+Currently AYN gets zero chat history -- every message is a fresh conversation. Fix by:
+- Query the last 10 exchanges from `ayn_mind` where type is `observation` and content starts with "Admin asked:"
+- Build a proper `messages` array with alternating user/assistant turns
+- Send the full conversation history to the AI so AYN remembers what you talked about
+
+### Fix 6: Add More Telegram Commands
+**File**: `supabase/functions/ayn-telegram-webhook/index.ts`
+
+Add these commands so you can control AYN directly from Telegram:
+- `/think` -- Force AYN to run a thinking cycle and share results
+- `/tweets` -- Show recent tweet performance
+- `/errors` -- Show recent error details
+- `/unblock [user_id]` -- Unblock a rate-limited user
+- `/help` -- List all available commands
+
 ---
 
-## Technical Details
+## Technical Summary
 
-### New Edge Function: `ayn-telegram-webhook`
-- `verify_jwt = false` (Telegram sends webhooks directly)
-- Security: validates `chat_id` matches `TELEGRAM_CHAT_ID` secret
-- Uses the same AI model and system context as `admin-ai-assistant`
-- Supports text messages and `/commands`
-- Responds in AYN's casual personality style
+| Change | File | What |
+|--------|------|------|
+| Fix ticket loop | ayn-proactive-loop | Update ticket to `pending` after auto-reply |
+| Natural messages | ayn-proactive-loop | AI generates casual message instead of bullet report |
+| Cooldown | ayn-proactive-loop | Skip if messaged less than 5h ago |
+| Deduplication | ayn-proactive-loop | Skip if metrics identical to last message |
+| Tighter triggers | ayn-proactive-loop | Remove `actions.length > 0` from worthSharing |
+| Chat memory | ayn-telegram-webhook | Send last 10 conversation turns to AI |
+| More commands | ayn-telegram-webhook | Add /think, /tweets, /errors, /unblock, /help |
 
-### New Database Table: `ayn_mind`
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | UUID | Primary key |
-| type | text | thought, observation, idea, task, mood |
-| content | text | What AYN is thinking |
-| context | jsonb | Related metrics/data |
-| shared_with_admin | boolean | Whether he already told you |
-| created_at | timestamp | When he thought of it |
-
-### Upgraded `ayn-proactive-loop`
-- Reads previous `ayn_mind` entries to avoid repeating
-- Detects metric trends by comparing with last run
-- Generates 1-2 original thoughts per cycle
-- Only messages you on Telegram when something is genuinely interesting or actionable
-- Saves all observations to `ayn_mind`
-
-### Cron Job (pg_cron)
-- Runs `ayn-proactive-loop` every 6 hours
-- Uses `pg_net` to call the edge function
-
-### Telegram Bot Webhook Registration
-- One-time setup: call Telegram's `setWebhook` API to point to `ayn-telegram-webhook`
-- Will provide the registration command after deployment
-
----
-
-## What AYN Will Be Able to Do After This
-
-- **Reply to your Telegram messages** with full system awareness
-- **Start conversations** when he notices something ("hey, 3 tickets have been sitting for 8 hours")
-- **Think independently** and log observations ("beam calculator usage spiked 400% today — maybe we should feature it")
-- **Remember what he told you** so he doesn't repeat himself
-- **Run on autopilot** every 6 hours without you triggering anything
-- **Execute actions** from Telegram (you text "unblock users" and he does it)
+After these changes, AYN will:
+- Stop spamming you with the same ticket notification
+- Text you like a person, not a dashboard
+- Remember your conversation context across messages
+- Let you control him with commands from Telegram
+- Stay quiet when nothing interesting is happening
