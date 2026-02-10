@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, Pencil, Check, X } from 'lucide-react';
+import { ChevronDown, Pencil, Check, X, Upload } from 'lucide-react';
 import { AynEyeIcon } from './AynEyeIcon';
 import { Button } from '@/components/ui/button';
+import browserImageCompression from 'browser-image-compression';
 
 const STORAGE_KEY = 'ayn-brand-kit';
+const LOGO_STORAGE_KEY = 'ayn-brand-kit-logo';
 
 export interface BrandKitState {
   colors: { name: string; hex: string }[];
   fonts: { name: string; usage: string; sample: string }[];
   tagline: string;
   traits: string[];
+  logoUrl?: string;
 }
 
 const defaultBrandKit: BrandKitState = {
@@ -35,9 +38,24 @@ const defaultBrandKit: BrandKitState = {
 function loadBrandKit(): BrandKitState {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    const logo = localStorage.getItem(LOGO_STORAGE_KEY);
+    if (stored) {
+      const kit = JSON.parse(stored);
+      if (logo) kit.logoUrl = logo;
+      return kit;
+    }
   } catch {}
   return defaultBrandKit;
+}
+
+function saveBrandKit(kit: BrandKitState) {
+  const { logoUrl, ...rest } = kit;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
+  if (logoUrl) {
+    localStorage.setItem(LOGO_STORAGE_KEY, logoUrl);
+  } else {
+    localStorage.removeItem(LOGO_STORAGE_KEY);
+  }
 }
 
 interface BrandKitProps {
@@ -50,13 +68,14 @@ export const BrandKit = ({ onBrandKitChange, externalColors }: BrandKitProps) =>
   const [isEditing, setIsEditing] = useState(false);
   const [brandKit, setBrandKit] = useState<BrandKitState>(loadBrandKit);
   const [editDraft, setEditDraft] = useState<BrandKitState>(brandKit);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const headerFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Apply external colors from brand scan
   useEffect(() => {
     if (externalColors && externalColors.length > 0) {
       setBrandKit(prev => {
         const updated = { ...prev, colors: externalColors };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        saveBrandKit(updated);
         return updated;
       });
     }
@@ -73,7 +92,7 @@ export const BrandKit = ({ onBrandKitChange, externalColors }: BrandKitProps) =>
 
   const saveEdit = () => {
     setBrandKit(editDraft);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(editDraft));
+    saveBrandKit(editDraft);
     setIsEditing(false);
   };
 
@@ -103,7 +122,63 @@ export const BrandKit = ({ onBrandKitChange, externalColors }: BrandKitProps) =>
     });
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, applyDirectly?: boolean) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const compressed = await browserImageCompression(file, {
+        maxSizeMB: 0.3,
+        maxWidthOrHeight: 256,
+        useWebWorker: true,
+      });
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        if (applyDirectly) {
+          // Direct update (from header click)
+          setBrandKit(prev => {
+            const updated = { ...prev, logoUrl: dataUrl };
+            saveBrandKit(updated);
+            return updated;
+          });
+        } else {
+          // Update draft (in edit mode)
+          setEditDraft(prev => ({ ...prev, logoUrl: dataUrl }));
+        }
+      };
+      reader.readAsDataURL(compressed);
+    } catch {
+      // Fallback without compression
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        if (applyDirectly) {
+          setBrandKit(prev => {
+            const updated = { ...prev, logoUrl: dataUrl };
+            saveBrandKit(updated);
+            return updated;
+          });
+        } else {
+          setEditDraft(prev => ({ ...prev, logoUrl: dataUrl }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeLogo = () => {
+    setEditDraft(prev => ({ ...prev, logoUrl: undefined }));
+  };
+
   const kit = isEditing ? editDraft : brandKit;
+
+  const LogoDisplay = ({ size, className }: { size: number; className?: string }) => {
+    if (kit.logoUrl) {
+      return <img src={kit.logoUrl} alt="Brand logo" className={`object-contain ${className || ''}`} style={{ width: size, height: size }} />;
+    }
+    return <AynEyeIcon size={size} className={className} />;
+  };
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -111,8 +186,8 @@ export const BrandKit = ({ onBrandKitChange, externalColors }: BrandKitProps) =>
         <CollapsibleTrigger asChild>
           <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-foreground flex items-center justify-center relative shadow-lg">
-                <AynEyeIcon size={28} className="text-background" />
+              <div className="w-12 h-12 rounded-2xl bg-foreground flex items-center justify-center relative shadow-lg overflow-hidden">
+                <LogoDisplay size={28} className="text-background" />
               </div>
               <div className="text-left">
                 <h3 className="font-bold text-base tracking-tight">AYN Brand Kit</h3>
@@ -139,18 +214,57 @@ export const BrandKit = ({ onBrandKitChange, externalColors }: BrandKitProps) =>
 
             {/* Logo & Identity */}
             <div className="flex items-center gap-5 p-4 rounded-xl bg-muted/30">
-              <div className="w-20 h-20 rounded-2xl bg-foreground flex items-center justify-center shadow-xl">
-                <AynEyeIcon size={44} className="text-background" />
+              <div className="relative group/logo">
+                <div className="w-20 h-20 rounded-2xl bg-foreground flex items-center justify-center shadow-xl overflow-hidden">
+                  <LogoDisplay size={44} className="text-background" />
+                </div>
+                {isEditing && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover/logo:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                    <Upload className="w-5 h-5 text-white" />
+                  </button>
+                )}
+                {!isEditing && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); headerFileInputRef.current?.click(); }}
+                    className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover/logo:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                  >
+                    <Upload className="w-5 h-5 text-white" />
+                  </button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleLogoUpload(e, false)}
+                />
+                <input
+                  ref={headerFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleLogoUpload(e, true)}
+                />
               </div>
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold tracking-tight">AYN</h2>
                 {isEditing ? (
-                  <Input
-                    value={editDraft.tagline}
-                    onChange={(e) => setEditDraft(prev => ({ ...prev, tagline: e.target.value }))}
-                    className="text-sm h-8 w-64"
-                    placeholder="Brand tagline..."
-                  />
+                  <>
+                    <Input
+                      value={editDraft.tagline}
+                      onChange={(e) => setEditDraft(prev => ({ ...prev, tagline: e.target.value }))}
+                      className="text-sm h-8 w-64"
+                      placeholder="Brand tagline..."
+                    />
+                    {editDraft.logoUrl && (
+                      <Button size="sm" variant="ghost" className="text-xs h-6 text-destructive" onClick={removeLogo}>
+                        <X className="w-3 h-3 mr-1" /> Remove logo
+                      </Button>
+                    )}
+                  </>
                 ) : (
                   <p className="text-sm text-muted-foreground italic leading-relaxed">"{kit.tagline}"</p>
                 )}
