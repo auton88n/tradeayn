@@ -11,8 +11,6 @@ export const PreviewPlaceholder: React.FC<PreviewPlaceholderProps> = ({ calculat
     switch (calculatorType) {
       case 'grading':
         return 'Upload survey data to see terrain visualization';
-      case 'parking':
-        return 'Configure site dimensions to see parking layout';
       default:
         return 'Enter values to see 3D preview';
     }
