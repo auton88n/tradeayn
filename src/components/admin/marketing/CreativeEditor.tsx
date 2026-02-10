@@ -6,7 +6,7 @@ import { Loader2, Download, Send, Sparkles, Globe } from 'lucide-react';
 import { AynEyeIcon } from './AynEyeIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { BrandKitState } from './BrandKit';
+import type { BrandKitState } from './CompactBrandBar';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -109,18 +109,9 @@ export const CreativeEditor = ({
   const handleBrandScan = useCallback(async (url: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('twitter-brand-scan', {
-        body: { url },
-      });
-
+      const { data, error } = await supabase.functions.invoke('twitter-brand-scan', { body: { url } });
       if (error) throw error;
-      if (data?.error) {
-        toast.error(data.error);
-        setIsLoading(false);
-        return null;
-      }
-
-      // Auto-update brand kit colors if callback provided
+      if (data?.error) { toast.error(data.error); setIsLoading(false); return null; }
       if (data?.brand_dna?.colors && onBrandKitUpdate) {
         const scannedColors = data.brand_dna.colors;
         if (Array.isArray(scannedColors) && scannedColors.length > 0) {
@@ -132,7 +123,6 @@ export const CreativeEditor = ({
           toast.success('Brand Kit colors updated from scan!');
         }
       }
-
       return data.brand_dna;
     } catch (err) {
       console.error('Brand scan error:', err);
@@ -145,7 +135,6 @@ export const CreativeEditor = ({
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isLoading) return;
-
     const userMsg: ChatMessage = { role: 'user', content: text.trim() };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
@@ -162,65 +151,31 @@ export const CreativeEditor = ({
           brand_kit: brandKit || undefined,
         },
       });
-
       if (error) throw error;
-
-      if (data?.error) {
-        toast.error(data.error);
-        setIsLoading(false);
-        return;
-      }
+      if (data?.error) { toast.error(data.error); setIsLoading(false); return; }
 
       if (data.type === 'scan_url' && data.scan_url) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
-
         const brandDNA = await handleBrandScan(data.scan_url);
         if (brandDNA) {
-          const followUp: ChatMessage = {
-            role: 'user',
-            content: `[BRAND_DNA_RESULT] Here's the brand analysis for ${data.scan_url}: ${JSON.stringify(brandDNA)}. Now use this to suggest visuals.`,
-          };
+          const followUp: ChatMessage = { role: 'user', content: `[BRAND_DNA_RESULT] Here's the brand analysis for ${data.scan_url}: ${JSON.stringify(brandDNA)}. Now use this to suggest visuals.` };
           const updatedMessages = [...newMessages, { role: 'assistant' as const, content: data.message }, followUp];
           setMessages(prev => [...prev, followUp]);
-
           const { data: followData, error: followError } = await supabase.functions.invoke('twitter-creative-chat', {
-            body: {
-              messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
-              post_id: postId,
-              tweet_text: tweetText,
-              brand_kit: brandKit || undefined,
-            },
+            body: { messages: updatedMessages.map(m => ({ role: m.role, content: m.content })), post_id: postId, tweet_text: tweetText, brand_kit: brandKit || undefined },
           });
-
           if (!followError && followData) {
-            const assistantMsg: ChatMessage = {
-              role: 'assistant',
-              content: followData.message || 'got the brand DNA! what would you like me to create?',
-              image_url: followData.image_url,
-            };
-            setMessages(prev => [...prev, assistantMsg]);
-            if (followData.image_url) {
-              setCurrentImageUrl(followData.image_url);
-              onImageGenerated(followData.image_url);
-            }
+            setMessages(prev => [...prev, { role: 'assistant', content: followData.message || 'got the brand DNA! what would you like me to create?', image_url: followData.image_url }]);
+            if (followData.image_url) { setCurrentImageUrl(followData.image_url); onImageGenerated(followData.image_url); }
           }
         }
         setIsLoading(false);
         return;
       }
 
-      const assistantMsg: ChatMessage = {
-        role: 'assistant',
-        content: data.message || 'hmm, something went wrong. try again?',
-        image_url: data.image_url,
-      };
-
+      const assistantMsg: ChatMessage = { role: 'assistant', content: data.message || 'hmm, something went wrong. try again?', image_url: data.image_url };
       setMessages(prev => [...prev, assistantMsg]);
-
-      if (data.image_url) {
-        setCurrentImageUrl(data.image_url);
-        onImageGenerated(data.image_url);
-      }
+      if (data.image_url) { setCurrentImageUrl(data.image_url); onImageGenerated(data.image_url); }
     } catch (err) {
       console.error('Chat error:', err);
       toast.error('Failed to get response from AYN');
@@ -230,56 +185,21 @@ export const CreativeEditor = ({
     }
   }, [messages, isLoading, postId, tweetText, onImageGenerated, brandKit, handleBrandScan]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(input);
-    }
-  };
-
-  const handleUrlScan = () => {
-    if (urlInput.trim()) {
-      sendMessage(`scan ${urlInput.trim()} and analyze their brand identity`);
-      setUrlInput('');
-      setShowUrlInput(false);
-    }
-  };
-
-  const handleChipClick = (chip: string) => {
-    if (chip === 'Scan a website') {
-      setShowUrlInput(true);
-      return;
-    }
-    sendMessage(chip);
-  };
+  const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); } };
+  const handleUrlScan = () => { if (urlInput.trim()) { sendMessage(`scan ${urlInput.trim()} and analyze their brand identity`); setUrlInput(''); setShowUrlInput(false); } };
+  const handleChipClick = (chip: string) => { if (chip === 'Scan a website') { setShowUrlInput(true); return; } sendMessage(chip); };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl h-[90vh] max-h-[850px] p-0 gap-0 overflow-hidden border-border/40">
         <div className="grid grid-cols-1 md:grid-cols-5 h-full">
-          {/* Left: Preview (3/5) - FIXED, never shifts */}
           <div className="md:col-span-3 bg-muted/5 flex items-center justify-center p-8 border-r border-border/30 overflow-hidden relative">
-            {/* Subtle grid background */}
-            <div className="absolute inset-0 opacity-[0.02]" style={{
-              backgroundImage: 'linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)',
-              backgroundSize: '20px 20px'
-            }} />
-
+            <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             {currentImageUrl ? (
               <div className="relative w-full max-w-md mx-auto">
-                <img
-                  src={currentImageUrl}
-                  alt="Creative preview"
-                  className="relative w-full rounded-2xl shadow-2xl ring-1 ring-border/10 object-contain max-h-[70vh]"
-                />
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="absolute bottom-3 right-3 gap-1.5 shadow-lg backdrop-blur-sm bg-background/80"
-                  onClick={() => downloadImage(currentImageUrl)}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Download
+                <img src={currentImageUrl} alt="Creative preview" className="relative w-full rounded-2xl shadow-2xl ring-1 ring-border/10 object-contain max-h-[70vh]" />
+                <Button size="sm" variant="secondary" className="absolute bottom-3 right-3 gap-1.5 shadow-lg backdrop-blur-sm bg-background/80" onClick={() => downloadImage(currentImageUrl)}>
+                  <Download className="w-3.5 h-3.5" /> Download
                 </Button>
               </div>
             ) : (
@@ -294,34 +214,20 @@ export const CreativeEditor = ({
               </div>
             )}
           </div>
-
-          {/* Right: Chat (2/5) */}
           <div className="md:col-span-2 flex flex-col h-full overflow-hidden bg-background">
-            {/* Header with glassmorphism */}
             <div className="shrink-0 p-4 border-b border-border/30 backdrop-blur-sm bg-background/80">
               <h3 className="font-bold text-base tracking-tight flex items-center gap-2">
-                <AynEyeIcon size={18} className="text-foreground" />
-                AYN Creative Studio
+                <AynEyeIcon size={18} className="text-foreground" /> AYN Creative Studio
               </h3>
               <p className="text-[11px] text-muted-foreground mt-0.5">Marketing strategist · Brand consultant · Design director</p>
             </div>
-
-            {/* Messages - scrollable area */}
             <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="p-4 space-y-3">
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed break-words ${
-                      msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground rounded-br-md'
-                        : 'bg-muted/40 text-foreground rounded-bl-md border border-border/20'
-                    }`}>
+                    <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed break-words ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted/40 text-foreground rounded-bl-md border border-border/20'}`}>
                       <span className="whitespace-pre-wrap">{msg.content}</span>
-                      {msg.image_url && (
-                        <div className="mt-2 text-[11px] opacity-70 flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" /> image generated ✓
-                        </div>
-                      )}
+                      {msg.image_url && <div className="mt-2 text-[11px] opacity-70 flex items-center gap-1"><Sparkles className="w-3 h-3" /> image generated ✓</div>}
                     </div>
                   </div>
                 ))}
@@ -340,67 +246,27 @@ export const CreativeEditor = ({
                 <div ref={bottomRef} />
               </div>
             </div>
-
-            {/* URL input */}
             {showUrlInput && (
               <div className="shrink-0 px-4 py-2 border-t border-border/30">
                 <div className="flex gap-2">
-                  <Input
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleUrlScan()}
-                    placeholder="https://example.com"
-                    className="text-sm h-8 rounded-lg"
-                    autoFocus
-                  />
-                  <Button size="sm" onClick={handleUrlScan} disabled={!urlInput.trim()} className="h-8 gap-1 rounded-lg">
-                    <Globe className="w-3.5 h-3.5" /> Scan
-                  </Button>
+                  <Input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleUrlScan()} placeholder="https://example.com" className="text-sm h-8 rounded-lg" autoFocus />
+                  <Button size="sm" onClick={handleUrlScan} disabled={!urlInput.trim()} className="h-8 gap-1 rounded-lg"><Globe className="w-3.5 h-3.5" /> Scan</Button>
                 </div>
               </div>
             )}
-
-            {/* Quick chips */}
             <div className="shrink-0 px-4 py-2 border-t border-border/30">
               <div className="flex flex-wrap gap-1.5">
                 {QUICK_CHIPS.map((chip) => (
-                  <button
-                    key={chip}
-                    onClick={() => handleChipClick(chip)}
-                    disabled={isLoading}
-                    className={`text-[11px] px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50 hover:scale-[1.03] active:scale-95 ${
-                      chip === 'Scan a website'
-                        ? 'bg-primary/10 hover:bg-primary/20 text-primary font-medium'
-                        : 'bg-muted/30 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {chip === 'Scan a website' && <Globe className="w-3 h-3 inline mr-1" />}
-                    {chip}
+                  <button key={chip} onClick={() => handleChipClick(chip)} disabled={isLoading} className={`text-[11px] px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50 hover:scale-[1.03] active:scale-95 ${chip === 'Scan a website' ? 'bg-primary/10 hover:bg-primary/20 text-primary font-medium' : 'bg-muted/30 hover:bg-muted/60 text-muted-foreground hover:text-foreground'}`}>
+                    {chip === 'Scan a website' && <Globe className="w-3 h-3 inline mr-1" />}{chip}
                   </button>
                 ))}
               </div>
             </div>
-
-            {/* Input */}
             <div className="shrink-0 p-3 border-t border-border/30 bg-background">
               <div className="flex gap-2">
-                <Input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Describe your vision or paste a URL..."
-                  disabled={isLoading}
-                  className="text-sm rounded-lg"
-                />
-                <Button
-                  size="icon"
-                  onClick={() => sendMessage(input)}
-                  disabled={!input.trim() || isLoading}
-                  className="rounded-lg shrink-0"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
+                <Input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Describe your vision or paste a URL..." disabled={isLoading} className="text-sm rounded-lg" />
+                <Button size="icon" onClick={() => sendMessage(input)} disabled={!input.trim() || isLoading} className="rounded-lg shrink-0"><Send className="w-4 h-4" /></Button>
               </div>
             </div>
           </div>
