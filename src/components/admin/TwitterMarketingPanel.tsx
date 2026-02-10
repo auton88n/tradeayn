@@ -362,10 +362,8 @@ export const TwitterMarketingPanel = () => {
             <div className="space-y-2">
               <img src={previewImage} alt="Brand image preview" className="w-full rounded-lg" />
               <div className="flex justify-end gap-2">
-                <Button size="sm" variant="outline" asChild>
-                  <a href={previewImage} download target="_blank" rel="noopener noreferrer">
-                    <Download className="w-3 h-3 mr-1" /> Download
-                  </a>
+                <Button size="sm" variant="outline" onClick={() => window.open(previewImage!, '_blank')}>
+                  <Download className="w-3 h-3 mr-1" /> Download
                 </Button>
               </div>
             </div>

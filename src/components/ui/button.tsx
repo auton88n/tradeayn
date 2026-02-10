@@ -41,17 +41,22 @@ export interface ButtonProps
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, onClick, onMouseDown, onTouchStart, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+    // When asChild is true, render a clean Slot with no custom behavior
+    if (asChild) {
+      return (
+        <Slot
+          className={cn(buttonVariants({ variant, size, className }))}
+          ref={ref}
+          {...props}
+        />
+      )
+    }
+
     const { createRipple, RippleContainer } = useRipple()
 
     const handleInteraction = (event: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
-      // Trigger haptic feedback
       hapticFeedback('light')
-      
-      // Create ripple effect
       createRipple(event)
-      
-      // Call original handlers if they exist
       if ('touches' in event && onTouchStart) {
         onTouchStart(event as React.TouchEvent<HTMLButtonElement>)
       } else if (!('touches' in event) && onMouseDown) {
@@ -66,7 +71,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     }
 
     return (
-      <Comp
+      <button
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         onClick={handleClick}
@@ -75,8 +80,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {props.children}
-        {!asChild && <RippleContainer />}
-      </Comp>
+        <RippleContainer />
+      </button>
     )
   }
 )
