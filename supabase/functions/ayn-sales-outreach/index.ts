@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 
 const corsHeaders = {
@@ -287,8 +288,11 @@ async function handleSendEmail(supabase: any, lead_id: string, email_draft: any)
     return jsonResponse({ error: 'First contact requires admin approval. Use Telegram to approve.' }, 403);
   }
 
-  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-  if (!RESEND_API_KEY) return jsonResponse({ error: 'RESEND_API_KEY not configured' }, 500);
+  const SMTP_HOST = Deno.env.get('SMTP_HOST');
+  const SMTP_PORT = Deno.env.get('SMTP_PORT');
+  const SMTP_USER = Deno.env.get('SMTP_USER');
+  const SMTP_PASS = Deno.env.get('SMTP_PASS');
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return jsonResponse({ error: 'SMTP credentials not configured' }, 500);
 
   // If no draft provided, generate one
   let draft = email_draft;
@@ -302,20 +306,35 @@ async function handleSendEmail(supabase: any, lead_id: string, email_draft: any)
     return jsonResponse({ error: 'Invalid email draft' }, 400);
   }
 
-  // Send via Resend
-  const emailRes = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: 'AYN <info@aynn.io>',
-      to: [lead.contact_email],
-      subject: draft.subject,
-      html: draft.html_body,
-    }),
-  });
+  // Send via SMTP
+  let sent = false;
+  let emailResult: any = {};
+  try {
+    const client = new SMTPClient({
+      connection: {
+        hostname: SMTP_HOST,
+        port: Number(SMTP_PORT) || 465,
+        tls: true,
+        auth: { username: SMTP_USER, password: SMTP_PASS },
+      },
+    });
 
-  const emailResult = await emailRes.json();
-  const sent = emailRes.ok;
+    await client.send({
+      from: `AYN <${SMTP_USER}>`,
+      to: lead.contact_email,
+      subject: draft.subject,
+      content: draft.html_body,
+      html: draft.html_body,
+      replyTo: SMTP_USER,
+    });
+
+    await client.close();
+    sent = true;
+    emailResult = { status: 'sent', method: 'smtp' };
+  } catch (smtpErr) {
+    console.error('SMTP send failed:', smtpErr);
+    emailResult = { status: 'failed', error: smtpErr instanceof Error ? smtpErr.message : 'SMTP error' };
+  }
 
   // Update pipeline
   const nextFollowUp = new Date();
