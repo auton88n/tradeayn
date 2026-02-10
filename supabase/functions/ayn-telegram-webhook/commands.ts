@@ -440,7 +440,7 @@ export async function cmdEmail(text: string, supabase: Supabase): Promise<string
     .replace(/[—–]/g, '-')                         // Replace em-dashes with hyphens
     .replace(/\s+/g, ' ')                          // Collapse whitespace
     .trim();
-  if (!cleanSubject) cleanSubject = 'Hey from AYN';
+  if (!cleanSubject) cleanSubject = 'Quick question';
   if (cleanSubject.length > 60) cleanSubject = cleanSubject.slice(0, 57) + '...';
   const subject = cleanSubject;
   const body = rest.slice(pipeIdx + 1).trim();
@@ -451,12 +451,23 @@ export async function cmdEmail(text: string, supabase: Supabase): Promise<string
   try {
     const signature = `AYN AI<br><span style="color:#888;font-size:13px;">Intelligent Automation Solutions</span><br><a href="https://aynn.io" style="color:#0EA5E9;">aynn.io</a>`;
 
-    // Clean body: handle literal \n text + real newlines
+    // Clean body: remove leaked subject prefix, handle newlines
     let cleanBody = body
+      .replace(/^[^,.:!?]{0,40}:\s*/i, '')  // Remove "something:" prefix leaked from subject
       .replace(/\\n/g, '\n')
       .replace(/\n/g, '<br>');
     // Strip AI-generated signatures from body
     cleanBody = cleanBody.replace(/<br>\s*(?:Best|Regards|Cheers|Thanks|Warm regards|Kind regards),?\s*(?:<br>)?\s*(?:The\s+)?AYN(?:\s+Team)?(?:<br>.*)?$/i, '');
+    // Programmatically replace banned words the AI might still use
+    cleanBody = cleanBody
+      .replace(/\bbespoke\b/gi, 'custom')
+      .replace(/\bstreamline[sd]?\b/gi, 'simplify')
+      .replace(/\bleverage[sd]?\b/gi, 'use')
+      .replace(/\bsynergy\b/gi, 'teamwork')
+      .replace(/\boff[\s-]the[\s-]shelf\b/gi, 'generic')
+      .replace(/\bheavy lifting\b/gi, 'hard work')
+      .replace(/\bdelighted\b/gi, 'happy')
+      .replace(/\bthrilled\b/gi, 'glad');
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
