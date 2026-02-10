@@ -6,7 +6,7 @@ import { Shield, AlertTriangle } from 'lucide-react';
 
 interface TermsModalProps {
   open: boolean;
-  onAccept: () => void;
+  onAccept: (consent: { privacy: boolean; terms: boolean; aiDisclaimer: boolean }) => void;
 }
 
 const SummarySection = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -33,7 +33,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
 
   const handleAccept = () => {
     if (hasRead && acceptTerms && acceptAI) {
-      onAccept();
+      onAccept({ privacy: hasRead, terms: acceptTerms, aiDisclaimer: acceptAI });
     }
   };
 

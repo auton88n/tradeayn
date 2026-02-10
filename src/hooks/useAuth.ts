@@ -76,18 +76,46 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
     }
   }, [user.id, session.access_token]);
 
-  // Accept terms and conditions - uses direct fetch
-  const acceptTerms = useCallback(async () => {
+  // Accept terms and conditions - uses direct fetch with verification
+  const acceptTerms = useCallback(async (consent: { privacy: boolean; terms: boolean; aiDisclaimer: boolean }) => {
     try {
-      // Use PATCH to update existing row (created by trigger on signup)
-      await supabaseApi.patch(
+      const now = new Date().toISOString();
+
+      // Try PATCH first with return=representation to verify it worked
+      const updated = await supabaseApi.fetch<any[]>(
         `user_settings?user_id=eq.${user.id}`,
         session.access_token,
-        { has_accepted_terms: true, updated_at: new Date().toISOString() }
+        {
+          method: 'PATCH',
+          body: { has_accepted_terms: true, updated_at: now },
+          headers: { 'Prefer': 'return=representation' }
+        }
+      );
+
+      // If PATCH returned empty (no row existed), fall back to POST insert
+      if (!updated || updated.length === 0) {
+        await supabaseApi.post(
+          'user_settings',
+          session.access_token,
+          { user_id: user.id, has_accepted_terms: true, updated_at: now }
+        );
+      }
+
+      // Write immutable consent audit log
+      await supabaseApi.post(
+        'terms_consent_log',
+        session.access_token,
+        {
+          user_id: user.id,
+          terms_version: '2026-02-07',
+          privacy_accepted: consent.privacy,
+          terms_accepted: consent.terms,
+          ai_disclaimer_accepted: consent.aiDisclaimer,
+          user_agent: navigator.userAgent
+        }
       );
 
       setHasAcceptedTerms(true);
-      // Also save to localStorage as backup
       localStorage.setItem(`terms_accepted_${user.id}`, 'true');
       
       toast({

@@ -217,7 +217,7 @@ describe('useAuth', () => {
         expect(result.current.hasAcceptedTerms).toBe(false);
       });
 
-      result.current.acceptTerms();
+      result.current.acceptTerms({ privacy: true, terms: true, aiDisclaimer: true });
 
       expect(mockToast).toHaveBeenCalled();
       expect(result.current.hasAcceptedTerms).toBe(true);
