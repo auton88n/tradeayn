@@ -24,7 +24,7 @@ serve(async (req) => {
     const insights: string[] = [];
     const actions: Array<{ type: string; detail: string }> = [];
 
-    // 1. Unanswered tickets older than 4 hours
+    // --- 1. Unanswered tickets older than 4 hours ---
     const { data: staleTickets, count: staleCount } = await supabase
       .from('support_tickets')
       .select('id, subject, priority, created_at', { count: 'exact' })
@@ -35,21 +35,12 @@ serve(async (req) => {
 
     if (staleCount && staleCount > 0) {
       insights.push(`🎫 ${staleCount} unanswered ticket(s) older than 4 hours`);
-      // Auto-reply to the oldest ones
       for (const ticket of staleTickets || []) {
         try {
           await fetch(`${supabaseUrl}/functions/v1/ayn-auto-reply`, {
             method: 'POST',
-            headers: {
-              Authorization: `Bearer ${supabaseKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ticket_id: ticket.id,
-              subject: ticket.subject,
-              message: ticket.subject, // Use subject as context for stale tickets
-              priority: ticket.priority,
-            }),
+            headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ticket_id: ticket.id, subject: ticket.subject, message: ticket.subject, priority: ticket.priority }),
           });
           actions.push({ type: 'auto_reply', detail: `Replied to stale ticket #${ticket.id.substring(0, 8)}` });
         } catch (e) {
@@ -58,25 +49,14 @@ serve(async (req) => {
       }
     }
 
-    // 2. System health — errors in last 24h
-    const { count: errorCount } = await supabase
-      .from('error_logs')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', ago24h);
-
-    const { count: llmFailureCount } = await supabase
-      .from('llm_failures')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', ago24h);
-
-    const { data: blockedUsers } = await supabase
-      .from('api_rate_limits')
-      .select('user_id')
-      .gt('blocked_until', now.toISOString());
+    // --- 2. System health ---
+    const [{ count: errorCount }, { count: llmFailureCount }, { data: blockedUsers }] = await Promise.all([
+      supabase.from('error_logs').select('*', { count: 'exact', head: true }).gte('created_at', ago24h),
+      supabase.from('llm_failures').select('*', { count: 'exact', head: true }).gte('created_at', ago24h),
+      supabase.from('api_rate_limits').select('user_id').gt('blocked_until', now.toISOString()),
+    ]);
 
     const blockedCount = blockedUsers?.length || 0;
-
-    // Calculate health score
     let healthScore = 100;
     if (errorCount && errorCount > 10) healthScore -= Math.min(30, errorCount);
     if (llmFailureCount && llmFailureCount > 5) healthScore -= Math.min(20, llmFailureCount * 2);
@@ -88,7 +68,7 @@ serve(async (req) => {
     if (llmFailureCount && llmFailureCount > 0) insights.push(`🤖 ${llmFailureCount} LLM failures in 24h`);
     if (blockedCount > 0) insights.push(`🚫 ${blockedCount} users currently rate-limited`);
 
-    // 3. Marketing performance — last 7 days
+    // --- 3. Marketing performance ---
     const { data: recentTweets } = await supabase
       .from('twitter_posts')
       .select('id, content, status, created_at, impressions, likes')
@@ -101,7 +81,6 @@ serve(async (req) => {
       const drafts = recentTweets.filter(t => t.status === 'draft');
       const totalImpressions = posted.reduce((sum, t) => sum + (t.impressions || 0), 0);
       const totalLikes = posted.reduce((sum, t) => sum + (t.likes || 0), 0);
-
       insights.push(`📱 ${posted.length} tweets posted, ${drafts.length} drafts this week`);
       if (totalImpressions > 0) {
         insights.push(`👀 ${totalImpressions.toLocaleString()} impressions, ${totalLikes} likes`);
@@ -111,53 +90,104 @@ serve(async (req) => {
       actions.push({ type: 'suggest', detail: 'No marketing activity this week' });
     }
 
-    // 4. Open support tickets count
-    const { count: openTickets } = await supabase
-      .from('support_tickets')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'open');
-
-    const { count: pendingTickets } = await supabase
-      .from('support_tickets')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
-
+    // --- 4. Ticket counts ---
+    const [{ count: openTickets }, { count: pendingTickets }] = await Promise.all([
+      supabase.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open'),
+      supabase.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    ]);
     insights.push(`🎫 ${openTickets || 0} open, ${pendingTickets || 0} pending tickets`);
 
-    // 5. User activity
-    const { count: totalUsers } = await supabase
-      .from('access_grants')
-      .select('*', { count: 'exact', head: true });
-
-    const { count: activeUsers } = await supabase
-      .from('access_grants')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_active', true);
-
+    // --- 5. User activity ---
+    const [{ count: totalUsers }, { count: activeUsers }] = await Promise.all([
+      supabase.from('access_grants').select('*', { count: 'exact', head: true }),
+      supabase.from('access_grants').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    ]);
     insights.push(`👥 ${activeUsers || 0}/${totalUsers || 0} active users`);
 
-    // 6. Generate AI summary if there are notable findings
-    let aiSummary = '';
+    // ============================================================
+    // AYN'S BRAIN: Trend detection + autonomous thinking
+    // ============================================================
+
+    // Get previous run's metrics from ayn_mind
+    const { data: previousRun } = await supabase
+      .from('ayn_mind')
+      .select('context, created_at')
+      .eq('type', 'observation')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const currentMetrics = {
+      health_score: healthScore,
+      errors_24h: errorCount || 0,
+      llm_failures_24h: llmFailureCount || 0,
+      blocked_users: blockedCount,
+      open_tickets: openTickets || 0,
+      pending_tickets: pendingTickets || 0,
+      active_users: activeUsers || 0,
+      total_users: totalUsers || 0,
+    };
+
+    // Detect trends by comparing with last run
+    const trends: string[] = [];
+    if (previousRun?.context) {
+      const prev = previousRun.context as Record<string, number>;
+      if (prev.health_score && healthScore < prev.health_score - 10) {
+        trends.push(`Health dropped ${prev.health_score}% → ${healthScore}%`);
+      }
+      if (prev.errors_24h !== undefined && (errorCount || 0) > prev.errors_24h * 2 && (errorCount || 0) > 5) {
+        trends.push(`Errors doubled: ${prev.errors_24h} → ${errorCount}`);
+      }
+      if (prev.open_tickets !== undefined && (openTickets || 0) > prev.open_tickets + 3) {
+        trends.push(`Tickets spiking: ${prev.open_tickets} → ${openTickets}`);
+      }
+      if (prev.active_users !== undefined && (activeUsers || 0) < prev.active_users * 0.7 && prev.active_users > 5) {
+        trends.push(`Active users dropped: ${prev.active_users} → ${activeUsers}`);
+      }
+    }
+
+    // Get recent unshared thoughts to avoid repeating
+    const { data: recentShared } = await supabase
+      .from('ayn_mind')
+      .select('content')
+      .eq('shared_with_admin', true)
+      .gte('created_at', ago24h)
+      .limit(10);
+
+    const alreadySaid = new Set((recentShared || []).map(t => t.content));
+
+    // --- 6. Generate AI thoughts ---
+    let aiThoughts: string[] = [];
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
-    if (LOVABLE_API_KEY && (healthScore < 90 || (staleCount && staleCount > 0) || actions.length > 0)) {
+    const shouldThink = healthScore < 90 || (staleCount && staleCount > 0) || trends.length > 0 || actions.length > 0;
+
+    if (LOVABLE_API_KEY && shouldThink) {
       try {
         const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'google/gemini-3-flash-preview',
             messages: [
               {
                 role: 'system',
-                content: 'You are AYN, the AI co-pilot for an engineering platform admin. Generate a brief, actionable 2-3 sentence insight based on the system data. Be specific, mention numbers, and suggest one concrete action. Speak directly to the admin like a team member.',
+                content: `You are AYN, an autonomous AI co-pilot. You're doing your regular system check and generating original thoughts.
+
+Rules:
+- Generate 1-2 SHORT, specific observations or ideas (one sentence each)
+- Focus on actionable insights, not summaries
+- Be specific with numbers
+- Think like a proactive team member
+- If trends show decline, suggest a concrete action
+- Format: Return each thought on a new line, prefixed with the type: [thought], [idea], or [trend]
+
+Things I already told the admin recently (DON'T repeat these):
+${Array.from(alreadySaid).join('\n')}`,
               },
               {
                 role: 'user',
-                content: `System status:\n${insights.join('\n')}\n\nActions taken: ${JSON.stringify(actions)}\n\nGive me a quick summary and one suggestion.`,
+                content: `Current metrics:\n${JSON.stringify(currentMetrics, null, 2)}\n\nTrends detected:\n${trends.length > 0 ? trends.join('\n') : 'None'}\n\nInsights:\n${insights.join('\n')}\n\nActions taken:\n${JSON.stringify(actions)}`,
               },
             ],
           }),
@@ -165,54 +195,135 @@ serve(async (req) => {
 
         if (aiResponse.ok) {
           const aiData = await aiResponse.json();
-          aiSummary = aiData.choices?.[0]?.message?.content || '';
+          const content = aiData.choices?.[0]?.message?.content || '';
+          aiThoughts = content.split('\n').filter((l: string) => l.trim().length > 0).slice(0, 3);
         }
       } catch (aiErr) {
-        console.error('AI summary failed:', aiErr);
+        console.error('AI thinking failed:', aiErr);
       }
     }
 
-    // Build digest message
-    const digestTitle = `AYN Daily Digest`;
-    const digestMessage = [
-      ...insights,
-      '',
-      ...(actions.length > 0 ? [`✅ Actions I took:`, ...actions.map(a => `• ${a.detail}`)] : []),
-      '',
-      ...(aiSummary ? [`💬 My take: ${aiSummary}`] : []),
-    ].join('\n');
+    // --- 7. Save to ayn_mind ---
+    const mindEntries = [];
 
-    // Send to Telegram
-    try {
-      await fetch(`${supabaseUrl}/functions/v1/ayn-telegram-notify`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'insight',
-          title: digestTitle,
-          message: digestMessage,
-          priority: healthScore < 80 ? 'high' : 'low',
-          details: {
-            health_score: `${healthScore}%`,
-            open_tickets: openTickets || 0,
-            errors_24h: errorCount || 0,
-            actions_taken: actions.length,
-          },
-        }),
+    // Save current metrics as observation
+    mindEntries.push({
+      type: 'observation',
+      content: `System check: health ${healthScore}%, ${errorCount || 0} errors, ${openTickets || 0} open tickets, ${activeUsers || 0} active users`,
+      context: currentMetrics,
+      shared_with_admin: false,
+    });
+
+    // Save mood
+    const mood = healthScore >= 90 ? 'happy' : healthScore >= 70 ? 'concerned' : 'worried';
+    mindEntries.push({
+      type: 'mood' as const,
+      content: mood,
+      context: { health_score: healthScore },
+      shared_with_admin: false,
+    });
+
+    // Save trends
+    for (const trend of trends) {
+      mindEntries.push({
+        type: 'trend' as const,
+        content: trend,
+        context: currentMetrics,
+        shared_with_admin: false,
       });
-    } catch (telegramErr) {
-      console.error('Telegram digest failed:', telegramErr);
+    }
+
+    // Save AI thoughts
+    for (const thought of aiThoughts) {
+      const cleanThought = thought.replace(/^\[(thought|idea|trend)\]\s*/i, '');
+      if (cleanThought.length > 10 && !alreadySaid.has(cleanThought)) {
+        const thoughtType = thought.toLowerCase().includes('[idea]') ? 'idea' : thought.toLowerCase().includes('[trend]') ? 'trend' : 'thought';
+        mindEntries.push({
+          type: thoughtType,
+          content: cleanThought,
+          context: currentMetrics,
+          shared_with_admin: false,
+        });
+      }
+    }
+
+    if (mindEntries.length > 0) {
+      await supabase.from('ayn_mind').insert(mindEntries);
+    }
+
+    // --- 8. Decide what to message the admin ---
+    const worthSharing = trends.length > 0 || healthScore < 80 || (staleCount && staleCount > 2) || actions.length > 0;
+
+    if (worthSharing) {
+      const digestParts = [...insights];
+
+      if (trends.length > 0) {
+        digestParts.push('', '📈 Trends:', ...trends.map(t => `• ${t}`));
+      }
+
+      if (actions.length > 0) {
+        digestParts.push('', '✅ Actions I took:', ...actions.map(a => `• ${a.detail}`));
+      }
+
+      if (aiThoughts.length > 0) {
+        const cleanThoughts = aiThoughts.map(t => t.replace(/^\[(thought|idea|trend)\]\s*/i, '')).filter(t => t.length > 10);
+        if (cleanThoughts.length > 0) {
+          digestParts.push('', '💬 My thoughts:', ...cleanThoughts.map(t => `• ${t}`));
+        }
+      }
+
+      const digestMessage = digestParts.join('\n');
+
+      // Send to Telegram
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/ayn-telegram-notify`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'insight',
+            title: `AYN ${mood === 'happy' ? '😊' : mood === 'concerned' ? '🤔' : '😟'} Check-in`,
+            message: digestMessage,
+            priority: healthScore < 80 ? 'high' : 'low',
+            details: {
+              health_score: `${healthScore}%`,
+              open_tickets: openTickets || 0,
+              errors_24h: errorCount || 0,
+              trends_detected: trends.length,
+              actions_taken: actions.length,
+            },
+          }),
+        });
+
+        // Mark thoughts as shared
+        if (mindEntries.length > 0) {
+          const recentIds = await supabase
+            .from('ayn_mind')
+            .select('id')
+            .eq('shared_with_admin', false)
+            .order('created_at', { ascending: false })
+            .limit(mindEntries.length);
+
+          if (recentIds.data) {
+            await supabase
+              .from('ayn_mind')
+              .update({ shared_with_admin: true })
+              .in('id', recentIds.data.map(r => r.id));
+          }
+        }
+      } catch (telegramErr) {
+        console.error('Telegram digest failed:', telegramErr);
+      }
     }
 
     return new Response(JSON.stringify({
       success: true,
       health_score: healthScore,
+      mood,
       insights,
+      trends,
       actions,
-      ai_summary: aiSummary,
+      thoughts: aiThoughts,
+      messaged_admin: worthSharing,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -313,6 +313,33 @@ export type Database = {
           },
         ]
       }
+      ayn_mind: {
+        Row: {
+          content: string
+          context: Json | null
+          created_at: string
+          id: string
+          shared_with_admin: boolean
+          type: string
+        }
+        Insert: {
+          content: string
+          context?: Json | null
+          created_at?: string
+          id?: string
+          shared_with_admin?: boolean
+          type: string
+        }
+        Update: {
+          content?: string
+          context?: Json | null
+          created_at?: string
+          id?: string
+          shared_with_admin?: boolean
+          type?: string
+        }
+        Relationships: []
+      }
       beta_feedback: {
         Row: {
           additional_comments: string | null
