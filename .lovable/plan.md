@@ -1,95 +1,70 @@
 
 
-# Fix AYN's Broken Conversation Flow + Human Personality
+# Fix AYN's Memory + Make Conversations Flow Naturally
 
-## Problems (from your screenshot)
+## What's Breaking (from your screenshot)
 
-1. **AYN forgets its own messages** -- You replied "Yes" to its email draft, and it said "I'm not sure what you're confirming." It literally forgot what it just sent you.
-2. **Title is wrong** -- AYN signs as "Operations Manager" but should adapt its role based on context (Sales Executive when selling, etc.)
-3. **Talks like a robot** -- Formal, stiff email tone. No human warmth or personality in Telegram conversation.
-4. **No reply-to awareness** -- Telegram sends `reply_to_message` data when you swipe-reply, but AYN ignores it completely.
+AYN drafts an email, asks "Should I go ahead?", you say "Confirm send it" — and AYN replies "I don't have a pending email." Two problems cause this:
 
-## Root Causes
-
-1. **Conversation history is flat** -- `getConversationHistory()` fetches 40 entries from `ayn_mind` but they're just content strings. No message IDs, no threading. When AYN sends a long message with an email draft + "Should I go ahead?", then you reply "Yes", AYN can't connect the two.
-2. **No Telegram reply-to handling** -- The webhook reads `message.text` but ignores `message.reply_to_message`, which Telegram provides when you swipe-reply to a specific message.
-3. **Rigid role identity** -- The prompt hardcodes "lead operations manager" instead of letting AYN adapt its title based on what it's doing.
+1. AYN's replies are chopped to 500 characters when saved. The email draft is easily 1500+ chars, so by the time AYN reads its own history next turn, the draft and the "Should I go ahead?" question are gone.
+2. The "pending action" flag just says "awaiting_confirmation" but doesn't store WHICH lead or WHAT action to run. So even if AYN knows it asked something, it can't act on it.
 
 ## Changes
 
 ### File: `supabase/functions/ayn-telegram-webhook/index.ts`
 
-**1. Capture reply-to context from Telegram (main handler, around line 195)**
+**1. Increase message storage from 500 to 2000 characters (line 292-293)**
 
-Before sending to AI, check if `message.reply_to_message` exists. If it does, prepend the quoted message to the user's input so the AI knows exactly what they're replying to:
+Both admin messages and AYN replies get saved truncated. Bump to 2000 so email drafts survive in history.
 
+**2. Store actionable data in pending_action (line 284-293)**
+
+Instead of just `"awaiting_confirmation"`, extract the lead_id from executed actions and store:
 ```
-if (message.reply_to_message?.text) {
-  sanitizedInput = `[Replying to AYN's message: "${message.reply_to_message.text.slice(0, 500)}"]\n\n${sanitizedInput}`;
+{
+  type: "awaiting_confirmation",
+  action: "send_outreach",
+  lead_id: "abc-123",
+  summary: "Send outreach email to Crossmint"
 }
 ```
 
-This way when you swipe-reply "Yes" to the email draft, AYN sees:
-`[Replying to AYN's message: "I'm the lead operations manager... **Should I go ahead?**"] Yes`
+This is done by parsing the executed actions array for draft_outreach or send_email results, and pulling the lead_id from the action parameters.
 
-**2. Rewrite the personality prompt (lines 21-149)**
+**3. Auto-execute confirmations (before AI call, around line 224)**
 
-Key changes:
-- Remove "lead operations manager" -- replace with dynamic role: "You adapt your title based on context. When selling: Sales Executive. When managing ops: Operations Lead. When doing creative work: Creative Director."
-- Remove formal/stiff language constraints
-- Add explicit rule: "When someone replies 'yes', 'go ahead', 'do it' -- look at the LAST thing you said and execute that. You ASKED them to confirm something. Don't pretend you forgot."
-- Add: "When you draft emails, sign them naturally -- not with a rigid corporate title. Match the vibe to the prospect."
-- Make the tone more human: allow expressions like "yo", "honestly", "ngl", contractions, casual phrasing
+Add a check: if the user's message matches a confirmation pattern ("yes", "go ahead", "confirm", "send it", "do it") AND the most recent `ayn_mind` entry has a `pending_action` with a stored action and lead_id -- skip the AI call entirely and execute the pending action directly. Then respond with the result.
 
-**3. Improve conversation history (function `getConversationHistory`, line 412)**
+This is the real fix: instead of hoping the AI "remembers", we programmatically catch confirmations and run them.
 
-Store and retrieve `context` alongside content so AYN can see what actions were pending:
+**4. Enrich conversation history with pending context (line 441-446)**
 
+When building history and a message has `pending_action` with details, append:
 ```
-.select('type, content, context, created_at')
+[PENDING: Waiting for confirmation to send outreach to CompanyName (lead_id: abc-123)]
 ```
 
-And include context in the returned messages:
-
-```
-content: entry.context?.pending_action 
-  ? `${entry.content}\n[Pending action: ${entry.context.pending_action}]` 
-  : entry.content
-```
-
-**4. Tag outgoing messages with pending actions (line 272)**
-
-When AYN asks for confirmation ("Should I go ahead?"), store what it's waiting for:
-
-```
-{ type: 'telegram_ayn', content: cleanReply.slice(0, 500), 
-  context: { 
-    source: 'telegram', 
-    actions: executedActions,
-    pending_action: cleanReply.includes('Should I go ahead') || cleanReply.includes('go ahead?') 
-      ? 'awaiting_confirmation' : null
-  }, 
-  shared_with_admin: true }
-```
-
-**5. Update email signature in `ayn-sales-outreach`**
-
-Change the email drafting prompt to use "Sales Executive" or context-appropriate title instead of "Operations Manager". Make the email tone more natural and less templated.
+So even if the AI path is used, the model can see exactly what's pending.
 
 ### File: `supabase/functions/ayn-sales-outreach/index.ts`
 
-Update the email generation prompt to:
-- Sign as "AYN, Sales Executive @ AYN" (or let AI pick based on context)
-- Use a more conversational, human email tone
-- Remove stiff corporate language patterns
+**5. Ban "AYN Team" signatures (line 231)**
 
-## Summary
+Add explicit rule to the drafting prompt: "NEVER sign as 'AYN Team', 'The AYN Team', or 'Best, AYN Team'. Always use a personal name + role like 'Sarah, Sales @ AYN'."
 
-| Problem | Fix |
-|---------|-----|
-| "I'm not sure what you're confirming" | Capture Telegram reply-to-message context and prepend it |
-| Forgets its own previous message | Tag pending actions in conversation history |
-| Signs as "Operations Manager" always | Dynamic role based on context (Sales Exec, Creative Director, etc.) |
-| Robotic tone in conversation | Loosen personality constraints, more natural language |
-| Stiff email drafts | Update outreach prompt for conversational, human emails |
+## What stays the same
+
+- The personality prompt, tone, and dynamic role system -- already good from last update
+- Reply-to-message handling -- already working
+- All sales pipeline logic, SMTP sending, follow-up rules -- unchanged
+
+## Technical Summary
+
+| Fix | Where | What |
+|-----|-------|------|
+| Storage 500 to 2000 chars | webhook line 292-293 | Drafts survive in history |
+| Actionable pending_action | webhook line 284-293 | Stores lead_id + action type |
+| Auto-execute confirmations | webhook ~line 224 | Catches "yes"/"confirm" and runs pending action |
+| Richer history context | webhook line 441-446 | AI sees what's pending |
+| Ban "AYN Team" signature | sales-outreach line 231 | Personal sign-offs only |
 
