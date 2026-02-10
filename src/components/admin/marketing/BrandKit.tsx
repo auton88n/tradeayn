@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Brain, ChevronDown, Sparkles } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import { AynEyeIcon } from './AynEyeIcon';
 
 const brandColors = [
   { name: 'Primary Blue', hex: '#0EA5E9', css: 'bg-[hsl(199,89%,48%)]' },
@@ -27,8 +28,7 @@ export const BrandKit = () => {
           <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-foreground flex items-center justify-center relative shadow-lg">
-                <Brain className="w-6 h-6 text-background" />
-                <Sparkles className="w-3.5 h-3.5 text-[hsl(199,89%,48%)] absolute -top-1 -right-1" />
+                <AynEyeIcon size={28} className="text-background" />
               </div>
               <div className="text-left">
                 <h3 className="font-bold text-base tracking-tight">AYN Brand Kit</h3>
@@ -43,9 +43,8 @@ export const BrandKit = () => {
           <CardContent className="pt-0 pb-5 space-y-5">
             {/* Logo & Identity */}
             <div className="flex items-center gap-5 p-4 rounded-xl bg-muted/30">
-              <div className="w-20 h-20 rounded-2xl bg-foreground flex items-center justify-center relative shadow-xl">
-                <Brain className="w-10 h-10 text-background" />
-                <Sparkles className="w-4 h-4 text-[hsl(199,89%,48%)] absolute -top-1.5 -right-1.5" />
+              <div className="w-20 h-20 rounded-2xl bg-foreground flex items-center justify-center shadow-xl">
+                <AynEyeIcon size={44} className="text-background" />
               </div>
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold tracking-tight">AYN</h2>
