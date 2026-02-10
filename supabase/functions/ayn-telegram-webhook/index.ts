@@ -9,6 +9,8 @@ import {
   cmdReplyApp, cmdReplyContact, cmdEmail,
   cmdDelete, cmdClearErrors, cmdThink, cmdUnblock,
   cmdMessages, cmdFeedback, cmdEmails, cmdSecurity, cmdVisitors, cmdTwitter,
+  cmdUser, cmdGrant, cmdRevoke, cmdSetUnlimited,
+  cmdQuery, cmdWebhooks, cmdWeeklyReport,
 } from "./commands.ts";
 
 const corsHeaders = {
@@ -40,6 +42,7 @@ WHAT YOU KNOW (your full toolkit):
 - AI: All models run through Lovable Gateway (Gemini 3 Flash, Gemini 2.5 Flash, Gemini 3 Pro). Fallback chain + auto-maintenance on credit exhaustion
 - Marketing: Twitter auto-posting, brand scanning, creative content generation
 - Testing: Automated UI testing, AI evaluation, bug hunting, visual regression
+- Vision: You can analyze images sent to you on Telegram using Gemini vision
 
 WHAT YOU DON'T TOUCH:
 - Subscriptions, payments, billing, Stripe -- "that's your call, I stay out of money stuff"
@@ -60,40 +63,13 @@ CRITICAL RULES:
 - Never share raw user emails or PII
 
 YOUR SLASH COMMANDS (the admin can type these — you should reference them when relevant):
-📊 Status:
-/health — System health score (errors, LLM failures, blocked users)
-/tickets — Open/pending support ticket counts
-/stats — Active/total user counts
-/errors — Last 5 error messages
-/logs — Your (AYN's) recent activity log
-
-📋 Data:
-/applications — Recent service applications (with IDs for replying)
-/contacts — Recent contact messages (with IDs for replying)
-/users — Recent user profiles
-/messages — Recent user chat messages
-/feedback — User ratings & beta feedback
-/emails — Recent system emails sent
-/security — Recent security events
-/visitors — Today's page view analytics
-/twitter — Twitter post performance
-
-💬 Actions:
-/reply_app [id] [message] — Reply to a service application via email
-/reply_contact [id] [message] — Reply to a contact message via email
-/email [to] [subject] | [body] — Send a custom email
-
-🗑️ Delete:
-/delete_ticket [id] — Delete a support ticket
-/delete_message [id] — Delete a user message
-/delete_app [id] — Delete a service application
-/delete_contact [id] — Delete a contact message
-/clear_errors [hours] — Clear error logs older than N hours (default 24)
-
-🧠 AI:
-/think — Force a proactive thinking cycle
-/unblock [user_id] — Remove rate limit block from a user
-/help — Show the full command list
+📊 Status: /health, /tickets, /stats, /errors, /logs
+📋 Data: /applications, /contacts, /users, /messages, /feedback, /emails, /security, /visitors, /twitter
+👤 User Mgmt: /user [id], /grant [email], /revoke [id], /set_unlimited [id]
+💬 Actions: /reply_app [id] [msg], /reply_contact [id] [msg], /email [to] [subject] | [body]
+🔍 System: /query [table] [limit], /webhooks, /weekly_report
+🗑️ Delete: /delete_ticket [id], /delete_message [id], /delete_app [id], /delete_contact [id], /clear_errors [hours]
+🧠 AI: /think, /unblock [user_id], /help
 
 AVAILABLE AI ACTIONS (use exact format in your responses when you want to execute something):
 - [ACTION:unblock_user:user_id] — Remove rate limit block
@@ -107,6 +83,9 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:read_messages:count] — Read recent user messages (READ-ONLY)
 - [ACTION:read_feedback:count] — Read recent feedback (READ-ONLY)
 - [ACTION:check_security:count] — Check security logs (READ-ONLY)
+- [ACTION:grant_access:email] — Create access grant for user
+- [ACTION:revoke_access:user_id] — Revoke user access
+- [ACTION:set_unlimited:user_id] — Toggle unlimited for user
 
 BLOCKED ACTIONS (never execute):
 - No subscription/billing actions
@@ -130,7 +109,7 @@ serve(async (req) => {
     const update = await req.json();
     const message = update?.message;
 
-    if (!message?.text || !message?.chat?.id) {
+    if (!message?.chat?.id) {
       return new Response('OK', { status: 200 });
     }
 
@@ -139,10 +118,25 @@ serve(async (req) => {
       return new Response('OK', { status: 200 });
     }
 
-    const userText = message.text.trim();
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // ─── Handle photo messages (Vision AI) ───
+    if (message.photo && message.photo.length > 0) {
+      const reply = await handlePhoto(message, supabase, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID);
+      if (reply) {
+        await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, reply);
+      }
+      return new Response('OK', { status: 200 });
+    }
+
+    // Text messages only from here
+    if (!message.text) {
+      return new Response('OK', { status: 200 });
+    }
+
+    const userText = message.text.trim();
 
     // Handle slash commands
     const commandResponse = await handleCommand(userText, supabase, supabaseUrl, supabaseKey);
@@ -243,6 +237,82 @@ serve(async (req) => {
   }
 });
 
+// ─── Handle photo messages (Vision AI) ───
+async function handlePhoto(
+  message: any, supabase: any, botToken: string, chatId: string
+): Promise<string | null> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) return "⚠️ Vision not available — LOVABLE_API_KEY not configured.";
+
+  try {
+    // Get the highest resolution photo
+    const photo = message.photo[message.photo.length - 1];
+    const fileId = photo.file_id;
+
+    // Get file path from Telegram
+    const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
+    const fileData = await fileRes.json();
+    if (!fileData.ok) return "❌ Couldn't retrieve the image from Telegram.";
+
+    const filePath = fileData.result.file_path;
+    const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+
+    // Download and convert to base64
+    const imageRes = await fetch(fileUrl);
+    const imageBuffer = await imageRes.arrayBuffer();
+    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+    const mimeType = filePath.endsWith('.png') ? 'image/png' : 'image/jpeg';
+    const imageDataUrl = `data:${mimeType};base64,${base64Image}`;
+
+    const caption = message.caption || 'What do you see in this image? Provide actionable insights.';
+
+    // Send to Gemini vision
+    const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [{
+          role: 'system',
+          content: 'You are AYN, analyzing an image sent by the founder on Telegram. Be concise, insightful, and actionable. If it\'s a screenshot of the app or dashboard, comment on UX/data. If it\'s anything else, describe what you see and offer your take.',
+        }, {
+          role: 'user',
+          content: [
+            { type: 'text', text: caption },
+            { type: 'image_url', image_url: { url: imageDataUrl } },
+          ],
+        }],
+      }),
+    });
+
+    if (!aiRes.ok) {
+      if (aiRes.status === 429) return "🧠 Rate limited — try again in a minute.";
+      if (aiRes.status === 402) return "🧠 AI credits exhausted.";
+      return "❌ Vision analysis failed.";
+    }
+
+    const aiData = await aiRes.json();
+    const analysis = aiData.choices?.[0]?.message?.content?.trim() || "Couldn't analyze the image.";
+
+    // Log activity
+    await logAynActivity(supabase, 'vision_analysis', `Analyzed image: "${caption.slice(0, 80)}"`, {
+      target_type: 'image',
+      details: { caption, analysis_preview: analysis.slice(0, 200) },
+      triggered_by: 'telegram_photo',
+    });
+
+    await supabase.from('ayn_mind').insert([
+      { type: 'telegram_admin', content: `[Photo] ${caption.slice(0, 400)}`, context: { source: 'telegram', type: 'photo' }, shared_with_admin: true },
+      { type: 'telegram_ayn', content: analysis.slice(0, 500), context: { source: 'telegram', type: 'vision_response' }, shared_with_admin: true },
+    ]);
+
+    return analysis;
+  } catch (e) {
+    console.error('Vision AI error:', e);
+    return `❌ Vision failed: ${e instanceof Error ? e.message : 'Unknown error'}`;
+  }
+}
+
 // ─── Route commands ───
 async function handleCommand(
   text: string, supabase: any, supabaseUrl: string, supabaseKey: string
@@ -270,6 +340,13 @@ async function handleCommand(
   if (cmd === '/security') return cmdSecurity(supabase);
   if (cmd === '/visitors') return cmdVisitors(supabase);
   if (cmd === '/twitter') return cmdTwitter(supabase);
+  if (cmd === '/webhooks') return cmdWebhooks(supabase);
+  if (cmd === '/weekly_report') return cmdWeeklyReport(supabase);
+  if (cmd.startsWith('/user ')) return cmdUser(text, supabase);
+  if (cmd.startsWith('/grant ')) return cmdGrant(text, supabase);
+  if (cmd.startsWith('/revoke ')) return cmdRevoke(text, supabase);
+  if (cmd.startsWith('/set_unlimited ')) return cmdSetUnlimited(text, supabase);
+  if (cmd.startsWith('/query ')) return cmdQuery(text, supabase);
   if (cmd.startsWith('/reply_app ')) return cmdReplyApp(text, supabase, supabaseUrl, supabaseKey);
   if (cmd.startsWith('/reply_contact ')) return cmdReplyContact(text, supabase, supabaseUrl, supabaseKey);
   if (cmd.startsWith('/email ')) return cmdEmail(text, supabase);
@@ -330,23 +407,15 @@ async function gatherSystemContext(supabase: any) {
     supabase.from('service_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('status', 'new'),
     supabase.from('error_logs').select('error_message, created_at').order('created_at', { ascending: false }).limit(3),
-    // New: recent user messages
     supabase.from('messages').select('content, sender, mode_used, created_at').order('created_at', { ascending: false }).limit(5),
-    // Active sessions
     supabase.from('chat_sessions').select('*', { count: 'exact', head: true }),
-    // Recent ratings
     supabase.from('message_ratings').select('rating, created_at').order('created_at', { ascending: false }).limit(10),
-    // Beta feedback
     supabase.from('beta_feedback').select('overall_rating, improvement_suggestions, submitted_at').order('submitted_at', { ascending: false }).limit(3),
-    // Email logs
     supabase.from('email_logs').select('email_type, recipient_email, status, sent_at').order('sent_at', { ascending: false }).limit(5),
-    // Security logs
     supabase.from('security_logs').select('action, severity, created_at').order('created_at', { ascending: false }).limit(3),
-    // Engineering activity
     supabase.from('engineering_activity').select('activity_type, created_at').order('created_at', { ascending: false }).limit(5),
   ]);
 
-  // Calculate feedback ratio
   const positiveRatings = recentRatings?.filter((r: any) => r.rating === 'positive').length || 0;
   const totalRatings = recentRatings?.length || 0;
 
@@ -423,31 +492,35 @@ async function executeAction(
         if (colonIdx === -1) return null;
         const appId = params.slice(0, colonIdx);
         const msg = params.slice(colonIdx + 1);
-        const result = await cmdReplyApp(`/reply_app ${appId} ${msg}`, supabase, supabaseUrl, supabaseKey);
-        return result;
+        return await cmdReplyApp(`/reply_app ${appId} ${msg}`, supabase, supabaseUrl, supabaseKey);
       }
       case 'reply_contact': {
         const colonIdx = params.indexOf(':');
         if (colonIdx === -1) return null;
         const contactId = params.slice(0, colonIdx);
         const msg = params.slice(colonIdx + 1);
-        const result = await cmdReplyContact(`/reply_contact ${contactId} ${msg}`, supabase, supabaseUrl, supabaseKey);
-        return result;
+        return await cmdReplyContact(`/reply_contact ${contactId} ${msg}`, supabase, supabaseUrl, supabaseKey);
       }
       case 'send_email': {
         const parts = params.split(':');
         if (parts.length < 3) return null;
         const [to, subject, ...bodyParts] = parts;
-        const result = await cmdEmail(`/email ${to} ${subject} | ${bodyParts.join(':')}`, supabase);
-        return result;
+        return await cmdEmail(`/email ${to} ${subject} | ${bodyParts.join(':')}`, supabase);
       }
       case 'delete_ticket': {
-        const result = await cmdDelete(`/delete_ticket ${params}`, supabase);
-        return result;
+        return await cmdDelete(`/delete_ticket ${params}`, supabase);
       }
       case 'clear_errors': {
-        const result = await cmdClearErrors(`/clear_errors ${params}`, supabase);
-        return result;
+        return await cmdClearErrors(`/clear_errors ${params}`, supabase);
+      }
+      case 'grant_access': {
+        return await cmdGrant(`/grant ${params}`, supabase);
+      }
+      case 'revoke_access': {
+        return await cmdRevoke(`/revoke ${params}`, supabase);
+      }
+      case 'set_unlimited': {
+        return await cmdSetUnlimited(`/set_unlimited ${params}`, supabase);
       }
       // READ-ONLY actions
       case 'read_messages': {

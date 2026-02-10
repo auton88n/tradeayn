@@ -28,10 +28,21 @@ export async function cmdHelp(): Promise<string> {
 /visitors — Today's visitor analytics
 /twitter — Twitter post performance
 
+👤 User Management:
+/user [id] — View full user profile + access grant
+/grant [email] — Create access grant for user
+/revoke [id] — Deactivate user's access grant
+/set_unlimited [id] — Set user to unlimited usage
+
 💬 Actions:
 /reply_app [id] [message] — Reply to application
 /reply_contact [id] [message] — Reply to contact
 /email [to] [subject] | [body] — Send email
+
+🔍 System:
+/query [table] [limit] — Read-only data peek
+/webhooks — Check webhook/email/LLM health
+/weekly_report — Full 7-day executive summary
 
 🗑️ Delete:
 /delete_ticket [id]
@@ -511,7 +522,6 @@ export async function cmdClearErrors(text: string, supabase: Supabase): Promise<
   const hours = parseInt(hoursStr);
   if (isNaN(hours) || hours < 1) return '❌ Usage: /clear_errors [hours]';
   const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
-  // Count first, then delete (delete+select returns 0 since rows are gone)
   const { count } = await supabase.from('error_logs').select('*', { count: 'exact', head: true }).lt('created_at', cutoff);
   await supabase.from('error_logs').delete().lt('created_at', cutoff);
   await logAynActivity(supabase, 'errors_cleared', `Cleared ${count || 0} errors older than ${hours}h`, {
@@ -546,4 +556,338 @@ export async function cmdUnblock(text: string, supabase: Supabase): Promise<stri
     triggered_by: 'telegram_command',
   });
   return `✅ Unblocked user ${userId.slice(0, 8)}...`;
+}
+
+// ═══════════════════════════════════════════════════════
+// NEW COMMANDS
+// ═══════════════════════════════════════════════════════
+
+// ─── /user [id] — Full user profile ───
+export async function cmdUser(text: string, supabase: Supabase): Promise<string> {
+  const idFragment = text.replace(/^\/user\s+/i, '').trim();
+  if (!idFragment) return '❌ Usage: /user [user_id]';
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('user_id, company_name, contact_person, business_type, account_status, last_login, created_at')
+    .ilike('user_id', `${idFragment}%`)
+    .limit(1);
+
+  if (!profiles?.length) return `❌ No user found starting with "${idFragment}"`;
+  const p = profiles[0];
+
+  const { data: grants } = await supabase
+    .from('access_grants')
+    .select('is_active, monthly_limit, current_month_usage, auth_method, expires_at, created_at')
+    .eq('user_id', p.user_id)
+    .limit(1);
+
+  const grant = grants?.[0];
+  const lastLogin = p.last_login ? new Date(p.last_login).toLocaleDateString() : 'never';
+  const joined = new Date(p.created_at).toLocaleDateString();
+
+  let result = `👤 User Profile:
+• Name: ${p.contact_person || 'N/A'}
+• Company: ${p.company_name || 'N/A'}
+• Type: ${p.business_type || 'N/A'}
+• Status: ${p.account_status || 'active'}
+• Last login: ${lastLogin}
+• Joined: ${joined}
+• ID: ${p.user_id}`;
+
+  if (grant) {
+    const limitStr = grant.monthly_limit === -1 ? 'unlimited' : `${grant.current_month_usage || 0}/${grant.monthly_limit || 'N/A'}`;
+    result += `\n\n🔑 Access Grant:
+• Active: ${grant.is_active ? '✅' : '❌'}
+• Auth: ${grant.auth_method || 'N/A'}
+• Usage: ${limitStr}
+• Expires: ${grant.expires_at ? new Date(grant.expires_at).toLocaleDateString() : 'never'}`;
+  } else {
+    result += '\n\n🔑 No access grant found.';
+  }
+
+  return result;
+}
+
+// ─── /grant [email] — Create access grant ───
+export async function cmdGrant(text: string, supabase: Supabase): Promise<string> {
+  const email = text.replace(/^\/grant\s+/i, '').trim();
+  if (!email || !email.includes('@')) return '❌ Usage: /grant [email]';
+
+  // Look up user by email in auth.users via profiles
+  const { data: authUsers } = await supabase.auth.admin.listUsers();
+  const user = authUsers?.users?.find((u: any) => u.email === email);
+
+  if (!user) return `❌ No auth user found with email "${email}"`;
+
+  // Check if grant already exists
+  const { data: existing } = await supabase
+    .from('access_grants')
+    .select('id, is_active')
+    .eq('user_id', user.id)
+    .limit(1);
+
+  if (existing?.length) {
+    if (existing[0].is_active) return `⚠️ User already has an active access grant.`;
+    // Reactivate
+    await supabase.from('access_grants').update({ is_active: true }).eq('id', existing[0].id);
+    await logAynActivity(supabase, 'access_grant_reactivated', `Reactivated access for ${email}`, {
+      target_id: user.id, target_type: 'user', triggered_by: 'telegram_command',
+    });
+    return `✅ Reactivated access grant for ${email}`;
+  }
+
+  // Create new grant
+  await supabase.from('access_grants').insert({
+    user_id: user.id,
+    is_active: true,
+    monthly_limit: 50,
+    granted_by: 'ayn_telegram',
+    notes: 'Created via Telegram command',
+  });
+
+  await logAynActivity(supabase, 'access_grant_created', `Created access grant for ${email}`, {
+    target_id: user.id, target_type: 'user', triggered_by: 'telegram_command',
+  });
+
+  return `✅ Access granted to ${email} (limit: 50/month)`;
+}
+
+// ─── /revoke [id] — Deactivate access grant ───
+export async function cmdRevoke(text: string, supabase: Supabase): Promise<string> {
+  const idFragment = text.replace(/^\/revoke\s+/i, '').trim();
+  if (!idFragment) return '❌ Usage: /revoke [user_id]';
+
+  const { data: grants } = await supabase
+    .from('access_grants')
+    .select('id, user_id, is_active')
+    .ilike('user_id', `${idFragment}%`)
+    .limit(1);
+
+  if (!grants?.length) return `❌ No access grant found for user starting with "${idFragment}"`;
+  if (!grants[0].is_active) return `⚠️ Access is already revoked for this user.`;
+
+  await supabase.from('access_grants').update({ is_active: false }).eq('id', grants[0].id);
+
+  await logAynActivity(supabase, 'access_revoked', `Revoked access for user ${grants[0].user_id.slice(0, 8)}`, {
+    target_id: grants[0].user_id, target_type: 'user', triggered_by: 'telegram_command',
+  });
+
+  return `✅ Revoked access for user ${grants[0].user_id.slice(0, 8)}...`;
+}
+
+// ─── /set_unlimited [id] — Set user to unlimited ───
+export async function cmdSetUnlimited(text: string, supabase: Supabase): Promise<string> {
+  const idFragment = text.replace(/^\/set_unlimited\s+/i, '').trim();
+  if (!idFragment) return '❌ Usage: /set_unlimited [user_id]';
+
+  const { data: grants } = await supabase
+    .from('access_grants')
+    .select('id, user_id, monthly_limit')
+    .ilike('user_id', `${idFragment}%`)
+    .limit(1);
+
+  if (!grants?.length) return `❌ No access grant found for user starting with "${idFragment}"`;
+
+  const newLimit = grants[0].monthly_limit === -1 ? 50 : -1;
+  await supabase.from('access_grants').update({ monthly_limit: newLimit }).eq('id', grants[0].id);
+
+  await logAynActivity(supabase, 'user_limit_changed', `Set user ${grants[0].user_id.slice(0, 8)} to ${newLimit === -1 ? 'unlimited' : `${newLimit}/month`}`, {
+    target_id: grants[0].user_id, target_type: 'user', triggered_by: 'telegram_command',
+  });
+
+  return newLimit === -1
+    ? `✅ User ${grants[0].user_id.slice(0, 8)}... is now unlimited.`
+    : `✅ User ${grants[0].user_id.slice(0, 8)}... set back to 50/month limit.`;
+}
+
+// ─── /query [table] [limit] — Read-only data peek ───
+export async function cmdQuery(text: string, supabase: Supabase): Promise<string> {
+  const parts = text.replace(/^\/query\s+/i, '').trim().split(/\s+/);
+  const table = parts[0];
+  const limit = Math.min(parseInt(parts[1] || '5'), 20);
+
+  if (!table) return '❌ Usage: /query [table] [limit]\n\nAllowed: error_logs, support_tickets, service_applications, contact_messages, visitor_analytics, ayn_activity_log, twitter_posts, engineering_activity';
+
+  const ALLOWED_TABLES = [
+    'error_logs', 'support_tickets', 'service_applications', 'contact_messages',
+    'visitor_analytics', 'ayn_activity_log', 'twitter_posts', 'engineering_activity',
+  ];
+  const BLOCKED_KEYWORDS = ['subscription', 'credit_gift', 'stripe', 'payment', 'billing'];
+
+  if (BLOCKED_KEYWORDS.some(k => table.toLowerCase().includes(k))) {
+    return "❌ That table is outside my access — money stuff is off-limits.";
+  }
+  if (!ALLOWED_TABLES.includes(table)) {
+    return `❌ Table "${table}" not in allowed list.\n\nAllowed: ${ALLOWED_TABLES.join(', ')}`;
+  }
+
+  const { data, error } = await supabase
+    .from(table)
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) return `❌ Query failed: ${error.message}`;
+  if (!data?.length) return `📭 No data in ${table}.`;
+
+  const rows = data.map((row: any, i: number) => {
+    // Show a compact summary of each row
+    const keys = Object.keys(row).filter(k => !['id', 'user_id', 'created_at', 'updated_at'].includes(k));
+    const summary = keys.slice(0, 4).map(k => {
+      const val = row[k];
+      if (val === null) return `${k}: null`;
+      if (typeof val === 'string') return `${k}: "${String(val).slice(0, 40)}"`;
+      return `${k}: ${JSON.stringify(val).slice(0, 40)}`;
+    }).join(', ');
+    const ago = row.created_at ? Math.round((Date.now() - new Date(row.created_at).getTime()) / 3600000) + 'h ago' : '';
+    return `${i + 1}. ${summary} (${ago})`;
+  }).join('\n');
+
+  return `📊 ${table} (${data.length} rows):\n${rows}`;
+}
+
+// ─── /webhooks — System monitoring ───
+export async function cmdWebhooks(supabase: Supabase): Promise<string> {
+  const now24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const [{ data: failedEmails }, { data: llmFailures }, { data: topErrors }] = await Promise.all([
+    supabase.from('email_logs').select('email_type, error_message, sent_at')
+      .eq('status', 'failed').gte('sent_at', now24h).order('sent_at', { ascending: false }).limit(5),
+    supabase.from('llm_failures').select('error_type, error_message, created_at')
+      .gte('created_at', now24h).order('created_at', { ascending: false }).limit(5),
+    supabase.from('error_logs').select('error_message, created_at')
+      .gte('created_at', now24h).order('created_at', { ascending: false }).limit(20),
+  ]);
+
+  let result = '🔧 System Health (24h):\n';
+
+  // Failed emails
+  if (failedEmails?.length) {
+    result += `\n📧 Failed Emails (${failedEmails.length}):\n`;
+    result += failedEmails.map((e: any) => `  • [${e.email_type}] ${(e.error_message || 'unknown error').slice(0, 60)}`).join('\n');
+  } else {
+    result += '\n📧 Emails: All OK';
+  }
+
+  // LLM failures
+  if (llmFailures?.length) {
+    result += `\n\n🤖 LLM Failures (${llmFailures.length}):\n`;
+    result += llmFailures.map((f: any) => `  • [${f.error_type}] ${(f.error_message || '').slice(0, 60)}`).join('\n');
+  } else {
+    result += '\n\n🤖 LLM: All OK';
+  }
+
+  // Top recurring errors
+  if (topErrors?.length) {
+    const errorGroups: Record<string, number> = {};
+    topErrors.forEach((e: any) => {
+      const msg = e.error_message?.slice(0, 60) || 'unknown';
+      errorGroups[msg] = (errorGroups[msg] || 0) + 1;
+    });
+    const recurring = Object.entries(errorGroups).filter(([, count]) => count > 1).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    if (recurring.length) {
+      result += `\n\n🔄 Recurring Errors:\n`;
+      result += recurring.map(([msg, count]) => `  • ${msg} (x${count})`).join('\n');
+    }
+  }
+
+  return result;
+}
+
+// ─── /weekly_report — 7-day executive summary ───
+export async function cmdWeeklyReport(supabase: Supabase): Promise<string> {
+  const now = new Date();
+  const ago7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const ago14d = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [
+    { count: newGrantsThisWeek },
+    { count: newGrantsLastWeek },
+    { count: errorsThisWeek },
+    { count: errorsLastWeek },
+    { count: ticketsResolved },
+    { count: ticketsTotal },
+    { data: topPages },
+    { data: tweets },
+    { count: messagesCount },
+    { data: ratings },
+  ] = await Promise.all([
+    supabase.from('access_grants').select('*', { count: 'exact', head: true }).gte('created_at', ago7d),
+    supabase.from('access_grants').select('*', { count: 'exact', head: true }).gte('created_at', ago14d).lt('created_at', ago7d),
+    supabase.from('error_logs').select('*', { count: 'exact', head: true }).gte('created_at', ago7d),
+    supabase.from('error_logs').select('*', { count: 'exact', head: true }).gte('created_at', ago14d).lt('created_at', ago7d),
+    supabase.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'resolved').gte('created_at', ago7d),
+    supabase.from('support_tickets').select('*', { count: 'exact', head: true }).gte('created_at', ago7d),
+    supabase.from('visitor_analytics').select('page_url').gte('created_at', ago7d),
+    supabase.from('twitter_posts').select('content, status, impressions, likes').gte('created_at', ago7d),
+    supabase.from('messages').select('*', { count: 'exact', head: true }).gte('created_at', ago7d),
+    supabase.from('message_ratings').select('rating').gte('created_at', ago7d),
+  ]);
+
+  // Top pages
+  const pageViews: Record<string, number> = {};
+  topPages?.forEach((v: any) => {
+    const page = v.page_url || '/';
+    pageViews[page] = (pageViews[page] || 0) + 1;
+  });
+  const top5Pages = Object.entries(pageViews).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  // Tweet stats
+  const postedTweets = tweets?.filter((t: any) => t.status === 'posted') || [];
+  const totalImpressions = postedTweets.reduce((sum: number, t: any) => sum + (t.impressions || 0), 0);
+  const totalLikes = postedTweets.reduce((sum: number, t: any) => sum + (t.likes || 0), 0);
+
+  // Feedback
+  const positive = ratings?.filter((r: any) => r.rating === 'positive').length || 0;
+  const totalRatings = ratings?.length || 0;
+
+  // Try AI summary
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (LOVABLE_API_KEY) {
+    try {
+      const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [{
+            role: 'system',
+            content: 'You are AYN writing a weekly executive summary for the founder. Be concise, use emojis, highlight wins and concerns. 10-15 lines max.',
+          }, {
+            role: 'user',
+            content: `Weekly data:
+User growth: ${newGrantsThisWeek || 0} new (was ${newGrantsLastWeek || 0} last week)
+Errors: ${errorsThisWeek || 0} (was ${errorsLastWeek || 0} last week)
+Tickets: ${ticketsResolved || 0} resolved / ${ticketsTotal || 0} total
+Top pages: ${top5Pages.map(([p, c]) => `${p}(${c})`).join(', ') || 'none'}
+Tweets: ${postedTweets.length} posted, ${totalImpressions} impressions, ${totalLikes} likes
+AI messages: ${messagesCount || 0}
+Feedback: ${positive}/${totalRatings} positive`,
+          }],
+        }),
+      });
+
+      if (aiRes.ok) {
+        const aiData = await aiRes.json();
+        const summary = aiData.choices?.[0]?.message?.content?.trim();
+        if (summary) return `📊 Weekly Report\n\n${summary}`;
+      }
+    } catch (e) {
+      console.error('AI weekly report failed:', e);
+    }
+  }
+
+  // Fallback: raw report
+  return `📊 Weekly Report (7 days):
+
+👥 Users: ${newGrantsThisWeek || 0} new grants (prev week: ${newGrantsLastWeek || 0})
+⚠️ Errors: ${errorsThisWeek || 0} (prev week: ${errorsLastWeek || 0})
+🎫 Tickets: ${ticketsResolved || 0}/${ticketsTotal || 0} resolved
+🐦 Tweets: ${postedTweets.length} posted, ${totalImpressions} impressions
+💬 AI Messages: ${messagesCount || 0}
+👍 Feedback: ${positive}/${totalRatings} positive
+
+Top Pages:
+${top5Pages.map(([p, c]) => `  ${p} — ${c} views`).join('\n') || '  No data'}`;
 }

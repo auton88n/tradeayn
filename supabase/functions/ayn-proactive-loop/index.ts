@@ -18,12 +18,14 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const now = new Date();
+    const ago1h = new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString();
     const ago4h = new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString();
     const ago24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
     const ago7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const insights: string[] = [];
     const actions: Array<{ type: string; detail: string }> = [];
+    let isUrgent = false; // Bypasses cooldown
 
     // --- 1. Unanswered tickets older than 4 hours ---
     const { data: staleTickets, count: staleCount } = await supabase
@@ -43,7 +45,6 @@ serve(async (req) => {
             headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ ticket_id: ticket.id, subject: ticket.subject, message: ticket.subject, priority: ticket.priority, skip_telegram: true }),
           });
-          // FIX 1: Update ticket status so we don't re-process it
           await supabase.from('support_tickets').update({ status: 'pending' }).eq('id', ticket.id);
           actions.push({ type: 'auto_reply', detail: `Replied to stale ticket #${ticket.id.substring(0, 8)} and set to pending` });
           await logAynActivity(supabase, 'proactive_auto_reply', `Auto-replied to stale ticket #${ticket.id.substring(0, 8)}`, {
@@ -71,7 +72,60 @@ serve(async (req) => {
     if (blockedCount > 0) healthScore -= blockedCount * 3;
     healthScore = Math.max(0, healthScore);
 
-    // --- 3. Marketing performance ---
+    // --- 3. URGENT: Error spike (>10 errors in last hour) ---
+    const { count: errorsLastHour } = await supabase
+      .from('error_logs')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', ago1h);
+
+    if (errorsLastHour && errorsLastHour > 10) {
+      insights.push(`🚨 Error spike: ${errorsLastHour} errors in the last hour!`);
+      isUrgent = true;
+    }
+
+    // --- 4. URGENT: New high-priority tickets ---
+    const { data: urgentTickets } = await supabase
+      .from('support_tickets')
+      .select('id, subject, created_at')
+      .eq('status', 'open')
+      .eq('priority', 'urgent')
+      .gte('created_at', ago4h)
+      .limit(3);
+
+    if (urgentTickets?.length) {
+      insights.push(`🔴 ${urgentTickets.length} urgent ticket(s): ${urgentTickets.map(t => t.subject?.slice(0, 40)).join(', ')}`);
+      isUrgent = true;
+    }
+
+    // --- 5. New service applications since last run ---
+    const { data: newApps } = await supabase
+      .from('service_applications')
+      .select('id, full_name, service_type, created_at')
+      .eq('status', 'pending')
+      .gte('created_at', ago4h)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (newApps?.length) {
+      insights.push(`📋 ${newApps.length} new application(s): ${newApps.map(a => `${a.full_name} (${a.service_type})`).join(', ')}`);
+    }
+
+    // --- 6. URGENT: Newly rate-limited users ---
+    if (blockedCount > 0) {
+      insights.push(`🚫 ${blockedCount} user(s) currently rate-limited`);
+      // Check if any were blocked very recently (last hour)
+      const { data: recentlyBlocked } = await supabase
+        .from('api_rate_limits')
+        .select('user_id, blocked_until, updated_at')
+        .gt('blocked_until', now.toISOString())
+        .gte('updated_at', ago1h);
+      if (recentlyBlocked?.length) {
+        insights.push(`⚠️ ${recentlyBlocked.length} user(s) blocked in the last hour`);
+        isUrgent = true;
+      }
+    }
+
+    // --- 7. Marketing performance ---
     const { data: recentTweets } = await supabase
       .from('twitter_posts')
       .select('id, content, status, created_at, impressions, likes')
@@ -87,13 +141,13 @@ serve(async (req) => {
       tweetSummary = `${posted.length} posted, ${drafts.length} drafts, ${totalImpressions} impressions this week`;
     }
 
-    // --- 4. Ticket counts ---
+    // --- 8. Ticket counts ---
     const [{ count: openTickets }, { count: pendingTickets }] = await Promise.all([
       supabase.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open'),
       supabase.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     ]);
 
-    // --- 5. User activity ---
+    // --- 9. User activity ---
     const [{ count: totalUsers }, { count: activeUsers }] = await Promise.all([
       supabase.from('access_grants').select('*', { count: 'exact', head: true }),
       supabase.from('access_grants').select('*', { count: 'exact', head: true }).eq('is_active', true),
@@ -114,6 +168,7 @@ serve(async (req) => {
     const currentMetrics = {
       health_score: healthScore,
       errors_24h: errorCount || 0,
+      errors_1h: errorsLastHour || 0,
       llm_failures_24h: llmFailureCount || 0,
       blocked_users: blockedCount,
       open_tickets: openTickets || 0,
@@ -121,6 +176,7 @@ serve(async (req) => {
       active_users: activeUsers || 0,
       total_users: totalUsers || 0,
       tweet_summary: tweetSummary,
+      new_applications: newApps?.length || 0,
     };
 
     // Detect trends
@@ -162,7 +218,8 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // FIX 3: COOLDOWN — skip messaging if we messaged recently
+    // COOLDOWN — skip messaging if we messaged recently
+    // Unless isUrgent bypasses cooldown
     // ============================================================
     const { data: lastShared } = await supabase
       .from('ayn_mind')
@@ -176,16 +233,19 @@ serve(async (req) => {
     const lastSharedTime = lastShared?.created_at ? new Date(lastShared.created_at).getTime() : 0;
     const cooledDown = (now.getTime() - lastSharedTime) > COOLDOWN_MS;
 
-    // FIX 4: Tighter worthSharing — remove actions.length trigger
-    const worthSharing = trends.length > 0 || healthScore < 80 || (staleCount && staleCount > 5);
+    // Health < 60 is also urgent
+    if (healthScore < 60) isUrgent = true;
 
-    if (worthSharing && cooledDown) {
-      // FIX 2: Use AI to generate a natural message instead of bullet report
+    const worthSharing = trends.length > 0 || healthScore < 80 || (staleCount && staleCount > 5) || (newApps?.length && newApps.length > 0);
+    const shouldMessage = (worthSharing && cooledDown) || isUrgent;
+
+    if (shouldMessage) {
       const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
       let telegramMessage = '';
 
       if (LOVABLE_API_KEY) {
         try {
+          const urgentPrefix = isUrgent ? 'URGENT — this needs attention now. ' : '';
           const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
             method: 'POST',
             headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
@@ -203,18 +263,21 @@ Rules:
 - If everything is normal and boring, respond with exactly: [SKIP]
 - Don't list all stats — pick the most important thing
 - Sound human, not robotic
-- If you took actions (like replying to tickets), mention briefly`,
+- If you took actions (like replying to tickets), mention briefly
+- ${isUrgent ? 'This is URGENT — be direct and alarming. Do NOT skip.' : 'If nothing notable, say [SKIP]'}`,
                 },
                 {
                   role: 'user',
-                  content: `Current state:
+                  content: `${urgentPrefix}Current state:
 Health: ${healthScore}%
-Errors (24h): ${errorCount || 0}
+Errors (24h): ${errorCount || 0}, Errors (1h): ${errorsLastHour || 0}
 LLM failures: ${llmFailureCount || 0}
 Open tickets: ${openTickets || 0}, Pending: ${pendingTickets || 0}
 Active users: ${activeUsers || 0}/${totalUsers || 0}
 Blocked users: ${blockedCount}
 Tweets: ${tweetSummary}
+New applications: ${newApps?.length ? newApps.map(a => `${a.full_name} (${a.service_type})`).join(', ') : 'none'}
+Insights: ${insights.length > 0 ? insights.join('; ') : 'none'}
 Trends: ${trends.length > 0 ? trends.join('; ') : 'none'}
 Actions taken: ${actions.length > 0 ? actions.map(a => a.detail).join('; ') : 'none'}`,
                 },
@@ -231,10 +294,18 @@ Actions taken: ${actions.length > 0 ? actions.map(a => a.detail).join('; ') : 'n
         }
       }
 
-      // If AI said skip or failed, don't send
-      if (telegramMessage && !telegramMessage.includes('[SKIP]')) {
+      // If AI said skip or failed, don't send (unless urgent)
+      const shouldSend = isUrgent
+        ? Boolean(telegramMessage && !telegramMessage.includes('[SKIP]')) || true
+        : Boolean(telegramMessage && !telegramMessage.includes('[SKIP]'));
+
+      // Fallback message for urgent when AI fails
+      if (isUrgent && (!telegramMessage || telegramMessage.includes('[SKIP]'))) {
+        telegramMessage = `🚨 Urgent alert: ${insights.slice(0, 3).join(' | ') || `Health at ${healthScore}%`}`;
+      }
+
+      if (shouldSend && telegramMessage) {
         try {
-          // Send directly via Telegram API (no markdown formatting issues)
           const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
           const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
 
@@ -268,8 +339,10 @@ Actions taken: ${actions.length > 0 ? actions.map(a => a.detail).join('; ') : 'n
       health_score: healthScore,
       mood,
       trends,
+      insights,
       actions,
-      messaged_admin: worthSharing && cooledDown,
+      is_urgent: isUrgent,
+      messaged_admin: shouldMessage,
       cooldown_active: !cooledDown,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
