@@ -87,6 +87,11 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:grant_access:email] — Create access grant for user
 - [ACTION:revoke_access:user_id] — Revoke user access
 - [ACTION:set_unlimited:user_id] — Toggle unlimited for user
+- [ACTION:delete_app:app_id] — Delete a service application
+- [ACTION:delete_contact:contact_id] — Delete a contact message
+- [ACTION:delete_message:message_id] — Delete a user message
+- [ACTION:approve_app:app_id] — Approve service application
+- [ACTION:reject_app:app_id] — Reject service application
 
 BLOCKED ACTIONS (never execute):
 - No subscription/billing actions
@@ -533,11 +538,46 @@ async function executeAction(
       case 'check_security': {
         return await cmdSecurity(supabase);
       }
+      case 'delete_app': {
+        return await cmdDelete(`/delete_app ${params}`, supabase);
+      }
+      case 'delete_contact': {
+        return await cmdDelete(`/delete_contact ${params}`, supabase);
+      }
+      case 'delete_message': {
+        return await cmdDelete(`/delete_message ${params}`, supabase);
+      }
+      case 'approve_app': {
+        const { data } = await supabase.from('service_applications')
+          .select('id, full_name').ilike('id', `${params}%`).limit(1);
+        if (!data?.length) return `No application found`;
+        await supabase.from('service_applications')
+          .update({ status: 'approved' }).eq('id', data[0].id);
+        await logAynActivity(supabase, 'application_approved',
+          `Approved application from ${data[0].full_name}`, {
+          target_id: data[0].id, target_type: 'application',
+          triggered_by: 'admin_chat',
+        });
+        return `Approved application from ${data[0].full_name}`;
+      }
+      case 'reject_app': {
+        const { data } = await supabase.from('service_applications')
+          .select('id, full_name').ilike('id', `${params}%`).limit(1);
+        if (!data?.length) return `No application found`;
+        await supabase.from('service_applications')
+          .update({ status: 'rejected' }).eq('id', data[0].id);
+        await logAynActivity(supabase, 'application_rejected',
+          `Rejected application from ${data[0].full_name}`, {
+          target_id: data[0].id, target_type: 'application',
+          triggered_by: 'admin_chat',
+        });
+        return `Rejected application from ${data[0].full_name}`;
+      }
       default:
-        return null;
+        return `Unknown action: ${type}`;
     }
   } catch (e) {
     console.error(`Action ${type} failed:`, e);
-    return null;
+    return `Action ${type} failed: ${e instanceof Error ? e.message : 'Unknown error'}`;
   }
 }
