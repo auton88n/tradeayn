@@ -14,8 +14,9 @@ Deno.serve(async (req) => {
     const payload = await req.json();
     console.log('Resend inbound webhook received:', JSON.stringify(payload).slice(0, 500));
 
-    // Resend inbound webhook sends an object with email data
-    // See: https://resend.com/docs/dashboard/webhooks/introduction
+    // Resend wraps email fields inside payload.data
+    const emailData = payload.data || payload;
+
     const {
       from: fromRaw,
       to: toRaw,
@@ -23,7 +24,7 @@ Deno.serve(async (req) => {
       text: bodyText,
       html: bodyHtml,
       headers: emailHeaders,
-    } = payload;
+    } = emailData;
 
     // Parse from field - can be "Name <email>" or just "email"
     let fromEmail = '';
