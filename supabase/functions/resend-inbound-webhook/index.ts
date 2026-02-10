@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
       if (RESEND_API_KEY) {
         try {
-          const emailRes = await fetch(`https://api.resend.com/emails/${email_id}`, {
+          const emailRes = await fetch(`https://api.resend.com/emails/receiving/${email_id}`, {
             headers: { 'Authorization': `Bearer ${RESEND_API_KEY}` },
           });
           if (emailRes.ok) {
