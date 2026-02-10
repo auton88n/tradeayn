@@ -442,10 +442,14 @@ export async function cmdEmail(text: string, supabase: Supabase): Promise<string
   if (!RESEND_API_KEY) return '❌ RESEND_API_KEY not configured';
 
   try {
-    const names = ['Sarah', 'Mark', 'Lina', 'James', 'Noor'];
-    const roles = ['Sales @ AYN', 'Growth Lead @ AYN', 'Partnerships @ AYN'];
-    const sigName = names[Math.floor(Math.random() * names.length)];
-    const sigRole = roles[Math.floor(Math.random() * roles.length)];
+    const signature = `AYN AI<br><span style="color:#888;font-size:13px;">Intelligent Automation Solutions</span><br><a href="https://aynn.io" style="color:#0EA5E9;">aynn.io</a>`;
+
+    // Clean body: handle literal \n text + real newlines
+    let cleanBody = body
+      .replace(/\\n/g, '\n')
+      .replace(/\n/g, '<br>');
+    // Strip AI-generated signatures from body
+    cleanBody = cleanBody.replace(/<br>\s*(?:Best|Regards|Cheers|Thanks|Warm regards|Kind regards),?\s*(?:<br>)?\s*(?:The\s+)?AYN(?:\s+Team)?(?:<br>.*)?$/i, '');
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -457,7 +461,22 @@ export async function cmdEmail(text: string, supabase: Supabase): Promise<string
         from: 'AYN <info@mail.aynn.io>',
         to: [to],
         subject,
-        html: `<p>${body.replace(/\n/g, '<br>')}</p><p>${sigName}<br>${sigRole}</p>`,
+        html: `
+<div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e5e5;">
+  <div style="background:#000;padding:24px;text-align:center;">
+    <h1 style="color:#fff;font-size:32px;font-weight:900;letter-spacing:-1px;margin:0;">AYN</h1>
+    <div style="width:30px;height:3px;background:#0EA5E9;margin:10px auto 0;"></div>
+  </div>
+  <div style="padding:32px 24px;color:#333;font-size:15px;line-height:1.7;">
+    ${cleanBody}
+  </div>
+  <div style="padding:20px 24px;border-top:1px solid #eee;">
+    <p style="margin:0;font-size:14px;font-weight:600;color:#000;">${signature}</p>
+  </div>
+  <div style="background:#f9f9f9;padding:16px;text-align:center;">
+    <p style="margin:0;font-size:11px;color:#999;">&copy; 2026 AYN AI. All rights reserved.</p>
+  </div>
+</div>`,
       }),
     });
 
