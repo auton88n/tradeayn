@@ -442,6 +442,11 @@ export async function cmdEmail(text: string, supabase: Supabase): Promise<string
   if (!RESEND_API_KEY) return '❌ RESEND_API_KEY not configured';
 
   try {
+    const names = ['Sarah', 'Mark', 'Lina', 'James', 'Noor'];
+    const roles = ['Sales @ AYN', 'Growth Lead @ AYN', 'Partnerships @ AYN'];
+    const sigName = names[Math.floor(Math.random() * names.length)];
+    const sigRole = roles[Math.floor(Math.random() * roles.length)];
+
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -449,10 +454,10 @@ export async function cmdEmail(text: string, supabase: Supabase): Promise<string
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'AYN <info@aynn.io>',
+        from: 'AYN <info@mail.aynn.io>',
         to: [to],
         subject,
-        html: `<p>${body.replace(/\n/g, '<br>')}</p><p>— AYN Team</p>`,
+        html: `<p>${body.replace(/\n/g, '<br>')}</p><p>${sigName}<br>${sigRole}</p>`,
       }),
     });
 
@@ -462,7 +467,12 @@ export async function cmdEmail(text: string, supabase: Supabase): Promise<string
       triggered_by: 'telegram_command',
     });
 
-    return res.ok ? `✅ Email sent to ${to}` : `❌ Email failed to send`;
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error('[cmdEmail] Resend error:', errBody);
+      return `❌ Email failed: ${errBody}`;
+    }
+    return `✅ Email sent to ${to}`;
   } catch (e) {
     return `❌ Failed: ${e instanceof Error ? e.message : 'Unknown error'}`;
   }
