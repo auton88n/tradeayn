@@ -435,7 +435,14 @@ export async function cmdEmail(text: string, supabase: Supabase): Promise<string
   const rest = afterCmd.slice(spaceIdx + 1);
   const pipeIdx = rest.indexOf('|');
   if (pipeIdx === -1) return '❌ Usage: /email [to] [subject] | [body]';
-  const subject = rest.slice(0, pipeIdx).trim();
+  let cleanSubject = rest.slice(0, pipeIdx).trim()
+    .replace(/^(?:AYN|ayn)\s*[:/\-–—]\s*/i, '')  // Remove "AYN:" or "AYN /" prefix
+    .replace(/[—–]/g, '-')                         // Replace em-dashes with hyphens
+    .replace(/\s+/g, ' ')                          // Collapse whitespace
+    .trim();
+  if (!cleanSubject) cleanSubject = 'Hey from AYN';
+  if (cleanSubject.length > 60) cleanSubject = cleanSubject.slice(0, 57) + '...';
+  const subject = cleanSubject;
   const body = rest.slice(pipeIdx + 1).trim();
 
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');

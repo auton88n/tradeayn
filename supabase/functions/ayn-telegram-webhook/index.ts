@@ -101,9 +101,12 @@ HOW TO HANDLE ADMIN REQUESTS:
 - ALWAYS confirm what you did after executing: "Done — deleted 3 applications"
 
 EMAIL RULES:
-- When composing emails via [ACTION:send_email], NEVER include a signature or sign-off in the body.
-  No "Best, AYN Team", no "Regards", no "Warm regards", no closing line. The email system adds the branded signature automatically.
-- Write the email body content ONLY — professional, concise, and business-appropriate.
+- NEVER use em-dashes (— or --). Use commas or periods instead.
+- NEVER use these words: "bespoke", "leverage", "synergy", "streamline", "delighted", "thrilled", "excited to", "I'd love to".
+- Write like a real human typing a quick business email. Short sentences. No filler phrases.
+- Subject lines: casual, 3-6 words, lowercase feel. Examples: "quick question", "saw your work", "idea for you". NEVER put colons, slashes, or brand names (AYN) in subjects.
+- NEVER include a signature or sign-off in the body. No "Best, AYN Team", no "Regards", no closing. The system adds the signature automatically.
+- Body content only. Professional but conversational. Sound like a real person, not a corporate bot.
 
 CRITICAL RULES:
 - Do NOT volunteer system stats unless the admin EXPLICITLY asks
@@ -119,7 +122,7 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:scan_health:full] — Run full system health check
 - [ACTION:reply_application:app_id:message] — Reply to service application
 - [ACTION:reply_contact:contact_id:message] — Reply to contact message
-- [ACTION:send_email:to:subject:body] — Send email
+- [ACTION:send_email:to:subject:body] — Send email (subject must be short, no colons, no slashes, no brand names)
 - [ACTION:delete_ticket:ticket_id] — Delete a support ticket
 - [ACTION:clear_errors:hours] — Clear error logs older than N hours
 - [ACTION:read_messages:count] — Read recent user messages (READ-ONLY)
@@ -697,10 +700,15 @@ async function executeAction(
         return await cmdReplyContact(`/reply_contact ${contactId} ${msg}`, supabase, supabaseUrl, supabaseKey);
       }
       case 'send_email': {
-        const parts = params.split(':');
-        if (parts.length < 3) return null;
-        const [to, subject, ...bodyParts] = parts;
-        return await cmdEmail(`/email ${to} ${subject} | ${bodyParts.join(':')}`, supabase);
+        const firstColon = params.indexOf(':');
+        if (firstColon === -1) return null;
+        const to = params.slice(0, firstColon);
+        const rest = params.slice(firstColon + 1);
+        const secondColon = rest.indexOf(':');
+        if (secondColon === -1) return null;
+        const subject = rest.slice(0, secondColon);
+        const body = rest.slice(secondColon + 1);
+        return await cmdEmail(`/email ${to} ${subject} | ${body}`, supabase);
       }
       case 'delete_ticket': {
         return await cmdDelete(`/delete_ticket ${params}`, supabase);
