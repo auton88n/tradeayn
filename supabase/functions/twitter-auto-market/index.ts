@@ -114,9 +114,28 @@ Return ONLY valid JSON matching the specified format. No markdown, no code block
       throw new Error("AI returned invalid format");
     }
 
-    // Validate content length
-    if (!tweetData.content || tweetData.content.length > 280) {
-      throw new Error("Generated tweet exceeds 280 characters or is empty");
+    // Validate and fix content length
+    if (!tweetData.content) {
+      throw new Error("Generated tweet is empty");
+    }
+    
+    // If over 280 chars, intelligently trim: cut at last sentence/phrase boundary under 280
+    if (tweetData.content.length > 280) {
+      console.log("Tweet too long (" + tweetData.content.length + " chars), trimming...");
+      let trimmed = tweetData.content.substring(0, 280);
+      // Try to cut at last sentence boundary
+      const lastPeriod = trimmed.lastIndexOf('. ');
+      const lastQuestion = trimmed.lastIndexOf('? ');
+      const lastNewline = trimmed.lastIndexOf('\n');
+      const cutPoint = Math.max(lastPeriod, lastQuestion, lastNewline);
+      if (cutPoint > 150) {
+        trimmed = trimmed.substring(0, cutPoint + 1);
+      } else {
+        // Cut at last space to avoid breaking words
+        const lastSpace = trimmed.lastIndexOf(' ');
+        if (lastSpace > 150) trimmed = trimmed.substring(0, lastSpace);
+      }
+      tweetData.content = trimmed.trim();
     }
 
     // Save to database
