@@ -22,29 +22,40 @@ interface ActivityLog {
 }
 
 const ACTION_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
+  // Reply-type actions
   reply: { icon: MessageSquare, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', label: 'Reply' },
   application_replied: { icon: MessageSquare, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', label: 'Reply' },
   contact_replied: { icon: MessageSquare, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', label: 'Reply' },
+  ticket_auto_reply: { icon: MessageSquare, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', label: 'Reply' },
+  proactive_auto_reply: { icon: MessageSquare, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', label: 'Reply' },
+  // Email actions
   email: { icon: Mail, color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', label: 'Email' },
   email_sent: { icon: Mail, color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', label: 'Email' },
+  // Delete actions
   delete: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
+  bulk_delete: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
   ticket_deleted: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
   message_deleted: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
   application_deleted: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
   contact_deleted: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
+  // Alert actions
   alert: { icon: AlertTriangle, color: 'bg-amber-500/10 text-amber-500 border-amber-500/20', label: 'Alert' },
+  // Command actions
   command: { icon: Terminal, color: 'bg-violet-500/10 text-violet-500 border-violet-500/20', label: 'Command' },
+  ai_chat_actions: { icon: Terminal, color: 'bg-violet-500/10 text-violet-500 border-violet-500/20', label: 'Command' },
+  errors_cleared: { icon: Terminal, color: 'bg-violet-500/10 text-violet-500 border-violet-500/20', label: 'Command' },
+  // Maintenance actions
   maintenance_activated: { icon: Wrench, color: 'bg-orange-500/10 text-orange-500 border-orange-500/20', label: 'Maintenance' },
 };
 
 const FILTER_GROUPS: Record<string, string[]> = {
   all: [],
-  reply: ['reply', 'application_replied', 'contact_replied'],
+  reply: ['reply', 'application_replied', 'contact_replied', 'ticket_auto_reply', 'proactive_auto_reply'],
   email: ['email', 'email_sent'],
-  delete: ['delete', 'ticket_deleted', 'message_deleted', 'application_deleted', 'contact_deleted'],
+  delete: ['delete', 'bulk_delete', 'ticket_deleted', 'message_deleted', 'application_deleted', 'contact_deleted'],
   alert: ['alert'],
-  command: ['command'],
-  maintenance_activated: ['maintenance_activated'],
+  command: ['command', 'ai_chat_actions', 'errors_cleared'],
+  maintenance: ['maintenance_activated'],
 };
 
 const FILTER_LABELS: Record<string, string> = {
@@ -54,7 +65,7 @@ const FILTER_LABELS: Record<string, string> = {
   delete: 'Deletions',
   alert: 'Alerts',
   command: 'Commands',
-  maintenance_activated: 'Maintenance',
+  maintenance: 'Maintenance',
 };
 
 export const AYNActivityLog = () => {
@@ -140,7 +151,7 @@ export const AYNActivityLog = () => {
     return null;
   };
 
-  const isDeleteAction = (type: string) => type.includes('deleted') || type === 'delete';
+  const isDeleteAction = (type: string) => type.includes('deleted') || type === 'delete' || type === 'bulk_delete';
 
   return (
     <div className="space-y-4">
