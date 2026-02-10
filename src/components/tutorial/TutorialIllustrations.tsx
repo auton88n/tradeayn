@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp, Heart, Eye, Building2, Ruler, Calculator, Layers } from 'lucide-react';
+import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp, Heart, Eye, Building2, Ruler, Calculator, Layers, ClipboardCheck, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 export const MeetAynIllustration = () => (
   <div className="relative w-full h-full flex items-center justify-center">
@@ -576,7 +576,7 @@ export const EngineeringIllustration = () => (
           </div>
           <div>
             <div className="font-semibold text-xs">Engineering Tools</div>
-            <div className="text-[10px] text-muted-foreground">7 Professional Calculators</div>
+            <div className="text-[10px] text-muted-foreground">6 Structural Calculators</div>
           </div>
         </div>
         
@@ -589,7 +589,6 @@ export const EngineeringIllustration = () => (
             { icon: Layers, label: 'Foundation', color: 'text-violet-500' },
             { icon: Building2, label: 'Retaining', color: 'text-purple-500' },
             { icon: Ruler, label: 'Grading', color: 'text-emerald-500' },
-            { icon: Calculator, label: 'Parking', color: 'text-amber-500' },
           ].map((item, i) => (
             <motion.div
               key={item.label}
@@ -619,6 +618,63 @@ export const EngineeringIllustration = () => (
               <span className="text-[10px]">3D Visualization</span>
             </div>
             <span className="text-emerald-500 text-[10px] font-medium">✓ Ready</span>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  </div>
+);
+
+export const ComplianceIllustration = () => (
+  <div className="w-full h-full flex items-center justify-center">
+    <div className="relative">
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-teal-500/20 to-cyan-500/20 blur-2xl scale-150" />
+      
+      <div className="relative w-64 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden">
+        <div className="flex items-center gap-2 p-2.5 border-b border-border/30 bg-gradient-to-r from-teal-500/10 to-cyan-500/10">
+          <div className="w-7 h-7 rounded-lg bg-teal-500/20 flex items-center justify-center">
+            <ClipboardCheck className="w-4 h-4 text-teal-500" />
+          </div>
+          <div>
+            <div className="font-semibold text-xs">Code Compliance</div>
+            <div className="text-[10px] text-muted-foreground">IRC 2024 • NBC 2025</div>
+          </div>
+        </div>
+        
+        <div className="p-2 space-y-1.5">
+          {[
+            { label: 'Room Dimensions', status: 'pass' },
+            { label: 'Ceiling Height', status: 'pass' },
+            { label: 'Egress Windows', status: 'fail' },
+            { label: 'Stair Geometry', status: 'pass' },
+            { label: 'Fire Safety', status: 'warn' },
+            { label: 'Door Clearance', status: 'pass' },
+          ].map((item, i) => (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.08 }}
+              className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-muted/30"
+            >
+              <span className="text-[10px] font-medium">{item.label}</span>
+              {item.status === 'pass' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+              {item.status === 'fail' && <XCircle className="w-3.5 h-3.5 text-red-500" />}
+              {item.status === 'warn' && <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
+            </motion.div>
+          ))}
+        </div>
+        
+        <motion.div 
+          className="p-2 border-t border-border/30"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="flex items-center justify-between text-[10px] px-2">
+            <span className="text-emerald-500 font-medium">4 Passed</span>
+            <span className="text-red-500 font-medium">1 Failed</span>
+            <span className="text-amber-500 font-medium">1 Warning</span>
           </div>
         </motion.div>
       </div>
