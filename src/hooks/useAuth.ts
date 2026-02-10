@@ -79,13 +79,12 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   // Accept terms and conditions - uses direct fetch
   const acceptTerms = useCallback(async () => {
     try {
-      await supabaseApi.post('user_settings', session.access_token, {
-        user_id: user.id,
-        has_accepted_terms: true,
-        updated_at: new Date().toISOString()
-      }, {
-        headers: { 'Prefer': 'resolution=merge-duplicates' }
-      });
+      // Use PATCH to update existing row (created by trigger on signup)
+      await supabaseApi.patch(
+        `user_settings?user_id=eq.${user.id}`,
+        session.access_token,
+        { has_accepted_terms: true, updated_at: new Date().toISOString() }
+      );
 
       setHasAcceptedTerms(true);
       // Also save to localStorage as backup
