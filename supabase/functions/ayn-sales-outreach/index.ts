@@ -31,7 +31,7 @@ serve(async (req) => {
 
     switch (mode) {
       case 'prospect':
-        return await handleProspect(supabase, url, supabaseUrl, supabaseKey);
+        return await handleProspect(supabase, url);
       case 'draft_email':
         return await handleDraftEmail(supabase, lead_id);
       case 'send_email':
@@ -41,7 +41,7 @@ serve(async (req) => {
       case 'pipeline_status':
         return await handlePipelineStatus(supabase);
       case 'search_leads':
-        return await handleSearchLeads(supabase, search_query, supabaseUrl, supabaseKey);
+        return await handleSearchLeads(supabase, search_query);
       default:
         return jsonResponse({ error: `Unknown mode: ${mode}` }, 400);
     }
@@ -51,43 +51,48 @@ serve(async (req) => {
   }
 });
 
-// ─── Prospect a company URL ───
-async function handleProspect(supabase: any, url: string, supabaseUrl: string, supabaseKey: string) {
-  if (!url) return jsonResponse({ error: 'URL is required' }, 400);
+// ─── Scrape website via direct fetch ───
+async function scrapeWebsite(url: string): Promise<{ content: string; metadata: any }> {
+  let websiteContent = 'Could not fetch website';
+  let metadata: any = {};
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AYNBot/1.0)' },
+      redirect: 'follow',
+    });
+    if (res.ok) {
+      const html = await res.text();
+      const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
+      metadata = { title: titleMatch?.[1]?.trim() || 'Unknown' };
+      websiteContent = html
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    } else {
+      console.error('Website fetch returned:', res.status);
+    }
+  } catch (e) {
+    console.error('Website fetch failed:', e);
+  }
+  return { content: websiteContent, metadata };
+}
 
-  const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
-  if (!FIRECRAWL_API_KEY) return jsonResponse({ error: 'FIRECRAWL_API_KEY not configured' }, 500);
+// ─── Prospect a company URL ───
+async function handleProspect(supabase: any, url: string) {
+  if (!url) return jsonResponse({ error: 'URL is required' }, 400);
 
   let formattedUrl = url.trim();
   if (!formattedUrl.startsWith('http')) formattedUrl = `https://${formattedUrl}`;
 
   console.log('Prospecting:', formattedUrl);
 
-  // Scrape the website
-  let scrapeData: any = null;
-  try {
-    const scrapeRes = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        url: formattedUrl,
-        formats: ['markdown', 'links'],
-        onlyMainContent: true,
-      }),
-    });
-    if (scrapeRes.ok) {
-      scrapeData = await scrapeRes.json();
-    }
-  } catch (e) {
-    console.error('Firecrawl scrape failed:', e);
-  }
+  const { content: websiteContent, metadata } = await scrapeWebsite(formattedUrl);
 
   // Use AI to analyze the company
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY) return jsonResponse({ error: 'LOVABLE_API_KEY not configured' }, 500);
-
-  const websiteContent = scrapeData?.data?.markdown || scrapeData?.markdown || 'Could not scrape website content';
-  const metadata = scrapeData?.data?.metadata || scrapeData?.metadata || {};
 
   const analysisRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -172,7 +177,6 @@ Respond in JSON format:
 
   if (insertErr) return jsonResponse({ error: `Failed to save lead: ${insertErr.message}` }, 500);
 
-  // Also log to ayn_mind
   await supabase.from('ayn_mind').insert({
     type: 'sales_lead',
     content: `Found potential lead: ${analysis.company_name} (${analysis.industry}). Pain points: ${analysis.pain_points?.join(', ')}. Recommended: ${analysis.recommended_services?.join(', ')}`,
@@ -260,7 +264,6 @@ Respond in JSON:
     return jsonResponse({ error: 'Failed to parse email draft' }, 500);
   }
 
-  // Save draft to ayn_mind for admin review
   await supabase.from('ayn_mind').insert({
     type: 'sales_draft',
     content: `Email draft for ${lead.company_name}: "${draft?.subject}"`,
@@ -284,7 +287,6 @@ async function handleSendEmail(supabase: any, lead_id: string, email_draft: any)
   if (!lead) return jsonResponse({ error: 'Lead not found' }, 404);
   if (!lead.contact_email) return jsonResponse({ error: 'No contact email for this lead' }, 400);
 
-  // For first contact, require admin_approved
   if (lead.emails_sent === 0 && !lead.admin_approved) {
     return jsonResponse({ error: 'First contact requires admin approval. Use Telegram to approve.' }, 403);
   }
@@ -295,7 +297,6 @@ async function handleSendEmail(supabase: any, lead_id: string, email_draft: any)
   const SMTP_PASS = Deno.env.get('SMTP_PASS');
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return jsonResponse({ error: 'SMTP credentials not configured' }, 500);
 
-  // If no draft provided, generate one
   let draft = email_draft;
   if (!draft) {
     const draftRes = await handleDraftEmail(supabase, lead_id);
@@ -307,7 +308,6 @@ async function handleSendEmail(supabase: any, lead_id: string, email_draft: any)
     return jsonResponse({ error: 'Invalid email draft' }, 400);
   }
 
-  // Send via SMTP
   let sent = false;
   let emailResult: any = {};
   try {
@@ -337,7 +337,6 @@ async function handleSendEmail(supabase: any, lead_id: string, email_draft: any)
     emailResult = { status: 'failed', error: smtpErr instanceof Error ? smtpErr.message : 'SMTP error' };
   }
 
-  // Update pipeline
   const nextFollowUp = new Date();
   nextFollowUp.setDate(nextFollowUp.getDate() + (lead.emails_sent === 0 ? 3 : 7));
 
@@ -369,7 +368,6 @@ async function handleFollowUp(supabase: any, lead_id: string) {
 
   if (!lead) return jsonResponse({ error: 'Lead not found' }, 404);
 
-  // Safety checks
   if (lead.emails_sent >= 3) {
     return jsonResponse({ error: 'Max 3 emails per lead reached' }, 400);
   }
@@ -383,18 +381,15 @@ async function handleFollowUp(supabase: any, lead_id: string) {
     }
   }
 
-  // Draft and send
   const draftRes = await handleDraftEmail(supabase, lead_id);
   const draftData = await draftRes.json();
 
   if (!draftData.success) return jsonResponse(draftData, 500);
 
-  // For follow-ups on approved leads, send automatically
   if (lead.admin_approved) {
     return await handleSendEmail(supabase, lead_id, draftData.draft);
   }
 
-  // Otherwise return draft for admin review
   return jsonResponse({ success: true, needs_approval: true, draft: draftData.draft, lead_id });
 }
 
@@ -436,50 +431,66 @@ async function handlePipelineStatus(supabase: any) {
   });
 }
 
-// ─── Search for leads using Firecrawl ───
-async function handleSearchLeads(supabase: any, query: string, supabaseUrl: string, supabaseKey: string) {
+// ─── Search for leads using Gemini to suggest URLs ───
+async function handleSearchLeads(supabase: any, query: string) {
   if (!query) return jsonResponse({ error: 'search_query is required' }, 400);
 
-  const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
-  if (!FIRECRAWL_API_KEY) return jsonResponse({ error: 'FIRECRAWL_API_KEY not configured' }, 500);
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) return jsonResponse({ error: 'LOVABLE_API_KEY not configured' }, 500);
 
   console.log('Searching for leads:', query);
 
-  const searchRes = await fetch('https://api.firecrawl.dev/v1/search', {
+  // Use Gemini to suggest likely company URLs
+  const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      query: `${query} company website`,
-      limit: 5,
+      model: 'google/gemini-3-flash-preview',
+      messages: [{
+        role: 'system',
+        content: `You are a B2B lead researcher. Given a search query about an industry or type of business, suggest 5 real company website URLs that match. Focus on small-to-medium businesses that could benefit from AI automation, websites, or customer support solutions.
+
+Return ONLY a JSON array of URLs, nothing else:
+["https://example1.com", "https://example2.com", ...]`,
+      }, {
+        role: 'user',
+        content: query,
+      }],
     }),
   });
 
-  if (!searchRes.ok) return jsonResponse({ error: 'Firecrawl search failed' }, 500);
+  if (!aiRes.ok) return jsonResponse({ error: 'AI search failed' }, 500);
 
-  const searchData = await searchRes.json();
-  const results = searchData.data || [];
+  const aiData = await aiRes.json();
+  let urls: string[] = [];
+  try {
+    const content = aiData.choices?.[0]?.message?.content || '';
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    urls = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+  } catch {
+    return jsonResponse({ error: 'Failed to parse search results' }, 500);
+  }
 
-  // Prospect each result
+  // Prospect each URL
   const prospected: any[] = [];
-  for (const result of results.slice(0, 3)) {
-    if (!result.url) continue;
+  for (const u of urls.slice(0, 3)) {
     try {
-      const prospectRes = await handleProspect(supabase, result.url, supabaseUrl, supabaseKey);
+      const prospectRes = await handleProspect(supabase, u);
       const prospectData = await prospectRes.json();
       if (prospectData.success) {
-        prospected.push({ url: result.url, lead_id: prospectData.lead_id, analysis: prospectData.analysis });
+        prospected.push({ url: u, lead_id: prospectData.lead_id, analysis: prospectData.analysis });
       }
     } catch (e) {
-      console.error('Failed to prospect:', result.url, e);
+      console.error('Failed to prospect:', u, e);
     }
   }
 
   await logAynActivity(supabase, 'sales_search', `Searched for leads: "${query}" — found ${prospected.length}`, {
-    details: { query, results_count: results.length, prospected_count: prospected.length },
+    details: { query, urls_suggested: urls.length, prospected_count: prospected.length },
     triggered_by: 'sales_outreach',
   });
 
-  return jsonResponse({ success: true, query, total_results: results.length, prospected });
+  return jsonResponse({ success: true, query, total_results: urls.length, prospected });
 }
 
 function jsonResponse(data: any, status = 200) {
