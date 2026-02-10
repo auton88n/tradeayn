@@ -27,6 +27,7 @@ import { BetaFeedbackViewer } from '@/components/admin/BetaFeedbackViewer';
 import { MessageFeedbackViewer } from '@/components/admin/MessageFeedbackViewer';
 import { MarketingCommandCenter } from '@/components/admin/marketing/MarketingCommandCenter';
 import { AYNActivityLog } from '@/components/admin/AYNActivityLog';
+import { TermsConsentViewer } from '@/components/admin/TermsConsentViewer';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
 
@@ -446,6 +447,7 @@ export const AdminPanel = ({
                     {activeTab === 'message-feedback' && <MessageFeedbackViewer />}
                     {activeTab === 'test-results' && <TestResultsDashboard />}
                     {activeTab === 'twitter-marketing' && <MarketingCommandCenter />}
+                    {activeTab === 'terms-consent' && <TermsConsentViewer />}
                     {activeTab === 'ayn-logs' && <AYNActivityLog />}
                   </ErrorBoundary>
                 </motion.div>
