@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp, Heart, Eye, Building2, Ruler, Calculator, Layers, ClipboardCheck, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp, Heart, Eye, Building2, Ruler, Calculator, Layers, ClipboardCheck, CheckCircle2, XCircle, AlertTriangle, FileSpreadsheet, Download } from 'lucide-react';
 
 export const MeetAynIllustration = () => (
   <div className="relative w-full h-full flex items-center justify-center">
@@ -678,6 +678,84 @@ export const ComplianceIllustration = () => (
           </div>
         </motion.div>
       </div>
+    </div>
+  </div>
+);
+
+export const DocumentsIllustration = () => (
+  <div className="w-full h-full flex items-center justify-center">
+    <div className="flex items-center gap-6">
+      {/* PDF Document */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex flex-col items-center gap-2"
+      >
+        <div className="relative w-20 h-24 rounded-lg bg-background border border-border/50 shadow-lg overflow-hidden">
+          <div className="h-6 bg-red-500/20 flex items-center justify-center border-b border-red-500/30">
+            <span className="text-[8px] font-bold text-red-500">PDF</span>
+          </div>
+          <div className="p-2 space-y-1">
+            <div className="h-1 w-full bg-muted rounded" />
+            <div className="h-1 w-3/4 bg-muted rounded" />
+            <div className="h-1 w-full bg-muted rounded" />
+            <div className="h-1 w-1/2 bg-muted rounded" />
+          </div>
+          <div className="absolute bottom-1.5 right-1.5">
+            <FileText className="w-3.5 h-3.5 text-red-500" />
+          </div>
+        </div>
+        <span className="text-[10px] font-medium text-muted-foreground">Reports</span>
+      </motion.div>
+
+      {/* Download arrow */}
+      <motion.div
+        animate={{ y: [0, 4, 0] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+      >
+        <Download className="w-5 h-5 text-muted-foreground" />
+      </motion.div>
+
+      {/* Excel Document */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex flex-col items-center gap-2"
+      >
+        <div className="relative w-20 h-24 rounded-lg bg-background border border-border/50 shadow-lg overflow-hidden">
+          <div className="h-6 bg-emerald-500/20 flex items-center justify-center border-b border-emerald-500/30">
+            <span className="text-[8px] font-bold text-emerald-500">XLSX</span>
+          </div>
+          <div className="p-1.5">
+            <div className="grid grid-cols-3 gap-0.5">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div key={i} className="h-2 bg-muted/60 rounded-sm" />
+              ))}
+            </div>
+          </div>
+          <div className="absolute bottom-1.5 right-1.5">
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
+          </div>
+        </div>
+        <span className="text-[10px] font-medium text-muted-foreground">Spreadsheets</span>
+      </motion.div>
+    </div>
+
+    {/* Language badges */}
+    <div className="absolute bottom-6 flex gap-2">
+      {['EN', 'AR', 'FR'].map((lang, i) => (
+        <motion.div
+          key={lang}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4 + i * 0.1 }}
+          className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[9px] font-medium text-primary"
+        >
+          {lang}
+        </motion.div>
+      ))}
     </div>
   </div>
 );

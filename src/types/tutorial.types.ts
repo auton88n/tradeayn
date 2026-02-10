@@ -38,6 +38,12 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     icon: 'MessageSquare',
   },
   {
+    id: 'documents',
+    title: 'Generate Documents',
+    description: 'AYN creates professional PDFs and Excel spreadsheets in English, Arabic, and French. Just ask!',
+    icon: 'FileText',
+  },
+  {
     id: 'files',
     title: 'Upload & Analyze Files',
     description: 'Upload documents or images using the + button for analysis.',
