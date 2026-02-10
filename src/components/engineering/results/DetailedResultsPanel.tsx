@@ -35,8 +35,8 @@ export const DetailedResultsPanel: React.FC<DetailedResultsPanelProps> = ({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [copied, setCopied] = useState(false);
 
-  // Skip parking and grading - they have their own outputs
-  if (calculatorType === 'parking' || calculatorType === 'grading' || !calculatorType) {
+  // Skip grading - it has its own outputs
+  if (calculatorType === 'grading' || !calculatorType) {
     return null;
   }
 

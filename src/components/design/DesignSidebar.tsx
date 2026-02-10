@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
-export type DesignToolType = 'drawings' | 'compliance' | 'parking' | null;
+export type DesignToolType = 'drawings' | 'compliance' | null;
 
 interface DesignToolOption {
   id: DesignToolType;

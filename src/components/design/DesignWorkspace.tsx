@@ -9,7 +9,7 @@ import { SEO } from '@/components/shared/SEO';
 import { HardHat } from 'lucide-react';
 
 // Reuse existing lazy-loaded components
-const ParkingDesigner = lazy(() => import('@/components/engineering/ParkingDesigner').then(m => ({ default: m.ParkingDesigner })));
+// const ParkingDesigner = lazy(() => import('@/components/engineering/ParkingDesigner').then(m => ({ default: m.ParkingDesigner })));
 const ComplianceWizard = lazy(() => import('@/components/engineering/compliance/ComplianceWizard'));
 // const DrawingGenerator = lazy(() => import('@/components/engineering/drawings/DrawingGenerator'));
 
@@ -73,17 +73,8 @@ export const DesignWorkspace: React.FC<DesignWorkspaceProps> = ({ userId }) => {
             <ComplianceWizard userId={userId} />
           </Suspense>
         );
-      case 'parking':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <ParkingDesigner
-              onCalculate={handleCalculationComplete}
-              isCalculating={isCalculating}
-              setIsCalculating={setIsCalculating}
-              userId={userId}
-            />
-          </Suspense>
-        );
+      // case 'parking': (hidden for now)
+      //   return null;
       default:
         return null;
     }
@@ -110,14 +101,13 @@ export const DesignWorkspace: React.FC<DesignWorkspaceProps> = ({ userId }) => {
         Design Studio
       </h2>
       <p className="text-muted-foreground max-w-2xl text-center mb-8">
-        Select a tool from the sidebar to get started with architectural drawings,
-        building code compliance checks, or parking lot design.
+        Select a tool from the sidebar to get started with
+        building code compliance checks.
       </p>
 
       <div className="grid md:grid-cols-3 gap-6 max-w-3xl">
         {[
           { title: 'Code Compliance', desc: 'Check against building codes' },
-          { title: 'Parking Designer', desc: 'Optimize parking lot layouts' },
         ].map((feature, i) => (
           <motion.div
             key={i}
@@ -138,7 +128,7 @@ export const DesignWorkspace: React.FC<DesignWorkspaceProps> = ({ userId }) => {
     <>
       <SEO 
         title="Design Studio | Architectural & Compliance Tools"
-        description="AI-powered design tools for architectural drawings, building code compliance checks, and parking lot design."
+        description="AI-powered design tools for architectural drawings and building code compliance checks."
       />
 
       <div className="h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">

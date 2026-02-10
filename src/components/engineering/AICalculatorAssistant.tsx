@@ -91,11 +91,7 @@ const QUICK_ACTIONS: Record<CalculatorType, { label: string; prompt: string; ico
     { label: 'Drainage design', prompt: 'What slope is needed for proper drainage?', icon: 'trend' },
     { label: 'Cost estimate', prompt: 'What is the estimated earthwork cost?', icon: 'zap' },
   ],
-  parking: [
-    { label: 'Maximize spaces', prompt: 'How can I maximize parking capacity in this area?', icon: 'sparkles' },
-    { label: 'ADA compliance', prompt: 'How many accessible spaces are required?', icon: 'trend' },
-    { label: 'Traffic flow', prompt: 'What is the optimal traffic circulation pattern?', icon: 'zap' },
-  ],
+  // parking: (hidden for now)
 };
 
 export const AICalculatorAssistant: React.FC<AICalculatorAssistantProps> = ({
@@ -162,56 +158,7 @@ export const AICalculatorAssistant: React.FC<AICalculatorAssistantProps> = ({
     const newSuggestions: Suggestion[] = [];
     const newInsights: AnalysisInsight[] = [];
 
-    // Parking-specific analysis
-    if (calculatorType === 'parking') {
-      const siteLength = parseFloat(inputs.siteLength || '0');
-      const siteWidth = parseFloat(inputs.siteWidth || '0');
-      const siteArea = siteLength * siteWidth;
-      
-      if (siteArea > 0) {
-        // Estimate parking capacity
-        const spaceWidth = parseFloat(inputs.spaceWidth || '2.5');
-        const spaceLength = parseFloat(inputs.spaceLength || '5.0');
-        const aisleWidth = parseFloat(inputs.aisleWidth || '6.0');
-        const moduleWidth = spaceLength * 2 + aisleWidth;
-        const numModules = Math.floor(siteWidth / moduleWidth);
-        const spacesPerRow = Math.floor(siteLength / spaceWidth);
-        const estimatedSpaces = numModules * 2 * spacesPerRow;
-
-        newInsights.push({
-          icon: 'check',
-          text: `Site area: ${siteArea.toLocaleString()} m² — ~${estimatedSpaces} spaces possible`,
-          type: 'positive'
-        });
-
-        // Angle optimization suggestion
-        const angle = parseFloat(inputs.parkingAngle || '90');
-        if (angle === 90 && siteWidth < 25) {
-          newSuggestions.push({
-            field: 'parkingAngle',
-            label: 'Parking Angle',
-            currentValue: '90°',
-            suggestedValue: '60',
-            reason: 'Narrower sites work better with angled parking — could add ~10% more spaces',
-            priority: 'medium',
-          });
-          newInsights.push({
-            icon: 'trend',
-            text: '60° angle would improve capacity for this site width',
-            type: 'neutral'
-          });
-        }
-
-        // Aisle width check
-        if (aisleWidth < 6.0) {
-          newWarnings.push({
-            type: 'warning',
-            message: 'Aisle width < 6m may not meet fire access requirements',
-            field: 'aisleWidth',
-          });
-        }
-      }
-    }
+    // Parking-specific analysis (hidden for now)
 
     // Beam-specific analysis
     if (calculatorType === 'beam' && inputs.span && inputs.width) {

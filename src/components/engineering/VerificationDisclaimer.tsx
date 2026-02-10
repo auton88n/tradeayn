@@ -10,7 +10,7 @@ export function VerificationDisclaimer({ className = "", compact = false }: Veri
   if (compact) {
     return (
       <p className={`text-xs text-amber-600 dark:text-amber-400 ${className}`}>
-        ⚠️ AYNN can make mistakes. Verify with licensed PE before use.
+        ⚠️ AYN can make mistakes. Verify with licensed PE before use.
       </p>
     );
   }

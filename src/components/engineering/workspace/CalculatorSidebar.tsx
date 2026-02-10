@@ -20,7 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { BuildingCodeSelector } from '@/components/engineering/BuildingCodeSelector';
 import { type BuildingCodeId, type NBCCVersion } from '@/lib/buildingCodes';
 
-export type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | 'grading' | 'compliance' | 'drawings' | null;
+export type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'grading' | 'compliance' | 'drawings' | null;
 
 interface CalculatorOption {
   id: CalculatorType;

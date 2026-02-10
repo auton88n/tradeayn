@@ -108,12 +108,7 @@ const QUICK_ACTIONS: Record<CalculatorType, { label: string; icon: typeof HelpCi
     { label: 'Compaction requirements', icon: BookOpen, question: 'What are the compaction specifications for different fill zones? How does soil type affect these requirements?' },
     { label: 'Cost optimization', icon: Lightbulb, question: 'How can I minimize earthwork costs? Consider haul distances, borrow vs waste, and staging.' },
   ],
-  parking: [
-    { label: 'Maximize capacity', icon: Calculator, question: 'How can I maximize parking capacity for this site? Analyze the current layout efficiency and suggest improvements.' },
-    { label: 'ADA compliance', icon: BookOpen, question: 'How many accessible parking spaces are required? Does this design meet ADA/local accessibility requirements?' },
-    { label: 'Traffic flow', icon: AlertTriangle, question: 'Analyze the traffic flow pattern. Are the aisle widths adequate? Suggest improvements for circulation.' },
-    { label: 'Optimize layout', icon: Lightbulb, question: 'What parking angle would be most efficient for this site? Compare 90°, 60°, and 45° layouts.' },
-  ],
+  // parking: (hidden for now)
 };
 
 export const EngineeringAIChat = ({

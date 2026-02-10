@@ -58,7 +58,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'engineering',
     title: 'Engineering Tools',
-    description: 'Access 7 professional calculators with 3D visualization and AI analysis.',
+    description: 'Access 6 professional calculators with 3D visualization and AI analysis.',
     icon: 'HardHat',
   },
   {
