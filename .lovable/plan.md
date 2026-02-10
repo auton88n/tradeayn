@@ -1,148 +1,97 @@
 
+# Creative Studio UX Polish + Editable Brand Colors + Modern Design
 
-# Creative Studio Power Upgrade: Smarter AYN + URL Brand DNA + Better UX
+## Issues Identified
 
-## Overview
-
-Three major upgrades to make the Creative Studio genuinely powerful:
-
-1. **Editable everything** -- Brand Kit becomes fully editable (colors, fonts, tagline)
-2. **URL-based Brand DNA extraction** -- Give AYN a website URL and it analyzes the site to extract brand identity (colors, fonts, style, tone) and uses that to create marketing visuals
-3. **Smarter AYN personality** -- Upgraded system prompt that makes AYN think like a real marketer and sales expert, not just an image generator
-4. **Chat auto-scroll fix** -- Ensure chat always scrolls to bottom when new messages arrive
+1. **Chat bubbles too wide** -- assistant messages stretch to 85% width, making long text hard to read and sometimes clipping
+2. **Image shifts when chat grows** -- the left preview panel is in a CSS grid that flexes as chat content grows, causing the image to jump around
+3. **Brand Kit color hex inputs clipped** -- the hex input fields are only `w-16` (64px), too narrow for a 7-character hex code like `#0EA5E9`
+4. **Brand colors not changeable from website scan** -- scan results should auto-update the Brand Kit colors
+5. **Overall design needs modernizing** -- tighter spacing, better visual hierarchy, glassmorphism touches
 
 ## Changes
 
-### 1. Editable Brand Kit (`BrandKit.tsx`)
+### 1. CreativeEditor.tsx -- Fix Layout + Modern Design
 
-Add edit mode to the Brand Kit so you can change:
-- Brand colors (click a swatch to open a color picker / hex input)
-- Font selections
-- Tagline text
-- Brand traits/values
+**Image panel stays fixed**: Change from CSS grid to a layout where the left panel has a fixed-size container for the image that never shifts. Use `sticky top-0` or `overflow-hidden` with centered content.
 
-Store edits in component state (and optionally in localStorage for persistence). Pass the current brand kit values down to the Creative Editor so AYN knows your actual brand when generating.
+**Chat bubble width fix**: Reduce `max-w-[85%]` to `max-w-[90%]` but add `break-words` to prevent overflow. The real fix is ensuring long text wraps properly.
 
-### 2. New Edge Function: `twitter-brand-scan` 
+**Modern design touches**:
+- Subtle backdrop blur on the header
+- Refined border styles using `border-border/30` for softer look
+- Rounded input with icon inside (search-style)
+- Chips get a hover scale effect
+- Loading indicator uses animated dots instead of spinner
 
-A new edge function that takes a URL and:
-1. Calls Firecrawl's scrape API with `formats: ['branding', 'markdown', 'screenshot']` to extract the website's brand identity
-2. Returns structured brand DNA: colors, fonts, typography, logo URL, tone of voice, key messaging
-3. AYN then uses this data to create marketing visuals that match the scanned brand
+### 2. BrandKit.tsx -- Fix Clipped Hex Inputs + Add Color Picker
 
-Since Firecrawl isn't connected yet, the plan will prompt you to connect the Firecrawl connector. Alternatively, we can use a simpler approach: use the AI gateway to analyze a screenshot of the website (via SCREENSHOTONE_API_KEY which is already configured).
+**Wider hex inputs**: Change from `w-16` to `w-20` so full hex codes are visible.
 
-**Recommended approach**: Use ScreenshotOne to capture the website, then send the screenshot to Gemini vision to extract brand DNA (colors, typography, style, messaging). This avoids needing a new connector.
+**Native color picker**: Add an HTML `<input type="color">` next to each hex input so users can pick colors visually, not just type hex codes.
 
-Flow:
-1. User pastes a URL in the Creative Studio chat: "scan https://example.com and create something matching their brand"
-2. AYN calls the `twitter-brand-scan` function
-3. The function screenshots the website, sends to Gemini for brand analysis
-4. Returns brand DNA (colors, fonts, tone, key visuals)
-5. AYN uses this data in its next image generation prompt
+**Color name editing**: Make the color name editable too (not just the hex).
 
-### 3. Upgraded System Prompt (`twitter-creative-chat`)
+### 3. Brand Scan Integration
 
-Transform AYN from a simple image generator into a marketing and sales expert:
+When AYN scans a website and returns brand DNA, the system should offer to update the Brand Kit colors to match. The `CreativeEditor` will emit a callback (`onBrandKitUpdate`) that the parent (`TwitterMarketingPanel`) uses to update the BrandKit state.
 
-- **Marketing strategist**: Understands audience targeting, hook psychology, CTA optimization
-- **Sales copywriter**: Knows AIDA framework, PAS framework, social proof techniques  
-- **Brand consultant**: Can analyze competitors, suggest positioning, recommend visual strategies
-- **Design director**: Strong opinions on composition, color theory, typography hierarchy
+### 4. AynEyeIcon.tsx -- Match the Screenshot
 
-New capabilities in the prompt:
-- When user shares a URL, detect `[SCAN_URL]` intent and call brand scan
-- Suggest marketing angles based on the tweet content
-- Recommend optimal image styles for different platforms (Twitter vs Instagram)
-- Provide A/B testing suggestions for creatives
-
-### 4. Chat Auto-Scroll Fix (`CreativeEditor.tsx`)
-
-The current scroll uses `scrollRef.current.scrollTop = scrollRef.current.scrollHeight` but `scrollRef` points to a div inside `ScrollArea`, not the scroll viewport. Fix:
-- Use `scrollRef` on the inner content div and call `scrollIntoView({ behavior: 'smooth' })` on a sentinel div at the bottom
-- Add a small delay to account for DOM updates
-
-### 5. URL Input in Creative Editor
-
-Add a "Scan URL" button/chip and a URL input field in the chat interface. When a user types or pastes a URL, AYN detects it and offers to scan the brand. Quick chip added: "Scan a website".
+The user's screenshot shows a clean, bold eye with thick strokes and a clear iris. The current icon's path math creates a slightly lopsided shape. Adjust to be more symmetrical and bold.
 
 ## Technical Details
 
-### Files to Create
+### CreativeEditor layout fix (prevent image shifting)
 
-| File | Purpose |
-|------|---------|
-| `supabase/functions/twitter-brand-scan/index.ts` | Screenshot + AI vision brand analysis |
+The left panel gets `min-h-0 overflow-hidden` with the image inside a container that uses `max-h-full object-contain` -- this keeps the image centered regardless of chat panel height.
 
-### Files to Modify
+```tsx
+{/* Left: Preview -- FIXED position, never shifts */}
+<div className="md:col-span-3 bg-muted/5 flex items-center justify-center p-8 border-r overflow-hidden relative">
+  {currentImageUrl ? (
+    <div className="relative w-full max-w-md mx-auto">
+      <img src={currentImageUrl} className="w-full rounded-2xl shadow-2xl object-contain max-h-[70vh]" />
+      <Button className="absolute bottom-3 right-3" onClick={() => downloadImage(currentImageUrl)}>
+        <Download /> Download
+      </Button>
+    </div>
+  ) : (
+    /* placeholder */
+  )}
+</div>
+```
+
+### Chat bubble fix
+
+```tsx
+<div className={`max-w-[80%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed break-words ${...}`}>
+```
+
+Reducing to 80% and adding `break-words` + slightly smaller text prevents clipping.
+
+### BrandKit wider inputs + color picker
+
+```tsx
+<div className="flex items-center gap-2">
+  <input
+    type="color"
+    value={editDraft.colors[i].hex}
+    onChange={(e) => updateColor(i, e.target.value)}
+    className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0"
+  />
+  <Input
+    value={editDraft.colors[i].hex}
+    onChange={(e) => updateColor(i, e.target.value)}
+    className="text-xs h-7 w-20 px-2 font-mono text-center"
+  />
+</div>
+```
+
+### Files Modified
 
 | File | Change |
 |------|--------|
-| `src/components/admin/marketing/BrandKit.tsx` | Add edit mode for colors, fonts, tagline |
-| `src/components/admin/marketing/CreativeEditor.tsx` | Auto-scroll fix, URL scan chip, pass brand kit context |
-| `supabase/functions/twitter-creative-chat/index.ts` | Upgraded marketer/sales system prompt, URL scan detection |
-| `src/components/admin/TwitterMarketingPanel.tsx` | Pass brand kit state to CreativeEditor |
-| `supabase/config.toml` | Register new edge function |
-
-### Brand Scan Edge Function Architecture
-
-```text
-User pastes URL
-      |
-      v
-twitter-brand-scan function
-      |
-      +-- 1. Call ScreenshotOne API (screenshot of the website)
-      |
-      +-- 2. Send screenshot to Gemini vision:
-      |       "Analyze this website screenshot and extract:
-      |        - Primary/secondary/accent colors (hex)
-      |        - Typography style (serif, sans-serif, mono)
-      |        - Overall aesthetic (minimal, bold, playful, corporate)
-      |        - Key messaging/taglines visible
-      |        - Brand personality traits"
-      |
-      +-- 3. Return structured brand DNA JSON
-```
-
-### Upgraded AYN System Prompt (Key Additions)
-
-AYN will now know:
-- **AIDA framework** (Attention, Interest, Desire, Action) for CTA optimization
-- **Color psychology** (blue = trust, red = urgency, green = growth)
-- **Platform-specific best practices** (Twitter: bold text, high contrast; Instagram: lifestyle, aspirational)
-- **Audience profiling** integration with the existing psychology intelligence
-- **Competitor analysis** when given a URL to scan
-- **Hook writing** -- first 7 words matter most
-
-### Auto-Scroll Fix
-
-```typescript
-// Add a sentinel div at the bottom of messages
-const bottomRef = useRef<HTMLDivElement>(null);
-
-useEffect(() => {
-  // Small delay for DOM update + animation
-  const timer = setTimeout(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, 100);
-  return () => clearTimeout(timer);
-}, [messages, isLoading]);
-
-// In JSX, after the loading indicator:
-<div ref={bottomRef} />
-```
-
-### Editable Brand Kit State
-
-```typescript
-interface BrandKitState {
-  colors: { name: string; hex: string }[];
-  fonts: { name: string; usage: string }[];
-  tagline: string;
-  traits: string[];
-}
-```
-
-Colors will be editable via clicking a swatch to reveal an inline hex input. Fonts will have a dropdown selector. The tagline and traits are editable text fields. All changes persist to localStorage under `ayn-brand-kit`.
-
+| `src/components/admin/marketing/CreativeEditor.tsx` | Fix image shifting, bubble width, modern styling |
+| `src/components/admin/marketing/BrandKit.tsx` | Wider hex inputs, native color picker, editable names |
+| `src/components/admin/marketing/AynEyeIcon.tsx` | Bolder, more symmetrical eye shape |
