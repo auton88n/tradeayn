@@ -1,37 +1,35 @@
 
-# Hide Architectural Drawings Feature & Remove from AYN
+# Replace Design Studio with Standalone Compliance Page
 
-## What This Does
+## Summary
 
-Hides the Architectural Drawings tool from the Design Studio sidebar and landing page, and removes the floor plan generation capability from AYN's chat (both intent detection and handling). No code is deleted -- everything is commented out or removed from arrays so it can be re-enabled later.
+Remove the entire Design Studio wrapper (sidebar, landing page, parking) and replace it with a standalone Compliance page at `/compliance`. The sidebar "Design" button becomes a "Compliance" button pointing to `/compliance`.
 
 ## Changes
 
-### 1. Design Studio Sidebar (`src/components/design/DesignSidebar.tsx`)
-- Comment out the `drawings` entry in the `designTools` array (lines 27-32), same way `parking` is already commented out
+### 1. Sidebar Button (`src/components/dashboard/Sidebar.tsx`)
+- Rename "Design Studio Button" to "Compliance" button
+- Change gradient from violet to teal (matching compliance branding)
+- Change icon from `Ruler` to `ClipboardCheck`
+- Change navigation from `/design` to `/compliance`
+- Update mobile toast message accordingly
 
-### 2. Design Studio Workspace (`src/components/design/DesignWorkspace.tsx`)
-- Remove the `DrawingGenerator` lazy import (line 14)
-- Comment out the `case 'drawings'` block in `renderToolForm` (lines 64-69)
-- Remove "Architectural Drawings" from the landing page feature cards (line 111)
+### 2. New Page: `src/pages/CompliancePage.tsx`
+- Simple page that wraps `ComplianceWizard` with auth check (same pattern as `DesignWorkspacePage.tsx`)
+- Header with Back button, "Code Compliance" title, teal branding
+- No sidebar, no parking, no Design Studio shell -- just the compliance wizard directly
+- Mobile block screen for small devices (same as current design page)
 
-### 3. AYN Intent Detector (`supabase/functions/ayn-unified/intentDetector.ts`)
-- Comment out the `floorPlanKeywords` array and the `floor_plan` return line
+### 3. Route Update (`src/App.tsx`)
+- Comment out the `/design` route (keep code)
+- Add new `/compliance` route pointing to the new `CompliancePage`
 
-### 4. AYN System Prompts (`supabase/functions/ayn-unified/systemPrompts.ts`)
-- Remove the "Floor plan generation" line from "WHAT YOU CAN DO" section
-- Comment out the `floor_plan` intent prompt block
+### 4. Design Studio Files (keep but disconnect)
+- `DesignWorkspace.tsx`, `DesignSidebar.tsx`, `DesignWorkspacePage.tsx` -- no changes needed, they just become unreachable since the route is commented out
 
-### 5. AYN Unified Handler (`supabase/functions/ayn-unified/index.ts`)
-- Comment out the `FLOOR_PLAN_CREDIT_COST` constant
-- Remove `floor_plan` from `FALLBACK_CHAINS`
-- Comment out the entire `if (intent === 'floor_plan')` handler block
+## Technical Details
 
-### 6. Client-Side Intent Detection (`src/hooks/useMessages.ts`)
-- Remove floor plan regex from `detectIntent()`
-- Remove `'floor_plan'` from `requiresNonStreaming` array
-- Remove the `isGeneratingFloorPlan` state setter block
-
-### 7. Edge functions deployment
-- Redeploy `ayn-unified` with floor plan handling removed
-- `render-floor-plan-svg` and `generate-floor-plan-layout` stay deployed but unused (no deletion)
+- The `CompliancePage` reuses the existing `ComplianceWizard` component directly -- no changes to compliance logic
+- The `ParkingDesigner` lazy import and all parking references stay in the commented-out Design Studio code
+- SEO title updates to "Code Compliance | Building Code Check"
+- The teal gradient (`from-teal-600 to-cyan-600`) matches the existing compliance tool branding from `ComplianceWizard.tsx`
