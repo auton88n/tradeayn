@@ -1,54 +1,58 @@
 
 
-# Refine AYN's Deletion Permissions on Telegram
+# Strengthen User Deletion Protection for AYN on Telegram
 
-## Understanding
+## Current State
 
-AYN should have these permission levels:
+AYN already has these protections:
+- The system prompt says "No user deletion" in BLOCKED ACTIONS
+- There is **no** `delete_user` action handler in the code — AYN literally cannot execute user deletion
+- Admin users are additionally protected by the `isAdminUser` guard
 
-| Data Category | Read | Delete |
-|---|---|---|
-| **Applications** (service_applications) | Yes | Yes |
-| **Tickets** (support_tickets, ticket_messages) | Yes | Yes |
-| **Contact messages** (contact_messages) | Yes | Yes |
-| **User conversations** (messages table) | Yes | **NO** |
-| **AYN dashboard data** (ayn_activity_log, security_logs, error_logs) | Yes | **NO** |
-| **Engineering tool usage** | Yes | **NO** |
-
-AYN keeps full read access everywhere to monitor, improve, and fix issues -- but cannot delete user conversations or any sensitive/analytical data.
+So AYN cannot currently delete users. But the prompt wording is vague — let's make it crystal clear.
 
 ## Changes
 
 ### File: `supabase/functions/ayn-telegram-webhook/index.ts`
 
-**System prompt updates:**
-- Remove `[ACTION:delete_message:message_id]` from the actions list (line 96)
-- Remove `[ACTION:delete_all_messages:confirm]` from the actions list (line 102)
-- Update BLOCKED ACTIONS section (line 110-113) to add:
-  - No deleting user messages/conversations
-  - No deleting AYN logs, security logs, or error logs
-  - No deleting engineering calculation data
+Update the BLOCKED ACTIONS section (line 110-116) to be more explicit:
 
-**Action handler updates:**
-- Replace `case 'delete_message'` (line 556-558) with a rejection: "User messages are protected and cannot be deleted. You can read them to monitor and improve AYN."
-- Replace `case 'delete_all_messages'` (line 620-628) with same rejection message
+**Before:**
+```
+BLOCKED ACTIONS (never execute):
+- No subscription/billing actions
+- No user deletion
+- No auth/password changes
+```
 
-All other delete actions (delete_app, delete_contact, delete_ticket, delete_all_apps, delete_all_tickets, delete_all_contacts) remain fully functional.
+**After:**
+```
+BLOCKED ACTIONS (never execute):
+- No subscription/billing actions
+- No removing users from the system — never delete user accounts, auth records, or profiles
+- No auth/password changes
+```
 
-### File: `supabase/functions/ayn-telegram-webhook/commands.ts`
+Also update the `WHAT YOU DON'T TOUCH` section (line 47-50) to explicitly mention user removal:
 
-- Remove `/delete_message [id]` from the help text (line 62)
-- Replace the `/delete_message` handler (lines 490-501) with a rejection message: "User messages are protected and cannot be deleted via Telegram. Use /messages to read them instead."
+**Before:**
+```
+WHAT YOU DON'T TOUCH:
+- ADMIN USERS ARE UNTOUCHABLE...
+- Subscriptions, payments, billing...
+- User passwords or auth tokens
+```
 
-### Summary
+**After:**
+```
+WHAT YOU DON'T TOUCH:
+- ADMIN USERS ARE UNTOUCHABLE...
+- NEVER remove or delete any user from the system — no account deletion, no auth record removal, no profile wiping
+- Subscriptions, payments, billing...
+- User passwords or auth tokens
+```
 
-| Action | Before | After |
-|---|---|---|
-| `/delete_ticket`, `/delete_app`, `/delete_contact` | Works | **No change** |
-| `delete_all_apps`, `delete_all_tickets`, `delete_all_contacts` | Works | **No change** |
-| `/delete_message [id]` | Deletes user message | **Blocked** with explanation |
-| `delete_message` action | Deletes user message | **Blocked** with explanation |
-| `delete_all_messages` action | Deletes all user messages | **Blocked** with explanation |
-| `/messages`, `read_messages` | Read-only | **No change** |
-| `read_feedback`, `check_security`, `get_errors` | Read-only | **No change** |
+This makes it clear across two sections of the prompt that AYN cannot remove anyone from the system — not just admins, but all users.
+
+No code handler changes needed since no `delete_user` action exists.
 
