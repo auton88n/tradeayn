@@ -584,7 +584,10 @@ async function executeAction(
       case 'delete_all_apps': {
         const { count } = await supabase.from('service_applications')
           .select('*', { count: 'exact', head: true });
-        await supabase.from('service_applications').delete().neq('id', '');
+        // Delete related replies first, then applications
+        await supabase.from('application_replies').delete().gte('id', '00000000-0000-0000-0000-000000000000');
+        const { error } = await supabase.from('service_applications').delete().gte('id', '00000000-0000-0000-0000-000000000000');
+        if (error) return `Failed to delete applications: ${error.message}`;
         await logAynActivity(supabase, 'bulk_delete', `Deleted all ${count || 0} applications`, {
           target_type: 'service_applications', triggered_by: 'admin_chat',
         });
@@ -593,9 +596,10 @@ async function executeAction(
       case 'delete_all_tickets': {
         const { count } = await supabase.from('support_tickets')
           .select('*', { count: 'exact', head: true });
-        await supabase.from('support_ticket_replies').delete().neq('id', '');
-        await supabase.from('ticket_messages').delete().neq('id', '');
-        await supabase.from('support_tickets').delete().neq('id', '');
+        await supabase.from('support_ticket_replies').delete().gte('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('ticket_messages').delete().gte('id', '00000000-0000-0000-0000-000000000000');
+        const { error } = await supabase.from('support_tickets').delete().gte('id', '00000000-0000-0000-0000-000000000000');
+        if (error) return `Failed to delete tickets: ${error.message}`;
         await logAynActivity(supabase, 'bulk_delete', `Deleted all ${count || 0} tickets`, {
           target_type: 'support_tickets', triggered_by: 'admin_chat',
         });
@@ -604,7 +608,8 @@ async function executeAction(
       case 'delete_all_contacts': {
         const { count } = await supabase.from('contact_messages')
           .select('*', { count: 'exact', head: true });
-        await supabase.from('contact_messages').delete().neq('id', '');
+        const { error } = await supabase.from('contact_messages').delete().gte('id', '00000000-0000-0000-0000-000000000000');
+        if (error) return `Failed to delete contacts: ${error.message}`;
         await logAynActivity(supabase, 'bulk_delete', `Deleted all ${count || 0} contact messages`, {
           target_type: 'contact_messages', triggered_by: 'admin_chat',
         });
@@ -613,7 +618,8 @@ async function executeAction(
       case 'delete_all_messages': {
         const { count } = await supabase.from('messages')
           .select('*', { count: 'exact', head: true });
-        await supabase.from('messages').delete().neq('id', '');
+        const { error } = await supabase.from('messages').delete().gte('id', '00000000-0000-0000-0000-000000000000');
+        if (error) return `Failed to delete messages: ${error.message}`;
         await logAynActivity(supabase, 'bulk_delete', `Deleted all ${count || 0} user messages`, {
           target_type: 'messages', triggered_by: 'admin_chat',
         });
