@@ -19,7 +19,8 @@ import {
   Sparkles,
   ThumbsUp,
   Twitter,
-  Activity
+  Activity,
+  Brain
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +45,8 @@ export type AdminTabId =
   | 'message-feedback'
   | 'twitter-marketing'
   | 'terms-consent'
-  | 'ayn-logs';
+  | 'ayn-logs'
+  | 'ayn-mind';
 
 interface AdminSection {
   id: AdminTabId;
@@ -78,6 +80,7 @@ const aiSections: AdminSection[] = [
   { id: 'test-results', title: 'Test Results', shortTitle: 'Test', icon: FlaskConical, gradient: 'from-pink-500 to-rose-500', adminOnly: true },
   { id: 'twitter-marketing', title: 'Twitter Marketing', shortTitle: 'Twtr', icon: Twitter, gradient: 'from-sky-500 to-blue-600', adminOnly: true },
   { id: 'ayn-logs', title: 'AYN Logs', shortTitle: 'Logs', icon: Activity, gradient: 'from-orange-500 to-red-500', adminOnly: true },
+  { id: 'ayn-mind', title: 'AYN Mind', shortTitle: 'Mind', icon: Brain, gradient: 'from-violet-500 to-purple-600', adminOnly: true },
 ];
 
 interface AdminSidebarProps {
