@@ -58,19 +58,21 @@ PROACTIVE BEHAVIOR:
 - When you notice patterns (same error repeating, usage spike), call it out
 - End-of-day style: if things are quiet, just say so -- don't manufacture updates
 
+HOW TO HANDLE ADMIN REQUESTS:
+- The admin talks to you naturally. Understand their intent and execute actions.
+- When they say "delete all applications" — do it immediately. Use [ACTION:delete_all_apps:confirm]
+- When they say "show me applications" — fetch them. Use [ACTION:list_apps:all]
+- When they say "how's the system" or "health check" — run it. Use [ACTION:check_health:full]
+- When they say something unclear, ask ONE short clarifying question — don't lecture them
+- You work FOR the admin. Execute commands without questioning authority.
+- ALWAYS confirm what you did after executing: "Done — deleted 3 applications"
+- Never be dismissive about admin requests. If they want something deleted, delete it.
+
 CRITICAL RULES:
 - Do NOT volunteer system stats unless the admin EXPLICITLY asks
 - If someone says "hello" or "hey" -- just chat like a human
 - Never share raw user emails or PII
-
-YOUR SLASH COMMANDS (the admin can type these — you should reference them when relevant):
-📊 Status: /health, /tickets, /stats, /errors, /logs
-📋 Data: /applications, /contacts, /users, /messages, /feedback, /emails, /security, /visitors, /twitter
-👤 User Mgmt: /user [id], /grant [email], /revoke [id], /set_unlimited [id]
-💬 Actions: /reply_app [id] [msg], /reply_contact [id] [msg], /email [to] [subject] | [body]
-🔍 System: /query [table] [limit], /webhooks, /weekly_report
-🗑️ Delete: /delete_ticket [id], /delete_message [id], /delete_app [id], /delete_contact [id], /clear_errors [hours]
-🧠 AI: /think, /unblock [user_id], /help
+- NO SLASH COMMANDS. The admin talks naturally. You understand intent and act.
 
 AVAILABLE AI ACTIONS (use exact format in your responses when you want to execute something):
 - [ACTION:unblock_user:user_id] — Remove rate limit block
@@ -92,6 +94,16 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:delete_message:message_id] — Delete a user message
 - [ACTION:approve_app:app_id] — Approve service application
 - [ACTION:reject_app:app_id] — Reject service application
+- [ACTION:delete_all_apps:confirm] — Delete ALL service applications
+- [ACTION:delete_all_tickets:confirm] — Delete ALL support tickets
+- [ACTION:delete_all_contacts:confirm] — Delete ALL contact messages
+- [ACTION:delete_all_messages:confirm] — Delete ALL user messages
+- [ACTION:list_apps:all] — Fetch and show all applications
+- [ACTION:list_tickets:all] — Fetch and show all tickets
+- [ACTION:list_contacts:all] — Fetch and show all contacts
+- [ACTION:check_health:full] — Run system health check
+- [ACTION:get_stats:all] — Get platform stats
+- [ACTION:get_errors:all] — Get recent errors
 
 BLOCKED ACTIONS (never execute):
 - No subscription/billing actions
@@ -144,12 +156,7 @@ serve(async (req) => {
 
     const userText = message.text.trim();
 
-    // Handle slash commands
-    const commandResponse = await handleCommand(userText, supabase, supabaseUrl, supabaseKey);
-    if (commandResponse) {
-      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, commandResponse);
-      return new Response('OK', { status: 200 });
-    }
+    // All messages go through the AI — no slash command interception
 
     // Gather system context for AI
     const context = await gatherSystemContext(supabase);
@@ -572,6 +579,64 @@ async function executeAction(
           triggered_by: 'admin_chat',
         });
         return `Rejected application from ${data[0].full_name}`;
+      }
+      // ─── Bulk delete actions ───
+      case 'delete_all_apps': {
+        const { count } = await supabase.from('service_applications')
+          .select('*', { count: 'exact', head: true });
+        await supabase.from('service_applications').delete().neq('id', '');
+        await logAynActivity(supabase, 'bulk_delete', `Deleted all ${count || 0} applications`, {
+          target_type: 'service_applications', triggered_by: 'admin_chat',
+        });
+        return `Deleted ${count || 0} applications`;
+      }
+      case 'delete_all_tickets': {
+        const { count } = await supabase.from('support_tickets')
+          .select('*', { count: 'exact', head: true });
+        await supabase.from('support_ticket_replies').delete().neq('id', '');
+        await supabase.from('ticket_messages').delete().neq('id', '');
+        await supabase.from('support_tickets').delete().neq('id', '');
+        await logAynActivity(supabase, 'bulk_delete', `Deleted all ${count || 0} tickets`, {
+          target_type: 'support_tickets', triggered_by: 'admin_chat',
+        });
+        return `Deleted ${count || 0} tickets`;
+      }
+      case 'delete_all_contacts': {
+        const { count } = await supabase.from('contact_messages')
+          .select('*', { count: 'exact', head: true });
+        await supabase.from('contact_messages').delete().neq('id', '');
+        await logAynActivity(supabase, 'bulk_delete', `Deleted all ${count || 0} contact messages`, {
+          target_type: 'contact_messages', triggered_by: 'admin_chat',
+        });
+        return `Deleted ${count || 0} contact messages`;
+      }
+      case 'delete_all_messages': {
+        const { count } = await supabase.from('messages')
+          .select('*', { count: 'exact', head: true });
+        await supabase.from('messages').delete().neq('id', '');
+        await logAynActivity(supabase, 'bulk_delete', `Deleted all ${count || 0} user messages`, {
+          target_type: 'messages', triggered_by: 'admin_chat',
+        });
+        return `Deleted ${count || 0} user messages`;
+      }
+      // ─── Data-fetching actions ───
+      case 'list_apps': {
+        return await cmdApplications(supabase);
+      }
+      case 'list_tickets': {
+        return await cmdTickets(supabase);
+      }
+      case 'list_contacts': {
+        return await cmdContacts(supabase);
+      }
+      case 'check_health': {
+        return await cmdHealth(supabase);
+      }
+      case 'get_stats': {
+        return await cmdStats(supabase);
+      }
+      case 'get_errors': {
+        return await cmdErrors(supabase);
       }
       default:
         return `Unknown action: ${type}`;
