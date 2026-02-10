@@ -42,13 +42,25 @@ function loadBrandKit(): BrandKitState {
 
 interface BrandKitProps {
   onBrandKitChange?: (kit: BrandKitState) => void;
+  externalColors?: { name: string; hex: string }[] | null;
 }
 
-export const BrandKit = ({ onBrandKitChange }: BrandKitProps) => {
+export const BrandKit = ({ onBrandKitChange, externalColors }: BrandKitProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [brandKit, setBrandKit] = useState<BrandKitState>(loadBrandKit);
   const [editDraft, setEditDraft] = useState<BrandKitState>(brandKit);
+
+  // Apply external colors from brand scan
+  useEffect(() => {
+    if (externalColors && externalColors.length > 0) {
+      setBrandKit(prev => {
+        const updated = { ...prev, colors: externalColors };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+    }
+  }, [externalColors]);
 
   useEffect(() => {
     onBrandKitChange?.(brandKit);
@@ -65,14 +77,20 @@ export const BrandKit = ({ onBrandKitChange }: BrandKitProps) => {
     setIsEditing(false);
   };
 
-  const cancelEdit = () => {
-    setIsEditing(false);
-  };
+  const cancelEdit = () => setIsEditing(false);
 
   const updateColor = (index: number, hex: string) => {
     setEditDraft(prev => {
       const colors = [...prev.colors];
       colors[index] = { ...colors[index], hex };
+      return { ...prev, colors };
+    });
+  };
+
+  const updateColorName = (index: number, name: string) => {
+    setEditDraft(prev => {
+      const colors = [...prev.colors];
+      colors[index] = { ...colors[index], name };
       return { ...prev, colors };
     });
   };
@@ -161,20 +179,35 @@ export const BrandKit = ({ onBrandKitChange }: BrandKitProps) => {
               <div className="flex gap-4 flex-wrap">
                 {kit.colors.map((c, i) => (
                   <div key={i} className="flex flex-col items-center gap-1.5">
-                    <div
-                      className="w-10 h-10 rounded-xl shadow-sm border"
-                      style={{ backgroundColor: c.hex }}
-                      title={c.name}
-                    />
-                    <span className="text-[10px] font-medium text-muted-foreground">{c.name}</span>
                     {isEditing ? (
-                      <Input
-                        value={editDraft.colors[i].hex}
-                        onChange={(e) => updateColor(i, e.target.value)}
-                        className="text-[9px] h-5 w-16 px-1 font-mono text-center"
-                      />
+                      <>
+                        <input
+                          type="color"
+                          value={editDraft.colors[i]?.hex || '#000000'}
+                          onChange={(e) => updateColor(i, e.target.value)}
+                          className="w-10 h-10 rounded-xl cursor-pointer border border-border p-0 bg-transparent"
+                        />
+                        <Input
+                          value={editDraft.colors[i]?.name || ''}
+                          onChange={(e) => updateColorName(i, e.target.value)}
+                          className="text-[10px] h-5 w-20 px-1 text-center"
+                        />
+                        <Input
+                          value={editDraft.colors[i]?.hex || ''}
+                          onChange={(e) => updateColor(i, e.target.value)}
+                          className="text-[9px] h-5 w-20 px-1 font-mono text-center"
+                        />
+                      </>
                     ) : (
-                      <span className="text-[9px] text-muted-foreground/60 font-mono">{c.hex}</span>
+                      <>
+                        <div
+                          className="w-10 h-10 rounded-xl shadow-sm border"
+                          style={{ backgroundColor: c.hex }}
+                          title={c.name}
+                        />
+                        <span className="text-[10px] font-medium text-muted-foreground">{c.name}</span>
+                        <span className="text-[9px] text-muted-foreground/60 font-mono">{c.hex}</span>
+                      </>
                     )}
                   </div>
                 ))}
