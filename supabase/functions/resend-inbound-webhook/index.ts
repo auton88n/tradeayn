@@ -21,10 +21,37 @@ Deno.serve(async (req) => {
       from: fromRaw,
       to: toRaw,
       subject,
-      text: bodyText,
-      html: bodyHtml,
-      headers: emailHeaders,
+      email_id,
     } = emailData;
+
+    // Resend webhooks don't include body/headers — fetch via API
+    let bodyText = '';
+    let bodyHtml = '';
+    let emailHeaders: Record<string, string> | null = null;
+
+    if (email_id) {
+      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+      if (RESEND_API_KEY) {
+        try {
+          const emailRes = await fetch(`https://api.resend.com/emails/${email_id}`, {
+            headers: { 'Authorization': `Bearer ${RESEND_API_KEY}` },
+          });
+          if (emailRes.ok) {
+            const emailDetail = await emailRes.json();
+            bodyText = emailDetail.text || '';
+            bodyHtml = emailDetail.html || '';
+            emailHeaders = emailDetail.headers || null;
+            console.log('Fetched email body, text length:', bodyText.length, 'html length:', bodyHtml.length);
+          } else {
+            console.error('Failed to fetch email detail:', emailRes.status, await emailRes.text());
+          }
+        } catch (fetchErr) {
+          console.error('Error fetching email detail:', fetchErr);
+        }
+      } else {
+        console.warn('RESEND_API_KEY not configured, cannot fetch email body');
+      }
+    }
 
     // Parse from field - can be "Name <email>" or just "email"
     let fromEmail = '';
