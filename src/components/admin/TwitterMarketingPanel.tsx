@@ -26,9 +26,9 @@ interface TwitterPost {
 }
 
 const statusColors: Record<string, string> = {
-  draft: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
-  posted: 'bg-green-500/10 text-green-600 border-green-500/20',
-  failed: 'bg-red-500/10 text-red-600 border-red-500/20',
+  draft: 'bg-warning/10 text-warning border-warning/20',
+  posted: 'bg-primary/10 text-primary border-primary/20',
+  failed: 'bg-destructive/10 text-destructive border-destructive/20',
   rejected: 'bg-muted text-muted-foreground border-border',
 };
 
@@ -158,7 +158,7 @@ export const TwitterMarketingPanel = () => {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline">{draftCount} drafts</Badge>
-          <Badge variant="outline" className="bg-green-500/10 text-green-600">{postedCount} posted</Badge>
+          <Badge variant="outline" className="bg-primary/10 text-primary">{postedCount} posted</Badge>
         </div>
       </div>
 
@@ -288,7 +288,7 @@ export const TwitterMarketingPanel = () => {
                         <BarChart3 className="w-3 h-3" />
                         {Object.entries(post.quality_score).map(([key, val]) => (
                           <span key={key} className="flex items-center gap-1">
-                            {key.replace(/_/g, ' ')}: <strong className={Number(val) >= 8 ? 'text-green-600' : Number(val) >= 6 ? 'text-yellow-600' : 'text-red-600'}>{String(val)}</strong>
+                            {key.replace(/_/g, ' ')}: <strong className={Number(val) >= 8 ? 'text-primary' : Number(val) >= 6 ? 'text-warning' : 'text-destructive'}>{String(val)}</strong>
                           </span>
                         ))}
                       </div>
@@ -332,7 +332,7 @@ export const TwitterMarketingPanel = () => {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-red-500 hover:text-red-600"
+                      className="text-destructive hover:text-destructive/80"
                       onClick={() => handleDelete(post.id)}
                     >
                       <Trash2 className="w-3 h-3" />
