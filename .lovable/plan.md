@@ -1,54 +1,32 @@
 
 
-# Update Tutorial to Match Current App State
+# Fix Tutorial Illustrations to Match Current UI
 
-## What's Wrong
+## Issue 1: Chat Input Illustration (Screenshot 1)
+The `ChatIllustration` shows an outdated chat input with a "General" dropdown, old "Eng" + "New" buttons below, and wrong layout. The actual chat input has:
+- Textarea with placeholder
+- Send button (appears when typing)
+- Bottom toolbar row: "+ New" pill, "+" attach, mic, sound, center "History", right counter + AYN brain icon
 
-The tutorial has outdated content that doesn't match the current app:
+**Fix in `TutorialIllustrations.tsx`**: Rewrite `ChatIllustration` to match the real toolbar layout -- remove the "General" dropdown and the "Eng"/"+ New" row below. Replace with the actual toolbar: "+ New" pill, "+" button, mic icon on left; "History" in center; "AYN" brain on right.
 
-1. **"documents" step** -- says "AYN creates stunning PDFs and Excel files" but there's no `DocumentsIllustration` component (it falls back to MeetAynIllustration)
-2. **"engineering" step** -- says "6 professional calculators" but the illustration shows 7 (includes "Parking" which is disabled). The actual active calculators are: Grading, Beam, Foundation, Column, Slab, Retaining Wall (6 total)
-3. **Step order and relevance** -- the "micro-behaviors" illustration exists but isn't used; the "documents" step has no visual
-4. **Engineering illustration shows "Parking"** which is commented out/hidden
+## Issue 2: Documents Illustration Language Badges (Screenshot 2)
+The EN/AR/FR badges at the bottom of `DocumentsIllustration` use `absolute bottom-6` positioning, which overlaps with the "Skip" button in the tutorial navigation area.
 
-## Changes
+**Fix in `TutorialIllustrations.tsx`**: Remove the floating EN/AR/FR language badges entirely. The documents illustration already clearly shows PDF and XLSX -- the description text mentions multilingual support, so the badges are redundant.
 
-### 1. Update `src/types/tutorial.types.ts`
+## Issue 3: Navigation/Sidebar Illustration (Screenshot 3)
+The `NavigationIllustration` shows old "Eng" and "+ New" buttons that don't exist in the current sidebar. Need to update to match the actual sidebar layout.
 
-Revise the tutorial steps to better reflect what exists:
+**Fix in `TutorialIllustrations.tsx`**: Update `NavigationIllustration` to remove the "Eng" and "+ New" button row. Replace with the current sidebar elements: AYN AI header, search bar, "Recent Chats" section.
 
-| Step | Before | After |
-|------|--------|-------|
-| meet-ayn | (keep) | No change |
-| emotions | (keep) | No change |
-| empathy | (keep) | No change |
-| chat | "Use the mode selector" | Keep, minor wording tweak |
-| **documents** | "AYN creates stunning PDFs and Excel files" | **Remove** -- documents are generated via chat, not a standalone feature worth a tutorial step |
-| files | "Upload documents or images" | Keep as-is |
-| credits | (keep) | No change |
-| engineering | "6 professional calculators" | Update to "6 structural calculators: Beam, Column, Slab, Foundation, Retaining Wall, and AI Grading" |
-| navigation | (keep) | No change |
-| profile | (keep) | No change |
-| **compliance** | (doesn't exist) | **Add** -- "Check designs against IRC 2024 and NBC 2025 building codes" -- this is a current standalone feature |
+---
 
-Final step count: 10 steps (remove documents, add compliance)
+## Technical Details
 
-### 2. Update `src/components/tutorial/TutorialIllustrations.tsx`
-
-- **Remove** the `DocumentsIllustration` reference (doesn't exist anyway, just clean up the unused import in TutorialPage)
-- **Fix `EngineeringIllustration`**: Remove "Parking" from the calculator list, update subtitle from "7 Professional Calculators" to "6 Structural Calculators"
-- **Add `ComplianceIllustration`**: A new illustration showing a building code checklist with pass/fail indicators, matching the compliance wizard feature
-
-### 3. Update `src/components/tutorial/TutorialPage.tsx`
-
-- Update the `illustrations` mapping to include `'compliance'` and remove `'documents'`
-- The mapping already falls back to `MeetAynIllustration` for unknown IDs, so this is mostly cleanup
-
-### Summary of file changes
-
-| File | Change |
-|------|--------|
-| `src/types/tutorial.types.ts` | Remove "documents" step, add "compliance" step, update engineering description |
-| `src/components/tutorial/TutorialIllustrations.tsx` | Fix engineering illustration (remove Parking), add ComplianceIllustration |
-| `src/components/tutorial/TutorialPage.tsx` | Update illustrations mapping |
+| File | Changes |
+|------|---------|
+| `src/components/tutorial/TutorialIllustrations.tsx` | Rewrite `ChatIllustration` (lines 109-161): remove "General" dropdown and "Eng/New" row, add real toolbar with "+ New" pill, "+", mic, History, AYN brain |
+| `src/components/tutorial/TutorialIllustrations.tsx` | Fix `DocumentsIllustration` (lines 746-759): remove the absolute-positioned EN/AR/FR badges |
+| `src/components/tutorial/TutorialIllustrations.tsx` | Update `NavigationIllustration` (lines 189-246): remove "Eng" + "+ New" button row, keep AYN header, search, and recent chats |
 
