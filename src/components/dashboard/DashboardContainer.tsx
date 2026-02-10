@@ -523,16 +523,8 @@ const DashboardContent = ({
             <span className="font-semibold text-base tracking-tight">AYN</span>
           </div>
           
-          {/* Right: Transcript toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleToggleTranscript()}
-            className="h-9 w-9 rounded-full bg-muted/40 border border-border/40 
-              shadow-sm hover:shadow hover:bg-muted/60 transition-all duration-200"
-          >
-            <MessageSquare className="w-4 h-4" />
-          </Button>
+          {/* Right spacer for centering */}
+          <div className="h-9 w-9" />
         </header>
 
         <CenterStageLayout
