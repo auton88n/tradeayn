@@ -329,9 +329,9 @@ serve(async (req) => {
     let designRating = 5;
     
     if (analysisOptions.suggestOptimizations && (nglPoints.length > 0 || designPoints.length > 0)) {
-      const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+      const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
       
-      if (openAIApiKey) {
+      if (lovableApiKey) {
         const avgNGL = nglPoints.length > 0 
           ? nglPoints.reduce((sum, p) => sum + p.z, 0) / nglPoints.length 
           : 0;
@@ -388,14 +388,14 @@ Return ONLY valid JSON (no markdown) with this structure:
 }`;
 
         try {
-          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${openAIApiKey}`,
+              'Authorization': `Bearer ${lovableApiKey}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'gpt-4o-mini',
+              model: 'google/gemini-3-flash-preview',
               messages: [{ role: 'user', content: aiPrompt }],
               max_tokens: 2000,
               temperature: 0.3,
@@ -412,7 +412,7 @@ Return ONLY valid JSON (no markdown) with this structure:
               designRating = aiOptimizations.designRating || 5;
             }
           } else {
-            console.error('OpenAI API error:', await response.text());
+            console.error('AI gateway error:', await response.text());
           }
         } catch (aiError) {
           console.error('AI analysis error:', aiError);

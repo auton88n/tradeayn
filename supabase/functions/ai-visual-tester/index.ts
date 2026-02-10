@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') || '';
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY') || '';
 const SCREENSHOTONE_API_KEY = Deno.env.get('SCREENSHOTONE_API_KEY') || '';
 
 // Critical pages for quick tests
@@ -147,27 +147,27 @@ async function analyzeScreenshotWithVision(
   pageName: string, 
   viewport: string
 ): Promise<VisualIssue[]> {
-  if (!OPENAI_API_KEY) {
-    console.error('OPENAI_API_KEY not configured');
+  if (!LOVABLE_API_KEY) {
+    console.error('LOVABLE_API_KEY not configured');
     return [{
       type: 'content',
       severity: 'low',
-      description: 'AI analysis unavailable - OpenAI API key not configured',
-      suggestion: 'Configure OPENAI_API_KEY secret'
+      description: 'AI analysis unavailable - LOVABLE_API_KEY not configured',
+      suggestion: 'Configure LOVABLE_API_KEY secret'
     }];
   }
 
   try {
-    console.log(`Analyzing ${viewport} screenshot of ${pageName} with GPT-4 Vision`);
+    console.log(`Analyzing ${viewport} screenshot of ${pageName} with AI Vision`);
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'system',
@@ -216,12 +216,12 @@ Be strict but fair - only report genuine issues that affect user experience.`
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`GPT-4 Vision error: ${response.status} - ${errorText}`);
+      console.error(`AI Vision error: ${response.status} - ${errorText}`);
       return [{
         type: 'content',
         severity: 'low',
-        description: `AI analysis failed: ${response.status}`,
-        suggestion: 'Check OpenAI API key and quota'
+        description: `AI analysis failed: ${response.status}${response.status === 429 ? ' (rate limited)' : response.status === 402 ? ' (credits exhausted)' : ''}`,
+        suggestion: response.status === 429 ? 'Wait a moment and retry' : response.status === 402 ? 'Add AI credits' : 'Check API configuration'
       }];
     }
 
@@ -343,8 +343,8 @@ async function analyzePageWithScreenshots(
 
 // Generate AI summary of all results
 async function getAISummary(results: PageResult[]): Promise<string> {
-  if (!OPENAI_API_KEY) {
-    return 'AI summary unavailable - OpenAI API key not configured';
+  if (!LOVABLE_API_KEY) {
+    return 'AI summary unavailable - LOVABLE_API_KEY not configured';
   }
   
   try {
@@ -358,14 +358,14 @@ async function getAISummary(results: PageResult[]): Promise<string> {
       highIssues: r.issues.filter(i => i.severity === 'high').map(i => i.description),
     }));
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'google/gemini-3-flash-preview',
         messages: [
           {
             role: 'system',
@@ -405,7 +405,7 @@ serve(async (req) => {
     console.log(`Starting GPT-4 Vision visual tests for ${pagesToTest.length} pages on ${siteUrl}`);
     console.log(`Mode: ${quickTest ? 'QUICK TEST (critical pages only)' : 'FULL TEST (all pages)'}`);
     console.log(`SCREENSHOTONE_API_KEY configured: ${!!SCREENSHOTONE_API_KEY}`);
-    console.log(`OPENAI_API_KEY configured: ${!!OPENAI_API_KEY}`);
+    console.log(`LOVABLE_API_KEY configured: ${!!LOVABLE_API_KEY}`);
     
     // Process pages in parallel batches for speed
     const batchSize = 3;
