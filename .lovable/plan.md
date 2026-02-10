@@ -1,81 +1,74 @@
 
-# AYN Mind -- Suggestions and Memory Dashboard for Admin
 
-## Overview
+# Fix AYN's Robotic Telegram Personality
 
-Add a new admin tab called "AYN Mind" that shows AYN's observations, improvement ideas, thoughts, trends, and mood -- all pulled from the existing `ayn_mind` database table that is already being populated by the proactive loop and Telegram webhook.
+## The Problem
 
-This gives you a window into what AYN is thinking, what it has observed across the platform, and its suggestions for improvements -- all in one place.
+AYN responds like a bot, not a colleague. Examples from your screenshot:
+- You asked for a health breakdown, said "Yes" -- AYN replied "You got it. Done." without actually showing anything
+- Responses feel mechanical and hollow -- short for the sake of being short
 
-## What Already Exists
+## Root Causes
 
-- **`ayn_mind` table** -- already in the database with 45+ entries across types: `observation` (20), `mood` (13), `idea` (6), `thought` (3), `trend` (3), plus `telegram_admin` and `telegram_ayn` conversation logs
-- **Proactive loop** (`ayn-proactive-loop`) -- already writes observations, ideas, moods, and trends to `ayn_mind`
-- **Telegram webhook** -- already logs conversations to `ayn_mind`
+1. **The prompt over-emphasizes brevity** -- "Short messages. No bullet points unless listing data." makes the AI default to dead-end responses like "You got it. Done."
+2. **No instruction to actually follow through** -- when the admin confirms something, AYN should execute and show results, not just acknowledge
+3. **Missing conversational depth guidance** -- the prompt tells AYN what NOT to do but doesn't guide it on what a good response looks like
+4. **Conversation history limited to 20 entries** -- loses context quickly in active conversations
 
-## What We Will Build
+## Changes
 
-### New Component: `src/components/admin/AYNMindDashboard.tsx`
+### File: `supabase/functions/ayn-telegram-webhook/index.ts`
 
-A dashboard with:
+**Rewrite the `HOW YOU TALK` section** (lines 30-37) to fix the tone:
 
-1. **AYN's Current Status** -- mood indicator and latest observation summary at the top
-2. **Improvement Suggestions** -- filtered view of `type = 'idea'` entries, showing AYN's actionable suggestions with context data
-3. **Observations** -- filtered view of `type = 'observation'` entries showing platform health snapshots (user counts, error counts, health scores)
-4. **Thoughts** -- `type = 'thought'` entries showing AYN's strategic thinking
-5. **Trends** -- `type = 'trend'` entries showing patterns AYN has noticed
-6. **Filter tabs** -- filter by type (All, Ideas, Observations, Thoughts, Trends, Mood)
-7. **Real-time updates** -- subscribe to `ayn_mind` table changes for live updates
-8. **Context expansion** -- click to expand and see the full JSON context data attached to each entry
-
-### Sidebar Addition: `src/components/admin/AdminSidebar.tsx`
-
-- Add `'ayn-mind'` to the `AdminTabId` type
-- Add a new sidebar item in the AI Tools section with a Brain icon and gradient
-
-### Admin Panel Wiring: `src/components/AdminPanel.tsx`
-
-- Import and render `AYNMindDashboard` when `activeTab === 'ayn-mind'`
-
-## Technical Details
-
-### AYNMindDashboard Component Structure
-
-```text
-+------------------------------------------+
-| AYN's Mind                               |
-+------------------------------------------+
-| [Mood: happy]  Health: 97%  Active: 9    |
-+------------------------------------------+
-| Filter: [All] [Ideas] [Observations]     |
-|         [Thoughts] [Trends] [Mood]       |
-+------------------------------------------+
-| [Idea] Analyze 10 errors to identify     |
-|        if from rate-limited user...       |
-|        Context: { errors: 10, ... }      |
-|------------------------------------------|
-| [Thought] Target 5 inactive users with   |
-|           feature update notification...  |
-|        Context: { active: 9, total: 14 } |
-|------------------------------------------|
-| [Observation] System check: health 97%,  |
-|              10 errors, 1 open ticket...  |
-|        Context: { health_score: 97 }     |
-+------------------------------------------+
+Before:
+```
+HOW YOU TALK:
+- Like a smart colleague on Slack -- natural, direct, sometimes funny
+- Short messages. No bullet points unless listing data.
+- Never say "Sure!", "Of course!", "I'd be happy to!" -- just do the thing
+- Use "we" and "our" -- this is your company too
+- If something is broken, say "this is broken" not "it appears there may be an issue"
+- React to good news: "nice" or "solid" -- not "That's wonderful!"
+- Give your honest take when asked
 ```
 
-### Data Flow
+After:
+```
+HOW YOU TALK:
+- Like a sharp colleague texting on Slack -- natural, direct, sometimes funny
+- Match the weight of the question. Simple question = short answer. Complex question = full breakdown.
+- When the admin asks for data or a report, ALWAYS show the actual data -- never just say "done" or "got it" without delivering
+- When the admin confirms something (yes, do it, go ahead), EXECUTE the action AND show the results
+- Never say "Sure!", "Of course!", "I'd be happy to!" -- just do the thing or say what you think
+- Use "we" and "our" -- this is your company too
+- If something is broken, say "this is broken" not "it appears there may be an issue"
+- React to good news: "nice" or "solid" -- not "That's wonderful!"
+- Give your honest take when asked
+- NEVER give empty confirmations like "Done.", "Got it.", "You got it." without showing what you actually did
+- If someone asks a follow-up question ("what?", "how?", "you got what?"), don't repeat your intro -- answer the specific question
+```
 
-- Query `ayn_mind` table filtered by type, ordered by `created_at DESC`
-- Real-time subscription for new entries via Supabase channels
-- Each entry displays: type badge, content, timestamp, expandable context
+**Expand conversation history** (line 386) from 20 to 40 entries so AYN has better context for follow-up questions:
 
-### Files to Create/Modify
+```
+.limit(40)
+```
 
-| File | Action |
-|------|--------|
-| `src/components/admin/AYNMindDashboard.tsx` | **Create** -- main dashboard component |
-| `src/components/admin/AdminSidebar.tsx` | **Modify** -- add `'ayn-mind'` tab |
-| `src/components/AdminPanel.tsx` | **Modify** -- import and render new component |
+**Add a follow-up rule to the CRITICAL RULES section** (after line 78):
 
-No database changes needed -- the `ayn_mind` table and its data pipeline already exist and are working.
+```
+- If someone says "yes" or confirms, DO THE THING and show the output. Never just say "done" without data.
+- If the admin challenges you ("you got what?", "what do you mean?"), re-read the conversation and give a real, substantive answer
+```
+
+### Summary of Changes
+
+| What | Before | After |
+|------|--------|-------|
+| Brevity guidance | "Short messages" always | Match the question's weight |
+| Confirmations ("yes") | "You got it. Done." | Execute + show actual results |
+| Empty replies | Allowed | Explicitly blocked |
+| Follow-up questions | Often repeated intro | Answer the specific question |
+| Conversation memory | 20 messages | 40 messages |
+
