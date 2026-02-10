@@ -28,17 +28,18 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const imagePrompt = `Create a professional 1080x1080 social media marketing image for an AI engineering platform called AYN. 
+    const imagePrompt = `Create a professional 1080x1080 social media marketing image for an AI engineering platform called AYN.
 
 Design requirements:
-- Dark modern aesthetic with deep navy/black background
-- Accent colors: electric blue (#0EA5E9) and cyan highlights
-- The following text should be displayed prominently, bold, readable, and centered: "${tweet_text}"
-- Brand name "AYN" should appear subtly in a corner
-- Include subtle engineering/tech visual elements (grid lines, blueprint patterns, geometric shapes)
-- Clean modern typography, no clutter
-- Professional and polished look suitable for Twitter/X and Instagram
-- The text must be fully legible and not cut off`;
+- Clean white/light background, minimal and professional
+- The following tweet text should be displayed in a small, elegant sans-serif font at moderate size (occupying about 30% of the image, NOT large or oversized): "${tweet_text}"
+- Text color: dark charcoal/black for readability, with select keywords highlighted in electric blue (#0EA5E9)
+- Include the AYN brand eye symbol (an stylized eye icon) subtly in the bottom-right corner as a watermark
+- Subtle light gray engineering grid lines and geometric blueprint patterns in the background
+- Generous whitespace around the text, clean layout with text centered vertically
+- Professional, polished, and elegant — suitable for Twitter/X and Instagram
+- The text must be fully legible, well-spaced, and not cut off
+- Do NOT make the text large or bold — keep it refined and understated`;
 
     console.log("Generating image for post:", post_id);
 
