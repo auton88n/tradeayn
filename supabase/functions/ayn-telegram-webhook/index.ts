@@ -305,9 +305,14 @@ serve(async (req) => {
     const actionRegex = /\[ACTION:([^:\]]+)(?::([^\]]*))?\]/g;
     let actionMatch;
     const executedActions: string[] = [];
+    const salesActionLeadIds: string[] = []; // Track lead_ids from sales actions
 
     while ((actionMatch = actionRegex.exec(reply)) !== null) {
       const [, actionType, actionParams] = actionMatch;
+      // Track lead_ids from sales-related actions
+      if (['draft_outreach', 'send_outreach', 'approve_lead', 'follow_up'].includes(actionType) && actionParams) {
+        salesActionLeadIds.push(actionParams);
+      }
       const result = await executeAction(actionType, actionParams || '', supabase, supabaseUrl, supabaseKey);
       if (result) executedActions.push(result);
     }
@@ -332,20 +337,20 @@ serve(async (req) => {
 
     let pendingAction: any = null;
     if (isAskingConfirmation) {
-      // Extract lead_id and action from executed actions or reply content
-      let detectedLeadId: string | null = null;
+      // Use lead_ids captured directly from ACTION tags
+      let detectedLeadId: string | null = salesActionLeadIds.length > 0 ? salesActionLeadIds[0] : null;
       let detectedAction = 'send_outreach';
       let detectedSummary = '';
 
-      // Check executed actions for lead references
-      for (const action of executedActions) {
-        const leadMatch = action.match(/lead[_\s]?(?:id)?[:\s]*([a-f0-9-]{36})/i);
-        if (leadMatch) detectedLeadId = leadMatch[1];
-      }
-
-      // Check reply content for lead references  
+      // Fallback: check executed action text and reply for UUIDs
       if (!detectedLeadId) {
-        const replyLeadMatch = cleanReply.match(/lead[_\s]?(?:id)?[:\s]*([a-f0-9-]{36})/i);
+        for (const action of executedActions) {
+          const leadMatch = action.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+          if (leadMatch) { detectedLeadId = leadMatch[1]; break; }
+        }
+      }
+      if (!detectedLeadId) {
+        const replyLeadMatch = reply.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
         if (replyLeadMatch) detectedLeadId = replyLeadMatch[1];
       }
 
