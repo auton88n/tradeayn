@@ -1,77 +1,29 @@
 
-# Branded Marketing Image Generation + Prompt Cleanup
 
-## Summary
+# Fix Image Generation: White Background + Smaller Text
 
-Two changes:
-1. **Trim the marketing psychology prompt** -- it's ~100 lines long. Condense it to keep the same intelligence but be more token-efficient.
-2. **Add AI brand image generation** -- when a tweet is generated, AYN can also create a professional branded marketing image with text overlay using Google Gemini image generation (already available via the Lovable AI Gateway).
+## Change
 
-## Part 1: Condense the Marketing Prompt
+Update the image prompt in `supabase/functions/twitter-generate-image/index.ts` to use a **clean white background** with smaller, elegant text and proper AYN branding.
 
-The current `MARKETING_PSYCHOLOGY_PROMPT` in `twitter-auto-market` is ~98 lines. It will be condensed to ~40 lines while preserving all the key intelligence:
-- Merge the "who is AYN" section into a compact list
-- Combine Cialdini's principles into a concise reference table
-- Keep the rules but remove redundant explanations
-- Keep the JSON output format unchanged
+## Updated Prompt
 
-No behavior changes -- same quality output, fewer tokens, faster responses.
+Replace the current `imagePrompt` (lines ~37-49) with a refined version that specifies:
 
-## Part 2: Branded Image Generation
+- **White/light background** -- clean, minimal, professional
+- **Smaller text** -- tweet text at moderate size (~30% of image), not oversized
+- **AYN eye symbol** -- subtle branding element in a corner
+- **Accent colors**: electric blue (#0EA5E9) for highlights, dark text for readability
+- **Engineering aesthetic**: subtle light gray grid lines, geometric patterns in background
+- **Professional typography**: clean sans-serif, well-spaced, elegant layout
 
-Add a "Generate Image" capability to each tweet draft. When clicked, it calls Gemini's image generation model to create a professional branded marketing graphic featuring:
-- The tweet text styled as a visual quote/poster
-- AYN branding (logo reference, brand colors)
-- Professional social media dimensions (1080x1080 for Instagram/X)
-- Clean typography on stylized backgrounds
+## File
 
-### How It Works
-
-```text
-User clicks "Generate Image" on a draft tweet
-        |
-        v
-Edge function: twitter-generate-image
-        |
-        v
-Calls Lovable AI Gateway with google/gemini-2.5-flash-image
-Prompt: "Create a professional branded social media post..."
-        |
-        v
-Returns base64 image -> uploads to Supabase Storage (generated-images bucket)
-        |
-        v
-Saves image URL to twitter_posts.image_url column
-        |
-        v
-Displays in the admin panel alongside the tweet text
-```
-
-### Technical Changes
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `supabase/functions/twitter-auto-market/index.ts` | Edit -- condense prompt to ~40 lines |
-| `supabase/functions/twitter-generate-image/index.ts` | Create -- new edge function for brand image generation |
-| `src/components/admin/TwitterMarketingPanel.tsx` | Edit -- add "Generate Image" button, image preview |
-| Database migration | Add `image_url` column to `twitter_posts` table |
-| `supabase/config.toml` | Add new function entry |
+| `supabase/functions/twitter-generate-image/index.ts` | Update `imagePrompt` string (~lines 37-49) |
 
-### Edge Function: `twitter-generate-image`
+## Technical Detail
 
-- Receives: `{ post_id, tweet_text }`
-- Calls `google/gemini-2.5-flash-image` via Lovable AI Gateway with a prompt like:
-  > "Create a professional 1080x1080 social media marketing image for an AI engineering platform called AYN. The image should feature this text: [tweet text]. Use a dark modern aesthetic with accent colors. Include subtle engineering/tech visual elements. The text should be bold, readable, and centered. Brand name 'AYN' should appear subtly."
-- Uploads the returned base64 image to the `generated-images` Supabase Storage bucket
-- Updates the `twitter_posts` row with the image URL
+The prompt will change from requesting a "dark navy/black background" to a white/light background with dark text and blue accents, keeping the engineering grid aesthetic but in a lighter palette.
 
-### UI Updates (TwitterMarketingPanel)
-
-- Add an "Image" button next to each draft tweet (camera icon)
-- When an image exists, show a thumbnail preview in the tweet card
-- Clicking the thumbnail opens a larger preview
-- Image can be downloaded or regenerated
-
-### Database
-
-- Add `image_url TEXT` column to `twitter_posts` table
