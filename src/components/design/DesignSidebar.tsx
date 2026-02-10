@@ -23,13 +23,13 @@ interface DesignToolOption {
 }
 
 const designTools: DesignToolOption[] = [
-  {
-    id: 'drawings',
-    title: 'Architectural Drawings',
-    shortTitle: 'Drawings',
-    icon: Ruler,
-    gradient: 'from-slate-600 to-gray-800',
-  },
+  // {
+  //   id: 'drawings',
+  //   title: 'Architectural Drawings',
+  //   shortTitle: 'Drawings',
+  //   icon: Ruler,
+  //   gradient: 'from-slate-600 to-gray-800',
+  // },
   {
     id: 'compliance',
     title: 'Code Compliance Check',
