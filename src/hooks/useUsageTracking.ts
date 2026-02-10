@@ -54,11 +54,12 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
           ? (data.current_daily_messages || 0)
           : (data.current_monthly_messages || 0);
         
-        const limit = data.is_unlimited 
-          ? null 
-          : isDaily 
-            ? (data.daily_messages || 5)
-            : (data.monthly_messages || 50);
+        const rawLimit = isDaily 
+          ? (data.daily_messages || 5)
+          : (data.monthly_messages || 50);
+        
+        const isUnlimited = data.is_unlimited || rawLimit < 0;
+        const limit = isUnlimited ? null : rawLimit;
         
         const resetDate = isDaily ? data.daily_reset_at : data.monthly_reset_at;
 
@@ -66,7 +67,7 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
           currentUsage,
           limit,
           bonusCredits: data.bonus_credits || 0,
-          isUnlimited: data.is_unlimited || false,
+          isUnlimited,
           resetDate,
           isLoading: false,
           isDaily,
@@ -110,7 +111,7 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'user_ai_limits',
           filter: `user_id=eq.${userId}`
@@ -132,11 +133,12 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
               ? (newData.current_daily_messages || 0)
               : (newData.current_monthly_messages || 0);
             
-            const limit = newData.is_unlimited 
-              ? null 
-              : prev.isDaily 
-                ? (newData.daily_messages || 5)
-                : (newData.monthly_messages || 50);
+            const rawLimit = prev.isDaily 
+              ? (newData.daily_messages || 5)
+              : (newData.monthly_messages || 50);
+            
+            const isUnlimited = newData.is_unlimited || rawLimit < 0;
+            const limit = isUnlimited ? null : rawLimit;
             
             const resetDate = prev.isDaily ? newData.daily_reset_at : newData.monthly_reset_at;
 
@@ -145,7 +147,7 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
               currentUsage,
               limit,
               bonusCredits: newData.bonus_credits || 0,
-              isUnlimited: newData.is_unlimited || false,
+              isUnlimited,
               resetDate
             };
           });
