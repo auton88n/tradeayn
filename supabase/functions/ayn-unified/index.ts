@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
-import { detectResponseEmotion, detectLanguage } from "./emotionDetector.ts";
+import { detectResponseEmotion, detectUserEmotion, detectLanguage } from "./emotionDetector.ts";
 import { detectIntent } from "./intentDetector.ts";
 import { buildSystemPrompt } from "./systemPrompts.ts";
 import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
@@ -932,13 +932,15 @@ serve(async (req) => {
     // Non-streaming response
     const responseContent = (response as { content: string }).content;
     const detectedEmotion = detectResponseEmotion(responseContent);
+    const userEmotion = detectUserEmotion(lastMessage);
     
     return new Response(JSON.stringify({
       content: responseContent,
       model: modelUsed.display_name,
       wasFallback,
       intent,
-      emotion: detectedEmotion
+      emotion: detectedEmotion,
+      userEmotion
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

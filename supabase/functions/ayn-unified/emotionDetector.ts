@@ -155,6 +155,94 @@ export function detectResponseEmotion(content: string): string {
   return maxScore >= 1 ? maxEmotion : 'calm';
 }
 
+export function detectUserEmotion(message: string): string {
+  const lower = message.toLowerCase();
+  const scores: Record<string, number> = {
+    neutral: 0, angry: 0, frustrated: 0, happy: 0, sad: 0, excited: 0, curious: 0
+  };
+
+  const patterns: Array<{ emotion: string; weight: number; patterns: RegExp[] }> = [
+    {
+      emotion: 'angry',
+      weight: 5,
+      patterns: [
+        /stupid/g, /idiot/g, /dumb/g, /shit/g, /fuck/g, /suck/g, /trash/g,
+        /useless/g, /worst/g, /hate you/g, /piece of/g, /shut up/g, /go away/g,
+        /غبي/g, /حمار/g, /تافه/g, /اسكت/g, /كرهتك/g,
+        /😡/g, /🤬/g, /💢/g, /🖕/g
+      ]
+    },
+    {
+      emotion: 'frustrated',
+      weight: 4,
+      patterns: [
+        /doesn'?t work/g, /not working/g, /broken/g, /wrong/g, /bad/g,
+        /can'?t believe/g, /annoying/g, /irritating/g, /ugh/g, /come on/g,
+        /again\?/g, /still not/g, /why can'?t/g, /what the/g,
+        /مايشتغل/g, /ما يشتغل/g, /غلط/g, /خربان/g,
+        /😤/g, /😓/g, /🙄/g
+      ]
+    },
+    {
+      emotion: 'happy',
+      weight: 3,
+      patterns: [
+        /thank/g, /thanks/g, /love it/g, /perfect/g, /great/g, /awesome/g,
+        /amazing/g, /good job/g, /well done/g, /nice/g, /cool/g,
+        /شكرا/g, /ممتاز/g, /رائع/g, /حلو/g,
+        /😊/g, /😄/g, /👍/g, /❤️/g, /🙏/g
+      ]
+    },
+    {
+      emotion: 'sad',
+      weight: 3,
+      patterns: [
+        /sad/g, /depressed/g, /lonely/g, /crying/g, /hurt/g, /lost/g,
+        /miss/g, /grief/g, /heartbroken/g, /give up/g, /hopeless/g,
+        /حزين/g, /زعلان/g, /مكتئب/g, /ضايق/g,
+        /😢/g, /😭/g, /💔/g, /😞/g
+      ]
+    },
+    {
+      emotion: 'excited',
+      weight: 3,
+      patterns: [
+        /wow/g, /omg/g, /can'?t wait/g, /so excited/g, /yay/g, /woah/g,
+        /!!+/g, /let'?s go/g,
+        /🎉/g, /🚀/g, /🔥/g, /🤩/g
+      ]
+    },
+    {
+      emotion: 'curious',
+      weight: 2,
+      patterns: [
+        /how do/g, /what is/g, /can you explain/g, /tell me about/g,
+        /i wonder/g, /curious/g, /what if/g,
+        /كيف/g, /ايش/g, /وش/g, /ليش/g,
+        /🤔/g, /🧐/g
+      ]
+    }
+  ];
+
+  for (const { emotion, weight, patterns: patternList } of patterns) {
+    for (const p of patternList) {
+      const m = lower.match(p);
+      if (m) scores[emotion] += m.length * weight;
+    }
+  }
+
+  let maxEmotion = 'neutral';
+  let maxScore = 0;
+  for (const [emotion, score] of Object.entries(scores)) {
+    if (score > maxScore) {
+      maxScore = score;
+      maxEmotion = emotion;
+    }
+  }
+
+  return maxScore >= 2 ? maxEmotion : 'neutral';
+}
+
 export function detectLanguage(message: string): string {
   if (/[\u0600-\u06FF]/.test(message)) return 'ar';
   return 'en';

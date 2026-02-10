@@ -113,6 +113,33 @@ export const analyzeResponseEmotion = (response: string): AYNEmotion => {
   return maxScore >= 2 ? maxEmotion : 'calm';
 };
 
+// Analyze user's message emotion (for blending with AYN's response emotion)
+export const analyzeUserEmotion = (message: string): string => {
+  const lower = message.toLowerCase();
+  const scores: Record<string, number> = {
+    neutral: 0, angry: 0, frustrated: 0, happy: 0, sad: 0, excited: 0, curious: 0
+  };
+
+  const angryPatterns = [/stupid/g, /idiot/g, /dumb/g, /shit/g, /fuck/g, /suck/g, /trash/g, /useless/g, /worst/g, /hate/g, /piece of/g, /shut up/g, /غبي/g, /حمار/g, /😡/g, /🤬/g];
+  angryPatterns.forEach(p => { const m = lower.match(p); if (m) scores.angry += m.length * 5; });
+
+  const frustratedPatterns = [/doesn'?t work/g, /not working/g, /broken/g, /wrong/g, /annoying/g, /ugh/g, /come on/g, /still not/g, /why can'?t/g, /مايشتغل/g, /غلط/g, /😤/g, /🙄/g];
+  frustratedPatterns.forEach(p => { const m = lower.match(p); if (m) scores.frustrated += m.length * 4; });
+
+  const happyPatterns = [/thank/g, /thanks/g, /love it/g, /perfect/g, /awesome/g, /amazing/g, /good job/g, /شكرا/g, /ممتاز/g, /😊/g, /👍/g, /❤️/g];
+  happyPatterns.forEach(p => { const m = lower.match(p); if (m) scores.happy += m.length * 3; });
+
+  const sadPatterns = [/sad/g, /depressed/g, /lonely/g, /crying/g, /hurt/g, /give up/g, /hopeless/g, /حزين/g, /😢/g, /😭/g, /💔/g];
+  sadPatterns.forEach(p => { const m = lower.match(p); if (m) scores.sad += m.length * 3; });
+
+  let maxEmotion = 'neutral';
+  let maxScore = 0;
+  for (const [emotion, score] of Object.entries(scores)) {
+    if (score > maxScore) { maxScore = score; maxEmotion = emotion; }
+  }
+  return maxScore >= 2 ? maxEmotion : 'neutral';
+};
+
 // Get emotion from message type
 export const getEmotionFromMessageType = (type: 'thinking' | 'speaking' | 'question' | 'excited' | 'uncertain'): AYNEmotion => {
   const mapping: Record<string, AYNEmotion> = {

@@ -6,6 +6,7 @@ import { StreamingMarkdown } from "@/components/eye/StreamingMarkdown";
 import { MessageFormatter } from "@/components/shared/MessageFormatter";
 import { TranscriptMessage } from "@/components/transcript/TranscriptMessage";
 import { hapticFeedback } from "@/lib/haptics";
+import { useEmotionOrchestrator } from "@/hooks/useEmotionOrchestrator";
 import {
   Copy,
   Check,
@@ -79,6 +80,7 @@ const ResponseCardComponent = ({
   onReply,
 }: ResponseCardProps) => {
   const navigate = useNavigate();
+  const { orchestrateEmotionChange } = useEmotionOrchestrator();
 
   const contentRef = useRef<HTMLDivElement>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
@@ -195,6 +197,8 @@ const ResponseCardComponent = ({
     const newFeedback = feedback === type ? null : type;
     setFeedback(newFeedback);
     if (newFeedback) {
+      // Trigger eye emotion reaction
+      orchestrateEmotionChange(type === "up" ? "happy" : "sad");
       try {
         const {
           data: { user },
