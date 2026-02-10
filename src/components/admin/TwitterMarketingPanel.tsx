@@ -58,6 +58,7 @@ export const TwitterMarketingPanel = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [creativeEditorPost, setCreativeEditorPost] = useState<TwitterPost | null>(null);
   const [brandKit, setBrandKit] = useState<BrandKitState | null>(null);
+  const [scannedColors, setScannedColors] = useState<{ name: string; hex: string }[] | null>(null);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -186,7 +187,7 @@ export const TwitterMarketingPanel = () => {
 
         {/* Creative Studio Tab */}
         <TabsContent value="studio" className="space-y-4 mt-4">
-          <BrandKit onBrandKitChange={setBrandKit} />
+          <BrandKit onBrandKitChange={setBrandKit} externalColors={scannedColors} />
 
           {/* Generate Controls */}
           <Card>
@@ -329,6 +330,7 @@ export const TwitterMarketingPanel = () => {
           postId={creativeEditorPost.id}
           onImageGenerated={(url) => handleImageGenerated(creativeEditorPost.id, url)}
           brandKit={brandKit}
+          onBrandKitUpdate={setScannedColors}
         />
       )}
 
