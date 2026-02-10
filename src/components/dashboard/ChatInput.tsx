@@ -344,7 +344,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity, onLanguageChange, onTypingContentChange]);
   const handleSend = useCallback(() => {
     if (!inputMessage.trim() && !selectedFile) return;
-    if (isDisabled || isUploading) return;
+    if (isDisabled || isUploading || hasReachedLimit) return;
     // Sound removed - consolidated to absorption in CenterStageLayout
     bumpActivity(); // Increase activity level on message send
     onSend(inputMessage.trim(), selectedFile);
@@ -361,7 +361,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setTimeout(() => {
       triggerAttentionBlink();
     }, 100);
-  }, [inputMessage, selectedFile, isDisabled, isUploading, onSend, triggerAttentionBlink, playSound, bumpActivity]);
+  }, [inputMessage, selectedFile, isDisabled, isUploading, hasReachedLimit, onSend, triggerAttentionBlink, playSound, bumpActivity]);
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -448,7 +448,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         {/* Row 1: Input area with flexbox layout */}
         <div className="flex items-end gap-3 px-4 pt-3 pb-2">
           <div className="relative flex-1 min-w-0">
-            <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyDown={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} onPaste={(e) => { e.preventDefault(); const text = e.clipboardData.getData('text/plain'); const ta = textareaRef.current; if (ta) { const start = ta.selectionStart; const end = ta.selectionEnd; const before = inputMessage.slice(0, start); const after = inputMessage.slice(end); const newVal = before + text + after; setInputMessage(newVal); setShowPlaceholder(!newVal); pendingCursorRef.current = start + text.length; } else { setInputMessage(prev => prev + text); setShowPlaceholder(false); } }} disabled={isDisabled || isUploading} className={cn("w-full resize-none h-[44px]", "text-base bg-transparent", "border-0 focus-visible:ring-0 focus-visible:ring-offset-0", "text-foreground placeholder:text-muted-foreground", "disabled:opacity-50 disabled:cursor-not-allowed", "leading-relaxed", "overflow-y-auto", "px-2 py-2")} />
+            <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyDown={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} onPaste={(e) => { e.preventDefault(); const text = e.clipboardData.getData('text/plain'); const ta = textareaRef.current; if (ta) { const start = ta.selectionStart; const end = ta.selectionEnd; const before = inputMessage.slice(0, start); const after = inputMessage.slice(end); const newVal = before + text + after; setInputMessage(newVal); setShowPlaceholder(!newVal); pendingCursorRef.current = start + text.length; } else { setInputMessage(prev => prev + text); setShowPlaceholder(false); } }} disabled={isDisabled || isUploading || hasReachedLimit} className={cn("w-full resize-none h-[44px]", "text-base bg-transparent", "border-0 focus-visible:ring-0 focus-visible:ring-offset-0", "text-foreground placeholder:text-muted-foreground", "disabled:opacity-50 disabled:cursor-not-allowed", "leading-relaxed", "overflow-y-auto", "px-2 py-2")} />
 
             {/* Typewriter placeholder */}
             {showPlaceholder && !inputMessage && !isInputFocused && <div className="absolute top-[10px] left-[10px] pointer-events-none">
@@ -580,7 +580,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               <span>New</span>
             </button>
 
-            <button onClick={handleFileClick} disabled={isDisabled || isUploading} className={cn("p-1.5 sm:p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed")}>
+            <button onClick={handleFileClick} disabled={isDisabled || isUploading || hasReachedLimit} className={cn("p-1.5 sm:p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed")}>
               <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
             </button>
             
