@@ -1,77 +1,125 @@
 
 
-# Marketing Creative Studio -- Complete Quality Overhaul
+# Conversational Creative Studio with AYN AI + Higher Quality Images
 
-## What's Wrong
+## Overview
 
-1. **Buttons still cut off**: The DialogContent base class applies `grid` layout with `gap-4`, which conflicts with the inner grid. The close button also takes grid space. This pushes content down and hides the action buttons.
+Transform the Creative Editor from a "configure settings then click generate" tool into a **conversational experience** where you chat with AYN about what you want, and AYN creates and iterates on the image. Also upgrade image quality to the pro model and add proper download functionality.
 
-2. **Low-quality feel**: The current editor uses basic inputs, small color circles, and cramped spacing. Pomelli-level quality means: generous whitespace, large interactive elements, smooth visual feedback, and a cohesive design system.
+## Changes
 
-3. **Brand identity weak**: The AYN eye symbol is just a generic Brain icon from Lucide. It should be a proper styled SVG eye symbol matching the brand.
+### 1. Upgrade Image Model (Edge Function)
 
-## What Changes
+**File: `supabase/functions/twitter-generate-image/index.ts`**
 
-### 1. CreativeEditor.tsx -- Full Rewrite
+- Change model from `google/gemini-2.5-flash-image` to `google/gemini-3-pro-image-preview` for significantly higher quality output
+- Keep the same prompt structure -- just swap the model ID on line 87
 
-The dialog layout fix and quality upgrade:
+### 2. New Edge Function: `twitter-creative-chat`
 
-- Override the base DialogContent `gap-4` with `gap-0` so the inner layout is fully controlled
-- Use a flex column layout instead of CSS grid for the right panel to ensure the action buttons are always pinned to the bottom
-- Increase the dialog to near-full-screen on desktop (`max-w-6xl`, `h-[90vh]`)
-- Left panel (60%): Large preview with subtle checkerboard/grid background, proper aspect ratio container, and the AYN eye SVG placeholder (not Brain icon)
-- Right panel (40%): Polished control sections with:
-  - Textarea for header text (not single-line input) with live character count
-  - Large background theme cards (not tiny squares) with preview thumbnails showing what each looks like
-  - Bigger accent color circles (w-12 h-12) with labels and selected ring
-  - CTA input with placeholder
-  - Logo toggle with proper AYN eye icon
-- Action buttons pinned at bottom with clear visual hierarchy
+**New file: `supabase/functions/twitter-creative-chat/index.ts`**
 
-### 2. BrandKit.tsx -- Add AYN Eye SVG
+A conversational AI endpoint where AYN acts as a creative director. The user describes what they want, AYN asks clarifying questions, then generates/refines the image.
 
-Replace the Brain icon with a proper inline SVG eye symbol that matches the AYN brand (the eye icon visible in the user's generated image screenshot).
+- Uses `google/gemini-3-pro-image-preview` for image generation
+- Has a system prompt that makes AYN act as a brand-aware creative director for AYN's marketing
+- Accepts conversation history (messages array) + current creative params
+- When AYN decides to generate, it calls the image model and returns the result
+- Uploads to `generated-images` storage bucket (same as existing flow)
+- Can also return text-only responses for the conversation phase
 
-### 3. CampaignGallery.tsx -- Minor Polish
+Flow:
+1. User says "I want a dark techy image with our tagline"
+2. AYN responds: "nice -- i'm thinking dark navy with grid lines, your tagline centered in a clean sans-serif. want the eye logo as a watermark? any specific accent color?"
+3. User says "yes logo, use blue accent, and add a CTA saying Try AYN Free"
+4. AYN generates the image with those specs and returns it
+5. User says "make the text smaller and move the CTA higher"
+6. AYN regenerates with adjustments
 
-No major changes needed -- the grid layout is already good. Small tweaks to card border radius and hover transitions.
+### 3. Redesign Creative Editor with Chat Interface
 
-## Technical Details
+**File: `src/components/admin/marketing/CreativeEditor.tsx`** -- Full rewrite
 
-### DialogContent gap fix (line 62 of CreativeEditor)
+New layout (still a dialog, but completely different UX):
 
+```text
++--------------------------------------------------+
+|  AYN Creative Studio                          [X] |
++--------------------------------------------------+
+|                    |                              |
+|   PREVIEW AREA     |   CHAT WITH AYN             |
+|   (60%)            |   (40%)                     |
+|                    |                              |
+|  [Generated image  |  AYN: hey! tell me what     |
+|   or AYN branded   |  kind of creative you're    |
+|   placeholder]     |  imagining for this tweet.   |
+|                    |                              |
+|                    |  You: dark background with   |
+|                    |  the AYN eye logo            |
+|                    |                              |
+|                    |  AYN: got it -- generating   |
+|                    |  a dark navy creative with   |
+|                    |  grid lines and your eye...  |
+|                    |                              |
+|                    |  [image generated!]          |
+|                    |                              |
+|                    +------------------------------+
+|                    | [Type your idea...]   [Send] |
+|  [Download]        +------------------------------+
++--------------------------------------------------+
 ```
-Before: className="max-w-5xl max-h-[85vh] p-0 overflow-hidden"
-After:  className="max-w-6xl h-[90vh] max-h-[800px] p-0 gap-0 overflow-hidden"
+
+Key features:
+- **Left panel**: Live preview of current/latest image, with Download button overlay
+- **Right panel**: Chat messages with AYN (scrollable), input at bottom
+- AYN's first message is auto-generated based on the tweet text: "hey! i see your tweet is about [topic]. want me to create a visual for it? tell me the vibe -- light, dark, colorful? any specific text overlay?"
+- Quick-action chips below the chat input for common requests: "Dark theme", "Light & clean", "Add CTA", "Regenerate", "Make text smaller"
+- The manual controls (background, colors, logo) are still available as a collapsible "Manual Controls" section below the chat, for power users who want direct control
+- Download button works via creating a temporary `<a>` element with `download` attribute for proper file download (not just opening in new tab)
+
+### 4. Proper Download Function
+
+Instead of `window.open()` which just opens in a new tab, implement actual file download:
+
+```typescript
+const downloadImage = async (url: string, filename?: string) => {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename || 'ayn-creative.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
+};
 ```
 
-Adding `gap-0` overrides the base `gap-4` from the dialog component. Using `h-[90vh] max-h-[800px]` gives more room.
+This will trigger a real browser download dialog.
 
-### Right panel structure
+### 5. Update TwitterMarketingPanel Integration
 
-```
-<div className="flex flex-col h-full overflow-hidden">
-  <header className="shrink-0 p-6 border-b">...</header>
-  <ScrollArea className="flex-1 min-h-0">
-    <div className="p-6 space-y-8">...controls...</div>
-  </ScrollArea>
-  <footer className="shrink-0 p-6 border-t bg-background">
-    ...buttons...
-  </footer>
-</div>
-```
+**File: `src/components/admin/TwitterMarketingPanel.tsx`**
 
-The key fix is `min-h-0` on ScrollArea (needed for flex children to shrink below content size) and `shrink-0` on header/footer.
+- Pass the `post_id` to CreativeEditor so the chat function can save images to the correct post
+- When CreativeEditor generates an image via chat, update the post's `image_url` in local state
 
-### AYN Eye SVG Component
+## File Summary
 
-A reusable `AynEyeIcon` component rendering a stylized eye/perception symbol in SVG, used across BrandKit, CreativeEditor placeholder, and CampaignGallery empty state.
-
-## Files Modified
-
-| File | Change |
+| File | Action |
 |------|--------|
-| `src/components/admin/marketing/CreativeEditor.tsx` | Full rewrite -- layout fix + Pomelli-quality UI |
-| `src/components/admin/marketing/BrandKit.tsx` | Replace Brain icon with AYN eye SVG |
-| `src/components/admin/marketing/AynEyeIcon.tsx` | New -- reusable AYN eye brand icon component |
+| `supabase/functions/twitter-generate-image/index.ts` | Edit -- swap model to `google/gemini-3-pro-image-preview` |
+| `supabase/functions/twitter-creative-chat/index.ts` | New -- conversational creative AI endpoint |
+| `src/components/admin/marketing/CreativeEditor.tsx` | Rewrite -- chat-based UI with AYN conversation |
+| `src/components/admin/TwitterMarketingPanel.tsx` | Edit -- pass `post_id`, handle chat-generated images |
+
+## Technical Notes
+
+- The `twitter-creative-chat` edge function uses the same storage upload pattern as `twitter-generate-image` (upload base64 to `generated-images` bucket, return public URL)
+- AYN's creative director personality matches the existing casual tone from `ayn-unified` ("hey", "nice", lowercase, no corporate speak)
+- The chat history is kept in React state (not persisted to DB) since it's a session-based creative flow
+- Quick-action chips send predefined messages to AYN, making common operations one-click
+- The manual controls section is collapsible and starts collapsed -- chat-first experience
+- Rate limit (429) and credit (402) errors from the AI gateway are caught and shown as toast notifications
 
