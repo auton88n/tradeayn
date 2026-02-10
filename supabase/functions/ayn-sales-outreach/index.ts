@@ -228,7 +228,7 @@ Rules:
 - Reference their SPECIFIC problems. Show you actually looked at their business.
 - One clear CTA — reply, book a call, or check our work
 - Portfolio: https://almufaijer.com (a project we built — mention naturally, not as a bullet point)
-- Sign off naturally as a person from AYN. Pick a fitting role based on context — Sales Executive, Growth Lead, whatever fits. Not "Operations Manager". Not "The AYN Team". A real person's sign-off.
+- Sign off with a personal name + role. Example: "Sarah, Sales @ AYN" or "Mark, Growth Lead @ AYN". NEVER sign as "AYN Team", "The AYN Team", "Best, AYN Team", or any variation of a team signature. Always use a personal first name + a role that fits the context.
 - From: info@aynn.io
 - ${angle}
 - Don't use phrases like "I hope this email finds you well", "I wanted to reach out", "leverage", "synergy", "streamline". Write like you'd text a business contact.

@@ -221,6 +221,46 @@ serve(async (req) => {
       });
     }
 
+    // ─── Auto-execute confirmations ───
+    const confirmPatterns = /^(yes|yep|yeah|yea|go ahead|do it|confirm|send it|confirmed|approve|approved|go for it|ship it|send|sure|ok send|yes send|confirm send)/i;
+    if (confirmPatterns.test(userText.trim())) {
+      // Check if there's a pending action in the most recent ayn_mind entry
+      const { data: recentMind } = await supabase
+        .from('ayn_mind')
+        .select('context, content')
+        .eq('type', 'telegram_ayn')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const pending = recentMind?.[0]?.context?.pending_action;
+      if (pending && typeof pending === 'object' && pending.type === 'awaiting_confirmation' && pending.lead_id) {
+        // Execute the pending action directly
+        try {
+          const actionResult = await executeAction(
+            pending.action || 'send_outreach',
+            pending.lead_id,
+            supabase, supabaseUrl, supabaseKey
+          );
+          const confirmMsg = actionResult
+            ? `✅ ${pending.summary || 'Done'} — ${actionResult}`
+            : `✅ ${pending.summary || 'Executed'} — action completed.`;
+          
+          await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, confirmMsg);
+          
+          // Log both sides
+          await supabase.from('ayn_mind').insert([
+            { type: 'telegram_admin', content: userText.slice(0, 2000), context: { source: 'telegram' }, shared_with_admin: true },
+            { type: 'telegram_ayn', content: confirmMsg.slice(0, 2000), context: { source: 'telegram', actions: [actionResult], pending_action: null }, shared_with_admin: true },
+          ]);
+          
+          return new Response('OK', { status: 200 });
+        } catch (e) {
+          console.error('Auto-execute confirmation failed:', e);
+          // Fall through to AI if execution fails
+        }
+      }
+    }
+
     // Call AI
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -280,17 +320,54 @@ serve(async (req) => {
     await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, cleanReply);
 
     // Log conversation + activity
-    // Detect if AYN is asking for confirmation (pending action)
-    const pendingAction = (cleanReply.toLowerCase().includes('should i go ahead') || 
-      cleanReply.toLowerCase().includes('go ahead?') || 
-      cleanReply.toLowerCase().includes('want me to') ||
-      cleanReply.toLowerCase().includes('confirm?') ||
-      cleanReply.toLowerCase().includes('shall i'))
-      ? 'awaiting_confirmation' : null;
+    // Detect if AYN is asking for confirmation and extract actionable data
+    const replyLower = cleanReply.toLowerCase();
+    const isAskingConfirmation = replyLower.includes('should i go ahead') || 
+      replyLower.includes('go ahead?') || 
+      replyLower.includes('want me to') ||
+      replyLower.includes('confirm?') ||
+      replyLower.includes('shall i') ||
+      replyLower.includes('want me to send') ||
+      replyLower.includes('ready to send');
+
+    let pendingAction: any = null;
+    if (isAskingConfirmation) {
+      // Extract lead_id and action from executed actions or reply content
+      let detectedLeadId: string | null = null;
+      let detectedAction = 'send_outreach';
+      let detectedSummary = '';
+
+      // Check executed actions for lead references
+      for (const action of executedActions) {
+        const leadMatch = action.match(/lead[_\s]?(?:id)?[:\s]*([a-f0-9-]{36})/i);
+        if (leadMatch) detectedLeadId = leadMatch[1];
+      }
+
+      // Check reply content for lead references  
+      if (!detectedLeadId) {
+        const replyLeadMatch = cleanReply.match(/lead[_\s]?(?:id)?[:\s]*([a-f0-9-]{36})/i);
+        if (replyLeadMatch) detectedLeadId = replyLeadMatch[1];
+      }
+
+      // Extract company name for summary
+      const companyMatch = cleanReply.match(/(?:to|for|email(?:ing)?)\s+([A-Z][a-zA-Z0-9\s&.]+?)(?:\s*[\(\[\n,\-—]|\.?\s*(?:Here|The|I |about|regarding))/);
+      detectedSummary = companyMatch ? `Send outreach to ${companyMatch[1].trim()}` : 'Send pending outreach email';
+
+      // Detect action type from context
+      if (replyLower.includes('follow-up') || replyLower.includes('follow up')) detectedAction = 'follow_up';
+      if (replyLower.includes('draft')) detectedAction = 'send_outreach';
+
+      pendingAction = {
+        type: 'awaiting_confirmation',
+        action: detectedAction,
+        lead_id: detectedLeadId,
+        summary: detectedSummary,
+      };
+    }
 
     await supabase.from('ayn_mind').insert([
-      { type: 'telegram_admin', content: userText.slice(0, 500), context: { source: 'telegram' }, shared_with_admin: true },
-      { type: 'telegram_ayn', content: cleanReply.slice(0, 500), context: { source: 'telegram', actions: executedActions, pending_action: pendingAction }, shared_with_admin: true },
+      { type: 'telegram_admin', content: userText.slice(0, 2000), context: { source: 'telegram' }, shared_with_admin: true },
+      { type: 'telegram_ayn', content: cleanReply.slice(0, 2000), context: { source: 'telegram', actions: executedActions, pending_action: pendingAction }, shared_with_admin: true },
     ]);
 
     if (executedActions.length > 0) {
@@ -438,12 +515,16 @@ async function getConversationHistory(supabase: any) {
 
   if (!exchanges?.length) return [];
 
-  return exchanges.map((entry: any) => ({
-    role: entry.type === 'telegram_admin' ? 'user' : 'assistant',
-    content: entry.context?.pending_action
-      ? `${entry.content}\n[Pending action: ${entry.context.pending_action}]`
-      : entry.content,
-  }));
+  return exchanges.map((entry: any) => {
+    let content = entry.content;
+    const pending = entry.context?.pending_action;
+    if (pending && typeof pending === 'object' && pending.type === 'awaiting_confirmation') {
+      content += `\n[PENDING: Waiting for confirmation to ${pending.summary || pending.action || 'execute action'}${pending.lead_id ? ` (lead_id: ${pending.lead_id})` : ''}]`;
+    } else if (pending === 'awaiting_confirmation') {
+      content += `\n[Pending action: awaiting_confirmation]`;
+    }
+    return { role: entry.type === 'telegram_admin' ? 'user' : 'assistant', content };
+  });
 }
 
 // ─── Expanded system context ───
