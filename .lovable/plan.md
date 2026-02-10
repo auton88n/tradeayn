@@ -1,107 +1,142 @@
 
-# Supercharge AYN Telegram Bot — Full Power Upgrade
 
-## Overview
+# Marketing Studio V2 — Complete Redesign
 
-Adding all proposed enhancements to make AYN a fully autonomous operations manager on Telegram: user management, vision AI, weekly reports, smarter proactive alerts, and multi-step workflows.
+## The Problems
 
----
-
-## 1. User Management Commands (commands.ts)
-
-New commands for managing users directly from Telegram:
-
-- `/user [id]` — View full profile: company, contact person, status, last login, access grant details (monthly limit, current usage, active status)
-- `/grant [email]` — Create a new access grant for a user (looks up user by email in profiles)
-- `/revoke [id]` — Deactivate an access grant (`is_active = false`)
-- `/set_unlimited [id]` — Set a user's `monthly_limit` to `-1` (unlimited)
-
-All commands log to `ayn_activity_log` with `triggered_by: 'telegram_command'`.
+1. **The AI feels like a bot** — The creative chat uses a generic system prompt and lacks memory of past conversations, brand context, and strategic continuity. It asks the same opening question every time.
+2. **Weak capabilities** — You can only generate tweets one at a time, no scheduling, no analytics view, no thread support, no campaign planning.
+3. **Dated UI** — Tabbed layout feels like an admin panel, not a creative command center. The Creative Editor is locked behind a dialog. The Brand Kit is collapsible clutter.
 
 ---
 
-## 2. Vision AI — Image Analysis (index.ts)
+## What Changes
 
-When AYN receives a photo on Telegram (not just text), he will:
+### A. Smarter AI (Backend)
 
-1. Download the image via Telegram Bot API (`getFile` + file URL)
-2. Convert to base64
-3. Send to Gemini 3 Flash via Lovable AI Gateway with a multimodal message
-4. Reply with the AI's analysis
+**`twitter-creative-chat/index.ts`** — Rewrite the system prompt and add memory:
 
-This uses the same pattern as `twitter-brand-scan` (already working in the codebase). AYN's system prompt will instruct him to describe what he sees and offer actionable insights.
+- Give AYN a sharper, more opinionated personality — fewer generic responses, more strategic pushback ("that hook is weak, try this instead")
+- Inject the last 5 tweets + their engagement data into context so AYN knows what worked
+- Inject the full Brand Kit automatically (no more "tell me the vibe")
+- Add awareness of time (day of week, time zone) for posting strategy
+- Add a "campaign mode" where AYN plans a 5-7 tweet content calendar in one shot
+- Support thread generation (multi-tweet output as JSON array)
+- When generating images, pass more specific brand instructions (colors, grid pattern, typography rules from the memory)
+
+**`twitter-auto-market/index.ts`** — Enhance tweet generation:
+
+- Add `thread_mode` parameter that generates 3-5 connected tweets
+- Add `campaign_plan` parameter that generates a week of content with varied types/audiences
+- Include engagement data from recent posts in the prompt so the AI learns what works
+
+### B. Full UI Redesign (Frontend)
+
+Replace the current tabbed `TwitterMarketingPanel.tsx` with a modern **Marketing Command Center**:
+
+```text
++-------------------------------------------------------+
+|  MARKETING HQ                          [Auto-Pilot: ON]|
++------------------+------------------------------------+
+|                  |                                     |
+|  BRAND KIT BAR   |   CONTENT AREA                     |
+|  (compact,       |   (switches between views)         |
+|   always visible)|                                     |
+|  - Logo          |   [Pipeline] [Studio] [Analytics]   |
+|  - Colors row    |                                     |
+|  - Quick edit    |   Pipeline: Kanban-style columns    |
+|                  |     Draft → Scheduled → Posted      |
+|  CO-PILOT CHAT   |                                     |
+|  (persistent     |   Studio: Full-screen creative      |
+|   sidebar)       |     editor (not a dialog)           |
+|                  |                                     |
+|  - Always open   |   Analytics: Engagement charts      |
+|  - Remembers     |     over time, best performers      |
+|    context       |                                     |
++------------------+------------------------------------+
+```
+
+**New Components:**
+
+| Component | Purpose |
+|-----------|---------|
+| `MarketingCommandCenter.tsx` | Main layout with sidebar + content area |
+| `ContentPipeline.tsx` | Kanban board: Draft / Scheduled / Posted columns with drag cards |
+| `MarketingCoPilot.tsx` | Persistent chat sidebar — always visible, remembers context |
+| `AnalyticsDashboard.tsx` | Engagement charts (recharts), best performing tweets, content type breakdown |
+| `ThreadComposer.tsx` | Multi-tweet thread builder with preview |
+| `CampaignPlanner.tsx` | AI generates a week of content, you approve/edit/schedule |
+| `CompactBrandBar.tsx` | Slim brand identity bar — logo + color dots + tagline, click to expand |
+
+**Removed:**
+- Old `TwitterMarketingPanel.tsx` (replaced entirely)
+- Dialog-based `CreativeEditor.tsx` (replaced with inline studio)
+
+**Kept & Enhanced:**
+- `BrandKit.tsx` logic (refactored into CompactBrandBar)
+- `CampaignGallery.tsx` (integrated into Pipeline view)
+- `AynEyeIcon.tsx` (unchanged)
+
+### C. New Features
+
+1. **Campaign Planner** — Ask AYN "plan my week" and get 7 tweets with varied content types, audiences, and scheduled times. Approve, edit, or regenerate individual ones.
+
+2. **Thread Composer** — Create 3-5 tweet threads. AYN structures them with hook + expansion + proof + CTA. Preview the full thread before posting.
+
+3. **Scheduling** — Set date/time for tweets. A new `scheduled_at` column in `twitter_posts` table. A cron-invoked edge function `twitter-scheduled-poster` checks every 15 min and posts due tweets.
+
+4. **Analytics View** — Pull engagement data from `twitter_posts` (impressions, likes, retweets, replies) and show trend charts. Highlight best-performing content types and audiences.
+
+5. **Persistent Co-Pilot** — The chat sidebar stays open as you navigate between Pipeline/Studio/Analytics. AYN sees what you're looking at and offers contextual advice.
 
 ---
 
-## 3. Weekly Report Command (commands.ts)
+## Technical Details
 
-`/weekly_report` — Compiles a comprehensive 7-day summary:
+### Database Changes
 
-- User growth (new access grants this week vs last week)
-- Error trends (errors this week vs last week)
-- Ticket resolution rate (resolved / total)
-- Top 5 most-viewed pages from `visitor_analytics`
-- Twitter performance (posts, impressions, engagement)
-- AI usage (message count by mode from `messages` table)
-- Feedback summary (positive/negative ratio)
+Add column to `twitter_posts`:
+- `scheduled_at` (timestamptz, nullable) — when to auto-post
+- `thread_id` (uuid, nullable) — groups tweets in a thread
+- `thread_order` (int, nullable) — position in thread
 
-Uses AI (Gemini) to format the raw data into a natural executive summary instead of a raw data dump.
+### New Edge Function
 
----
+**`twitter-scheduled-poster/index.ts`** — Invoked by cron every 15 min:
+- Query `twitter_posts` where `status = 'scheduled'` and `scheduled_at <= now()`
+- Post each via existing `twitter-post` function
+- Update status to `posted` or `failed`
+- Notify via Telegram
 
-## 4. Smarter Proactive Loop (ayn-proactive-loop/index.ts)
+### Files Changed
 
-Enhance the existing 6-hour loop with immediate alert triggers:
+| File | Action |
+|------|--------|
+| `src/components/admin/TwitterMarketingPanel.tsx` | **Replaced** with `MarketingCommandCenter.tsx` |
+| `src/components/admin/marketing/CreativeEditor.tsx` | **Replaced** with inline `MarketingCoPilot.tsx` |
+| `src/components/admin/marketing/BrandKit.tsx` | **Refactored** into `CompactBrandBar.tsx` |
+| `src/components/admin/marketing/CampaignGallery.tsx` | **Integrated** into `ContentPipeline.tsx` |
+| `src/components/admin/marketing/ContentPipeline.tsx` | **New** — Kanban pipeline |
+| `src/components/admin/marketing/MarketingCommandCenter.tsx` | **New** — Main layout |
+| `src/components/admin/marketing/MarketingCoPilot.tsx` | **New** — Persistent chat |
+| `src/components/admin/marketing/AnalyticsDashboard.tsx` | **New** — Charts & insights |
+| `src/components/admin/marketing/ThreadComposer.tsx` | **New** — Thread builder |
+| `src/components/admin/marketing/CampaignPlanner.tsx` | **New** — Week planning |
+| `src/components/admin/marketing/CompactBrandBar.tsx` | **New** — Slim brand bar |
+| `supabase/functions/twitter-creative-chat/index.ts` | **Rewritten** — Smarter personality + memory |
+| `supabase/functions/twitter-auto-market/index.ts` | **Enhanced** — Thread + campaign modes |
+| `supabase/functions/twitter-scheduled-poster/index.ts` | **New** — Cron poster |
+| `src/components/AdminPanel.tsx` | **Updated** — Point to new component |
 
-- **Error spike**: If errors in the last 1 hour exceed 10, send immediate alert (separate from cooldown)
-- **New service application**: Check for applications created since last run, mention them naturally
-- **Rate-limited user**: If a user gets blocked, notify immediately
-- **New high-priority ticket**: Flag any `priority: 'urgent'` tickets created since last run
+### Implementation Order
 
-Add an `urgency` flag that bypasses the 5-hour cooldown for critical events (health < 60, error spike, urgent ticket).
+1. Database migration (add columns)
+2. Backend: Rewrite `twitter-creative-chat` with smarter prompt + memory
+3. Backend: Enhance `twitter-auto-market` with thread/campaign modes
+4. Backend: Create `twitter-scheduled-poster`
+5. Frontend: Build `CompactBrandBar` + `MarketingCoPilot` (core pieces)
+6. Frontend: Build `ContentPipeline` + `ThreadComposer`
+7. Frontend: Build `CampaignPlanner` + `AnalyticsDashboard`
+8. Frontend: Assemble `MarketingCommandCenter` and wire into AdminPanel
+9. Deploy all edge functions
 
----
-
-## 5. Direct DB Read Query (commands.ts)
-
-`/query [table] [limit]` — Read-only data peek with strict guardrails:
-
-- Whitelist of allowed tables: `error_logs`, `support_tickets`, `service_applications`, `contact_messages`, `visitor_analytics`, `ayn_activity_log`, `twitter_posts`, `engineering_activity`
-- Blacklisted tables: `user_subscriptions`, `credit_gifts`, anything with `stripe`, `payment`, `billing`
-- Always SELECT only, limit capped at 20
-- Returns formatted results
-
----
-
-## 6. Webhook/System Monitoring (commands.ts)
-
-`/webhooks` — Check recent webhook activity:
-
-- Query `email_logs` for failed emails in last 24h
-- Query `llm_failures` for patterns (same error repeating)
-- Query `error_logs` grouped by `error_message` to show top recurring errors
-
----
-
-## 7. Updated Help & Personality
-
-- Update `/help` to include all new commands organized by category
-- Update `AYN_PERSONALITY` system prompt to include new capabilities
-- Add new ACTION patterns for AI-triggered user management
-
----
-
-## Files Changed
-
-| File | Changes |
-|------|---------|
-| `supabase/functions/ayn-telegram-webhook/commands.ts` | Add `cmdUser`, `cmdGrant`, `cmdRevoke`, `cmdSetUnlimited`, `cmdWeeklyReport`, `cmdQuery`, `cmdWebhooks` |
-| `supabase/functions/ayn-telegram-webhook/index.ts` | Add photo handling, new command routing, updated personality prompt with new commands, new ACTION patterns for user management |
-| `supabase/functions/ayn-proactive-loop/index.ts` | Add urgent alert bypass, new application detection, rate-limit notifications |
-| `supabase/functions/_shared/telegramHelper.ts` | No changes needed |
-
-## Deployment
-
-Redeploy both edge functions:
-- `ayn-telegram-webhook`
-- `ayn-proactive-loop`
