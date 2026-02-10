@@ -1,90 +1,90 @@
 
+# Fix Email Subject Parsing and AI Tone
 
-# Fix Email Quality: Branding, Signature, and Formatting
+## Problem 1: Subject Gets Mangled
 
-## Problems Found
+The email action format is `[ACTION:send_email:to:subject:body]` and the parser splits on `:` (colon). If the AI writes a colon anywhere in the subject or body, it breaks the parsing -- the subject gets mixed with the body, producing garbage like "your automation / AYN:Hey,".
 
-1. **Literal `\n` showing in email** -- The body text from AYN contains literal backslash-n (`\n`) characters as text, not real newlines. The current `.replace(/\n/g, '<br>')` only catches real newline characters, not the text `\n`.
-2. **Double signature** -- AYN's AI writes "Best, AYN Team" inside the body text. Then our code appends a SECOND signature ("Noor, Sales @ AYN") below it. Result: two signatures stacked.
-3. **No branding** -- Emails are bare text in plain `<p>` tags. No AYN header, no professional styling.
-4. **Fake person names** -- The random names (Sarah, Noor, Mark) should be replaced with "AYN AI" as the sender identity.
+**Fix in `index.ts` (action parser, lines 699-704):**
+- Change the parser to only split on the FIRST 3 colons, so everything after the third colon becomes the body (even if it contains more colons).
+- Also clean the subject: strip any leftover slashes, "AYN:" prefixes, or junk that the AI sometimes prepends.
 
-## Changes
+**Fix in `index.ts` (system prompt, line 122):**
+- Update the action format documentation to explicitly tell the AI: "The subject must be a clean, short, human-sounding email subject line. No colons, no slashes, no brand prefixes."
 
-### File: `supabase/functions/ayn-telegram-webhook/commands.ts`
+## Problem 2: AI Writes Like a Robot
 
-**1. Fix `\n` literal parsing (line 460)**
+Em-dashes, words like "bespoke", overly polished corporate language -- it screams AI. The email body needs to sound like a real person typed it quickly.
 
-Replace both literal `\n` text AND real newlines with `<br>`:
+**Fix in `index.ts` (EMAIL RULES, lines 103-106):**
+Add specific writing style rules:
+- Never use em-dashes. Use commas or periods instead.
+- Never use words like "bespoke", "leverage", "synergy", "streamline", "delighted".
+- Write like a real person sending a quick business email -- casual but professional.
+- Keep sentences short and direct. No filler phrases.
+- The subject line should be casual and short (3-6 words), like a human would write. Examples: "Quick question", "Saw your work", "Hey from AYN". Never include brand names or slashes in subjects.
 
-```typescript
-body.replace(/\\n/g, '\n').replace(/\n/g, '<br>')
-```
+## Problem 3: Subject Cleanup in Code
 
-**2. Strip "AYN Team" from body before wrapping (before line 456)**
+**Fix in `commands.ts` (line 438):**
+Add a cleanup step for the subject after parsing:
+- Strip any "AYN:" or "AYN /" prefixes
+- Remove em-dashes
+- Trim extra whitespace
+- Cap subject length to prevent overly long subjects
 
-Add a cleanup step to remove any AI-generated signature from the body text:
-
-```typescript
-let cleanBody = body
-  .replace(/\\n/g, '\n')
-  .replace(/\n/g, '<br>');
-// Remove AI-generated generic signatures
-cleanBody = cleanBody.replace(/<br>\s*(?:Best|Regards|Cheers|Thanks),?\s*(?:<br>)?\s*(?:The\s+)?AYN(?:\s+Team)?(?:<br>.*)?$/i, '');
-```
-
-**3. Replace fake names with "AYN AI" (lines 445-448)**
-
-Remove the random name/role arrays. Use a fixed professional signature:
-
-```typescript
-const signature = `AYN AI<br><span style="color:#888;font-size:13px;">Intelligent Automation Solutions</span><br><a href="https://aynn.io" style="color:#0EA5E9;">aynn.io</a>`;
-```
-
-**4. Add branded HTML email template (line 460)**
-
-Wrap the email in a professional, branded HTML template with the AYN header, styled body, and footer:
-
-```typescript
-html: `
-<div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;">
-  <div style="background:#000;padding:24px;text-align:center;">
-    <h1 style="color:#fff;font-size:32px;font-weight:900;letter-spacing:-1px;margin:0;">AYN</h1>
-    <div style="width:30px;height:3px;background:#0EA5E9;margin:10px auto 0;"></div>
-  </div>
-  <div style="padding:32px 24px;color:#333;font-size:15px;line-height:1.7;">
-    ${cleanBody}
-  </div>
-  <div style="padding:20px 24px;border-top:1px solid #eee;">
-    <p style="margin:0;font-size:14px;font-weight:600;color:#000;">${signature}</p>
-  </div>
-  <div style="background:#f9f9f9;padding:16px;text-align:center;">
-    <p style="margin:0;font-size:11px;color:#999;">&copy; 2026 AYN AI. All rights reserved.</p>
-  </div>
-</div>`,
-```
+## Technical Details
 
 ### File: `supabase/functions/ayn-telegram-webhook/index.ts`
 
-**5. Update the system prompt to stop AYN from writing signatures in email bodies**
+1. **Action parser fix (lines 699-703):** Change from `params.split(':')` with destructuring to a smarter split that only takes the first 2 colons as delimiters:
 
-In the system prompt (around line 94), add a rule:
+```typescript
+case 'send_email': {
+  const firstColon = params.indexOf(':');
+  if (firstColon === -1) return null;
+  const to = params.slice(0, firstColon);
+  const rest = params.slice(firstColon + 1);
+  const secondColon = rest.indexOf(':');
+  if (secondColon === -1) return null;
+  const subject = rest.slice(0, secondColon);
+  const body = rest.slice(secondColon + 1);
+  return await cmdEmail(`/email ${to} ${subject} | ${body}`, supabase);
+}
+```
+
+2. **System prompt update (lines 103-106):** Expand EMAIL RULES:
 
 ```
-- When composing emails via [ACTION:send_email], NEVER include a signature or sign-off in the body. 
-  No "Best, AYN Team", no "Regards", no closing. The email system adds the signature automatically.
+EMAIL RULES:
+- NEVER use em-dashes (--). Use commas or periods.
+- NEVER use words: "bespoke", "leverage", "synergy", "streamline", "delighted", "thrilled".
+- Write like a real human typing a quick email. Short sentences. No filler.
+- Subject lines: casual, 3-6 words, lowercase feel. Examples: "quick question", "saw your work", "idea for you". No colons, slashes, or brand names in subjects.
+- No signature or sign-off in the body. The system adds it automatically.
+- Body content only. Professional but conversational.
 ```
 
-## Summary
+3. **Action format docs (line 122):** Add a note about subject formatting:
 
-| Problem | Fix |
-|---------|-----|
-| Literal `\n` showing | Parse `\n` text into real newlines before converting to `<br>` |
-| "AYN Team" in body | Strip AI-generated signatures from body text |
-| Random fake names | Replace with "AYN AI / Intelligent Automation Solutions / aynn.io" |
-| No branding | Professional HTML template with black header, AYN logo, blue accent |
-| AI keeps adding signatures | Update system prompt to forbid signatures in email body |
+```
+- [ACTION:send_email:to:subject:body] -- Send email (subject must be short, no colons)
+```
+
+### File: `supabase/functions/ayn-telegram-webhook/commands.ts`
+
+4. **Subject cleanup (after line 438):** Add sanitization:
+
+```typescript
+// Clean up AI-generated subject
+let cleanSubject = subject
+  .replace(/^(?:AYN|ayn)\s*[:/\-]\s*/i, '')  // Remove "AYN:" or "AYN /" prefix
+  .replace(/—/g, '-')                          // Replace em-dashes
+  .replace(/\s+/g, ' ')                        // Collapse whitespace
+  .trim();
+if (!cleanSubject) cleanSubject = 'Hey from AYN';
+```
 
 ## Files Changed
-- `supabase/functions/ayn-telegram-webhook/commands.ts` -- Email formatting, branding, signature
-- `supabase/functions/ayn-telegram-webhook/index.ts` -- System prompt update
+- `supabase/functions/ayn-telegram-webhook/index.ts` -- Parser fix + prompt update
+- `supabase/functions/ayn-telegram-webhook/commands.ts` -- Subject sanitization
