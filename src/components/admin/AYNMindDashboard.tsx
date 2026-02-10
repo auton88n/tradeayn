@@ -1,15 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Brain, Lightbulb, Eye, MessageCircle, TrendingUp, Smile, ChevronDown, RefreshCw, Loader2 } from 'lucide-react';
+import { Brain, Lightbulb, Eye, MessageCircle, TrendingUp, Smile, ChevronDown, RefreshCw, Loader2, Target, Zap, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
-type MindEntryType = 'observation' | 'idea' | 'thought' | 'trend' | 'mood' | 'telegram_admin' | 'telegram_ayn';
-type FilterType = 'all' | 'idea' | 'observation' | 'thought' | 'trend' | 'mood';
+type MindEntryType = 'observation' | 'idea' | 'thought' | 'trend' | 'mood' | 'telegram_admin' | 'telegram_ayn' | 'sales_lead' | 'initiative' | 'sales_draft';
+type FilterType = 'all' | 'idea' | 'observation' | 'thought' | 'trend' | 'mood' | 'sales_lead' | 'initiative' | 'sales_draft';
 
 interface MindEntry {
   id: string;
@@ -26,6 +26,9 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; label: string; colo
   thought: { icon: MessageCircle, label: 'Thought', color: 'text-purple-500', gradient: 'from-purple-500/10 to-violet-500/10' },
   trend: { icon: TrendingUp, label: 'Trend', color: 'text-emerald-500', gradient: 'from-emerald-500/10 to-teal-500/10' },
   mood: { icon: Smile, label: 'Mood', color: 'text-rose-500', gradient: 'from-rose-500/10 to-pink-500/10' },
+  sales_lead: { icon: Target, label: 'Sales Lead', color: 'text-orange-500', gradient: 'from-orange-500/10 to-red-500/10' },
+  initiative: { icon: Zap, label: 'Initiative', color: 'text-indigo-500', gradient: 'from-indigo-500/10 to-blue-500/10' },
+  sales_draft: { icon: Mail, label: 'Email Draft', color: 'text-teal-500', gradient: 'from-teal-500/10 to-emerald-500/10' },
 };
 
 const FILTERS: { value: FilterType; label: string }[] = [
@@ -35,7 +38,12 @@ const FILTERS: { value: FilterType; label: string }[] = [
   { value: 'thought', label: 'Thoughts' },
   { value: 'trend', label: 'Trends' },
   { value: 'mood', label: 'Mood' },
+  { value: 'sales_lead', label: 'Sales Leads' },
+  { value: 'initiative', label: 'Initiatives' },
+  { value: 'sales_draft', label: 'Email Drafts' },
 ];
+
+const ENTRY_TYPES = ['observation', 'idea', 'thought', 'trend', 'mood', 'sales_lead', 'initiative', 'sales_draft'];
 
 const MindEntryCard = ({ entry }: { entry: MindEntry }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -95,7 +103,7 @@ export const AYNMindDashboard = () => {
       const { data, error } = await supabase
         .from('ayn_mind')
         .select('*')
-        .in('type', ['observation', 'idea', 'thought', 'trend', 'mood'])
+        .in('type', ENTRY_TYPES)
         .order('created_at', { ascending: false })
         .limit(200);
 
@@ -115,7 +123,7 @@ export const AYNMindDashboard = () => {
       .channel('ayn-mind-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ayn_mind' }, (payload) => {
         const newEntry = payload.new as MindEntry;
-        if (['observation', 'idea', 'thought', 'trend', 'mood'].includes(newEntry.type)) {
+        if (ENTRY_TYPES.includes(newEntry.type)) {
           setEntries(prev => [newEntry, ...prev]);
         }
       })
@@ -138,13 +146,11 @@ export const AYNMindDashboard = () => {
     return ctx.health_score ?? ctx.healthScore ?? null;
   }, [latestObservation]);
 
-  const counts = useMemo(() => ({
-    idea: entries.filter(e => e.type === 'idea').length,
-    observation: entries.filter(e => e.type === 'observation').length,
-    thought: entries.filter(e => e.type === 'thought').length,
-    trend: entries.filter(e => e.type === 'trend').length,
-    mood: entries.filter(e => e.type === 'mood').length,
-  }), [entries]);
+  const counts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const t of ENTRY_TYPES) c[t] = entries.filter(e => e.type === t).length;
+    return c;
+  }, [entries]);
 
   return (
     <div className="space-y-6">
@@ -156,7 +162,7 @@ export const AYNMindDashboard = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-foreground">AYN's Mind</h2>
-            <p className="text-sm text-muted-foreground">Observations, ideas, and suggestions</p>
+            <p className="text-sm text-muted-foreground">Observations, ideas, sales leads, and initiatives</p>
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={fetchEntries} disabled={isLoading}>
@@ -166,7 +172,7 @@ export const AYNMindDashboard = () => {
       </div>
 
       {/* Status Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Card className="border-border/50">
           <CardContent className="p-4 flex items-center gap-3">
             <Smile className="w-5 h-5 text-rose-500" />
@@ -187,10 +193,19 @@ export const AYNMindDashboard = () => {
         </Card>
         <Card className="border-border/50">
           <CardContent className="p-4 flex items-center gap-3">
-            <Lightbulb className="w-5 h-5 text-amber-500" />
+            <Target className="w-5 h-5 text-orange-500" />
             <div>
-              <p className="text-xs text-muted-foreground">Total Ideas</p>
-              <p className="text-sm font-semibold">{counts.idea}</p>
+              <p className="text-xs text-muted-foreground">Sales Leads</p>
+              <p className="text-sm font-semibold">{counts.sales_lead || 0}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-4 flex items-center gap-3">
+            <Zap className="w-5 h-5 text-indigo-500" />
+            <div>
+              <p className="text-xs text-muted-foreground">Initiatives</p>
+              <p className="text-sm font-semibold">{counts.initiative || 0}</p>
             </div>
           </CardContent>
         </Card>
@@ -209,7 +224,7 @@ export const AYNMindDashboard = () => {
             {f.label}
             {f.value !== 'all' && (
               <span className="ml-1.5 text-xs opacity-70">
-                {counts[f.value as keyof typeof counts] || 0}
+                {counts[f.value] || 0}
               </span>
             )}
           </Button>
