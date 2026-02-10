@@ -1,64 +1,60 @@
 
 
-# Fix AYN's Memory (For Real This Time) + Email Signature
+# Fix Email Sending via Resend
 
-## The ACTUAL Root Cause
+## What's Wrong
 
-The `ayn_mind` table has a database CHECK constraint that only allows these types:
-`thought`, `observation`, `idea`, `task`, `mood`, `trend`
+The email command already uses Resend with `info@aynn.io` -- that part is correct. The problem is:
 
-Every Telegram message uses `telegram_admin` or `telegram_ayn` as the type -- which the database **rejects**. Same for sales entries (`sales_lead`, `sales_draft`). That's why AYN has had zero conversation history this entire time. The code was correct, the database was blocking it.
+1. **Hidden errors**: When Resend fails, line 465 just says "Email failed to send" without showing WHY. We need to read the error response body.
+2. **"AYN Team" signature**: Line 455 hardcodes `— AYN Team` in every email.
 
-## Fix 1: Update the CHECK Constraint (Database Migration)
+## Changes
 
-Drop the old constraint and add a new one that includes all the types AYN uses:
+### File: `supabase/functions/ayn-telegram-webhook/commands.ts`
 
-```sql
-ALTER TABLE ayn_mind DROP CONSTRAINT ayn_mind_type_check;
-ALTER TABLE ayn_mind ADD CONSTRAINT ayn_mind_type_check 
-  CHECK (type = ANY (ARRAY[
-    'thought', 'observation', 'idea', 'task', 'mood', 'trend',
-    'telegram_admin', 'telegram_ayn',
-    'sales_lead', 'sales_draft',
-    'vision_analysis', 'proactive_research'
-  ]));
-```
+**1. Show actual Resend error (line 465)**
 
-This is the only change needed to fix memory. Once this constraint is updated, all the error-checked insert code we already added will start working immediately.
-
-## Fix 2: Email Signature — Strengthen the Prompt
-
-In `supabase/functions/ayn-sales-outreach/index.ts`, the email drafting prompt already says to use a personal name, but the AI ignores it. We'll make it more forceful:
-
-- Add an explicit "NEVER sign as AYN, AYN Team, Best AYN, or any variation" rule
-- Add example signatures the AI must choose from
-- Add a post-generation check: if the draft contains "AYN Team" in the signature, auto-replace it with a random personal name + role
-
-### Technical Details
-
-In the `handleDraftEmail` function's system prompt (around line 170 of `ayn-sales-outreach/index.ts`), strengthen the signature instruction and add a fallback regex replacement after parsing the AI response:
+Replace the silent failure with the actual error from Resend so you can see what went wrong:
 
 ```typescript
-// After parsing the draft, fix signature if needed
-const teamSignatureRegex = /(?:Best|Regards|Cheers|Thanks),?\s*\n?\s*AYN\s*(?:\n?\s*AYN Team)?/gi;
-if (teamSignatureRegex.test(draft.html_body || '') || /AYN Team/i.test(draft.html_body || '')) {
-  const names = ['Sarah', 'Mark', 'Lina', 'James', 'Noor'];
-  const roles = ['Sales @ AYN', 'Growth Lead @ AYN', 'Partnerships @ AYN'];
-  const name = names[Math.floor(Math.random() * names.length)];
-  const role = roles[Math.floor(Math.random() * roles.length)];
-  draft.html_body = draft.html_body.replace(teamSignatureRegex, `${name}\n${role}`);
-  if (draft.plain_text) draft.plain_text = draft.plain_text.replace(teamSignatureRegex, `${name}\n${role}`);
+if (!res.ok) {
+  const errBody = await res.text();
+  console.error('[cmdEmail] Resend error:', errBody);
+  return `Email failed: ${errBody}`;
 }
+return `Email sent to ${to}`;
 ```
+
+**2. Fix the hardcoded "AYN Team" signature (line 455)**
+
+Replace the hardcoded `— AYN Team` with a personal signature:
+
+```typescript
+// Pick a random personal signature
+const names = ['Sarah', 'Mark', 'Lina', 'James', 'Noor'];
+const roles = ['Sales @ AYN', 'Growth Lead @ AYN', 'Partnerships @ AYN'];
+const name = names[Math.floor(Math.random() * names.length)];
+const role = roles[Math.floor(Math.random() * roles.length)];
+
+html: `<p>${body.replace(/\n/g, '<br>')}</p><p>${name}<br>${role}</p>`,
+```
+
+**3. Update the `from` field to use `mail.aynn.io` subdomain (line 452)**
+
+Your Resend domain is verified as `mail.aynn.io` (that's what the auth emails use: `noreply@mail.aynn.io`). Update the from address to match:
+
+```typescript
+from: 'AYN <info@mail.aynn.io>',
+```
+
+This is likely the actual fix -- Resend requires sending from a verified domain, and `mail.aynn.io` is the one that's verified, not bare `aynn.io`.
 
 ## Summary
 
-| Problem | Root Cause | Fix |
-|---------|-----------|-----|
-| AYN forgets everything | Database CHECK constraint rejects `telegram_admin`/`telegram_ayn` types | Add those types to the constraint |
-| "Best, AYN AYN Team" signature | AI ignores prompt instructions | Stronger prompt + code-level fallback replacement |
-
-## Files Changed
-- **Database migration**: Update `ayn_mind_type_check` constraint
-- **`supabase/functions/ayn-sales-outreach/index.ts`**: Signature fix in `handleDraftEmail`
+| Issue | Fix |
+|-------|-----|
+| Email fails silently | Show Resend's actual error message |
+| Wrong sender domain | Change `info@aynn.io` to `info@mail.aynn.io` (verified domain) |
+| "AYN Team" signature | Replace with personal name + role |
 
