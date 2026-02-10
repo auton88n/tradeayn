@@ -1,6 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -312,8 +314,10 @@ If the question is simple, you can omit the optional fields. Always include "ans
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'AI credits exhausted.', answer: 'AI credits have been exhausted. Please add credits to continue.', quickReplies: [] }), {
-          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+        await activateMaintenanceMode(supabase, 'AI credits exhausted (402 from engineering-ai-assistant)');
+        return new Response(JSON.stringify({ error: 'Service temporarily unavailable.', answer: 'The service is temporarily unavailable. Please try again later.', quickReplies: [] }), {
+          status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
       throw new Error(`AI gateway error: ${response.status}`);

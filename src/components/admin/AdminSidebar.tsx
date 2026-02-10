@@ -17,7 +17,8 @@ import {
   Gift,
   Sparkles,
   ThumbsUp,
-  Twitter
+  Twitter,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +41,8 @@ export type AdminTabId =
   | 'credit-history'
   | 'beta-feedback'
   | 'message-feedback'
-  | 'twitter-marketing';
+  | 'twitter-marketing'
+  | 'ayn-logs';
 
 interface AdminSection {
   id: AdminTabId;
@@ -72,6 +74,7 @@ const aiSections: AdminSection[] = [
   { id: 'beta-feedback', title: 'Beta Feedback', shortTitle: 'Beta', icon: Sparkles, gradient: 'from-amber-500 to-yellow-500', adminOnly: true },
   { id: 'test-results', title: 'Test Results', shortTitle: 'Test', icon: FlaskConical, gradient: 'from-pink-500 to-rose-500', adminOnly: true },
   { id: 'twitter-marketing', title: 'Twitter Marketing', shortTitle: 'Twtr', icon: Twitter, gradient: 'from-sky-500 to-blue-600', adminOnly: true },
+  { id: 'ayn-logs', title: 'AYN Logs', shortTitle: 'Logs', icon: Activity, gradient: 'from-orange-500 to-red-500', adminOnly: true },
 ];
 
 interface AdminSidebarProps {

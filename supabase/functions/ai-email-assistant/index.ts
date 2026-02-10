@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -155,8 +156,10 @@ serve(async (req) => {
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ success: false, error: 'AI credits exhausted. Please add credits to continue.' }), {
-          status: 402, headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        const maintenanceSupabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+        await activateMaintenanceMode(maintenanceSupabase, 'AI credits exhausted (402 from ai-email-assistant)');
+        return new Response(JSON.stringify({ success: false, error: 'Service temporarily unavailable. Please try again later.' }), {
+          status: 503, headers: { 'Content-Type': 'application/json', ...corsHeaders },
         });
       }
       throw new Error(`AI gateway error: ${response.status}`);
