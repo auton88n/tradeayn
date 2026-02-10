@@ -11,7 +11,7 @@ import { HardHat } from 'lucide-react';
 // Reuse existing lazy-loaded components
 const ParkingDesigner = lazy(() => import('@/components/engineering/ParkingDesigner').then(m => ({ default: m.ParkingDesigner })));
 const ComplianceWizard = lazy(() => import('@/components/engineering/compliance/ComplianceWizard'));
-const DrawingGenerator = lazy(() => import('@/components/engineering/drawings/DrawingGenerator'));
+// const DrawingGenerator = lazy(() => import('@/components/engineering/drawings/DrawingGenerator'));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-full">
@@ -61,12 +61,12 @@ export const DesignWorkspace: React.FC<DesignWorkspaceProps> = ({ userId }) => {
 
   const renderToolForm = () => {
     switch (selectedTool) {
-      case 'drawings':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <DrawingGenerator />
-          </Suspense>
-        );
+      // case 'drawings':
+      //   return (
+      //     <Suspense fallback={<LoadingFallback />}>
+      //       <DrawingGenerator />
+      //     </Suspense>
+      //   );
       case 'compliance':
         return (
           <Suspense fallback={<LoadingFallback />}>
@@ -116,7 +116,6 @@ export const DesignWorkspace: React.FC<DesignWorkspaceProps> = ({ userId }) => {
 
       <div className="grid md:grid-cols-3 gap-6 max-w-3xl">
         {[
-          { title: 'Architectural Drawings', desc: 'AI-generated floor plans and elevations' },
           { title: 'Code Compliance', desc: 'Check against building codes' },
           { title: 'Parking Designer', desc: 'Optimize parking lot layouts' },
         ].map((feature, i) => (

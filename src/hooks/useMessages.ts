@@ -316,8 +316,8 @@ export const useMessages = (
         if (/اعمل pdf|انشئ pdf|ملف pdf|تقرير pdf|اعمل لي|سوي لي/.test(lower)) return 'document';
         if (/créer pdf|faire pdf|rapport pdf|document pdf|créer excel/.test(lower)) return 'document';
         
-        // Floor plan detection
-        if (/floor plan|house plan|home layout|design a house|design me a|مخطط|تصميم بيت|تصميم منزل|plan de maison/.test(lower)) return 'floor_plan';
+        // Floor plan detection (disabled - rebuilding)
+        // if (/floor plan|house plan|home layout|design a house|design me a|مخطط|تصميم بيت|تصميم منزل|plan de maison/.test(lower)) return 'floor_plan';
         
         // Other intent detection
         if (/search|find|look up|latest|news/.test(lower)) return 'search';
@@ -328,7 +328,7 @@ export const useMessages = (
       const detectedIntent = detectIntent();
       
       // Intents that require non-streaming (return JSON with URLs)
-      const requiresNonStreaming = ['document', 'image', 'floor_plan'].includes(detectedIntent);
+      const requiresNonStreaming = ['document', 'image'].includes(detectedIntent);
       
       // Set document generation state for visual indicator
       if (detectedIntent === 'document') {
@@ -338,10 +338,10 @@ export const useMessages = (
         setDocumentType(isExcel ? 'excel' : 'pdf');
       }
       
-      // Set floor plan generation state
-      if (detectedIntent === 'floor_plan') {
-        setIsGeneratingFloorPlan(true);
-      }
+      // Floor plan generation state (disabled - rebuilding)
+      // if (detectedIntent === 'floor_plan') {
+      //   setIsGeneratingFloorPlan(true);
+      // }
 
       // Build conversation history in ayn-unified format
       // Strip old [Attached file: ...] references so AYN focuses on the current file

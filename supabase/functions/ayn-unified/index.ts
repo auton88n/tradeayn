@@ -23,7 +23,7 @@ const DOCUMENT_CREDIT_COST = {
   pdf: 30,
   excel: 25
 };
-const FLOOR_PLAN_CREDIT_COST = 35;
+// const FLOOR_PLAN_CREDIT_COST = 35;
 
 const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
   chat: [
@@ -46,11 +46,11 @@ const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
   image: [
     { id: 'lovable-gemini-image', provider: 'lovable', model_id: 'google/gemini-2.5-flash-image-preview', display_name: 'Gemini Image' }
   ],
-  floor_plan: [
-    { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' },
-    { id: 'lovable-gemini-3-pro', provider: 'lovable', model_id: 'google/gemini-3-pro-preview', display_name: 'Gemini 3 Pro' },
-    { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini 2.5 Flash' }
-  ]
+  // floor_plan: [
+  //   { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' },
+  //   { id: 'lovable-gemini-3-pro', provider: 'lovable', model_id: 'google/gemini-3-pro-preview', display_name: 'Gemini 3 Pro' },
+  //   { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini 2.5 Flash' }
+  // ]
 };
 
 // Generate image using Lovable AI
@@ -820,196 +820,18 @@ serve(async (req) => {
       }
     }
 
-    // Handle floor plan generation intent
+    // Handle floor plan generation intent (DISABLED - rebuilding with staged pipeline)
+    /*
     if (intent === 'floor_plan') {
-      try {
-        console.log('[ayn-unified] Floor plan generation requested');
-        
-        // === PREMIUM FEATURE: Check subscription tier AND admin role ===
-        const [{ data: subscription }, { data: adminRole }] = await Promise.all([
-          supabase.from('user_subscriptions').select('tier').eq('user_id', userId).maybeSingle(),
-          supabase.from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle()
-        ]);
-        
-        const userTier = subscription?.tier || 'free';
-        const isAdmin = !!adminRole;
-        
-        if (userTier === 'free' && !isInternalCall && !isAdmin) {
-          console.log('[ayn-unified] Free user blocked from floor plan generation');
-          const upgradeMessages: Record<string, string> = {
-            ar: '🏠 إنشاء المخططات هو ميزة مدفوعة.\nقم بالترقية لإنشاء مخططات معمارية احترافية!\n\n[ترقية الآن](/pricing)',
-            fr: "🏠 La génération de plans est une fonctionnalité premium.\nPassez à un forfait payant pour créer des plans architecturaux!\n\n[Mettre à niveau](/pricing)",
-            en: '🏠 Floor plan generation is a premium feature.\nUpgrade to create professional architectural drawings!\n\n[Upgrade Now](/pricing)'
-          };
-          return new Response(JSON.stringify({
-            content: upgradeMessages[language] || upgradeMessages.en,
-            intent: 'floor_plan',
-            requiresUpgrade: true
-          }), {
-            status: 403,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
-
-        // Extract parameters from user message using LLM
-        const paramMessages = [
-          { role: 'system', content: systemPrompt },
-          ...messages
-        ];
-        
-        const llmResult = await callWithFallback('floor_plan', paramMessages, false, supabase, userId);
-        const llmContent = (llmResult.response as { content: string }).content;
-        
-        // Parse params JSON
-        let floorPlanParams;
-        try {
-          const jsonMatch = llmContent.match(/\{[\s\S]*\}/);
-          if (!jsonMatch) throw new Error('No JSON found');
-          floorPlanParams = JSON.parse(jsonMatch[0]);
-        } catch (parseError) {
-          console.error('[ayn-unified] Failed to parse floor plan params:', parseError);
-          floorPlanParams = {
-            style_preset: 'modern',
-            num_bedrooms: 3,
-            num_bathrooms: 2,
-            target_sqft: 1800,
-            num_storeys: 1,
-            has_garage: true,
-            garage_type: 'attached_2car'
-          };
-        }
-
-        console.log('[ayn-unified] Floor plan params:', JSON.stringify(floorPlanParams));
-
-        // Call generate-floor-plan-layout
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const layoutResponse = await fetch(`${supabaseUrl}/functions/v1/generate-floor-plan-layout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            ...floorPlanParams,
-            userId
-          })
-        });
-
-        if (!layoutResponse.ok) {
-          const errorText = await layoutResponse.text();
-          throw new Error(`Layout generation failed: ${errorText}`);
-        }
-
-        const layoutData = await layoutResponse.json();
-        const layout = layoutData.layout || layoutData;
-
-        if (!layout || !layout.rooms) {
-          throw new Error('Invalid layout: no rooms generated');
-        }
-
-        console.log(`[ayn-unified] Layout generated: ${layout.rooms.length} rooms`);
-
-        // Call render-floor-plan-svg
-        const svgResponse = await fetch(`${supabaseUrl}/functions/v1/render-floor-plan-svg`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            layout: {
-              ...layout,
-              title: `${floorPlanParams.style_preset?.replace(/_/g, ' ') || 'Modern'} - ${floorPlanParams.num_bedrooms || 3} Bed ${floorPlanParams.num_bathrooms || 2} Bath`,
-              style_preset: floorPlanParams.style_preset
-            }
-          })
-        });
-
-        if (!svgResponse.ok) {
-          const errorText = await svgResponse.text();
-          throw new Error(`SVG rendering failed: ${errorText}`);
-        }
-
-        const { svg } = await svgResponse.json();
-        if (!svg) throw new Error('No SVG returned from renderer');
-
-        // Upload SVG to floor-plans bucket
-        const timestamp = Date.now();
-        const style = floorPlanParams.style_preset || 'modern';
-        const filePath = `${userId}/${timestamp}-${style}.svg`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('floor-plans')
-          .upload(filePath, svg, {
-            contentType: 'image/svg+xml',
-            upsert: false
-          });
-
-        if (uploadError) {
-          throw new Error(`Upload failed: ${uploadError.message}`);
-        }
-
-        const { data: publicUrlData } = supabase.storage
-          .from('floor-plans')
-          .getPublicUrl(filePath);
-
-        const downloadUrl = publicUrlData.publicUrl;
-        const filename = `Floor-Plan-${style.replace(/_/g, '-')}-${floorPlanParams.num_bedrooms || 3}bed.svg`;
-
-        // Deduct credits
-        const { data: userLimits } = await supabase
-          .from('user_ai_limits')
-          .select('monthly_messages, current_usage')
-          .eq('user_id', userId)
-          .maybeSingle();
-        
-        const currentUsage = userLimits?.current_usage || 0;
-        await supabase
-          .from('user_ai_limits')
-          .update({ current_usage: currentUsage + FLOOR_PLAN_CREDIT_COST })
-          .eq('user_id', userId);
-
-        console.log(`[ayn-unified] Floor plan uploaded: ${downloadUrl}`);
-
-        // Build success message
-        const totalArea = layout.rooms.reduce((sum: number, r: { width: number; height: number }) => sum + r.width * r.height, 0);
-        const creditsRemaining = (userLimits?.monthly_messages || 50) - currentUsage - FLOOR_PLAN_CREDIT_COST;
-        
-        const successMessages: Record<string, string> = {
-          ar: `تم إنشاء المخطط بنجاح! 🏠\n\n**${style.replace(/_/g, ' ')} - ${floorPlanParams.num_bedrooms || 3} غرف نوم، ${floorPlanParams.num_bathrooms || 2} حمام**\n\n- المساحة الإجمالية: ${totalArea.toFixed(0)} قدم مربع\n- عدد الغرف: ${layout.rooms.length}\n\nاضغط زر التحميل أدناه لتنزيل الملف.\n\n_(${FLOOR_PLAN_CREDIT_COST} رصيد مخصوم • ${creditsRemaining} متبقي)_`,
-          fr: `Plan créé avec succès! 🏠\n\n**${style.replace(/_/g, ' ')} - ${floorPlanParams.num_bedrooms || 3} chambres, ${floorPlanParams.num_bathrooms || 2} SdB**\n\n- Surface totale: ${totalArea.toFixed(0)} pi²\n- Pièces: ${layout.rooms.length}\n\nCliquez sur le bouton ci-dessous.\n\n_(${FLOOR_PLAN_CREDIT_COST} crédits déduits • ${creditsRemaining} restants)_`,
-          en: `Floor plan created successfully! 🏠\n\n**${style.replace(/_/g, ' ')} - ${floorPlanParams.num_bedrooms || 3} Bed, ${floorPlanParams.num_bathrooms || 2} Bath**\n\n- Total area: ${totalArea.toFixed(0)} SF\n- Rooms: ${layout.rooms.length}\n\nClick the download button below to get your floor plan.\n\n_(${FLOOR_PLAN_CREDIT_COST} credits used • ${creditsRemaining} remaining)_`
-        };
-
-        return new Response(JSON.stringify({
-          content: successMessages[language] || successMessages.en,
-          model: llmResult.modelUsed.display_name,
-          wasFallback: llmResult.wasFallback,
-          intent: 'floor_plan',
-          documentUrl: downloadUrl,
-          documentType: 'svg',
-          documentName: filename
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-
-      } catch (fpError) {
-        console.error('[ayn-unified] Floor plan generation failed:', fpError);
-        const errorMessages: Record<string, string> = {
-          ar: 'عذراً، حدث خطأ أثناء إنشاء المخطط. حاول مرة أخرى؟',
-          fr: "Désolé, une erreur est survenue lors de la création du plan. Réessayer?",
-          en: "Sorry, couldn't create that floor plan right now. Try again?"
-        };
-        return new Response(JSON.stringify({
-          content: errorMessages[language] || errorMessages.en,
-          error: fpError instanceof Error ? fpError.message : 'Floor plan generation failed',
-          intent: 'floor_plan'
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
+      // ... floor plan handler commented out for rebuild
     }
+    */
+    if (intent === 'floor_plan') {
+      // Temporarily disabled - treat as regular chat
+      intent = 'chat';
+      systemPrompt = buildSystemPrompt('chat', language, context, userMessage, userContext);
+    }
+
 
     // Sanitize user messages before passing to LLM
     const sanitizedMessages = messages.map((msg: { role: string; content: any }) => ({
