@@ -37,45 +37,52 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const displayText = header_text || tweet_text;
+    // Extract a SHORT catchy hook from the tweet text (max 10 words)
+    const words = (header_text || tweet_text).split(/\s+/);
+    const displayText = words.length > 10 ? words.slice(0, 10).join(' ') + '...' : words.join(' ');
 
-    // Build background instruction
+    // Build background instruction — BOLD and eye-catching
     const bgMap: Record<string, string> = {
-      white: "Clean white/light background with subtle light gray engineering grid lines and geometric blueprint patterns",
-      dark: "Dark navy/charcoal background (#1a1a2e) with subtle glowing grid lines in dark blue",
-      blue: `Gradient background using brand blue (${accent_color}) fading to a darker shade, with subtle geometric patterns`,
+      white: `Bold, clean design with a subtle light gray geometric grid at 5% opacity. White-to-light-gray gradient background with strong visual hierarchy`,
+      dark: `Dramatic dark navy-to-black gradient (#0a0a1a to #1a1a2e) with subtle glowing blue grid lines. Moody, high-contrast, premium feel`,
+      blue: `Bold gradient from deep electric blue (${accent_color}) to dark navy, with geometric light patterns. Energetic and modern`,
     };
-    const bgInstruction = bgMap[background_color] || bgMap.white;
+    const bgInstruction = bgMap[background_color] || bgMap.dark;
 
     // Build logo instruction
     const logoInstruction = include_logo
-      ? "Include the AYN brand eye symbol (a stylized eye/brain icon) subtly in the bottom-right corner as a watermark"
+      ? "Include the AYN brand eye symbol (a stylized eye icon) subtly in the bottom-right corner as a small watermark"
       : "Do NOT include any logo or watermark";
 
     // Build CTA instruction
     const ctaInstruction = cta_text
-      ? `Include a call-to-action button or text at the bottom: "${cta_text}" styled as a pill-shaped element with the accent color`
+      ? `Include a call-to-action at the bottom: "${cta_text}" styled as a sleek pill-shaped button with the accent color`
       : "";
 
     // Text color based on background
     const textColor = background_color === "dark" || background_color === "blue"
-      ? "white/light text for readability"
-      : "dark charcoal/black text for readability";
+      ? "bright white text for maximum contrast"
+      : "dark charcoal (#1a1a1a) text for strong readability";
 
-    const imagePrompt = `Create a professional 1080x1080 social media marketing image for an AI engineering platform called AYN.
+    const imagePrompt = `Create a BOLD, scroll-stopping 1080x1080 social media marketing image for AYN, an AI engineering platform.
 
-Design requirements:
+CRITICAL DESIGN RULES:
 - ${bgInstruction}
-- The following text should be displayed in a small, elegant sans-serif font at moderate size (occupying about 30% of the image, NOT large or oversized): "${displayText}"
-- Text color: ${textColor}, with select keywords highlighted in accent color (${accent_color})
+- The main text should be SHORT and IMPACTFUL: "${displayText}"
+- Text must be LARGE, BOLD, and the focal point — use a modern geometric sans-serif font
+- Text color: ${textColor}
+- Highlight 1-2 key words in electric blue (${accent_color}) with a subtle glow effect
 - ${logoInstruction}
-- Generous whitespace around the text, clean layout with text centered vertically
-- Professional, polished, and elegant — suitable for Twitter/X and Instagram
-- The text must be fully legible, well-spaced, and not cut off
-- Do NOT make the text large or bold — keep it refined and understated
-${ctaInstruction ? `- ${ctaInstruction}` : ""}`;
+- Design should make people STOP SCROLLING — think top-tier design agency quality
+- Strong visual hierarchy: one dominant element (the text), minimal supporting elements
+- Use negative space strategically — don't crowd the design
+- NO small text, NO paragraphs, NO cluttered layouts
+- The overall feel should be premium, bold, and impossible to ignore
+${ctaInstruction ? `- ${ctaInstruction}` : ""}
 
-    console.log("Generating image for post:", post_id, "bg:", background_color);
+Style reference: think Apple keynote slides meets tech startup marketing — bold, minimal, impactful.`;
+
+    console.log("Generating bold image for post:", post_id, "bg:", background_color);
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

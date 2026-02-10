@@ -7,13 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
-  Send, Trash2, Edit3, Clock, CheckCircle, XCircle,
-  Loader2, Sparkles, Calendar as CalendarIcon, BarChart3, RefreshCw, Camera, Target,
-  AlertCircle, Plus
+  Send, Trash2, Edit3, Clock, CheckCircle,
+  Loader2, Sparkles, Calendar as CalendarIcon, RefreshCw, Camera, Target,
+  AlertCircle, Plus, ChevronDown, ImageIcon
 } from 'lucide-react';
 import { BarChart, Bar, ResponsiveContainer } from 'recharts';
 
@@ -57,7 +58,7 @@ const EngagementSparkline = ({ post }: { post: TwitterPost }) => {
   if (!hasData) return null;
 
   return (
-    <div className="flex items-center gap-2 mt-1">
+    <div className="flex items-center gap-2 mt-1.5">
       <div className="w-16 h-6">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
@@ -65,7 +66,7 @@ const EngagementSparkline = ({ post }: { post: TwitterPost }) => {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
         <span>👁 {post.impressions?.toLocaleString() || 0}</span>
         <span>♥ {post.likes || 0}</span>
         <span>🔄 {post.retweets || 0}</span>
@@ -84,7 +85,7 @@ const CharCount = ({ count }: { count: number }) => {
   const offset = circumference - pct * circumference;
 
   return (
-    <div className="relative w-5 h-5 flex items-center justify-center">
+    <div className="relative w-5 h-5 flex items-center justify-center shrink-0">
       <svg className="w-5 h-5 -rotate-90" viewBox="0 0 20 20">
         <circle cx="10" cy="10" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="2" />
         <circle cx="10" cy="10" r={radius} fill="none" stroke={isOver ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'} strokeWidth="2" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
@@ -96,9 +97,9 @@ const CharCount = ({ count }: { count: number }) => {
 
 // Thread connector
 const ThreadConnector = ({ isFirst, isLast }: { isFirst: boolean; isLast: boolean }) => (
-  <div className="absolute -left-3 top-0 bottom-0 w-4 flex flex-col items-center">
+  <div className="absolute -left-4 top-0 bottom-0 w-5 flex flex-col items-center">
     {!isFirst && <div className="w-0.5 flex-1 bg-primary/20" />}
-    <div className="w-2 h-2 rounded-full bg-primary/40 border-2 border-primary shrink-0" />
+    <div className="w-2.5 h-2.5 rounded-full bg-primary/40 border-2 border-primary shrink-0" />
     {!isLast && <div className="w-0.5 flex-1 bg-primary/20" />}
   </div>
 );
@@ -149,6 +150,11 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
   const [editContent, setEditContent] = useState('');
   const [filterContentType, setFilterContentType] = useState('all');
   const [filterAudience, setFilterAudience] = useState('all');
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+
+  const toggleSection = (status: string) => {
+    setCollapsedSections(prev => ({ ...prev, [status]: !prev[status] }));
+  };
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -165,7 +171,7 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
-  const handleGenerate = async (mode?: 'single' | 'thread' | 'campaign') => {
+  const handleGenerate = async (mode?: 'single' | 'thread' | 'campaign' | 'image') => {
     setIsGenerating(true);
     try {
       const body: Record<string, unknown> = {};
@@ -173,10 +179,18 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
       if (filterAudience !== 'all') body.target_audience = filterAudience;
       if (mode === 'thread') body.thread_mode = true;
       if (mode === 'campaign') body.campaign_plan = true;
+      if (mode === 'image') body.image_only = true;
 
       const { data, error } = await supabase.functions.invoke('twitter-auto-market', { body });
       if (error) throw error;
-      toast.success(mode === 'thread' ? 'Thread generated!' : mode === 'campaign' ? 'Campaign plan generated!' : 'Tweet generated!');
+      
+      const modeLabels: Record<string, string> = {
+        thread: 'Thread generated!',
+        campaign: 'Campaign plan generated!',
+        image: 'Image post generated!',
+        single: 'Tweet generated!',
+      };
+      toast.success(modeLabels[mode || 'single'] || 'Tweet generated!');
       fetchPosts();
     } catch { toast.error('Failed to generate'); }
     finally { setIsGenerating(false); }
@@ -243,19 +257,16 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
       }
     });
 
-    // Sort thread posts by order
     threads.forEach(posts => posts.sort((a, b) => (a.thread_order || 0) - (b.thread_order || 0)));
-
     return { threads, singles };
   };
 
-  const columns: { status: string; posts: TwitterPost[] }[] = [
+  const sections: { status: string; posts: TwitterPost[] }[] = [
     { status: 'draft', posts: posts.filter(p => p.status === 'draft') },
     { status: 'scheduled', posts: posts.filter(p => p.status === 'scheduled') },
     { status: 'posted', posts: posts.filter(p => p.status === 'posted') },
   ];
 
-  // Failed posts
   const failedPosts = posts.filter(p => p.status === 'failed');
 
   if (isLoading) return (
@@ -301,6 +312,9 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
         <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => handleGenerate('campaign')} disabled={isGenerating}>
           📅 Campaign
         </Button>
+        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => handleGenerate('image')} disabled={isGenerating}>
+          <ImageIcon className="w-3 h-3" /> Image Post
+        </Button>
         <Button size="sm" variant="ghost" className="h-8 w-8 p-0 ml-auto" onClick={fetchPosts} title="Refresh">
           <RefreshCw className="w-3.5 h-3.5" />
         </Button>
@@ -327,78 +341,84 @@ export const ContentPipeline = ({ onOpenCreativeEditor }: ContentPipelineProps) 
         </div>
       )}
 
-      {/* Kanban columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {columns.map(({ status, posts: colPosts }) => {
+      {/* Vertically stacked sections */}
+      <div className="space-y-3">
+        {sections.map(({ status, posts: sectionPosts }) => {
           const config = statusConfig[status];
           const Icon = config.icon;
-          const { threads, singles } = groupPosts(colPosts);
+          const { threads, singles } = groupPosts(sectionPosts);
+          const isOpen = !collapsedSections[status];
 
           return (
-            <div key={status} className="space-y-2">
-              <div className="flex items-center gap-2 px-1">
-                <Icon className={`w-3.5 h-3.5 ${config.color}`} />
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{config.label}</h3>
-                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-auto">{colPosts.length}</Badge>
-              </div>
+            <Collapsible key={status} open={isOpen} onOpenChange={() => toggleSection(status)}>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-muted/15 border border-border/30 hover:bg-muted/25 transition-colors cursor-pointer">
+                  <Icon className={`w-4 h-4 ${config.color}`} />
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{config.label}</h3>
+                  <Badge variant="secondary" className="text-[10px] h-5 px-2">{sectionPosts.length}</Badge>
+                  <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CollapsibleTrigger>
 
-              <div className="space-y-2 min-h-[120px]">
-                {/* Thread groups */}
-                {Array.from(threads.entries()).map(([threadId, threadPosts]) => (
-                  <div key={threadId} className="relative pl-5 space-y-1.5">
-                    <Badge variant="outline" className="text-[9px] h-4 px-1.5 mb-1">🧵 Thread · {threadPosts.length} tweets</Badge>
-                    {threadPosts.map((post, idx) => (
-                      <div key={post.id} className="relative">
-                        <ThreadConnector isFirst={idx === 0} isLast={idx === threadPosts.length - 1} />
-                        <PostCard
-                          post={post}
-                          editingId={editingId}
-                          editContent={editContent}
-                          isPosting={isPosting}
-                          setEditingId={setEditingId}
-                          setEditContent={setEditContent}
-                          handleSaveEdit={handleSaveEdit}
-                          handlePost={handlePost}
-                          handleSchedule={handleSchedule}
-                          handleDelete={handleDelete}
-                          onOpenCreativeEditor={onOpenCreativeEditor}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ))}
+              <CollapsibleContent>
+                <div className="space-y-2 pt-2">
+                  {/* Thread groups */}
+                  {Array.from(threads.entries()).map(([threadId, threadPosts]) => (
+                    <div key={threadId} className="relative pl-6 space-y-2">
+                      <Badge variant="outline" className="text-[9px] h-4 px-1.5 mb-1">🧵 Thread · {threadPosts.length} tweets</Badge>
+                      {threadPosts.map((post, idx) => (
+                        <div key={post.id} className="relative">
+                          <ThreadConnector isFirst={idx === 0} isLast={idx === threadPosts.length - 1} />
+                          <PostCard
+                            post={post}
+                            editingId={editingId}
+                            editContent={editContent}
+                            isPosting={isPosting}
+                            setEditingId={setEditingId}
+                            setEditContent={setEditContent}
+                            handleSaveEdit={handleSaveEdit}
+                            handlePost={handlePost}
+                            handleSchedule={handleSchedule}
+                            handleDelete={handleDelete}
+                            onOpenCreativeEditor={onOpenCreativeEditor}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ))}
 
-                {/* Single posts */}
-                {singles.map(post => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    editingId={editingId}
-                    editContent={editContent}
-                    isPosting={isPosting}
-                    setEditingId={setEditingId}
-                    setEditContent={setEditContent}
-                    handleSaveEdit={handleSaveEdit}
-                    handlePost={handlePost}
-                    handleSchedule={handleSchedule}
-                    handleDelete={handleDelete}
-                    onOpenCreativeEditor={onOpenCreativeEditor}
-                  />
-                ))}
+                  {/* Single posts */}
+                  {singles.map(post => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      editingId={editingId}
+                      editContent={editContent}
+                      isPosting={isPosting}
+                      setEditingId={setEditingId}
+                      setEditContent={setEditContent}
+                      handleSaveEdit={handleSaveEdit}
+                      handlePost={handlePost}
+                      handleSchedule={handleSchedule}
+                      handleDelete={handleDelete}
+                      onOpenCreativeEditor={onOpenCreativeEditor}
+                    />
+                  ))}
 
-                {colPosts.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-border/50 p-6 text-center space-y-2">
-                    <Icon className="w-5 h-5 text-muted-foreground/30 mx-auto" />
-                    <p className="text-[11px] text-muted-foreground">{config.emptyText}</p>
-                    {status === 'draft' && (
-                      <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => handleGenerate('single')} disabled={isGenerating}>
-                        <Plus className="w-3 h-3" /> {config.emptyAction}
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+                  {sectionPosts.length === 0 && (
+                    <div className="rounded-xl border border-dashed border-border/50 p-8 text-center space-y-2">
+                      <Icon className="w-6 h-6 text-muted-foreground/30 mx-auto" />
+                      <p className="text-xs text-muted-foreground">{config.emptyText}</p>
+                      {status === 'draft' && (
+                        <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1 mt-2" onClick={() => handleGenerate('single')} disabled={isGenerating}>
+                          <Plus className="w-3 h-3" /> {config.emptyAction}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           );
         })}
       </div>
@@ -447,8 +467,9 @@ const PostCard = ({
         </div>
       )}
 
+      {/* Image preview — prominent */}
       {post.image_url && (
-        <img src={post.image_url} alt="" className="w-full rounded-lg aspect-video object-cover" loading="lazy" />
+        <img src={post.image_url} alt="" className="w-full rounded-lg aspect-square object-cover border border-border/20" loading="lazy" />
       )}
 
       <div className="flex items-center gap-1 flex-wrap">
@@ -466,8 +487,8 @@ const PostCard = ({
       {/* Engagement sparkline for posted */}
       {post.status === 'posted' && <EngagementSparkline post={post} />}
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Actions — always visible */}
+      <div className="flex items-center gap-1 pt-1">
         {post.status === 'draft' && (
           <>
             <Button size="sm" className="h-6 text-[10px] gap-1" onClick={() => handlePost(post)} disabled={isPosting === post.id}>
@@ -478,7 +499,7 @@ const PostCard = ({
               <Edit3 className="w-2.5 h-2.5" />
             </Button>
             {onOpenCreativeEditor && (
-              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onOpenCreativeEditor(post)}>
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onOpenCreativeEditor(post)} title="Generate image">
                 <Camera className="w-2.5 h-2.5" />
               </Button>
             )}
