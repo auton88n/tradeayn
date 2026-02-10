@@ -511,13 +511,15 @@ export async function cmdClearErrors(text: string, supabase: Supabase): Promise<
   const hours = parseInt(hoursStr);
   if (isNaN(hours) || hours < 1) return '❌ Usage: /clear_errors [hours]';
   const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
-  const { count } = await supabase.from('error_logs').delete().lt('created_at', cutoff).select('*', { count: 'exact', head: true });
-  await logAynActivity(supabase, 'errors_cleared', `Cleared errors older than ${hours}h`, {
+  // Count first, then delete (delete+select returns 0 since rows are gone)
+  const { count } = await supabase.from('error_logs').select('*', { count: 'exact', head: true }).lt('created_at', cutoff);
+  await supabase.from('error_logs').delete().lt('created_at', cutoff);
+  await logAynActivity(supabase, 'errors_cleared', `Cleared ${count || 0} errors older than ${hours}h`, {
     target_type: 'error_log',
     details: { hours, cutoff, deleted_count: count },
     triggered_by: 'telegram_command',
   });
-  return `🧹 Cleared error logs older than ${hours} hours.`;
+  return `🧹 Cleared ${count || 0} error logs older than ${hours} hours.`;
 }
 
 // ─── /think ───
