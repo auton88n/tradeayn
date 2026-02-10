@@ -1502,6 +1502,59 @@ export type Database = {
         }
         Relationships: []
       }
+      inbound_email_replies: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          created_at: string
+          from_email: string
+          from_name: string | null
+          id: string
+          in_reply_to: string | null
+          is_read: boolean
+          message_id: string | null
+          pipeline_lead_id: string | null
+          subject: string | null
+          to_email: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          from_email: string
+          from_name?: string | null
+          id?: string
+          in_reply_to?: string | null
+          is_read?: boolean
+          message_id?: string | null
+          pipeline_lead_id?: string | null
+          subject?: string | null
+          to_email: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          from_email?: string
+          from_name?: string | null
+          id?: string
+          in_reply_to?: string | null
+          is_read?: boolean
+          message_id?: string | null
+          pipeline_lead_id?: string | null
+          subject?: string | null
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbound_email_replies_pipeline_lead_id_fkey"
+            columns: ["pipeline_lead_id"]
+            isOneToOne: false
+            referencedRelation: "ayn_sales_pipeline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ip_blocks: {
         Row: {
           block_reason: string
