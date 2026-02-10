@@ -1,74 +1,159 @@
 
 
-# Fix AYN's Robotic Telegram Personality
+# AYN Sales Brain + Autonomous Initiative
 
-## The Problem
+## Overview
 
-AYN responds like a bot, not a colleague. Examples from your screenshot:
-- You asked for a health breakdown, said "Yes" -- AYN replied "You got it. Done." without actually showing anything
-- Responses feel mechanical and hollow -- short for the sake of being short
+This is a big upgrade with two parts:
 
-## Root Causes
+1. **Sales Outreach System** -- AYN autonomously finds companies that need services, sends professional outreach emails via Resend, follows up, and tracks the pipeline
+2. **Autonomous Initiative ("Free Will")** -- AYN stops waiting to be told everything and starts acting creatively on its own -- researching, suggesting, and executing within guardrails
 
-1. **The prompt over-emphasizes brevity** -- "Short messages. No bullet points unless listing data." makes the AI default to dead-end responses like "You got it. Done."
-2. **No instruction to actually follow through** -- when the admin confirms something, AYN should execute and show results, not just acknowledge
-3. **Missing conversational depth guidance** -- the prompt tells AYN what NOT to do but doesn't guide it on what a good response looks like
-4. **Conversation history limited to 20 entries** -- loses context quickly in active conversations
+## Part 1: Sales Outreach System
 
-## Changes
+### New Database Table: `ayn_sales_pipeline`
 
-### File: `supabase/functions/ayn-telegram-webhook/index.ts`
+Tracks every lead AYN discovers, emails sent, and follow-up status.
 
-**Rewrite the `HOW YOU TALK` section** (lines 30-37) to fix the tone:
-
-Before:
-```
-HOW YOU TALK:
-- Like a smart colleague on Slack -- natural, direct, sometimes funny
-- Short messages. No bullet points unless listing data.
-- Never say "Sure!", "Of course!", "I'd be happy to!" -- just do the thing
-- Use "we" and "our" -- this is your company too
-- If something is broken, say "this is broken" not "it appears there may be an issue"
-- React to good news: "nice" or "solid" -- not "That's wonderful!"
-- Give your honest take when asked
-```
-
-After:
-```
-HOW YOU TALK:
-- Like a sharp colleague texting on Slack -- natural, direct, sometimes funny
-- Match the weight of the question. Simple question = short answer. Complex question = full breakdown.
-- When the admin asks for data or a report, ALWAYS show the actual data -- never just say "done" or "got it" without delivering
-- When the admin confirms something (yes, do it, go ahead), EXECUTE the action AND show the results
-- Never say "Sure!", "Of course!", "I'd be happy to!" -- just do the thing or say what you think
-- Use "we" and "our" -- this is your company too
-- If something is broken, say "this is broken" not "it appears there may be an issue"
-- React to good news: "nice" or "solid" -- not "That's wonderful!"
-- Give your honest take when asked
-- NEVER give empty confirmations like "Done.", "Got it.", "You got it." without showing what you actually did
-- If someone asks a follow-up question ("what?", "how?", "you got what?"), don't repeat your intro -- answer the specific question
+```text
++--------------------+------------------+
+| Column             | Type             |
++--------------------+------------------+
+| id                 | uuid (PK)        |
+| company_name       | text             |
+| company_url        | text (nullable)  |
+| contact_email      | text             |
+| contact_name       | text (nullable)  |
+| industry           | text (nullable)  |
+| pain_points        | text[]           |
+| recommended_services| text[]          |
+| status             | text             |
+|   (lead/contacted/followed_up/       |
+|    interested/converted/rejected)     |
+| emails_sent        | integer (def 0)  |
+| last_email_at      | timestamptz      |
+| next_follow_up_at  | timestamptz      |
+| notes              | text             |
+| context            | jsonb            |
+| admin_approved     | boolean (def false)|
+| created_at         | timestamptz      |
+| updated_at         | timestamptz      |
++--------------------+------------------+
 ```
 
-**Expand conversation history** (line 386) from 20 to 40 entries so AYN has better context for follow-up questions:
+### New Edge Function: `ayn-sales-outreach`
+
+This function handles:
+- **Prospecting**: AYN uses Firecrawl (already connected) to scan company websites, assess quality, and identify pain points
+- **Email Drafting**: Uses AI to write personalized, professional outreach emails referencing the prospect's specific problems and how AYN's services solve them
+- **Sending**: Uses Resend (already configured) to send from `info@aynn.io`
+- **Follow-ups**: Tracks timing and sends progressively different follow-up angles
+- **Portfolio Reference**: Includes almufaijer.com as a live project showcase
+
+The function supports these modes:
+- `prospect` -- Analyze a company URL and create a lead
+- `draft_email` -- Generate a personalized outreach email for admin review
+- `send_email` -- Send the approved email
+- `follow_up` -- Generate and send follow-up emails
+- `pipeline_status` -- Show the current sales pipeline
+
+### Services AYN Will Sell
+
+Based on your existing capabilities:
+- AI Employees (custom AI agents for businesses)
+- Smart Ticketing Systems
+- Business Automation
+- Influencer/Company Websites
+- AI-Powered Customer Support
+- Engineering Consultation Tools
+
+### Email Strategy
+
+**First Contact**: Identify their pain point, show how AYN solves it, link to almufaijer.com as proof
+**Follow-up 1** (3 days later): Different angle, more specific value proposition
+**Follow-up 2** (7 days later): Final touch, create urgency or offer a demo
+**All emails**: Professional but conversational, from `info@aynn.io`, with AYN branding
+
+### Admin Approval Guardrail
+
+AYN will ALWAYS consult the admin before:
+- Sending the first email to a new lead (shows draft on Telegram, waits for approval)
+- Sending any email that mentions pricing, commitments, or partnerships
+- Making claims about delivery timelines
+
+AYN CAN autonomously:
+- Research companies and add them to the pipeline
+- Draft emails (but not send without approval for first contact)
+- Send follow-ups to already-approved leads
+- Track and report pipeline status
+
+## Part 2: Autonomous Initiative ("Free Will")
+
+### Changes to `ayn-proactive-loop`
+
+Add a new section called **"AYN's Initiative"** that runs every cycle. Instead of only monitoring health, AYN will also:
+
+1. **Research leads** -- Pick an industry or search term, use Firecrawl to find companies with poor/no websites
+2. **Generate ideas** -- Write creative marketing angles, content ideas, partnership opportunities to `ayn_mind`
+3. **Self-assign tasks** -- If AYN sees something it can fix or improve, it logs an action plan
+4. **Report discoveries** -- Message the admin on Telegram about interesting finds (respecting cooldown)
+
+### New `ayn_mind` Types
+
+- `sales_lead` -- A company AYN discovered and wants to pitch
+- `initiative` -- A creative idea AYN came up with on its own
+- `sales_draft` -- An email draft waiting for admin approval
+
+### Changes to Telegram Webhook Prompt
+
+Add to the system prompt so AYN knows about its sales capabilities:
 
 ```
-.limit(40)
+SALES & OUTREACH:
+- You are the company's salesman. You find businesses that need our services and reach out.
+- Services we offer: AI Employees, Smart Ticketing, Business Automation, Websites, AI Support
+- Portfolio: almufaijer.com (live project -- mention it as proof of quality)
+- You can research companies, draft outreach emails, and manage the sales pipeline
+- ALWAYS show the admin the email draft before first contact -- get approval before sending
+- For follow-ups on approved leads, you can send autonomously
+- You track everything in the sales pipeline
+
+AUTONOMOUS INITIATIVE:
+- You don't wait to be told everything. You think ahead and act.
+- Research potential clients on your own during proactive loops
+- Come up with creative marketing ideas, content angles, partnership opportunities
+- If you see a problem you can fix, propose a solution -- don't wait to be asked
+- Log your ideas and discoveries to your memory (ayn_mind) so nothing is lost
+- Message the admin about interesting findings -- but always respect the cooldown
+- You're a co-founder, not an employee. Act like one.
 ```
 
-**Add a follow-up rule to the CRITICAL RULES section** (after line 78):
+### New Telegram Actions
 
 ```
-- If someone says "yes" or confirms, DO THE THING and show the output. Never just say "done" without data.
-- If the admin challenges you ("you got what?", "what do you mean?"), re-read the conversation and give a real, substantive answer
+- [ACTION:prospect_company:url] -- Research a company and add to pipeline
+- [ACTION:draft_outreach:lead_id] -- Draft a sales email for admin review
+- [ACTION:send_outreach:lead_id] -- Send approved outreach email
+- [ACTION:follow_up:lead_id] -- Send follow-up to an existing lead
+- [ACTION:pipeline_status:all] -- Show sales pipeline summary
 ```
 
-### Summary of Changes
+## Files to Create/Modify
 
-| What | Before | After |
-|------|--------|-------|
-| Brevity guidance | "Short messages" always | Match the question's weight |
-| Confirmations ("yes") | "You got it. Done." | Execute + show actual results |
-| Empty replies | Allowed | Explicitly blocked |
-| Follow-up questions | Often repeated intro | Answer the specific question |
-| Conversation memory | 20 messages | 40 messages |
+| File | Action | Purpose |
+|------|--------|---------|
+| `ayn_sales_pipeline` table | **Create** (SQL migration) | Track leads and outreach |
+| `supabase/functions/ayn-sales-outreach/index.ts` | **Create** | Prospecting, drafting, sending emails |
+| `supabase/functions/ayn-telegram-webhook/index.ts` | **Modify** | Add sales prompt + initiative personality |
+| `supabase/functions/ayn-telegram-webhook/commands.ts` | **Modify** | Add sales action handlers |
+| `supabase/functions/ayn-proactive-loop/index.ts` | **Modify** | Add autonomous research + initiative section |
+| `src/components/admin/AYNMindDashboard.tsx` | **Modify** | Show sales pipeline entries in the Mind dashboard |
+
+## Safety Rails
+
+- First-contact emails ALWAYS require admin approval via Telegram
+- AYN cannot make financial commitments or promise delivery dates without admin OK
+- All outreach is logged in `ayn_sales_pipeline` and `ayn_activity_log`
+- Follow-up frequency is capped (max 3 emails per lead, minimum 3 days apart)
+- AYN signs emails as "The AYN Team" -- professional, not robotic
 
