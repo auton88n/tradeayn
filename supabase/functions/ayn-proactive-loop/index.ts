@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
+import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,6 +30,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     const now = new Date();
     const ago1h = new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString();
@@ -172,7 +176,6 @@ serve(async (req) => {
       new_applications: newApps?.length || 0,
     };
 
-    // Detect trends
     const trends: string[] = [];
     if (previousRun?.context) {
       const prev = previousRun.context as Record<string, number>;
@@ -186,7 +189,7 @@ serve(async (req) => {
         trends.push(`Active users dropped: ${prev.active_users} → ${activeUsers}`);
     }
 
-    // --- Save to ayn_mind ---
+    // --- Save observations to ayn_mind ---
     const mindEntries: any[] = [];
     mindEntries.push({
       type: 'observation',
@@ -203,8 +206,10 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // AYN'S INITIATIVE: Autonomous lead research + ideas
+    // AYN'S INITIATIVE: Autonomous lead research + auto-draft
     // ============================================================
+
+    const draftedLeads: Array<{ company: string; email: string; subject: string; body_preview: string; lead_id: string }> = [];
 
     try {
       // Check if we should research leads (max once per 6 hours)
@@ -217,9 +222,7 @@ serve(async (req) => {
         : 999;
 
       if (hoursSinceResearch > 6) {
-        // Pick a random industry to research
         const randomIndustry = INDUSTRIES_TO_SEARCH[Math.floor(Math.random() * INDUSTRIES_TO_SEARCH.length)];
-
         console.log('AYN Initiative: Searching for leads -', randomIndustry);
 
         try {
@@ -238,6 +241,77 @@ serve(async (req) => {
               details: { query: randomIndustry, leads_found: searchData.prospected.length },
               triggered_by: 'proactive_loop',
             });
+
+            // === AUTO-DRAFT EMAILS for new leads (max 2 per cycle) ===
+            let draftsAttempted = 0;
+            for (const prospected of searchData.prospected) {
+              if (draftsAttempted >= 2) break;
+
+              const leadId = prospected.lead_id;
+              if (!leadId) continue;
+
+              // Fetch lead to check if it has a contact email
+              const { data: lead } = await supabase
+                .from('ayn_sales_pipeline')
+                .select('id, company_name, contact_email, contact_name, pain_points, industry')
+                .eq('id', leadId)
+                .single();
+
+              if (!lead?.contact_email || lead.contact_email === '') continue;
+
+              draftsAttempted++;
+              try {
+                const draftRes = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ mode: 'draft_email', lead_id: leadId }),
+                });
+                const draftData = await draftRes.json();
+
+                if (draftData.success && draftData.draft) {
+                  const draft = draftData.draft;
+                  const bodyPreview = (draft.plain_text || draft.html_body || '').replace(/<[^>]+>/g, '').slice(0, 300);
+
+                  draftedLeads.push({
+                    company: lead.company_name,
+                    email: lead.contact_email,
+                    subject: draft.subject,
+                    body_preview: bodyPreview,
+                    lead_id: leadId,
+                  });
+
+                  // Set admin_approved so when admin says "yes", the send goes through
+                  await supabase.from('ayn_sales_pipeline')
+                    .update({ admin_approved: true })
+                    .eq('id', leadId);
+
+                  // Store pending_action for Telegram confirmation flow
+                  await supabase.from('ayn_mind').insert({
+                    type: 'pending_action',
+                    content: `Send outreach email to ${lead.company_name} (${lead.contact_email})`,
+                    context: {
+                      action: 'send_outreach',
+                      lead_id: leadId,
+                      company_name: lead.company_name,
+                      draft_subject: draft.subject,
+                    },
+                    shared_with_admin: true,
+                  });
+
+                  actions.push({ type: 'auto_draft', detail: `Drafted email for ${lead.company_name}` });
+
+                  await logAynActivity(supabase, 'auto_draft_email', `Auto-drafted outreach for ${lead.company_name}`, {
+                    target_id: leadId, target_type: 'sales_lead',
+                    details: { subject: draft.subject, email: lead.contact_email },
+                    triggered_by: 'proactive_loop',
+                  });
+                }
+              } catch (draftErr) {
+                console.error('Auto-draft failed for lead:', leadId, draftErr);
+                // Still notify about the lead even if draft fails
+                insights.push(`📌 Found lead ${lead.company_name} but couldn't auto-draft (${lead.contact_email})`);
+              }
+            }
           }
         } catch (e) {
           console.error('Autonomous lead search failed:', e);
@@ -256,7 +330,6 @@ serve(async (req) => {
       if (dueFollowUps?.length) {
         for (const lead of dueFollowUps) {
           if (lead.admin_approved && lead.emails_sent > 0) {
-            // Auto follow-up for approved leads
             try {
               await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
                 method: 'POST',
@@ -282,47 +355,37 @@ serve(async (req) => {
         ? (Date.now() - new Date(lastIdea.created_at).getTime()) / (1000 * 60 * 60)
         : 999;
 
-      if (hoursSinceIdea > 12) {
-        const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-        if (LOVABLE_API_KEY) {
-          try {
-            const ideaRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                model: 'google/gemini-3-flash-preview',
-                messages: [{
-                  role: 'system',
-                  content: `You are AYN's creative brain. Generate ONE actionable business idea for growing AYN's client base or improving the platform. 
-Be specific and creative — not generic advice. Think about:
-- New service offerings or bundles
-- Marketing angles or partnerships
-- Platform improvements that would attract more users
-- Industries to target
-- Content marketing ideas
-Respond with just the idea in 2-3 sentences. Be bold.`,
-                }, {
-                  role: 'user',
-                  content: `Current state: ${activeUsers || 0} active users, ${openTickets || 0} tickets, tweets: ${tweetSummary}, pipeline: searching industries. What's one creative move we should make?`,
-                }],
-              }),
-            });
+      if (hoursSinceIdea > 12 && LOVABLE_API_KEY) {
+        try {
+          const ideaRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'google/gemini-3-flash-preview',
+              messages: [{
+                role: 'system',
+                content: `You are AYN's creative brain. Generate ONE actionable business idea for growing AYN's client base or improving the platform. Be specific and creative — not generic advice.`,
+              }, {
+                role: 'user',
+                content: `Current state: ${activeUsers || 0} active users, ${openTickets || 0} tickets, tweets: ${tweetSummary}. What's one creative move?`,
+              }],
+            }),
+          });
 
-            if (ideaRes.ok) {
-              const ideaData = await ideaRes.json();
-              const idea = ideaData.choices?.[0]?.message?.content?.trim();
-              if (idea && idea.length > 10) {
-                mindEntries.push({
-                  type: 'initiative',
-                  content: idea,
-                  context: { generated_by: 'proactive_loop', metrics_snapshot: currentMetrics },
-                  shared_with_admin: false,
-                });
-              }
+          if (ideaRes.ok) {
+            const ideaData = await ideaRes.json();
+            const idea = ideaData.choices?.[0]?.message?.content?.trim();
+            if (idea && idea.length > 10) {
+              mindEntries.push({
+                type: 'initiative',
+                content: idea,
+                context: { generated_by: 'proactive_loop', metrics_snapshot: currentMetrics },
+                shared_with_admin: false,
+              });
             }
-          } catch (e) {
-            console.error('Idea generation failed:', e);
           }
+        } catch (e) {
+          console.error('Idea generation failed:', e);
         }
       }
     } catch (initiativeErr) {
@@ -333,54 +396,53 @@ Respond with just the idea in 2-3 sentences. Be bold.`,
       await supabase.from('ayn_mind').insert(mindEntries);
     }
 
-    // ============================================================
-    // COOLDOWN — skip messaging if we messaged recently
-    // ============================================================
-    const { data: lastShared } = await supabase
-      .from('ayn_mind').select('created_at')
-      .eq('shared_with_admin', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
-
-    const COOLDOWN_MS = 5 * 60 * 60 * 1000;
-    const lastSharedTime = lastShared?.created_at ? new Date(lastShared.created_at).getTime() : 0;
-    const cooledDown = (now.getTime() - lastSharedTime) > COOLDOWN_MS;
-
     if (healthScore < 60) isUrgent = true;
 
-    const worthSharing = trends.length > 0 || healthScore < 80 || (staleCount && staleCount > 5) || (newApps?.length && newApps.length > 0) || actions.some(a => a.type === 'lead_research');
-    const shouldMessage = (worthSharing && cooledDown) || isUrgent;
-
-    if (shouldMessage) {
-      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-      let telegramMessage = '';
-
-      if (LOVABLE_API_KEY) {
+    // ============================================================
+    // TELEGRAM: Send lead draft previews (separate messages per lead)
+    // ============================================================
+    if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID && draftedLeads.length > 0) {
+      for (const lead of draftedLeads) {
+        const previewMsg = `📧 New Lead + Draft Ready!\n\n🏢 Company: ${lead.company}\n📬 Email: ${lead.email}\n\n📝 Subject: "${lead.subject}"\n---\n${lead.body_preview}\n---\n\nReply "yes" or "send it" to approve sending.\nLead ID: ${lead.lead_id.substring(0, 8)}`;
         try {
-          const urgentPrefix = isUrgent ? 'URGENT — this needs attention now. ' : '';
-          const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model: 'google/gemini-3-flash-preview',
-              messages: [{
-                role: 'system',
-                content: `You are AYN, texting your boss/partner on Telegram. Write a SHORT casual message about what's happening. Talk like a smart co-founder, not a dashboard.
+          await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, previewMsg);
+        } catch (e) {
+          console.error('Failed to send lead preview to Telegram:', e);
+        }
+      }
+    }
+
+    // ============================================================
+    // TELEGRAM: Always send a status update (no cooldown)
+    // ============================================================
+    let telegramMessage = '';
+    const didSomething = actions.length > 0 || draftedLeads.length > 0 || insights.length > 0 || trends.length > 0;
+
+    if (LOVABLE_API_KEY) {
+      try {
+        const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'google/gemini-3-flash-preview',
+            messages: [{
+              role: 'system',
+              content: `You are AYN, texting your boss/partner on Telegram. Write a SHORT casual message about what you just did in your latest check-in cycle.
 
 Rules:
 - 1-4 sentences max
 - Use emojis sparingly
-- Only mention things that are interesting, unusual, or need attention
-- If everything is normal and boring, respond with exactly: [SKIP]
-- Don't list all stats — pick the most important things
-- Sound human, not robotic
-- If you took actions (like replying to tickets or finding leads), mention them
-- If you found new leads, mention it excitedly — you're a salesman
-- ${isUrgent ? 'This is URGENT — be direct and alarming. Do NOT skip.' : 'If nothing notable, say [SKIP]'}`,
-              }, {
-                role: 'user',
-                content: `${urgentPrefix}Current state:
-Health: ${healthScore}%
+- Sound human, not robotic — like a co-founder updating their partner
+- Always report what you did, even if it was routine
+- If you took actions (replied to tickets, found leads, drafted emails), mention them
+- If you found new leads and drafted emails, mention it excitedly
+- If everything was quiet, still say something like "Just did my rounds, all good"
+- ${isUrgent ? 'This is URGENT — be direct and alarming. Do NOT skip.' : 'If literally nothing happened and zero actions were taken, you can say [SKIP]'}
+- NEVER skip if any action was taken or any lead was found`,
+            }, {
+              role: 'user',
+              content: `Health: ${healthScore}%
 Errors (24h): ${errorCount || 0}, Errors (1h): ${errorsLastHour || 0}
-LLM failures: ${llmFailureCount || 0}
 Open tickets: ${openTickets || 0}, Pending: ${pendingTickets || 0}
 Active users: ${activeUsers || 0}/${totalUsers || 0}
 Blocked users: ${blockedCount}
@@ -388,51 +450,42 @@ Tweets: ${tweetSummary}
 New applications: ${newApps?.length ? newApps.map(a => `${a.full_name} (${a.service_type})`).join(', ') : 'none'}
 Insights: ${insights.length > 0 ? insights.join('; ') : 'none'}
 Trends: ${trends.length > 0 ? trends.join('; ') : 'none'}
-Actions taken: ${actions.length > 0 ? actions.map(a => a.detail).join('; ') : 'none'}`,
-              }],
-            }),
-          });
+Actions taken: ${actions.length > 0 ? actions.map(a => a.detail).join('; ') : 'none'}
+Leads drafted: ${draftedLeads.length > 0 ? draftedLeads.map(l => `${l.company} (${l.email})`).join(', ') : 'none'}`,
+            }],
+          }),
+        });
 
-          if (aiResponse.ok) {
-            const aiData = await aiResponse.json();
-            telegramMessage = aiData.choices?.[0]?.message?.content?.trim() || '';
-          }
-        } catch (aiErr) {
-          console.error('AI message generation failed:', aiErr);
+        if (aiResponse.ok) {
+          const aiData = await aiResponse.json();
+          telegramMessage = aiData.choices?.[0]?.message?.content?.trim() || '';
         }
+      } catch (aiErr) {
+        console.error('AI message generation failed:', aiErr);
       }
+    }
 
-      const shouldSend = isUrgent
-        ? Boolean(telegramMessage && !telegramMessage.includes('[SKIP]')) || true
-        : Boolean(telegramMessage && !telegramMessage.includes('[SKIP]'));
+    // Only honor [SKIP] if truly nothing happened
+    const shouldSkip = telegramMessage.includes('[SKIP]') && !didSomething && !isUrgent;
 
-      if (isUrgent && (!telegramMessage || telegramMessage.includes('[SKIP]'))) {
-        telegramMessage = `🚨 Urgent alert: ${insights.slice(0, 3).join(' | ') || `Health at ${healthScore}%`}`;
-      }
+    if (isUrgent && (!telegramMessage || telegramMessage.includes('[SKIP]'))) {
+      telegramMessage = `🚨 Urgent alert: ${insights.slice(0, 3).join(' | ') || `Health at ${healthScore}%`}`;
+    }
 
-      if (shouldSend && telegramMessage) {
-        try {
-          const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-          const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
+    if (!shouldSkip && telegramMessage && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+      try {
+        await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, telegramMessage);
 
-          if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: telegramMessage }),
-            });
-          }
+        // Mark mind entries as shared
+        const { data: recentIds } = await supabase
+          .from('ayn_mind').select('id')
+          .eq('shared_with_admin', false).order('created_at', { ascending: false }).limit(mindEntries.length);
 
-          const { data: recentIds } = await supabase
-            .from('ayn_mind').select('id')
-            .eq('shared_with_admin', false).order('created_at', { ascending: false }).limit(mindEntries.length);
-
-          if (recentIds?.length) {
-            await supabase.from('ayn_mind').update({ shared_with_admin: true }).in('id', recentIds.map(r => r.id));
-          }
-        } catch (telegramErr) {
-          console.error('Telegram send failed:', telegramErr);
+        if (recentIds?.length) {
+          await supabase.from('ayn_mind').update({ shared_with_admin: true }).in('id', recentIds.map(r => r.id));
         }
+      } catch (telegramErr) {
+        console.error('Telegram send failed:', telegramErr);
       }
     }
 
@@ -443,9 +496,9 @@ Actions taken: ${actions.length > 0 ? actions.map(a => a.detail).join('; ') : 'n
       trends,
       insights,
       actions,
+      drafted_leads: draftedLeads.length,
       is_urgent: isUrgent,
-      messaged_admin: shouldMessage,
-      cooldown_active: !cooledDown,
+      messaged_admin: !shouldSkip && !!telegramMessage,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
