@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   MessageSquare, Mail, Trash2, AlertTriangle, Terminal, 
-  RefreshCw, ChevronDown, ChevronUp, Filter, Wrench
+  RefreshCw, ChevronDown, ChevronUp, Filter, Wrench, Circle
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -23,20 +23,47 @@ interface ActivityLog {
 
 const ACTION_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   reply: { icon: MessageSquare, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', label: 'Reply' },
+  application_replied: { icon: MessageSquare, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', label: 'Reply' },
+  contact_replied: { icon: MessageSquare, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', label: 'Reply' },
   email: { icon: Mail, color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', label: 'Email' },
+  email_sent: { icon: Mail, color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', label: 'Email' },
   delete: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
+  ticket_deleted: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
+  message_deleted: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
+  application_deleted: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
+  contact_deleted: { icon: Trash2, color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Delete' },
   alert: { icon: AlertTriangle, color: 'bg-amber-500/10 text-amber-500 border-amber-500/20', label: 'Alert' },
   command: { icon: Terminal, color: 'bg-violet-500/10 text-violet-500 border-violet-500/20', label: 'Command' },
   maintenance_activated: { icon: Wrench, color: 'bg-orange-500/10 text-orange-500 border-orange-500/20', label: 'Maintenance' },
 };
 
-const FILTERS = ['all', 'reply', 'email', 'delete', 'alert', 'command', 'maintenance_activated'] as const;
+const FILTER_GROUPS: Record<string, string[]> = {
+  all: [],
+  reply: ['reply', 'application_replied', 'contact_replied'],
+  email: ['email', 'email_sent'],
+  delete: ['delete', 'ticket_deleted', 'message_deleted', 'application_deleted', 'contact_deleted'],
+  alert: ['alert'],
+  command: ['command'],
+  maintenance_activated: ['maintenance_activated'],
+};
+
+const FILTER_LABELS: Record<string, string> = {
+  all: 'All',
+  reply: 'Replies',
+  email: 'Emails',
+  delete: 'Deletions',
+  alert: 'Alerts',
+  command: 'Commands',
+  maintenance_activated: 'Maintenance',
+};
 
 export const AYNActivityLog = () => {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isLive, setIsLive] = useState(false);
+  const liveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -46,8 +73,8 @@ export const AYNActivityLog = () => {
       .order('created_at', { ascending: false })
       .limit(200);
 
-    if (filter !== 'all') {
-      query = query.eq('action_type', filter);
+    if (filter !== 'all' && FILTER_GROUPS[filter]) {
+      query = query.in('action_type', FILTER_GROUPS[filter]);
     }
 
     const { data, error } = await query;
@@ -60,28 +87,76 @@ export const AYNActivityLog = () => {
   useEffect(() => {
     fetchLogs();
 
-    // Real-time subscription
     const channel = supabase
       .channel('ayn-activity-log-changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ayn_activity_log' }, (payload) => {
         const newLog = payload.new as ActivityLog;
-        if (filter === 'all' || newLog.action_type === filter) {
+        const filterTypes = FILTER_GROUPS[filter];
+        if (filter === 'all' || filterTypes?.includes(newLog.action_type)) {
           setLogs(prev => [newLog, ...prev].slice(0, 200));
         }
+        // Pulse live indicator
+        setIsLive(true);
+        if (liveTimeout.current) clearTimeout(liveTimeout.current);
+        liveTimeout.current = setTimeout(() => setIsLive(false), 3000);
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+      if (liveTimeout.current) clearTimeout(liveTimeout.current);
+    };
   }, [filter]);
 
   const getConfig = (type: string) => ACTION_CONFIG[type] || ACTION_CONFIG.command;
 
+  // Extract inline details based on action type
+  const getInlineDetail = (log: ActivityLog): string | null => {
+    const d = log.details as Record<string, unknown> | null;
+    if (!d) return null;
+
+    const type = log.action_type;
+
+    // Replies: show the message text
+    if (type.includes('replied') || type === 'reply') {
+      const msg = d.message || d.reply_text || d.content;
+      if (typeof msg === 'string') return `"${msg.slice(0, 120)}${msg.length > 120 ? '…' : ''}"`;
+    }
+
+    // Emails: show recipient + subject
+    if (type.includes('email')) {
+      const to = d.to || d.recipient;
+      const subject = d.subject;
+      if (to && subject) return `→ ${to} — "${subject}"`;
+      if (to) return `→ ${to}`;
+    }
+
+    // Deletions: show what was deleted
+    if (type.includes('deleted')) {
+      const name = d.full_name || d.name || d.subject || d.content_preview;
+      if (typeof name === 'string') return name.slice(0, 100);
+    }
+
+    return null;
+  };
+
+  const isDeleteAction = (type: string) => type.includes('deleted') || type === 'delete';
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">AYN Activity Log</h2>
-          <p className="text-sm text-muted-foreground">Everything AYN has done, in real-time</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h2 className="text-2xl font-bold">AYN Activity Log</h2>
+            <p className="text-sm text-muted-foreground">Everything AYN has done, in real-time</p>
+          </div>
+          {/* Live indicator */}
+          <div className="flex items-center gap-1.5">
+            <Circle className={`w-2.5 h-2.5 fill-current ${isLive ? 'text-green-500 animate-pulse' : 'text-muted-foreground/30'}`} />
+            <span className={`text-xs ${isLive ? 'text-green-500' : 'text-muted-foreground/50'}`}>
+              {isLive ? 'Live' : 'Idle'}
+            </span>
+          </div>
         </div>
         <Button variant="outline" size="sm" onClick={fetchLogs} disabled={loading}>
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -92,15 +167,15 @@ export const AYNActivityLog = () => {
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
         <Filter className="w-4 h-4 text-muted-foreground" />
-        {FILTERS.map(f => (
+        {Object.keys(FILTER_LABELS).map(f => (
           <Button
             key={f}
             variant={filter === f ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter(f)}
-            className="capitalize text-xs"
+            className="text-xs"
           >
-            {f === 'all' ? 'All' : (ACTION_CONFIG[f]?.label || f)}
+            {FILTER_LABELS[f]}
           </Button>
         ))}
       </div>
@@ -115,6 +190,8 @@ export const AYNActivityLog = () => {
             const config = getConfig(log.action_type);
             const Icon = config.icon;
             const isExpanded = expandedId === log.id;
+            const inlineDetail = getInlineDetail(log);
+            const isDeletion = isDeleteAction(log.action_type);
 
             return (
               <Card key={log.id} className="shadow-sm hover:shadow-md transition-shadow">
@@ -135,7 +212,16 @@ export const AYNActivityLog = () => {
                           by {log.triggered_by}
                         </span>
                       </div>
-                      <p className="text-sm mt-1 font-medium">{log.summary}</p>
+                      <p className={`text-sm mt-1 font-medium ${isDeletion ? 'line-through text-red-400' : ''}`}>
+                        {log.summary}
+                      </p>
+                      
+                      {/* Inline detail */}
+                      {inlineDetail && (
+                        <p className={`text-xs mt-1 ${isDeletion ? 'text-red-400/70 line-through' : 'text-muted-foreground italic'}`}>
+                          {inlineDetail}
+                        </p>
+                      )}
                       
                       {log.details && Object.keys(log.details).length > 0 && (
                         <Button

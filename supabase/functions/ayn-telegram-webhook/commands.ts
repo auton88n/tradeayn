@@ -21,6 +21,12 @@ export async function cmdHelp(): Promise<string> {
 /applications — Recent service applications
 /contacts — Recent contact messages
 /users — Recent users
+/messages — Recent user chat messages
+/feedback — User ratings & beta feedback
+/emails — Recent system emails
+/security — Recent security events
+/visitors — Today's visitor analytics
+/twitter — Twitter post performance
 
 💬 Actions:
 /reply_app [id] [message] — Reply to application
@@ -163,6 +169,133 @@ export async function cmdUsers(supabase: Supabase): Promise<string> {
   return `👥 Recent Users:\n${list}`;
 }
 
+// ─── /messages ───
+export async function cmdMessages(supabase: Supabase): Promise<string> {
+  const { data: msgs } = await supabase
+    .from('messages')
+    .select('content, sender, mode_used, created_at')
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (!msgs?.length) return '💬 No recent messages.';
+
+  const list = msgs.map((m: any, i: number) => {
+    const ago = Math.round((Date.now() - new Date(m.created_at).getTime()) / 60000);
+    const unit = ago >= 60 ? `${Math.round(ago / 60)}h` : `${ago}m`;
+    return `${i + 1}. [${m.sender}${m.mode_used ? '/' + m.mode_used : ''}] "${m.content.slice(0, 60)}${m.content.length > 60 ? '…' : ''}" (${unit} ago)`;
+  }).join('\n');
+  return `💬 Recent Messages:\n${list}`;
+}
+
+// ─── /feedback ───
+export async function cmdFeedback(supabase: Supabase): Promise<string> {
+  const [{ data: ratings }, { data: beta }] = await Promise.all([
+    supabase.from('message_ratings').select('rating, message_preview, created_at').order('created_at', { ascending: false }).limit(10),
+    supabase.from('beta_feedback').select('overall_rating, improvement_suggestions, submitted_at').order('submitted_at', { ascending: false }).limit(5),
+  ]);
+
+  let result = '';
+
+  if (ratings?.length) {
+    const pos = ratings.filter((r: any) => r.rating === 'positive').length;
+    const neg = ratings.filter((r: any) => r.rating === 'negative').length;
+    result += `👍 Ratings: ${pos} positive / ${neg} negative (last ${ratings.length})\n`;
+    const recent = ratings.slice(0, 3).map((r: any) =>
+      `  ${r.rating === 'positive' ? '👍' : '👎'} "${r.message_preview.slice(0, 50)}…"`
+    ).join('\n');
+    result += recent;
+  } else {
+    result += '👍 No message ratings yet.';
+  }
+
+  if (beta?.length) {
+    result += `\n\n🧪 Beta Feedback:\n`;
+    result += beta.map((b: any, i: number) =>
+      `${i + 1}. ⭐${b.overall_rating || '?'}/5 — "${(b.improvement_suggestions || 'No suggestion').slice(0, 80)}"`
+    ).join('\n');
+  }
+
+  return result;
+}
+
+// ─── /emails ───
+export async function cmdEmails(supabase: Supabase): Promise<string> {
+  const { data: emails } = await supabase
+    .from('email_logs')
+    .select('email_type, recipient_email, status, sent_at')
+    .order('sent_at', { ascending: false })
+    .limit(10);
+
+  if (!emails?.length) return '📧 No recent emails.';
+
+  const list = emails.map((e: any, i: number) => {
+    const ago = e.sent_at ? Math.round((Date.now() - new Date(e.sent_at).getTime()) / 60000) : 0;
+    const unit = ago >= 60 ? `${Math.round(ago / 60)}h` : `${ago}m`;
+    const recipient = e.recipient_email ? e.recipient_email.slice(0, 20) + '…' : 'unknown';
+    return `${i + 1}. [${e.email_type}] → ${recipient} (${e.status || '?'}, ${unit} ago)`;
+  }).join('\n');
+  return `📧 Recent Emails:\n${list}`;
+}
+
+// ─── /security ───
+export async function cmdSecurity(supabase: Supabase): Promise<string> {
+  const { data: logs } = await supabase
+    .from('security_logs')
+    .select('action, severity, created_at')
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (!logs?.length) return '🔒 No recent security events. All clear.';
+
+  const list = logs.map((l: any, i: number) => {
+    const ago = Math.round((Date.now() - new Date(l.created_at).getTime()) / 60000);
+    const unit = ago >= 60 ? `${Math.round(ago / 60)}h` : `${ago}m`;
+    const sev = l.severity === 'high' ? '🔴' : l.severity === 'medium' ? '🟡' : '🟢';
+    return `${i + 1}. ${sev} ${l.action} (${unit} ago)`;
+  }).join('\n');
+  return `🔒 Security Events:\n${list}`;
+}
+
+// ─── /visitors ───
+export async function cmdVisitors(supabase: Supabase): Promise<string> {
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const { data: visits } = await supabase
+    .from('visitor_analytics')
+    .select('page_url, created_at')
+    .gte('created_at', todayStart.toISOString());
+
+  if (!visits?.length) return '👀 No visitors recorded today yet.';
+
+  const uniquePages = new Set(visits.map((v: any) => v.page_url));
+  const topPages: Record<string, number> = {};
+  visits.forEach((v: any) => {
+    const page = v.page_url || '/';
+    topPages[page] = (topPages[page] || 0) + 1;
+  });
+  const sorted = Object.entries(topPages).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  let result = `👀 Today's Visitors:\n• ${visits.length} page views\n• ${uniquePages.size} unique pages\n\nTop pages:\n`;
+  result += sorted.map(([page, count]) => `  ${page} — ${count} views`).join('\n');
+  return result;
+}
+
+// ─── /twitter ───
+export async function cmdTwitter(supabase: Supabase): Promise<string> {
+  const { data: posts } = await supabase
+    .from('twitter_posts')
+    .select('content, status, engagement_score, created_at')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  if (!posts?.length) return '🐦 No twitter posts found.';
+
+  const list = posts.map((p: any, i: number) => {
+    const ago = Math.round((Date.now() - new Date(p.created_at).getTime()) / 3600000);
+    return `${i + 1}. "${p.content?.slice(0, 60)}…" [${p.status}] ${p.engagement_score ? `📈${p.engagement_score}` : ''} (${ago}h ago)`;
+  }).join('\n');
+  return `🐦 Recent Tweets:\n${list}`;
+}
+
 // ─── /reply_app ───
 export async function cmdReplyApp(
   text: string, supabase: Supabase, supabaseUrl: string, supabaseKey: string
@@ -172,7 +305,6 @@ export async function cmdReplyApp(
   const message = parts.slice(1).join(' ');
   if (!idFragment || !message) return '❌ Usage: /reply_app [id] [message]';
 
-  // Find the application by ID prefix
   const { data: apps } = await supabase
     .from('service_applications')
     .select('id, full_name, email, service_type')
@@ -182,7 +314,6 @@ export async function cmdReplyApp(
   if (!apps?.length) return `❌ No application found starting with "${idFragment}"`;
   const app = apps[0];
 
-  // Call send-reply-email edge function
   try {
     const res = await fetch(`${supabaseUrl}/functions/v1/send-reply-email`, {
       method: 'POST',
@@ -235,7 +366,6 @@ export async function cmdReplyContact(
   if (!msgs?.length) return `❌ No contact message found starting with "${idFragment}"`;
   const contact = msgs[0];
 
-  // Send email via Resend
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   if (!RESEND_API_KEY) return '❌ RESEND_API_KEY not configured';
 
@@ -255,8 +385,6 @@ export async function cmdReplyContact(
     });
 
     const emailSent = emailRes.ok;
-
-    // Update status
     await supabase.from('contact_messages').update({ status: 'replied' }).eq('id', contact.id);
 
     await logAynActivity(supabase, 'contact_replied', `Replied to ${contact.name}: "${message.slice(0, 80)}"`, {
@@ -276,7 +404,6 @@ export async function cmdReplyContact(
 
 // ─── /email ───
 export async function cmdEmail(text: string, supabase: Supabase): Promise<string> {
-  // Format: /email to@email.com Subject Here | Body text here
   const afterCmd = text.replace(/^\/email\s+/i, '');
   const spaceIdx = afterCmd.indexOf(' ');
   if (spaceIdx === -1) return '❌ Usage: /email [to] [subject] | [body]';

@@ -60,6 +60,22 @@ const ContactMessagesView: React.FC = () => {
 
   useEffect(() => {
     fetchMessages();
+
+    const channel = supabase
+      .channel('contacts-realtime')
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'contact_messages' }, (payload) => {
+        setMessages(prev => prev.filter(m => m.id !== (payload.old as any)?.id));
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'contact_messages' }, (payload) => {
+        const updated = payload.new as ContactMessage;
+        setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_messages' }, (payload) => {
+        setMessages(prev => [payload.new as ContactMessage, ...prev]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchMessages = async () => {

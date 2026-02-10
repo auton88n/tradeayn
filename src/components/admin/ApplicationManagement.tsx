@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Session } from '@supabase/supabase-js';
 import { supabaseApi } from '@/lib/supabaseApi';
@@ -141,6 +141,18 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
   const [selectedApplication, setSelectedApplication] = useState<ServiceApplication | null>(null);
   const [replyingTo, setReplyingTo] = useState<ServiceApplication | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Real-time: auto-refresh when AYN acts on applications
+  useEffect(() => {
+    const channel = supabase
+      .channel('applications-realtime')
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'service_applications' }, () => onRefresh())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'application_replies' }, () => onRefresh())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'service_applications' }, () => onRefresh())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [onRefresh]);
 
   const filteredApplications = useMemo(() => {
     return applications.filter(app => {
