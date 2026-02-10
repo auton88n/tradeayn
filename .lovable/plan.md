@@ -1,41 +1,77 @@
 
 
-# Fix: Creative Editor Buttons Cut Off + Height Constraint
+# Marketing Creative Studio -- Complete Quality Overhaul
 
-## Problem
+## What's Wrong
 
-The Creative Editor dialog has `min-h-[540px]` on its inner grid but no `max-h` constraint. On smaller viewports, the action buttons (Generate Creative / Download) are pushed below the visible area. The right panel's ScrollArea works correctly in isolation, but the overall dialog is not constrained to the viewport.
+1. **Buttons still cut off**: The DialogContent base class applies `grid` layout with `gap-4`, which conflicts with the inner grid. The close button also takes grid space. This pushes content down and hides the action buttons.
 
-## Fix
+2. **Low-quality feel**: The current editor uses basic inputs, small color circles, and cramped spacing. Pomelli-level quality means: generous whitespace, large interactive elements, smooth visual feedback, and a cohesive design system.
 
-A single targeted change to `src/components/admin/marketing/CreativeEditor.tsx`:
+3. **Brand identity weak**: The AYN eye symbol is just a generic Brain icon from Lucide. It should be a proper styled SVG eye symbol matching the brand.
 
-1. Add `max-h-[85vh]` to the `DialogContent` so the entire dialog never exceeds the viewport
-2. Change `min-h-[540px]` to `h-[85vh] max-h-[700px]` on the grid so it fills available space but caps out
-3. Add `overflow-hidden` to the right column so the ScrollArea properly constrains
-4. Ensure the action buttons div has `shrink-0` so it never gets compressed by flex
+## What Changes
 
-### Technical Change
+### 1. CreativeEditor.tsx -- Full Rewrite
+
+The dialog layout fix and quality upgrade:
+
+- Override the base DialogContent `gap-4` with `gap-0` so the inner layout is fully controlled
+- Use a flex column layout instead of CSS grid for the right panel to ensure the action buttons are always pinned to the bottom
+- Increase the dialog to near-full-screen on desktop (`max-w-6xl`, `h-[90vh]`)
+- Left panel (60%): Large preview with subtle checkerboard/grid background, proper aspect ratio container, and the AYN eye SVG placeholder (not Brain icon)
+- Right panel (40%): Polished control sections with:
+  - Textarea for header text (not single-line input) with live character count
+  - Large background theme cards (not tiny squares) with preview thumbnails showing what each looks like
+  - Bigger accent color circles (w-12 h-12) with labels and selected ring
+  - CTA input with placeholder
+  - Logo toggle with proper AYN eye icon
+- Action buttons pinned at bottom with clear visual hierarchy
+
+### 2. BrandKit.tsx -- Add AYN Eye SVG
+
+Replace the Brain icon with a proper inline SVG eye symbol that matches the AYN brand (the eye icon visible in the user's generated image screenshot).
+
+### 3. CampaignGallery.tsx -- Minor Polish
+
+No major changes needed -- the grid layout is already good. Small tweaks to card border radius and hover transitions.
+
+## Technical Details
+
+### DialogContent gap fix (line 62 of CreativeEditor)
 
 ```
-File: src/components/admin/marketing/CreativeEditor.tsx
-
-Line 62: DialogContent
-- Before: className="max-w-5xl p-0 overflow-hidden"
-- After:  className="max-w-5xl max-h-[85vh] p-0 overflow-hidden"
-
-Line 63: Grid container
-- Before: className="grid grid-cols-1 md:grid-cols-5 min-h-[540px]"
-- After:  className="grid grid-cols-1 md:grid-cols-5 h-[85vh] max-h-[700px]"
-
-Line 91: Right column
-- Before: className="md:col-span-2 flex flex-col"
-- After:  className="md:col-span-2 flex flex-col overflow-hidden"
-
-Line 197: Action buttons container
-- Before: className="p-5 border-t space-y-2"
-- After:  className="p-5 border-t space-y-2 shrink-0"
+Before: className="max-w-5xl max-h-[85vh] p-0 overflow-hidden"
+After:  className="max-w-6xl h-[90vh] max-h-[800px] p-0 gap-0 overflow-hidden"
 ```
 
-These 4 small class changes will ensure the dialog fits within the viewport and the Generate/Download buttons are always visible at the bottom.
+Adding `gap-0` overrides the base `gap-4` from the dialog component. Using `h-[90vh] max-h-[800px]` gives more room.
+
+### Right panel structure
+
+```
+<div className="flex flex-col h-full overflow-hidden">
+  <header className="shrink-0 p-6 border-b">...</header>
+  <ScrollArea className="flex-1 min-h-0">
+    <div className="p-6 space-y-8">...controls...</div>
+  </ScrollArea>
+  <footer className="shrink-0 p-6 border-t bg-background">
+    ...buttons...
+  </footer>
+</div>
+```
+
+The key fix is `min-h-0` on ScrollArea (needed for flex children to shrink below content size) and `shrink-0` on header/footer.
+
+### AYN Eye SVG Component
+
+A reusable `AynEyeIcon` component rendering a stylized eye/perception symbol in SVG, used across BrandKit, CreativeEditor placeholder, and CampaignGallery empty state.
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/admin/marketing/CreativeEditor.tsx` | Full rewrite -- layout fix + Pomelli-quality UI |
+| `src/components/admin/marketing/BrandKit.tsx` | Replace Brain icon with AYN eye SVG |
+| `src/components/admin/marketing/AynEyeIcon.tsx` | New -- reusable AYN eye brand icon component |
 
