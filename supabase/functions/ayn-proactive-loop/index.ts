@@ -40,7 +40,7 @@ serve(async (req) => {
           await fetch(`${supabaseUrl}/functions/v1/ayn-auto-reply`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ticket_id: ticket.id, subject: ticket.subject, message: ticket.subject, priority: ticket.priority }),
+            body: JSON.stringify({ ticket_id: ticket.id, subject: ticket.subject, message: ticket.subject, priority: ticket.priority, skip_telegram: true }),
           });
           // FIX 1: Update ticket status so we don't re-process it
           await supabase.from('support_tickets').update({ status: 'pending' }).eq('id', ticket.id);

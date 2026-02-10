@@ -110,10 +110,13 @@ serve(async (req) => {
       messages.push(turn);
     }
 
-    // Add current message with system context
+    // Inject system context into the system prompt, keep user message clean
+    messages[0].content += `\n\nCURRENT SYSTEM STATUS (reference only, don't report unless asked):\n${JSON.stringify(context)}`;
+
+    // Add current message — just the admin's words
     messages.push({
       role: 'user',
-      content: `System status:\n${JSON.stringify(context, null, 2)}\n\nAdmin says: ${sanitizedInput}`,
+      content: sanitizedInput,
     });
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
