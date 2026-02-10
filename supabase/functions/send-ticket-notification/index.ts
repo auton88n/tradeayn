@@ -239,6 +239,33 @@ ${userEmail ? `<a href="mailto:${userEmail}" style="color:#0ea5e9;">${userEmail}
 
     await client.close();
 
+    // Trigger AYN auto-reply for the ticket
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://dfkoxuokfkttjhfjcecx.supabase.co";
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (supabaseKey) {
+        await fetch(`${supabaseUrl}/functions/v1/ayn-auto-reply`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ticket_id: ticketId,
+            subject: rawSubject,
+            message: rawMessage,
+            category: rawCategory,
+            priority: rawPriority,
+            user_name: rawUserName,
+            user_email: rawUserEmail,
+          }),
+        });
+        console.log("AYN auto-reply triggered for ticket:", ticketId);
+      }
+    } catch (autoReplyErr) {
+      console.error("AYN auto-reply trigger failed (non-blocking):", autoReplyErr);
+    }
+
     return new Response(
       JSON.stringify({ success: true, message: "Notifications sent successfully", ticketRef }),
       {
