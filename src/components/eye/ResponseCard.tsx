@@ -599,8 +599,8 @@ const ResponseCardComponent = ({
                     className={cn(
                       "p-2 rounded-lg transition-colors",
                       feedback === "up"
-                        ? "text-foreground bg-muted"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                        ? "text-green-500 bg-green-500/10"
+                        : "text-muted-foreground hover:text-green-500 hover:bg-green-500/10",
                     )}
                     aria-label="Helpful"
                   >
@@ -611,8 +611,8 @@ const ResponseCardComponent = ({
                     className={cn(
                       "p-2 rounded-lg transition-colors",
                       feedback === "down"
-                        ? "text-foreground bg-muted"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                        ? "text-red-500 bg-red-500/10"
+                        : "text-muted-foreground hover:text-red-500 hover:bg-red-500/10",
                     )}
                     aria-label="Not helpful"
                   >
