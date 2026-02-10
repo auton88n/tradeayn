@@ -35,57 +35,44 @@ interface DataSources {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
 
 async function callAI(prompt: string): Promise<string> {
-  // Try Lovable first
-  if (LOVABLE_API_KEY) {
-    try {
-      const response = await fetch('https://api.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 2000
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.choices?.[0]?.message?.content || '';
-      }
-    } catch (e) {
-      console.error('Lovable API error:', e);
-    }
+  if (!LOVABLE_API_KEY) {
+    console.error('LOVABLE_API_KEY not configured');
+    return '';
   }
-  
-  // Fallback to OpenRouter
-  if (OPENROUTER_API_KEY) {
-    try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'anthropic/claude-3-haiku',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 2000
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.choices?.[0]?.message?.content || '';
-      }
-    } catch (e) {
-      console.error('OpenRouter error:', e);
+
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2000
+      })
+    });
+    
+    if (response.status === 429) {
+      console.error('AI rate limited');
+      return 'AI analysis temporarily unavailable due to rate limits. Please try again shortly.';
     }
+    if (response.status === 402) {
+      console.error('AI credits exhausted');
+      return 'AI analysis unavailable - credits exhausted. Please add credits to continue.';
+    }
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || '';
+    }
+    
+    console.error('AI gateway error:', response.status);
+  } catch (e) {
+    console.error('Lovable AI error:', e);
   }
   
   return '';
