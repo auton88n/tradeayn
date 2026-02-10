@@ -604,7 +604,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   </> : <Mic className="w-4 h-4 text-muted-foreground" />}
               </button>}
             
-            <button onClick={() => soundContext?.toggleEnabled()} className={cn("p-1.5 sm:p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200")} title={soundContext?.enabled ? "Sound on - click to mute" : "Sound off - click to enable"}>
+            <button onClick={() => soundContext?.toggleEnabled()} className={cn("hidden sm:block p-1.5 sm:p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200")} title={soundContext?.enabled ? "Sound on - click to mute" : "Sound off - click to enable"}>
               {soundContext?.enabled ? <Volume2 className="w-4 h-4 text-muted-foreground" /> : <VolumeX className="w-4 h-4 text-muted-foreground/50" />}
             </button>
           </div>
@@ -626,7 +626,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
             <div className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
               <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
-              <span className="text-xs sm:text-sm font-medium">AYN</span>
+              <span className="hidden sm:inline text-xs sm:text-sm font-medium">AYN</span>
             </div>
           </div>
         </div>
