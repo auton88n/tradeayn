@@ -521,10 +521,17 @@ export const useMessages = (
           setIsGeneratingFloorPlan(false);
           setDocumentType(null);
 
-          // Detect emotion from complete response
-          const { analyzeResponseEmotion } = await import('@/lib/emotionMapping');
-          const detectedEmotion = analyzeResponseEmotion(response);
-          console.log('[useMessages] Streaming emotion:', detectedEmotion);
+          // Detect emotion from complete response + blend with user emotion
+          const { analyzeResponseEmotion, analyzeUserEmotion } = await import('@/lib/emotionMapping');
+          let detectedEmotion = analyzeResponseEmotion(response);
+          const userEmotion = analyzeUserEmotion(content);
+          // If user is angry/frustrated but AYN's response reads as calm, override to comfort/supportive
+          if (['angry', 'frustrated'].includes(userEmotion) && ['calm', 'happy'].includes(detectedEmotion)) {
+            detectedEmotion = 'comfort';
+          } else if (userEmotion === 'sad' && detectedEmotion === 'calm') {
+            detectedEmotion = 'supportive';
+          }
+          console.log('[useMessages] Streaming emotion:', detectedEmotion, '(user:', userEmotion, ')');
           setLastSuggestedEmotion(detectedEmotion);
 
         } catch (streamError) {
@@ -564,16 +571,24 @@ export const useMessages = (
           ? responseContent 
           : "Let me think about that differently... Could you try asking again? Sometimes a fresh start helps me give you a better answer! 💭";
 
-        // Extract emotion from backend response
-        if (webhookData?.emotion) {
-          console.log('[useMessages] Backend emotion:', webhookData.emotion);
-          setLastSuggestedEmotion(webhookData.emotion);
-        } else {
+        // Extract emotion from backend response + blend with user emotion
+        let finalEmotion = webhookData?.emotion || null;
+        const backendUserEmotion = webhookData?.userEmotion || null;
+        
+        if (!finalEmotion) {
           const { analyzeResponseEmotion } = await import('@/lib/emotionMapping');
-          const fallbackEmotion = analyzeResponseEmotion(response);
-          console.log('[useMessages] Fallback emotion:', fallbackEmotion);
-          setLastSuggestedEmotion(fallbackEmotion);
+          finalEmotion = analyzeResponseEmotion(response);
         }
+        
+        // Blend: if user is negative but AYN response emotion is neutral, override
+        if (backendUserEmotion && ['angry', 'frustrated'].includes(backendUserEmotion) && ['calm', 'happy'].includes(finalEmotion)) {
+          finalEmotion = 'comfort';
+        } else if (backendUserEmotion === 'sad' && finalEmotion === 'calm') {
+          finalEmotion = 'supportive';
+        }
+        
+        console.log('[useMessages] Final emotion:', finalEmotion, '(userEmotion:', backendUserEmotion, ')');
+        setLastSuggestedEmotion(finalEmotion);
 
         // Extract LAB data if present (for image generation)
         const labData: LABResponse | undefined = webhookData?.imageUrl ? {
