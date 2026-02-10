@@ -264,6 +264,25 @@ Respond in JSON:
     return jsonResponse({ error: 'Failed to parse email draft' }, 500);
   }
 
+  // Fix signature if AI used "AYN Team" or similar
+  if (draft) {
+    const teamSignatureRegex = /(?:Best|Regards|Cheers|Thanks|Warm regards|Kind regards),?\s*\n?\s*(?:The\s+)?AYN\s*(?:Team)?(?:\s*\n?\s*AYN\s*Team)?/gi;
+    const hasTeamSig = teamSignatureRegex.test(draft.html_body || '') || /AYN\s*Team/i.test(draft.html_body || '');
+    if (hasTeamSig) {
+      const names = ['Sarah', 'Mark', 'Lina', 'James', 'Noor'];
+      const roles = ['Sales @ AYN', 'Growth Lead @ AYN', 'Partnerships @ AYN'];
+      const name = names[Math.floor(Math.random() * names.length)];
+      const role = roles[Math.floor(Math.random() * roles.length)];
+      const personalSig = `${name}\n${role}`;
+      // Reset regex since test() advances lastIndex
+      const fixRegex = /(?:Best|Regards|Cheers|Thanks|Warm regards|Kind regards),?\s*\n?\s*(?:The\s+)?AYN\s*(?:Team)?(?:\s*\n?\s*AYN\s*Team)?/gi;
+      draft.html_body = (draft.html_body || '').replace(fixRegex, personalSig);
+      if (draft.plain_text) {
+        draft.plain_text = draft.plain_text.replace(/(?:Best|Regards|Cheers|Thanks|Warm regards|Kind regards),?\s*\n?\s*(?:The\s+)?AYN\s*(?:Team)?(?:\s*\n?\s*AYN\s*Team)?/gi, personalSig);
+      }
+    }
+  }
+
   await supabase.from('ayn_mind').insert({
     type: 'sales_draft',
     content: `Email draft for ${lead.company_name}: "${draft?.subject}"`,
