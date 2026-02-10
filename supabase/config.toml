@@ -219,3 +219,6 @@ verify_jwt = false
 
 [functions.ayn-proactive-loop]
 verify_jwt = false
+
+[functions.ayn-telegram-webhook]
+verify_jwt = false
