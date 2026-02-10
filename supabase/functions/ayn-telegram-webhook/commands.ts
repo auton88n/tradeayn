@@ -59,7 +59,7 @@ export async function cmdHelp(): Promise<string> {
 
 🗑️ Delete:
 /delete_ticket [id]
-/delete_message [id]
+/messages — Read user messages (read-only)
 /delete_app [id]
 /delete_contact [id]
 /clear_errors [hours] — Clear old errors
@@ -487,17 +487,8 @@ export async function cmdDelete(
     return `🗑️ Deleted ticket ${data[0].id.slice(0, 8)}`;
   }
 
-  if (cmd.startsWith('/delete_message ')) {
-    const id = text.slice(16).trim();
-    const { data } = await supabase.from('messages').select('id, content').ilike('id', `${id}%`).limit(1);
-    if (!data?.length) return `❌ No message found starting with "${id}"`;
-    await supabase.from('messages').delete().eq('id', data[0].id);
-    await logAynActivity(supabase, 'message_deleted', `Deleted message: "${data[0].content.slice(0, 50)}"`, {
-      target_id: data[0].id, target_type: 'message',
-      details: { content_preview: data[0].content.slice(0, 200) },
-      triggered_by: 'telegram_command',
-    });
-    return `🗑️ Deleted message ${data[0].id.slice(0, 8)}`;
+  if (cmd.startsWith('/delete_message')) {
+    return `🔒 User messages are protected and cannot be deleted via Telegram. Use /messages to read them instead.`;
   }
 
   if (cmd.startsWith('/delete_app ')) {

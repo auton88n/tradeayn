@@ -93,13 +93,13 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:set_unlimited:user_id] — Toggle unlimited for user
 - [ACTION:delete_app:app_id] — Delete a service application
 - [ACTION:delete_contact:contact_id] — Delete a contact message
-- [ACTION:delete_message:message_id] — Delete a user message
+- [ACTION:delete_message:message_id] — BLOCKED: User messages are protected
 - [ACTION:approve_app:app_id] — Approve service application
 - [ACTION:reject_app:app_id] — Reject service application
 - [ACTION:delete_all_apps:confirm] — Delete ALL service applications
 - [ACTION:delete_all_tickets:confirm] — Delete ALL support tickets
 - [ACTION:delete_all_contacts:confirm] — Delete ALL contact messages
-- [ACTION:delete_all_messages:confirm] — Delete ALL user messages
+- [ACTION:delete_all_messages:confirm] — BLOCKED: User messages are protected
 - [ACTION:list_apps:all] — Fetch and show all applications
 - [ACTION:list_tickets:all] — Fetch and show all tickets
 - [ACTION:list_contacts:all] — Fetch and show all contacts
@@ -110,7 +110,10 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 BLOCKED ACTIONS (never execute):
 - No subscription/billing actions
 - No user deletion
-- No auth/password changes`;
+- No auth/password changes
+- No deleting user messages/conversations (messages table) — read-only access for monitoring and improvement
+- No deleting AYN activity logs, security logs, or error logs — these are audit trails
+- No deleting engineering calculation data or tool usage history`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -554,7 +557,7 @@ async function executeAction(
         return await cmdDelete(`/delete_contact ${params}`, supabase);
       }
       case 'delete_message': {
-        return await cmdDelete(`/delete_message ${params}`, supabase);
+        return `🔒 User messages are protected and cannot be deleted. You can read them with [ACTION:read_messages:10] to monitor and improve AYN.`;
       }
       case 'approve_app': {
         const { data } = await supabase.from('service_applications')
@@ -618,14 +621,7 @@ async function executeAction(
         return `Deleted ${count || 0} contact messages`;
       }
       case 'delete_all_messages': {
-        const { count } = await supabase.from('messages')
-          .select('*', { count: 'exact', head: true });
-        const { error } = await supabase.from('messages').delete().gte('id', '00000000-0000-0000-0000-000000000000');
-        if (error) return `Failed to delete messages: ${error.message}`;
-        await logAynActivity(supabase, 'bulk_delete', `Deleted all ${count || 0} user messages`, {
-          target_type: 'messages', triggered_by: 'admin_chat',
-        });
-        return `Deleted ${count || 0} user messages`;
+        return `🔒 User messages are protected and cannot be deleted. You can read them with [ACTION:read_messages:50] to monitor and improve AYN.`;
       }
       // ─── Data-fetching actions ───
       case 'list_apps': {
