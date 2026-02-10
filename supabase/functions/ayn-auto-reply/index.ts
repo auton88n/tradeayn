@@ -46,7 +46,7 @@ serve(async (req) => {
   }
 
   try {
-    const { ticket_id, subject, message, category, priority, user_name, user_email } = await req.json();
+    const { ticket_id, subject, message, category, priority, user_name, user_email, skip_telegram } = await req.json();
 
     if (!ticket_id || !message) {
       return new Response(JSON.stringify({ error: 'ticket_id and message required' }), {
@@ -145,7 +145,8 @@ Generate a helpful reply and confidence score. Return ONLY valid JSON.`,
         .eq('id', ticket_id);
     }
 
-    // Always notify admin via Telegram
+    // Notify admin via Telegram (skip when called internally by proactive loop)
+    if (!skip_telegram) {
     const telegramMessage = isConfident
       ? `New ticket from ${user_name || 'user'}: "${subject || 'No subject'}"\n\n` +
         `My reply: "${replyData.reply?.substring(0, 200)}..."\n\n` +
@@ -178,6 +179,7 @@ Generate a helpful reply and confidence score. Return ONLY valid JSON.`,
     } catch (telegramErr) {
       console.error('Telegram notification failed:', telegramErr);
     }
+    } // end if (!skip_telegram)
 
     return new Response(JSON.stringify({
       success: true,
