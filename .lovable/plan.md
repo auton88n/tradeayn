@@ -1,42 +1,77 @@
 
-# Add Terms Consent Log Viewer to Admin Panel
 
-## What's Missing
-The `terms_consent_log` table was created in the database, but there's no section in the Admin Panel to view it. We need to add a new admin sidebar tab and a viewer component so you can see proof of who accepted the terms.
+# Fix AYN's Emotional Intelligence + Feedback Reactions
+
+## Problem 1: AYN responds like a robot to hostility
+
+When a user says "You are stupid. You piece of shit", AYN responds with a flat corporate message: "I'm AYN, built by the AYN Team. I'm here to help with your questions..."
+
+Compare to ChatGPT which responds warmly: "Hey. That sounds like frustration talking. If something I said annoyed you, tell me what it was and I'll fix it. I'm here to help you, not to get in your way."
+
+**Root cause:** The system prompt in `systemPrompts.ts` has zero guidance on handling hostility, insults, or emotionally charged messages. AYN defaults to its identity script.
+
+**Fix:** Add an emotional intelligence section to the system prompt that instructs AYN to:
+- Acknowledge the user's frustration without being defensive
+- Stay warm and grounded (like the ChatGPT example)
+- Never mirror hostility, never be passive-aggressive
+- Offer to reset and try again
+- Not repeat its identity intro when insulted
+
+## Problem 2: Eye emotion doesn't match the conversation
+
+The emotion detection in `emotionDetector.ts` (backend) and `emotionMapping.ts` (frontend) only analyzes AYN's own response text for keywords. When AYN responds to an insult with "I'm here to help", it detects "supportive" from the response -- but that's weak. The system should also consider the user's emotion to pick the right eye state.
+
+**Fix:** In `useMessages.ts`, after getting the response, also analyze the user's message emotion and blend it with the response emotion. If the user is angry/frustrated, AYN's eye should show "comfort" or "supportive" (warm colors), not just "calm" (the default).
+
+## Problem 3: Like/Dislike doesn't trigger eye reaction
+
+When a user taps thumbs up or thumbs down on a response, the only feedback is a toast message. The eye doesn't react at all.
+
+**Fix:** In `ResponseCard.tsx`, after saving feedback, call `orchestrateEmotionChange`:
+- Thumbs up: trigger "happy" emotion (AYN is pleased the user liked the response)
+- Thumbs down: trigger "sad" emotion (AYN feels the response didn't help)
+
+---
 
 ## Changes
 
-### 1. New Component: `src/components/admin/TermsConsentViewer.tsx`
-A new admin section that:
-- Fetches all records from `terms_consent_log` (admin RLS policy already allows this)
-- Displays a table with columns: User, Terms Version, Privacy, Terms, AI Disclaimer, Accepted At, User Agent
-- Each checkbox state shown as a green checkmark or red X
-- Includes a search bar to filter by user
-- Shows total count of consent records
-- Sorted by most recent first
+### 1. `supabase/functions/ayn-unified/systemPrompts.ts`
+Add emotional intelligence rules to the base system prompt:
 
-### 2. Update `src/components/admin/AdminSidebar.tsx`
-- Add `'terms-consent'` to the `AdminTabId` type
-- Add a new sidebar entry in the main sections (under "Main" group, after "Users") with a `FileCheck` icon
-
-### 3. Update `src/components/AdminPanel.tsx`
-- Import `TermsConsentViewer`
-- Add `{activeTab === 'terms-consent' && <TermsConsentViewer />}` to the tab content rendering block
-
-## Technical Details
-
-### Data Fetching
-The component will use `supabaseApi.get()` (matching the existing pattern used throughout the admin panel) to query:
 ```
-terms_consent_log?select=*&order=accepted_at.desc
+EMOTIONAL INTELLIGENCE:
+- If the user is frustrated, angry, or insulting: stay calm and warm
+- Acknowledge their frustration without being defensive: "I hear you" / "That sounds like frustration"
+- Never mirror hostility or get passive-aggressive
+- Offer to reset: "Take a breath -- we can start fresh however you want"
+- Don't repeat your identity intro when someone is venting
+- Match their energy for positive emotions (excitement, happiness)
+- For negative emotions, be a grounding, empathetic presence
 ```
 
-To show user info alongside consent records, it will also fetch profiles to map `user_id` to a display name/email.
+### 2. `src/components/eye/ResponseCard.tsx`
+Update `handleFeedback` to trigger eye emotion changes:
+- Import `useEmotionOrchestrator`
+- On thumbs up: call `orchestrateEmotionChange('happy')`
+- On thumbs down: call `orchestrateEmotionChange('sad')`
 
-### UI Layout
-- Summary cards at top: Total Acceptances count
-- Searchable/filterable table below
-- Each row shows: user name, terms version, three boolean columns (privacy/terms/ai disclaimer) with visual indicators, timestamp, and truncated user agent
+### 3. `src/hooks/useMessages.ts`
+After getting a response, also factor in the user's message emotion:
+- Import `analyzeUserEmotion` from `userEmotionDetection.ts`
+- If user emotion is strongly negative (angry, frustrated) and AYN's detected response emotion is just "calm", override to "comfort" or "supportive" to ensure the eye shows warmth
+- This ensures the eye state reflects AYN empathizing with the user, not just keyword-matching its own response
 
-### No new dependencies needed
-Uses existing UI components (Card, Badge, Table patterns) already in the project.
+### 4. `supabase/functions/ayn-unified/emotionDetector.ts`
+Add a new function `detectUserEmotion` that the backend can use to tag the user's emotional state. Return both `emotion` (AYN's response emotion) and `userEmotion` in the API response so the frontend has both signals.
+
+---
+
+## Technical Summary
+
+| File | Change |
+|---|---|
+| `supabase/functions/ayn-unified/systemPrompts.ts` | Add emotional intelligence rules for handling hostility |
+| `supabase/functions/ayn-unified/emotionDetector.ts` | Add `detectUserEmotion()` function, return user emotion in API |
+| `supabase/functions/ayn-unified/index.ts` | Include `userEmotion` in response payload |
+| `src/components/eye/ResponseCard.tsx` | Trigger happy/sad eye emotion on like/dislike |
+| `src/hooks/useMessages.ts` | Blend user emotion with response emotion for better eye matching |
