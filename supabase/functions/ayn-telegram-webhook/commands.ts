@@ -6,6 +6,19 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 
 type Supabase = ReturnType<typeof import("https://esm.sh/@supabase/supabase-js@2.56.0").createClient>;
 
+// ─── Admin protection: prevent AYN from modifying admin users ───
+async function isAdminUser(supabase: Supabase, userId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .in('role', ['admin', 'duty'])
+    .limit(1);
+  return (data?.length ?? 0) > 0;
+}
+
+const ADMIN_PROTECTED_MSG = "🛡️ That user is an admin. I can't modify admin accounts — that's above my pay grade.";
+
 // ─── /help ───
 export async function cmdHelp(): Promise<string> {
   return `🤖 AYN Commands:
@@ -550,6 +563,10 @@ export async function cmdThink(supabaseUrl: string, supabaseKey: string): Promis
 export async function cmdUnblock(text: string, supabase: Supabase): Promise<string> {
   const userId = text.slice(9).trim();
   if (!userId) return '❌ Usage: /unblock [user_id]';
+
+  // Block if target is an admin
+  if (await isAdminUser(supabase, userId)) return ADMIN_PROTECTED_MSG;
+
   await supabase.from('api_rate_limits').update({ blocked_until: null }).eq('user_id', userId);
   await logAynActivity(supabase, 'user_unblocked', `Unblocked user ${userId.slice(0, 8)}`, {
     target_id: userId, target_type: 'user',
@@ -627,6 +644,9 @@ export async function cmdGrant(text: string, supabase: Supabase): Promise<string
     .eq('user_id', user.id)
     .limit(1);
 
+  // Block if target is an admin
+  if (await isAdminUser(supabase, user.id)) return ADMIN_PROTECTED_MSG;
+
   if (existing?.length) {
     if (existing[0].is_active) return `⚠️ User already has an active access grant.`;
     // Reactivate
@@ -665,6 +685,10 @@ export async function cmdRevoke(text: string, supabase: Supabase): Promise<strin
     .limit(1);
 
   if (!grants?.length) return `❌ No access grant found for user starting with "${idFragment}"`;
+
+  // Block if target is an admin
+  if (await isAdminUser(supabase, grants[0].user_id)) return ADMIN_PROTECTED_MSG;
+
   if (!grants[0].is_active) return `⚠️ Access is already revoked for this user.`;
 
   await supabase.from('access_grants').update({ is_active: false }).eq('id', grants[0].id);
@@ -688,6 +712,9 @@ export async function cmdSetUnlimited(text: string, supabase: Supabase): Promise
     .limit(1);
 
   if (!grants?.length) return `❌ No access grant found for user starting with "${idFragment}"`;
+
+  // Block if target is an admin
+  if (await isAdminUser(supabase, grants[0].user_id)) return ADMIN_PROTECTED_MSG;
 
   const newLimit = grants[0].monthly_limit === -1 ? 50 : -1;
   await supabase.from('access_grants').update({ monthly_limit: newLimit }).eq('id', grants[0].id);
