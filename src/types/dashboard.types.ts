@@ -251,7 +251,7 @@ export interface UseAuthReturn {
   checkAccess: () => Promise<void>;
   checkAdminRole: () => Promise<void>;
   loadUserProfile: () => Promise<void>;
-  acceptTerms: () => Promise<void>;
+  acceptTerms: (consent: { privacy: boolean; terms: boolean; aiDisclaimer: boolean }) => Promise<void>;
 }
 
 // ============================================

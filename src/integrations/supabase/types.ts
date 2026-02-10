@@ -2303,6 +2303,39 @@ export type Database = {
         }
         Relationships: []
       }
+      terms_consent_log: {
+        Row: {
+          accepted_at: string
+          ai_disclaimer_accepted: boolean
+          id: string
+          privacy_accepted: boolean
+          terms_accepted: boolean
+          terms_version: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          ai_disclaimer_accepted?: boolean
+          id?: string
+          privacy_accepted?: boolean
+          terms_accepted?: boolean
+          terms_version?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          ai_disclaimer_accepted?: boolean
+          id?: string
+          privacy_accepted?: boolean
+          terms_accepted?: boolean
+          terms_version?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       test_results: {
         Row: {
           browser: string | null
