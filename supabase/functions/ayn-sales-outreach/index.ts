@@ -218,19 +218,20 @@ async function handleDraftEmail(supabase: any, lead_id: string) {
       model: 'google/gemini-3-flash-preview',
       messages: [{
         role: 'system',
-        content: `You are a professional sales copywriter for AYN (aynn.io), a tech company that builds AI-powered solutions.
+        content: `You're writing a sales email for AYN (aynn.io). We build AI-powered solutions for businesses.
 
-Write a ${emailNumber === 1 ? 'cold outreach' : 'follow-up'} email.
+Write a ${emailNumber === 1 ? 'cold outreach' : 'follow-up'} email that sounds like it's from a real person — not a template.
 
 Rules:
-- Professional but conversational — not corporate-speak
-- Short (3-4 paragraphs max)
-- Reference their SPECIFIC problems, not generic benefits
-- Include a clear CTA (book a call, reply, visit our portfolio)
-- Portfolio link: https://almufaijer.com (a live project we built)
-- Sign as "The AYN Team"
-- From email: info@aynn.io
+- Write like a human, not a corporation. Conversational, warm, direct.
+- Short — 3 paragraphs max. Nobody reads long cold emails.
+- Reference their SPECIFIC problems. Show you actually looked at their business.
+- One clear CTA — reply, book a call, or check our work
+- Portfolio: https://almufaijer.com (a project we built — mention naturally, not as a bullet point)
+- Sign off naturally as a person from AYN. Pick a fitting role based on context — Sales Executive, Growth Lead, whatever fits. Not "Operations Manager". Not "The AYN Team". A real person's sign-off.
+- From: info@aynn.io
 - ${angle}
+- Don't use phrases like "I hope this email finds you well", "I wanted to reach out", "leverage", "synergy", "streamline". Write like you'd text a business contact.
 
 Our services: ${SERVICES.map(s => s.name).join(', ')}
 
