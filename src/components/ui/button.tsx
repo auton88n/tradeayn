@@ -75,7 +75,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {props.children}
-        <RippleContainer />
+        {!asChild && <RippleContainer />}
       </Comp>
     )
   }
