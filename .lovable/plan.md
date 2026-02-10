@@ -1,66 +1,42 @@
 
+# Add Terms Consent Log Viewer to Admin Panel
 
-# Fix Terms Acceptance + Add Consent Audit Log
-
-## Two Problems Found
-
-### Problem 1: PATCH silently succeeds with zero rows updated
-The `supabaseApi.patch()` sends `Prefer: return=minimal`, which means Supabase returns HTTP 200 even when **zero rows are updated**. So if a user's `user_settings` row doesn't exist for any reason, the PATCH "succeeds" but nothing changes. The modal closes, user gets in, then next page load it checks the database again and `has_accepted_terms` is still `false` -- so the modal comes back.
-
-**Fix:** Change the PATCH to use `Prefer: return=representation` so we get the updated row back. If the response is empty (no rows matched), fall back to a POST insert. This guarantees the write actually lands.
-
-### Problem 2: No audit trail for consent
-There's no proof that a user accepted the terms. The `user_settings` table just has a boolean flag that can be toggled. For legal compliance, you need an immutable log.
-
-**Fix:** Create a `terms_consent_log` table that records every acceptance with a timestamp, IP info, and which version of the terms they accepted. This is append-only -- users can read their own records but never update or delete them.
-
----
+## What's Missing
+The `terms_consent_log` table was created in the database, but there's no section in the Admin Panel to view it. We need to add a new admin sidebar tab and a viewer component so you can see proof of who accepted the terms.
 
 ## Changes
 
-### 1. Database: New `terms_consent_log` table
+### 1. New Component: `src/components/admin/TermsConsentViewer.tsx`
+A new admin section that:
+- Fetches all records from `terms_consent_log` (admin RLS policy already allows this)
+- Displays a table with columns: User, Terms Version, Privacy, Terms, AI Disclaimer, Accepted At, User Agent
+- Each checkbox state shown as a green checkmark or red X
+- Includes a search bar to filter by user
+- Shows total count of consent records
+- Sorted by most recent first
 
+### 2. Update `src/components/admin/AdminSidebar.tsx`
+- Add `'terms-consent'` to the `AdminTabId` type
+- Add a new sidebar entry in the main sections (under "Main" group, after "Users") with a `FileCheck` icon
+
+### 3. Update `src/components/AdminPanel.tsx`
+- Import `TermsConsentViewer`
+- Add `{activeTab === 'terms-consent' && <TermsConsentViewer />}` to the tab content rendering block
+
+## Technical Details
+
+### Data Fetching
+The component will use `supabaseApi.get()` (matching the existing pattern used throughout the admin panel) to query:
 ```
-terms_consent_log
-- id (uuid, primary key)
-- user_id (uuid, references auth.users)
-- terms_version (text) -- e.g. "2026-02-07"
-- privacy_accepted (boolean)
-- terms_accepted (boolean)
-- ai_disclaimer_accepted (boolean)
-- accepted_at (timestamptz, default now())
-- user_agent (text, nullable)
+terms_consent_log?select=*&order=accepted_at.desc
 ```
 
-RLS policies:
-- Users can INSERT their own consent records
-- Users can SELECT their own records
-- No UPDATE or DELETE allowed (immutable audit log)
+To show user info alongside consent records, it will also fetch profiles to map `user_id` to a display name/email.
 
-### 2. `src/hooks/useAuth.ts` -- Fix acceptTerms
+### UI Layout
+- Summary cards at top: Total Acceptances count
+- Searchable/filterable table below
+- Each row shows: user name, terms version, three boolean columns (privacy/terms/ai disclaimer) with visual indicators, timestamp, and truncated user agent
 
-- Pass `Prefer: return=representation` header on the PATCH so we can verify it actually updated a row
-- If PATCH returns empty array (no row found), fall back to POST insert
-- After successfully writing to `user_settings`, also INSERT a row into `terms_consent_log` with the current terms version and all three checkbox states
-- Include `navigator.userAgent` for extra audit proof
-
-### 3. `src/components/shared/TermsModal.tsx` -- Pass checkbox details
-
-- Change `onAccept` prop to pass the three checkbox states to the parent so the consent log can record exactly what was checked
-- Updated signature: `onAccept: (consent: { privacy: boolean; terms: boolean; aiDisclaimer: boolean }) => void`
-
-### 4. `src/components/Dashboard.tsx` -- Wire up new signature
-
-- Update the `onAccept` call to pass consent details through to `auth.acceptTerms`
-
----
-
-## Technical Summary
-
-| Location | Change |
-|---|---|
-| Database migration | Create `terms_consent_log` table with RLS (insert + select own, no update/delete) |
-| `src/hooks/useAuth.ts` | Fix PATCH to verify success, add POST fallback, write consent log entry |
-| `src/components/shared/TermsModal.tsx` | Pass checkbox states through `onAccept` callback |
-| `src/components/Dashboard.tsx` | Wire updated `onAccept` signature |
-
+### No new dependencies needed
+Uses existing UI components (Card, Badge, Table patterns) already in the project.
