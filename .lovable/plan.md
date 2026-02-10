@@ -1,125 +1,148 @@
 
 
-# Conversational Creative Studio with AYN AI + Higher Quality Images
+# Creative Studio Power Upgrade: Smarter AYN + URL Brand DNA + Better UX
 
 ## Overview
 
-Transform the Creative Editor from a "configure settings then click generate" tool into a **conversational experience** where you chat with AYN about what you want, and AYN creates and iterates on the image. Also upgrade image quality to the pro model and add proper download functionality.
+Three major upgrades to make the Creative Studio genuinely powerful:
+
+1. **Editable everything** -- Brand Kit becomes fully editable (colors, fonts, tagline)
+2. **URL-based Brand DNA extraction** -- Give AYN a website URL and it analyzes the site to extract brand identity (colors, fonts, style, tone) and uses that to create marketing visuals
+3. **Smarter AYN personality** -- Upgraded system prompt that makes AYN think like a real marketer and sales expert, not just an image generator
+4. **Chat auto-scroll fix** -- Ensure chat always scrolls to bottom when new messages arrive
 
 ## Changes
 
-### 1. Upgrade Image Model (Edge Function)
+### 1. Editable Brand Kit (`BrandKit.tsx`)
 
-**File: `supabase/functions/twitter-generate-image/index.ts`**
+Add edit mode to the Brand Kit so you can change:
+- Brand colors (click a swatch to open a color picker / hex input)
+- Font selections
+- Tagline text
+- Brand traits/values
 
-- Change model from `google/gemini-2.5-flash-image` to `google/gemini-3-pro-image-preview` for significantly higher quality output
-- Keep the same prompt structure -- just swap the model ID on line 87
+Store edits in component state (and optionally in localStorage for persistence). Pass the current brand kit values down to the Creative Editor so AYN knows your actual brand when generating.
 
-### 2. New Edge Function: `twitter-creative-chat`
+### 2. New Edge Function: `twitter-brand-scan` 
 
-**New file: `supabase/functions/twitter-creative-chat/index.ts`**
+A new edge function that takes a URL and:
+1. Calls Firecrawl's scrape API with `formats: ['branding', 'markdown', 'screenshot']` to extract the website's brand identity
+2. Returns structured brand DNA: colors, fonts, typography, logo URL, tone of voice, key messaging
+3. AYN then uses this data to create marketing visuals that match the scanned brand
 
-A conversational AI endpoint where AYN acts as a creative director. The user describes what they want, AYN asks clarifying questions, then generates/refines the image.
+Since Firecrawl isn't connected yet, the plan will prompt you to connect the Firecrawl connector. Alternatively, we can use a simpler approach: use the AI gateway to analyze a screenshot of the website (via SCREENSHOTONE_API_KEY which is already configured).
 
-- Uses `google/gemini-3-pro-image-preview` for image generation
-- Has a system prompt that makes AYN act as a brand-aware creative director for AYN's marketing
-- Accepts conversation history (messages array) + current creative params
-- When AYN decides to generate, it calls the image model and returns the result
-- Uploads to `generated-images` storage bucket (same as existing flow)
-- Can also return text-only responses for the conversation phase
+**Recommended approach**: Use ScreenshotOne to capture the website, then send the screenshot to Gemini vision to extract brand DNA (colors, typography, style, messaging). This avoids needing a new connector.
 
 Flow:
-1. User says "I want a dark techy image with our tagline"
-2. AYN responds: "nice -- i'm thinking dark navy with grid lines, your tagline centered in a clean sans-serif. want the eye logo as a watermark? any specific accent color?"
-3. User says "yes logo, use blue accent, and add a CTA saying Try AYN Free"
-4. AYN generates the image with those specs and returns it
-5. User says "make the text smaller and move the CTA higher"
-6. AYN regenerates with adjustments
+1. User pastes a URL in the Creative Studio chat: "scan https://example.com and create something matching their brand"
+2. AYN calls the `twitter-brand-scan` function
+3. The function screenshots the website, sends to Gemini for brand analysis
+4. Returns brand DNA (colors, fonts, tone, key visuals)
+5. AYN uses this data in its next image generation prompt
 
-### 3. Redesign Creative Editor with Chat Interface
+### 3. Upgraded System Prompt (`twitter-creative-chat`)
 
-**File: `src/components/admin/marketing/CreativeEditor.tsx`** -- Full rewrite
+Transform AYN from a simple image generator into a marketing and sales expert:
 
-New layout (still a dialog, but completely different UX):
+- **Marketing strategist**: Understands audience targeting, hook psychology, CTA optimization
+- **Sales copywriter**: Knows AIDA framework, PAS framework, social proof techniques  
+- **Brand consultant**: Can analyze competitors, suggest positioning, recommend visual strategies
+- **Design director**: Strong opinions on composition, color theory, typography hierarchy
+
+New capabilities in the prompt:
+- When user shares a URL, detect `[SCAN_URL]` intent and call brand scan
+- Suggest marketing angles based on the tweet content
+- Recommend optimal image styles for different platforms (Twitter vs Instagram)
+- Provide A/B testing suggestions for creatives
+
+### 4. Chat Auto-Scroll Fix (`CreativeEditor.tsx`)
+
+The current scroll uses `scrollRef.current.scrollTop = scrollRef.current.scrollHeight` but `scrollRef` points to a div inside `ScrollArea`, not the scroll viewport. Fix:
+- Use `scrollRef` on the inner content div and call `scrollIntoView({ behavior: 'smooth' })` on a sentinel div at the bottom
+- Add a small delay to account for DOM updates
+
+### 5. URL Input in Creative Editor
+
+Add a "Scan URL" button/chip and a URL input field in the chat interface. When a user types or pastes a URL, AYN detects it and offers to scan the brand. Quick chip added: "Scan a website".
+
+## Technical Details
+
+### Files to Create
+
+| File | Purpose |
+|------|---------|
+| `supabase/functions/twitter-brand-scan/index.ts` | Screenshot + AI vision brand analysis |
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/components/admin/marketing/BrandKit.tsx` | Add edit mode for colors, fonts, tagline |
+| `src/components/admin/marketing/CreativeEditor.tsx` | Auto-scroll fix, URL scan chip, pass brand kit context |
+| `supabase/functions/twitter-creative-chat/index.ts` | Upgraded marketer/sales system prompt, URL scan detection |
+| `src/components/admin/TwitterMarketingPanel.tsx` | Pass brand kit state to CreativeEditor |
+| `supabase/config.toml` | Register new edge function |
+
+### Brand Scan Edge Function Architecture
 
 ```text
-+--------------------------------------------------+
-|  AYN Creative Studio                          [X] |
-+--------------------------------------------------+
-|                    |                              |
-|   PREVIEW AREA     |   CHAT WITH AYN             |
-|   (60%)            |   (40%)                     |
-|                    |                              |
-|  [Generated image  |  AYN: hey! tell me what     |
-|   or AYN branded   |  kind of creative you're    |
-|   placeholder]     |  imagining for this tweet.   |
-|                    |                              |
-|                    |  You: dark background with   |
-|                    |  the AYN eye logo            |
-|                    |                              |
-|                    |  AYN: got it -- generating   |
-|                    |  a dark navy creative with   |
-|                    |  grid lines and your eye...  |
-|                    |                              |
-|                    |  [image generated!]          |
-|                    |                              |
-|                    +------------------------------+
-|                    | [Type your idea...]   [Send] |
-|  [Download]        +------------------------------+
-+--------------------------------------------------+
+User pastes URL
+      |
+      v
+twitter-brand-scan function
+      |
+      +-- 1. Call ScreenshotOne API (screenshot of the website)
+      |
+      +-- 2. Send screenshot to Gemini vision:
+      |       "Analyze this website screenshot and extract:
+      |        - Primary/secondary/accent colors (hex)
+      |        - Typography style (serif, sans-serif, mono)
+      |        - Overall aesthetic (minimal, bold, playful, corporate)
+      |        - Key messaging/taglines visible
+      |        - Brand personality traits"
+      |
+      +-- 3. Return structured brand DNA JSON
 ```
 
-Key features:
-- **Left panel**: Live preview of current/latest image, with Download button overlay
-- **Right panel**: Chat messages with AYN (scrollable), input at bottom
-- AYN's first message is auto-generated based on the tweet text: "hey! i see your tweet is about [topic]. want me to create a visual for it? tell me the vibe -- light, dark, colorful? any specific text overlay?"
-- Quick-action chips below the chat input for common requests: "Dark theme", "Light & clean", "Add CTA", "Regenerate", "Make text smaller"
-- The manual controls (background, colors, logo) are still available as a collapsible "Manual Controls" section below the chat, for power users who want direct control
-- Download button works via creating a temporary `<a>` element with `download` attribute for proper file download (not just opening in new tab)
+### Upgraded AYN System Prompt (Key Additions)
 
-### 4. Proper Download Function
+AYN will now know:
+- **AIDA framework** (Attention, Interest, Desire, Action) for CTA optimization
+- **Color psychology** (blue = trust, red = urgency, green = growth)
+- **Platform-specific best practices** (Twitter: bold text, high contrast; Instagram: lifestyle, aspirational)
+- **Audience profiling** integration with the existing psychology intelligence
+- **Competitor analysis** when given a URL to scan
+- **Hook writing** -- first 7 words matter most
 
-Instead of `window.open()` which just opens in a new tab, implement actual file download:
+### Auto-Scroll Fix
 
 ```typescript
-const downloadImage = async (url: string, filename?: string) => {
-  const response = await fetch(url);
-  const blob = await response.blob();
-  const blobUrl = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = blobUrl;
-  a.download = filename || 'ayn-creative.png';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(blobUrl);
-};
+// Add a sentinel div at the bottom of messages
+const bottomRef = useRef<HTMLDivElement>(null);
+
+useEffect(() => {
+  // Small delay for DOM update + animation
+  const timer = setTimeout(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, 100);
+  return () => clearTimeout(timer);
+}, [messages, isLoading]);
+
+// In JSX, after the loading indicator:
+<div ref={bottomRef} />
 ```
 
-This will trigger a real browser download dialog.
+### Editable Brand Kit State
 
-### 5. Update TwitterMarketingPanel Integration
+```typescript
+interface BrandKitState {
+  colors: { name: string; hex: string }[];
+  fonts: { name: string; usage: string }[];
+  tagline: string;
+  traits: string[];
+}
+```
 
-**File: `src/components/admin/TwitterMarketingPanel.tsx`**
-
-- Pass the `post_id` to CreativeEditor so the chat function can save images to the correct post
-- When CreativeEditor generates an image via chat, update the post's `image_url` in local state
-
-## File Summary
-
-| File | Action |
-|------|--------|
-| `supabase/functions/twitter-generate-image/index.ts` | Edit -- swap model to `google/gemini-3-pro-image-preview` |
-| `supabase/functions/twitter-creative-chat/index.ts` | New -- conversational creative AI endpoint |
-| `src/components/admin/marketing/CreativeEditor.tsx` | Rewrite -- chat-based UI with AYN conversation |
-| `src/components/admin/TwitterMarketingPanel.tsx` | Edit -- pass `post_id`, handle chat-generated images |
-
-## Technical Notes
-
-- The `twitter-creative-chat` edge function uses the same storage upload pattern as `twitter-generate-image` (upload base64 to `generated-images` bucket, return public URL)
-- AYN's creative director personality matches the existing casual tone from `ayn-unified` ("hey", "nice", lowercase, no corporate speak)
-- The chat history is kept in React state (not persisted to DB) since it's a session-based creative flow
-- Quick-action chips send predefined messages to AYN, making common operations one-click
-- The manual controls section is collapsible and starts collapsed -- chat-first experience
-- Rate limit (429) and credit (402) errors from the AI gateway are caught and shown as toast notifications
+Colors will be editable via clicking a swatch to reveal an inline hex input. Fonts will have a dropdown selector. The tagline and traits are editable text fields. All changes persist to localStorage under `ayn-brand-kit`.
 
