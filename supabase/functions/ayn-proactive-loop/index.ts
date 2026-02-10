@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+import { logAynActivity } from "../_shared/aynLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,6 +46,11 @@ serve(async (req) => {
           // FIX 1: Update ticket status so we don't re-process it
           await supabase.from('support_tickets').update({ status: 'pending' }).eq('id', ticket.id);
           actions.push({ type: 'auto_reply', detail: `Replied to stale ticket #${ticket.id.substring(0, 8)} and set to pending` });
+          await logAynActivity(supabase, 'proactive_auto_reply', `Auto-replied to stale ticket #${ticket.id.substring(0, 8)}`, {
+            target_id: ticket.id, target_type: 'ticket',
+            details: { subject: ticket.subject, priority: ticket.priority },
+            triggered_by: 'proactive_loop',
+          });
         } catch (e) {
           console.error('Auto-reply failed for ticket:', ticket.id, e);
         }

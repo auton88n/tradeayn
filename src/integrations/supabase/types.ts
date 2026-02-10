@@ -313,6 +313,39 @@ export type Database = {
           },
         ]
       }
+      ayn_activity_log: {
+        Row: {
+          action_type: string
+          created_at: string
+          details: Json | null
+          id: string
+          summary: string
+          target_id: string | null
+          target_type: string | null
+          triggered_by: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          summary: string
+          target_id?: string | null
+          target_type?: string | null
+          triggered_by?: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          summary?: string
+          target_id?: string | null
+          target_type?: string | null
+          triggered_by?: string
+        }
+        Relationships: []
+      }
       ayn_mind: {
         Row: {
           content: string

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+import { logAynActivity } from "../_shared/aynLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -180,6 +181,18 @@ Generate a helpful reply and confidence score. Return ONLY valid JSON.`,
       console.error('Telegram notification failed:', telegramErr);
     }
     } // end if (!skip_telegram)
+
+    // Log to activity log
+    await logAynActivity(supabase, 'ticket_auto_reply', 
+      `Auto-replied to ticket from ${user_name || 'user'}: "${replyData.reply?.substring(0, 80)}"`, {
+      target_id: ticket_id,
+      target_type: 'ticket',
+      details: {
+        subject, confidence: replyData.confidence,
+        auto_replied: isConfident, reply_preview: replyData.reply?.substring(0, 200),
+      },
+      triggered_by: skip_telegram ? 'proactive_loop' : 'auto_reply',
+    });
 
     return new Response(JSON.stringify({
       success: true,
