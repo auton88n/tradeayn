@@ -25,7 +25,7 @@ import { SubscriptionManagement } from '@/components/admin/SubscriptionManagemen
 import { CreditGiftHistory } from '@/components/admin/CreditGiftHistory';
 import { BetaFeedbackViewer } from '@/components/admin/BetaFeedbackViewer';
 import { MessageFeedbackViewer } from '@/components/admin/MessageFeedbackViewer';
-import { TwitterMarketingPanel } from '@/components/admin/TwitterMarketingPanel';
+import { MarketingCommandCenter } from '@/components/admin/marketing/MarketingCommandCenter';
 import { AYNActivityLog } from '@/components/admin/AYNActivityLog';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
@@ -445,7 +445,7 @@ export const AdminPanel = ({
                     {activeTab === 'beta-feedback' && <BetaFeedbackViewer />}
                     {activeTab === 'message-feedback' && <MessageFeedbackViewer />}
                     {activeTab === 'test-results' && <TestResultsDashboard />}
-                    {activeTab === 'twitter-marketing' && <TwitterMarketingPanel />}
+                    {activeTab === 'twitter-marketing' && <MarketingCommandCenter />}
                     {activeTab === 'ayn-logs' && <AYNActivityLog />}
                   </ErrorBoundary>
                 </motion.div>

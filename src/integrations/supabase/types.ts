@@ -2497,8 +2497,11 @@ export type Database = {
           posted_at: string | null
           psychological_strategy: string | null
           quality_score: Json | null
+          scheduled_at: string | null
           status: string
           target_audience: string | null
+          thread_id: string | null
+          thread_order: number | null
           tweet_id: string | null
           updated_at: string
         }
@@ -2513,8 +2516,11 @@ export type Database = {
           posted_at?: string | null
           psychological_strategy?: string | null
           quality_score?: Json | null
+          scheduled_at?: string | null
           status?: string
           target_audience?: string | null
+          thread_id?: string | null
+          thread_order?: number | null
           tweet_id?: string | null
           updated_at?: string
         }
@@ -2529,8 +2535,11 @@ export type Database = {
           posted_at?: string | null
           psychological_strategy?: string | null
           quality_score?: Json | null
+          scheduled_at?: string | null
           status?: string
           target_audience?: string | null
+          thread_id?: string | null
+          thread_order?: number | null
           tweet_id?: string | null
           updated_at?: string
         }
