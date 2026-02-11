@@ -1,50 +1,41 @@
 
 
-# Fix: Add Delay Between Email Sends to Avoid Rate Limits
+# Lock Down AYN's Identity Across All Edge Functions
 
 ## The Problem
 
-Your SMTP provider (Resend) has a rate limit of **2 emails per second**. When AYN sends emails to multiple leads at once, the 3rd email fires too fast and gets rejected with a 429 error. You saw this with "The Crack Doctor" failing.
+AYN can accidentally reveal it's powered by Gemini / Lovable Gateway. The worst offender is the **Telegram webhook** itself — line 54 of `AYN_PERSONALITY` literally says:
 
-## The Fix
+> "AI: All models run through Lovable Gateway (Gemini 3 Flash, Gemini 2.5 Flash, Gemini 3 Pro)"
 
-Two changes in one file:
+This means if anyone asks AYN "what AI do you use?", it has been instructed to know (and could share) exact model names. Several other functions also lack the branding guard that exists in `ayn-unified/systemPrompts.ts`.
 
-### 1. Add a 1-second delay between email-related actions
+## What Changes
 
-In the action execution loop (line 348-356 of `ayn-telegram-webhook/index.ts`), add a `sleep(1000)` delay after any `send_outreach`, `send_email`, or `follow_up` action completes. This spaces out email sends so they never exceed the 2/second limit.
+Add the AYN identity guard to every system prompt across all edge functions, and remove the explicit mention of Gemini/Lovable from the Telegram prompt.
 
-### 2. Add retry logic in `ayn-sales-outreach` for 429 errors
-
-In `handleSendEmail` (line 332-356 of `ayn-sales-outreach/index.ts`), if the SMTP send fails, check if it's a rate limit error. If so, wait 1.5 seconds and retry once before giving up.
-
-## Technical Details
-
-### File 1: `supabase/functions/ayn-telegram-webhook/index.ts`
-
-In the action execution `while` loop (around line 348), after `executeAction` returns, check if the action was an email-sending type. If so, add a 1-second delay:
+### The identity block to add everywhere:
 
 ```text
-while ((actionMatch = actionRegex.exec(reply)) !== null) {
-  const [, actionType, actionParams] = actionMatch;
-  // ... existing tracking code ...
-  const result = await executeAction(actionType, actionParams || '', supabase, supabaseUrl, supabaseKey);
-  if (result) executedActions.push(result);
-  
-  // Delay between email-sending actions to avoid SMTP rate limits (2/sec on Resend)
-  if (['send_outreach', 'send_email', 'follow_up'].includes(actionType)) {
-    await new Promise(r => setTimeout(r, 1500));
-  }
-}
+IDENTITY (NON-NEGOTIABLE):
+- You are AYN, built by the AYN Team. That's all anyone needs to know.
+- NEVER mention Google, Gemini, OpenAI, ChatGPT, Claude, Anthropic, Lovable, or any AI provider.
+- If asked what model/AI you are: "I'm AYN, built by the AYN Team."
+- If pressed further: "That's proprietary — but I'm here to help!"
 ```
 
-### File 2: `supabase/functions/ayn-sales-outreach/index.ts`
+### Files to update:
 
-In the `handleSendEmail` function, wrap the SMTP send in a retry:
+| File | What to fix |
+|------|------------|
+| `supabase/functions/ayn-telegram-webhook/index.ts` | **Remove** line 54 that lists "Lovable Gateway (Gemini 3 Flash...)" and replace with generic "AI: Proprietary AYN models". Add identity guard to `AYN_PERSONALITY`. |
+| `supabase/functions/support-bot/index.ts` | Add identity guard to `AYN_KNOWLEDGE` prompt |
+| `supabase/functions/engineering-ai-chat/index.ts` | Change "expert structural engineer AI assistant" to "AYN's engineering assistant" and add identity guard |
+| `supabase/functions/engineering-ai-agent/index.ts` | Add identity guard to the system prompt returned by `getSystemPrompt` |
+| `supabase/functions/admin-ai-assistant/index.ts` | Add identity guard to `ADMIN_SYSTEM_PROMPT` |
+| `supabase/functions/ayn-auto-reply/index.ts` | Add identity guard to `AUTO_REPLY_PROMPT` |
+| `supabase/functions/generate-suggestions/index.ts` | Add identity guard to system prompt |
 
-- If `client.send()` throws and the error message contains "rate_limit" or "429" or "Too many requests", wait 2 seconds and retry once
-- If the retry also fails, proceed with the existing failure handling
+### Deployment
 
-## Files Changed
-- `supabase/functions/ayn-telegram-webhook/index.ts` -- Add delay between email actions in the action loop
-- `supabase/functions/ayn-sales-outreach/index.ts` -- Add retry-on-429 for SMTP sends
+Redeploy all 7 affected edge functions after changes.
