@@ -1,46 +1,44 @@
 
 
-# Fix Marketing Bot: Image Generation Not Triggering
+# Add a Second Marketing Creator to the Bot
 
-## The Problem
+## What Changes
 
-The bot checks `cleanReply.startsWith('[GENERATE_IMAGE]')` but the AI writes text before the tag (e.g., "To stop the scroll, we need a punchy visual... [GENERATE_IMAGE] ..."). Since `startsWith` fails, the tag is printed as raw text instead of triggering image generation.
+The bot currently checks `message.chat.id` against a single environment variable (`TELEGRAM_MARKETING_CHAT_ID`). We need to support multiple allowed chat IDs so both creators can interact with the bot.
 
-## The Fix
+## Approach
 
-### File: `supabase/functions/ayn-marketing-webhook/index.ts`
+### 1. Add a new secret for the second creator's chat ID
 
-**1. Fix the text message handler (line 267)**
+Add a new environment variable: `TELEGRAM_MARKETING_CHAT_ID_2` with the new person's Telegram chat ID (you'll provide this).
 
-Replace `startsWith` with `includes` check. Extract the `[GENERATE_IMAGE]` block from anywhere in the reply, split the reply into the text message part and the image prompt part, then trigger image generation.
+### 2. Update the authorization check
 
-```text
-Before:  if (cleanReply.startsWith('[GENERATE_IMAGE]'))
-After:   if (cleanReply.includes('[GENERATE_IMAGE]'))
-         -> Split at the tag
-         -> Everything before = text message to send first
-         -> Everything after = image prompt to generate
-         -> Send the text message, then generate and send the image
-```
-
-**2. Fix the voice handler (line 515)**
-
-Same fix: replace `startsWith` with `includes` so voice-triggered image requests also work.
-
-**3. Tighten the system prompt (lines 59-70)**
-
-The current prompt format example has `[GENERATE_IMAGE]` on its own line with instructions around it that the AI copies literally. Simplify to make the AI put `[GENERATE_IMAGE]` at the START or clearly separated:
+In `supabase/functions/ayn-marketing-webhook/index.ts`, change the single chat ID check to accept either:
 
 ```text
-Before: Multi-line example with surrounding text
-After:  "When generating an image, put [GENERATE_IMAGE] on its own line followed by the prompt on the next line. Put your conversational message AFTER a blank line. Never put text before [GENERATE_IMAGE]."
+Before:
+  if (String(message.chat.id) !== TELEGRAM_MARKETING_CHAT_ID) -> reject
+
+After:
+  const allowedChatIds = [TELEGRAM_MARKETING_CHAT_ID, TELEGRAM_MARKETING_CHAT_ID_2].filter(Boolean);
+  if (!allowedChatIds.includes(String(message.chat.id))) -> reject
 ```
 
-**4. Strip the tag from the sent message**
+### 3. Replies go to the sender's chat
 
-Ensure the `[GENERATE_IMAGE]` tag and prompt lines are cleaned out of any text that gets sent to Telegram, so the user never sees raw tags.
+Update all `sendTelegramMessage` calls in the main handler to use `String(message.chat.id)` instead of the hardcoded `TELEGRAM_MARKETING_CHAT_ID`, so replies go back to whoever sent the message (not always to the first creator's chat).
 
-### Deployment
+### 4. Track who's talking
 
-Redeploy `ayn-marketing-webhook` edge function.
+Include the sender's chat ID or username in the `ayn_mind` context so AYN knows which creator it's talking to.
+
+### File changes
+
+| File | Change |
+|------|--------|
+| `supabase/functions/ayn-marketing-webhook/index.ts` | Multi-chat-ID auth check, reply to sender's chat, track sender identity |
+| Secrets | Add `TELEGRAM_MARKETING_CHAT_ID_2` |
+
+### No database changes needed
 
