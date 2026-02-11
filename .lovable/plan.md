@@ -1,50 +1,71 @@
 
 
-# Fix Telegram Formatting and Make Marketing Bot More Flexible
+# Add AYN Product Knowledge to the Marketing Bot's Persona
 
-## Problem 1: Raw `****` showing in Telegram
+## What's Changing
 
-The AI sometimes outputs markdown like `**bold**` or stray `****` that doesn't get cleaned up properly before sending to Telegram. The current `markdownToTelegramHtml` function misses edge cases like:
-- Empty bold markers `****` (no text between them)
-- Triple asterisks `***text***`
-- Unmatched single `*` characters
-- Bullet points using `*`
+The marketing bot currently knows nothing about what AYN actually offers. We'll add a comprehensive "AYN PRODUCT KNOWLEDGE" section to the `MARKETING_PERSONA` so the bot (and the creators using it) can reference real services, features, and selling points when creating content.
 
-### Fix in `supabase/functions/_shared/telegramHelper.ts`:
-- Strip empty bold/italic markers (`****`, `**`, stray `*`)
-- Handle `***bold italic***` properly
-- Clean up any remaining raw asterisks that aren't part of valid formatting
-- Also strip raw markdown like `---`, `___` horizontal rules
+## What Gets Added to the Persona
 
-## Problem 2: Too Rigid Brand Rules
+A new section injected into `MARKETING_PERSONA` in `supabase/functions/ayn-marketing-webhook/index.ts` covering:
 
-The current persona has strict rules like "MAX 3-4 WORDS", "BLACK and WHITE only", "Blue accent for ONE word only". This makes the bot push back on the creator's ideas instead of following their direction.
+### AYN Platform Overview
+- AYN is a perceptive AI platform: "i see, i understand, i help"
+- Website: https://aynn.io / https://almufaijer.com (portfolio)
+- Multi-language: English, Arabic, French
 
-### Fix in `MARKETING_PERSONA` (in `ayn-marketing-webhook/index.ts`):
-- Remove the rigid brand color/style rules from being enforced
-- Keep brand awareness but make it a suggestion, not a rule
-- Add explicit instruction: "the creator is the boss — follow their creative direction"
-- Remove lines that tell the bot to push back on ideas
-- Make the bot collaborative instead of opinionated
+### Services We Offer
 
-## Problem 3: Not Friendly Enough
+1. **AI Agents** (`/services/ai-agents`)
+   - Custom AI chatbots for businesses
+   - Multi-channel: website, WhatsApp, Instagram, phone
+   - 24/7 customer support, lead qualification, multilingual
+   - Use case: replace or augment support teams
 
-The current persona says things like "never say Great idea!" and "if a hook is weak, say that hook is weak". This makes the bot feel cold.
+2. **AI Employee** (`/services/ai-employee`)
+   - Full AI team members (not just chatbots)
+   - Roles: customer service, accounting, HR, travel booking, tutoring
+   - Work 24/7, no vacations, fraction of the cost
+   - Comparison angle: traditional employee vs AI employee
 
-### Fix in `MARKETING_PERSONA`:
-- Remove the "never say nice things" rules
-- Add warmth — the bot should be supportive and encouraging
-- Keep it casual and teammate-like but add genuine enthusiasm
-- Make it feel like a friend who's good at marketing, not a strict creative director
+3. **Automation** (`/services/automation`)
+   - Business workflow automation
+   - Email, scheduling, reporting, data entry, notifications
+   - Save hours per week on repetitive tasks
+   - Integrations with existing tools
 
-## Files to Change
+4. **Influencer/Creator Sites** (`/services/influencer-sites`)
+   - Premium personal websites for content creators
+   - Analytics dashboards, brand kit, media kit
+   - Help creators land more brand partnerships
+   - Mobile-first, stunning design
 
-| File | What Changes |
-|------|-------------|
-| `supabase/functions/_shared/telegramHelper.ts` | Better markdown cleanup — strip `****`, stray `*`, handle edge cases |
-| `supabase/functions/ayn-marketing-webhook/index.ts` | Rewrite `MARKETING_PERSONA` to be friendlier, less rigid, follow the creator's lead |
+5. **Smart Ticketing** (`/services/ticketing`)
+   - AI-powered event ticketing system
+   - QR codes, real-time analytics, custom branding
+   - AI crowd management and marketing suggestions
 
-## Updated Persona Direction
+6. **Building Code Compliance** (`/compliance`)
+   - IRC 2024 / NBC 2025 compliance checks
+   - AI-powered building code analysis
+   - For engineers and construction professionals
 
-The bot will shift from "opinionated creative director who pushes back" to "supportive marketing teammate who follows the creator's vision while offering smart suggestions when asked". Brand guidelines become soft suggestions, not enforced rules. The creator decides the style, colors, and direction.
+### Subscription Tiers
+- Free, Starter, Pro, Business, Enterprise
+
+### Key Selling Points for Content
+- AI that actually works for your business (not hype)
+- Fraction of the cost of traditional solutions
+- 24/7 availability
+- Multi-language support (EN/AR/FR)
+- Built by a real team, not a template
+
+## File to Change
+
+| File | Change |
+|------|--------|
+| `supabase/functions/ayn-marketing-webhook/index.ts` | Add "AYN PRODUCT KNOWLEDGE" block to `MARKETING_PERSONA` string |
+
+## No other files or database changes needed
 
