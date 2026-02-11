@@ -46,7 +46,13 @@ serve(async (req) => {
     }
 
     const imageBuffer = await screenshotResp.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+    // Chunked base64 conversion to avoid call stack overflow
+    const bytes = new Uint8Array(imageBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    }
+    const base64Image = btoa(binary);
     const imageDataUrl = `data:image/png;base64,${base64Image}`;
 
     console.log("Screenshot captured, sending to Gemini for brand analysis...");

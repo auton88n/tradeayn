@@ -37,50 +37,50 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Extract a SHORT catchy hook from the tweet text (max 10 words)
+    // Extract 3-4 word hook from the tweet text
     const words = (header_text || tweet_text).split(/\s+/);
-    const displayText = words.length > 10 ? words.slice(0, 10).join(' ') + '...' : words.join(' ');
+    const displayText = words.length > 4 ? words.slice(0, 4).join(' ') : words.join(' ');
 
-    // Build background instruction — BOLD and eye-catching
+    // Build background instruction — black/white dominant
     const bgMap: Record<string, string> = {
-      white: `Bold, clean design with a subtle light gray geometric grid at 5% opacity. White-to-light-gray gradient background with strong visual hierarchy`,
-      dark: `Dramatic dark navy-to-black gradient (#0a0a1a to #1a1a2e) with subtle glowing blue grid lines. Moody, high-contrast, premium feel`,
-      blue: `Bold gradient from deep electric blue (${accent_color}) to dark navy, with geometric light patterns. Energetic and modern`,
+      white: `Clean white background with maximum negative space. Premium, minimal, like a high-end print ad`,
+      dark: `Pure black (#000000) background. Dramatic, high-contrast, premium feel. Like a luxury brand ad`,
+      blue: `Deep black background with very subtle dark blue (#0a0a2e) tint. Moody and minimal`,
     };
     const bgInstruction = bgMap[background_color] || bgMap.dark;
 
     // Build logo instruction
     const logoInstruction = include_logo
-      ? "Include the AYN brand eye symbol (a stylized eye icon) subtly in the bottom-right corner as a small watermark"
+      ? "Include a subtle AYN watermark text in the bottom-right corner, very small, in gray"
       : "Do NOT include any logo or watermark";
 
     // Build CTA instruction
     const ctaInstruction = cta_text
-      ? `Include a call-to-action at the bottom: "${cta_text}" styled as a sleek pill-shaped button with the accent color`
+      ? `Include a small call-to-action: "${cta_text}" in a thin pill-shaped outline`
       : "";
 
     // Text color based on background
-    const textColor = background_color === "dark" || background_color === "blue"
-      ? "bright white text for maximum contrast"
-      : "dark charcoal (#1a1a1a) text for strong readability";
+    const textColor = background_color === "white"
+      ? "pure black (#000000) text"
+      : "pure white (#FFFFFF) text";
 
-    const imagePrompt = `Create a BOLD, scroll-stopping 1080x1080 social media marketing image for AYN, an AI engineering platform.
+    const imagePrompt = `Create a BOLD, scroll-stopping 1080x1080 social media image for AYN, an AI engineering platform.
 
 CRITICAL DESIGN RULES:
 - ${bgInstruction}
-- The main text should be SHORT and IMPACTFUL: "${displayText}"
-- Text must be LARGE, BOLD, and the focal point — use a modern geometric sans-serif font
+- The main text is ONLY 3-4 WORDS: "${displayText}"
+- Text must be HUGE, BOLD, and the ONLY focal point — modern geometric sans-serif font
 - Text color: ${textColor}
-- Highlight 1-2 key words in electric blue (${accent_color}) with a subtle glow effect
+- Highlight exactly ONE word in electric blue (#0EA5E9) — this is the only color accent
 - ${logoInstruction}
-- Design should make people STOP SCROLLING — think top-tier design agency quality
-- Strong visual hierarchy: one dominant element (the text), minimal supporting elements
-- Use negative space strategically — don't crowd the design
-- NO small text, NO paragraphs, NO cluttered layouts
-- The overall feel should be premium, bold, and impossible to ignore
+- BLACK AND WHITE DOMINANT. No gradients as main design. No busy backgrounds.
+- Maximum negative space. The text IS the design.
+- Think premium black-and-white print ad with one pop of blue
+- NO small text, NO paragraphs, NO cluttered layouts, NO stock photo feel
+- NO colorful backgrounds, NO rainbow gradients
 ${ctaInstruction ? `- ${ctaInstruction}` : ""}
 
-Style reference: think Apple keynote slides meets tech startup marketing — bold, minimal, impactful.`;
+Style reference: Apple keynote slides meets high-end fashion advertising — bold, minimal, monochrome with one blue accent.`;
 
     console.log("Generating bold image for post:", post_id, "bg:", background_color);
 
