@@ -1,39 +1,18 @@
 
 
-# Fix: Unlimited Users Blocked by Legacy Limit System
+# Revert: Keep 100-Message Per-Chat Cap for Unlimited Users
 
-## What's Happening
+## What Changed
 
-Unlimited users see "limit exceeded" because of two old checks that don't know about the `is_unlimited` flag:
+The recent fix correctly bypassed the legacy monthly limit system for unlimited users. However, it also removed the 100-message per-chat session cap in `ayn-unified` for unlimited users -- you want that cap to stay.
 
-1. **Frontend pre-check** (line 235): Calls `increment_usage()` RPC which checks the old `access_grants` table -- no concept of unlimited
-2. **Post-send warning** (lines 730-765): Reads from `access_grants` and shows "Monthly Limit Reached" toasts
+## Change
 
-The server-side `check_user_ai_limit()` in `ayn-unified` already handles unlimited users correctly. The old system is redundant and actively blocking users.
+### `supabase/functions/ayn-unified/index.ts`
 
-## Changes
+Remove the `is_unlimited` query and conditional that was added around the `MAX_MESSAGES_PER_CHAT` check. Restore it to the original behavior where **all users** (including unlimited) are subject to the 100-message per-chat cap.
 
-### 1. `src/hooks/useMessages.ts` -- Add `isUnlimited` parameter, skip old checks
+This means removing the block that queries `user_ai_limits.is_unlimited` and the `if (!isUnlimited)` wrapper around the session message count check.
 
-- Add `isUnlimited: boolean` as 8th parameter to the `useMessages` hook
-- Wrap the `increment_usage` pre-check (lines 233-271) with `if (!isUnlimited)` so unlimited users skip it entirely
-- Remove the post-send `access_grants` usage warning block (lines 730-765) -- the `SystemNotificationBanner` already handles this from the correct `user_ai_limits` data
+The monthly limit fix (frontend `increment_usage` bypass and toast removal) stays intact -- only the per-chat cap revert is needed.
 
-### 2. `src/components/dashboard/DashboardContainer.tsx` -- Pass `isUnlimited` to hook
-
-- Pass `usageTracking.isUnlimited` as the 8th argument to `useMessages()`
-
-### 3. `supabase/functions/ayn-unified/index.ts` -- Bypass 100-message cap for unlimited
-
-- Before the `MAX_MESSAGES_PER_CHAT` check (line 547), query `user_ai_limits.is_unlimited`
-- If unlimited, skip the 100-message enforcement entirely
-
-### 4. Update test file
-
-- Update `src/hooks/__tests__/useMessages.test.ts` to pass the new `isUnlimited` parameter (as `false` for existing tests)
-
-## What This Does NOT Change
-
-- Regular (non-unlimited) users keep all existing limits intact
-- The server-side `check_user_ai_limit()` system is untouched -- it already works correctly
-- No database changes needed
