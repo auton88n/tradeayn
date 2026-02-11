@@ -860,6 +860,183 @@ export async function cmdWebhooks(supabase: Supabase): Promise<string> {
   return result;
 }
 
+// ─── find_user — Lookup user by email or name ───
+export async function cmdFindUser(query: string, supabase: Supabase): Promise<string> {
+  if (!query || query.length < 2) return '❌ Need at least 2 characters to search.';
+
+  try {
+    // Search profiles by contact_person (name)
+    const { data: profileMatches } = await supabase
+      .from('profiles')
+      .select('user_id, contact_person, company_name, account_status, last_login')
+      .ilike('contact_person', `%${query}%`)
+      .limit(5);
+
+    // Search auth users by email
+    const { data: authData } = await supabase.auth.admin.listUsers();
+    const emailMatches = authData?.users?.filter((u: any) =>
+      u.email?.toLowerCase().includes(query.toLowerCase())
+    ).slice(0, 5) || [];
+
+    // Merge results (deduplicate by user_id)
+    const seen = new Set<string>();
+    const results: Array<{
+      user_id: string;
+      name: string;
+      email: string;
+      company: string;
+      status: string;
+      last_login: string;
+    }> = [];
+
+    // Add profile matches
+    for (const p of profileMatches || []) {
+      if (seen.has(p.user_id)) continue;
+      seen.add(p.user_id);
+      const authUser = authData?.users?.find((u: any) => u.id === p.user_id);
+      results.push({
+        user_id: p.user_id,
+        name: p.contact_person || 'N/A',
+        email: authUser?.email || 'N/A',
+        company: p.company_name || 'N/A',
+        status: p.account_status || 'active',
+        last_login: p.last_login ? new Date(p.last_login).toLocaleDateString() : 'never',
+      });
+    }
+
+    // Add email matches not already found
+    for (const u of emailMatches) {
+      if (seen.has(u.id)) continue;
+      seen.add(u.id);
+      const profile = profileMatches?.find((p: any) => p.user_id === u.id);
+      results.push({
+        user_id: u.id,
+        name: profile?.contact_person || 'N/A',
+        email: u.email || 'N/A',
+        company: profile?.company_name || 'N/A',
+        status: profile?.account_status || 'active',
+        last_login: profile?.last_login ? new Date(profile.last_login).toLocaleDateString() : 'never',
+      });
+    }
+
+    if (results.length === 0) return `❌ No users found matching "${query}"`;
+
+    // For each result, fetch subscription tier and access grant status
+    const enriched = await Promise.all(results.map(async (r) => {
+      const [{ data: sub }, { data: grant }, { data: limits }] = await Promise.all([
+        supabase.from('user_subscriptions').select('subscription_tier, status').eq('user_id', r.user_id).limit(1),
+        supabase.from('access_grants').select('is_active, monthly_limit').eq('user_id', r.user_id).limit(1),
+        supabase.from('user_ai_limits').select('is_unlimited').eq('user_id', r.user_id).limit(1),
+      ]);
+      const tier = sub?.[0]?.subscription_tier || 'free';
+      const grantStatus = grant?.[0] ? (grant[0].is_active ? '✅ active' : '❌ inactive') : '⚠️ none';
+      const unlimited = limits?.[0]?.is_unlimited ? '♾️' : '';
+      return `• ${r.name} (${r.email})\n  Company: ${r.company} | Status: ${r.status}\n  Tier: ${tier} ${unlimited} | Grant: ${grantStatus}\n  Last login: ${r.last_login}\n  ID: ${r.user_id}`;
+    }));
+
+    await logAynActivity(supabase, 'user_lookup', `Searched for "${query}" — found ${results.length} result(s)`, {
+      target_type: 'user',
+      details: { query, result_count: results.length },
+      triggered_by: 'telegram_command',
+    });
+
+    return `🔍 Found ${results.length} user(s) matching "${query}":\n\n${enriched.join('\n\n')}`;
+  } catch (e) {
+    console.error('cmdFindUser error:', e);
+    return `❌ User lookup failed: ${e instanceof Error ? e.message : 'Unknown error'}`;
+  }
+}
+
+// ─── check_user_status — Comprehensive user status (read-only) ───
+export async function cmdCheckUserStatus(userIdOrPrefix: string, supabase: Supabase): Promise<string> {
+  if (!userIdOrPrefix || userIdOrPrefix.length < 4) return '❌ Need at least 4 characters of the user ID.';
+
+  try {
+    // Find the user profile
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, contact_person, company_name, business_type, account_status, last_login, created_at')
+      .ilike('user_id', `${userIdOrPrefix}%`)
+      .limit(1);
+
+    if (!profiles?.length) return `❌ No user found starting with "${userIdOrPrefix}"`;
+    const p = profiles[0];
+
+    // Fetch all status data in parallel
+    const [
+      { data: sub },
+      { data: grant },
+      { data: limits },
+      { data: authData },
+    ] = await Promise.all([
+      supabase.from('user_subscriptions').select('subscription_tier, status, stripe_customer_id, current_period_end').eq('user_id', p.user_id).limit(1),
+      supabase.from('access_grants').select('is_active, monthly_limit, current_month_usage, auth_method, expires_at, granted_by, notes').eq('user_id', p.user_id).limit(1),
+      supabase.from('user_ai_limits').select('is_unlimited, daily_messages, monthly_messages, current_daily_messages, current_monthly_messages, daily_engineering, monthly_engineering, current_daily_engineering, current_monthly_engineering, bonus_credits, daily_reset_at, monthly_reset_at').eq('user_id', p.user_id).limit(1),
+      supabase.auth.admin.getUserById(p.user_id),
+    ]);
+
+    const email = authData?.user?.email || 'N/A';
+    const s = sub?.[0];
+    const g = grant?.[0];
+    const l = limits?.[0];
+
+    let result = `📋 Full Status Report for ${p.contact_person || email}:
+
+👤 Profile:
+• Name: ${p.contact_person || 'N/A'}
+• Email: ${email}
+• Company: ${p.company_name || 'N/A'}
+• Type: ${p.business_type || 'N/A'}
+• Status: ${p.account_status || 'active'}
+• Last login: ${p.last_login ? new Date(p.last_login).toLocaleDateString() : 'never'}
+• Joined: ${new Date(p.created_at).toLocaleDateString()}
+• ID: ${p.user_id}`;
+
+    result += `\n\n💳 Subscription:
+• Tier: ${s?.subscription_tier || 'free'}
+• Status: ${s?.status || 'none'}
+• Period end: ${s?.current_period_end ? new Date(s.current_period_end).toLocaleDateString() : 'N/A'}`;
+
+    if (g) {
+      result += `\n\n🔑 Access Grant:
+• Active: ${g.is_active ? '✅' : '❌'}
+• Limit: ${g.monthly_limit === -1 ? 'unlimited' : g.monthly_limit}
+• Usage: ${g.current_month_usage || 0}
+• Auth: ${g.auth_method || 'N/A'}
+• Granted by: ${g.granted_by || 'N/A'}
+• Expires: ${g.expires_at ? new Date(g.expires_at).toLocaleDateString() : 'never'}`;
+    } else {
+      result += '\n\n🔑 Access Grant: None';
+    }
+
+    if (l) {
+      result += `\n\n📊 AI Limits:
+• Unlimited: ${l.is_unlimited ? '✅ YES' : '❌ no'}
+• Daily msgs: ${l.current_daily_messages || 0}/${l.daily_messages || 'N/A'}
+• Monthly msgs: ${l.current_monthly_messages || 0}/${l.monthly_messages || 'N/A'}
+• Daily eng: ${l.current_daily_engineering || 0}/${l.daily_engineering || 'N/A'}
+• Monthly eng: ${l.current_monthly_engineering || 0}/${l.monthly_engineering || 'N/A'}
+• Bonus credits: ${l.bonus_credits || 0}
+• Daily reset: ${l.daily_reset_at ? new Date(l.daily_reset_at).toLocaleString() : 'N/A'}
+• Monthly reset: ${l.monthly_reset_at ? new Date(l.monthly_reset_at).toLocaleString() : 'N/A'}`;
+    } else {
+      result += '\n\n📊 AI Limits: No record';
+    }
+
+    await logAynActivity(supabase, 'user_status_check', `Checked full status for ${p.contact_person || email}`, {
+      target_id: p.user_id,
+      target_type: 'user',
+      details: { tier: s?.subscription_tier, unlimited: l?.is_unlimited, grant_active: g?.is_active },
+      triggered_by: 'telegram_command',
+    });
+
+    return result;
+  } catch (e) {
+    console.error('cmdCheckUserStatus error:', e);
+    return `❌ Status check failed: ${e instanceof Error ? e.message : 'Unknown error'}`;
+  }
+}
+
 // ─── /weekly_report — 7-day executive summary ───
 export async function cmdWeeklyReport(supabase: Supabase): Promise<string> {
   const now = new Date();
