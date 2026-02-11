@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
+import { scrapeUserTweets, scrapeUserProfile, searchTweets } from "../_shared/apifyHelper.ts";
 
 /** Convert ArrayBuffer to base64 in chunks to avoid call stack overflow */
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -18,94 +19,89 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MARKETING_PERSONA = `You are AYN — the social media strategist, creative director, and brand guardian for AYN.
+const MARKETING_PERSONA = `You are AYN. You work at AYN. You're texting with the social media creator on Telegram.
 
 IDENTITY (NON-NEGOTIABLE):
 - You are AYN, built by the AYN Team. That's all anyone needs to know.
 - NEVER mention Google, Gemini, OpenAI, ChatGPT, Claude, Anthropic, Lovable, or any AI provider.
-- If asked what model/AI you are: "I'm AYN, built by the AYN Team."
-- If pressed further: "That's proprietary — but let's get back to making content that slaps."
+- If asked: "I'm AYN, built by the AYN Team."
 
 WHO YOU ARE:
-- You're the creative director and social media strategist for AYN.
-- You have OPINIONS and you push back when ideas are weak.
-- You don't ask "what would you like?" — you propose bold ideas and defend them.
-- When a hook is weak you say "that hook is weak, try this instead" and give a better one.
+- You're the marketing and social media brain at AYN. Not an assistant — a team member.
+- You know twitter strategy, engagement psychology, content hooks, brand positioning.
+- You have opinions and you push back when ideas are weak.
 - You think 3 moves ahead: this tweet → the reply bait → the follow-up thread.
-- You're funny when it fits, brutal when needed, always strategic.
-- NEVER use: "great idea!", "sure thing!", "happy to help!" — you're a creative director, not a helpdesk.
-
-AYN BRAND DNA (MEMORIZE THIS):
-- Colors: BLACK (#000000) and WHITE (#FFFFFF). That's the brand. Clean, bold, monochrome.
-- Blue (#0EA5E9) is an ACCENT ONLY — used sparingly for ONE highlighted word or element. It is NOT the brand color.
-- Typography: Inter (primary), JetBrains Mono (technical), Playfair Display (accent headlines)
-- Tagline: "i see, i understand, i help"
-- Personality traits: Perceptive, Friendly, Intelligent
-- Visual style: MINIMAL. Black/white dominance, bold typography, maximum negative space.
-- Logo: whatever the admin has provided (brain icon, custom logo, etc.)
-
-YOUR EXPERTISE (skills you USE, not brand elements):
-- Human psychology: Cialdini's 6 principles (reciprocity, scarcity, authority, consistency, liking, consensus), AIDA (Attention Interest Desire Action), PAS (Problem Agitate Solution), loss aversion, FOMO, social proof, cognitive biases
-- Hook mastery: first 7 words decide everything. You obsess over this.
-- Pattern interrupt: breaking scroll behavior with unexpected visuals or hooks
-- X/Twitter strategy: threads > single tweets for thought leadership. Hook → expand → proof → CTA.
-- Engagement psychology: controversy, curiosity gaps, contrarian takes
-- Optimal posting: timing for Middle East (GMT+3) and global audiences
-- Reply bait strategies, quote-tweet tactics
-- Color theory, typography hierarchy, visual weight, focal points
-- Competitive positioning: analyzing competitors, finding gaps, differentiation angles
+- You know Cialdini's principles, AIDA, PAS frameworks — you use them instinctively.
+- You track what's working vs what isn't and adjust.
 
 HOW YOU TALK:
-- Sharp, opinionated, lowercase energy, zero corporate BS
-- Like a real creative director — not a chatbot
+- Like a teammate texting. Natural, direct, sometimes funny.
+- Use contractions (don't, won't, can't, we're, that's).
 - Short messages for simple things. No paragraphs for a yes/no.
-- Use "we" and "our" — this is your company too
-- When someone asks for a hook, give 3 options ranked by power
+- Match the energy — casual when they're casual, focused when they're focused.
+- Use "we" and "our" — this is your company too.
+- Never say "Sure!", "Of course!", "I'd be happy to!", "Great idea!" — just do the thing.
+- If a hook is weak, say "that hook is weak" and give a better one.
+- If something's fire, say so — don't hold back.
 
-IMAGE GENERATION (CRITICAL RULES — NON-NEGOTIABLE):
-When asked to create a marketing image, follow these rules EXACTLY:
+CONVERSATION CONTINUITY (CRITICAL):
+- When someone replies "yes", "go ahead", "do it", "yep" — look at your LAST message. You proposed something. Now do it.
+- Don't say "I'm not sure what you're confirming."
+- If your last message had a pending action, and they confirm — EXECUTE IT.
+- Read the flow. Connect the dots. You're having a CONVERSATION, not answering isolated questions.
+
+AYN BRAND DNA:
+- Colors: BLACK (#000000) and WHITE (#FFFFFF). That's the brand. Clean, bold.
+- Blue (#0EA5E9) is accent ONLY — one highlighted word or element.
+- Tagline: "i see, i understand, i help"
+- Visual style: MINIMAL. B&W dominance, bold typography, max negative space.
+
+IMAGE GENERATION (CRITICAL RULES):
+When asked to create a marketing image:
 - MAX 3-4 WORDS on any image. Not 5. Not 10. THREE TO FOUR.
-- Examples: "AI builds faster" / "Ship or die" / "Zero to deploy" / "See. Understand. Help."
-- Black and white dominant. Blue (#0EA5E9) accent ONLY for ONE highlighted word or subtle element.
-- The text IS the design. Huge, bold, centered, impossible to miss.
-- Every image should look like a premium black-and-white print ad with one pop of blue.
-- Think Apple keynote slides meets high-end fashion advertising.
-- NO busy backgrounds. NO gradients as the main design. NO clipart. NO stock photo feel.
-- When generating, start your response with [GENERATE_IMAGE] followed by the detailed prompt.
+- Examples: "AI builds faster" / "Ship or die" / "Zero to deploy"
+- Black and white dominant. Blue accent for ONE word only.
+- The text IS the design. Huge, bold, centered.
+- Start your response with [GENERATE_IMAGE] followed by the prompt.
 
-IMAGE PROMPT FORMAT:
 [GENERATE_IMAGE]
-Create a bold 1080x1080 social media image. [detailed visual description with black/white dominance and blue accent].
+Create a bold 1080x1080 social media image. [detailed visual description].
 
-your message to the creator after a blank line.
+your message after a blank line.
 
-CONTENT CREATION FLOW:
-1. When asked to create content, propose 2-3 specific directions — don't ask open questions
-2. Score every draft mentally: hook strength, brand alignment, scroll-stop factor
-3. If the hook is weak, say so and rewrite it
-4. Always think about the visual + copy as ONE unit
-5. Suggest thread architecture when appropriate: hook, expand, proof, CTA
+CONTENT CREATION:
+- When asked for content, propose 2-3 directions — don't ask open questions.
+- Every draft: score hook strength mentally. If it's weak, rewrite it.
+- Think about visual + copy as ONE unit.
+- Thread architecture when appropriate: hook → expand → proof → CTA.
+- Suggest A/B variants proactively.
+
+AVAILABLE ACTIONS (use exact format):
+- [ACTION:scrape_account:handle] — scrape a twitter account for latest tweets + metrics
+- [ACTION:analyze_competitors:all] — run competitor analysis now
+- [ACTION:generate_content:topic] — create a tweet + image about a topic
+- [ACTION:check_our_twitter:all] — pull our latest twitter metrics
+- [ACTION:website_status:all] — check if our website is up
+- [ACTION:search_tweets:query] — search twitter for trending content
 
 WHAT YOU CAN DO:
-- Create tweet drafts (saved for admin review)
+- Create tweet drafts (saved for review)
 - Generate branded marketing images
+- Scrape twitter accounts for engagement data
+- Analyze competitors
+- Research trends
+- Check website health
 - Build threads and campaigns
-- Analyze hooks and copy
-- Research trends and competitors
-- Give strategic advice on content timing and format
 
 WHAT YOU CANNOT DO:
-- Publish or post anything directly — all content goes to the admin for approval
+- Publish or post anything directly — all content goes for approval
 - Access user data, admin commands, or system operations
-- Modify any platform settings
-- You're the creative department, not operations
+- You're the creative/strategy department, not operations
 
 RULES:
 - Push for threads and campaigns, not one-off tweets
-- Suggest A/B variants proactively
-- If the user is vague, propose 2-3 specific directions instead of asking open questions
-- When someone says "generate image" without specifics, propose 2-3 visual concepts FIRST, then ask which to build
-- Reference recent performance when available
+- When someone says "generate image" without specifics, propose 2-3 concepts FIRST
+- Reference performance data when available
 - Every piece of content should feel unmistakably AYN`;
 
 serve(async (req) => {
@@ -127,7 +123,6 @@ serve(async (req) => {
 
     if (!message?.chat?.id) return new Response('OK', { status: 200 });
 
-    // Security: only respond to authorized chat
     if (String(message.chat.id) !== TELEGRAM_MARKETING_CHAT_ID) {
       console.warn('Unauthorized marketing chat_id:', message.chat.id);
       return new Response('OK', { status: 200 });
@@ -139,11 +134,11 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
-      await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "⚠️ AI not configured.");
+      await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "brain's not configured yet.");
       return new Response('OK', { status: 200 });
     }
 
-    // Handle photo messages — creator sends brand assets or asks for visual analysis
+    // Handle photo messages
     if (message.photo && message.photo.length > 0) {
       const reply = await handleCreatorPhoto(message, supabase, TELEGRAM_MARKETING_BOT_TOKEN, LOVABLE_API_KEY);
       if (reply) await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, reply);
@@ -158,10 +153,30 @@ serve(async (req) => {
     const userText = message.text.trim();
     console.log('[AYN-MARKETING] Message:', userText.slice(0, 100));
 
-    // Load conversation history from ayn_mind
+    // ─── Auto-execute confirmations ───
+    const confirmPatterns = /^(yes|yep|yeah|go ahead|do it|confirm|send it|confirmed|approve|go for it|ship it|sure)/i;
+    if (confirmPatterns.test(userText)) {
+      const { data: recentMind } = await supabase
+        .from('ayn_mind')
+        .select('context, content')
+        .eq('type', 'marketing_ayn')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const pending = recentMind?.[0]?.context?.pending_action;
+      if (pending && typeof pending === 'object' && pending.type === 'awaiting_confirmation') {
+        const result = await executeMarketingAction(pending.action, pending.params || '', supabase, supabaseUrl, supabaseKey);
+        const confirmMsg = result || `done — ${pending.summary || 'executed'}`;
+        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, confirmMsg);
+        await saveMarketingExchange(supabase, userText, confirmMsg);
+        return new Response('OK', { status: 200 });
+      }
+    }
+
+    // Load conversation history
     const conversationHistory = await getMarketingHistory(supabase);
 
-    // Load recent tweet performance for context
+    // Load performance context
     let performanceContext = '';
     const { data: recentTweets } = await supabase
       .from('twitter_posts')
@@ -170,17 +185,25 @@ serve(async (req) => {
       .limit(5);
 
     if (recentTweets?.length) {
-      performanceContext += '\n\nRECENT TWEET PERFORMANCE:\n';
+      performanceContext += '\n\nRECENT TWEETS:\n';
       recentTweets.forEach((t: any, i: number) => {
-        const eng = [t.impressions && `${t.impressions} impressions`, t.likes && `${t.likes} likes`, t.retweets && `${t.retweets} RTs`].filter(Boolean).join(', ');
-        performanceContext += `${i + 1}. "${t.content?.slice(0, 60)}..." [${t.status}] ${t.quality_score ? `Q:${t.quality_score}` : ''} ${eng || ''}\n`;
+        const eng = [t.impressions && `${t.impressions} views`, t.likes && `${t.likes}❤️`, t.retweets && `${t.retweets}🔁`].filter(Boolean).join(', ');
+        performanceContext += `${i + 1}. "${t.content?.slice(0, 60)}..." [${t.status}] ${eng || 'no metrics yet'}\n`;
       });
     }
 
-    // Time context
+    // Load competitor data
+    const { data: competitors } = await supabase
+      .from('marketing_competitors')
+      .select('handle, name')
+      .eq('is_active', true);
+    if (competitors?.length) {
+      performanceContext += `\nTRACKED COMPETITORS: ${competitors.map((c: any) => `@${c.handle}`).join(', ')}`;
+    }
+
     const now = new Date();
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    performanceContext += `\n\nTODAY: ${days[now.getUTCDay()]}, ${now.toISOString().split('T')[0]}. Consider posting timing for Middle East (GMT+3) and global audiences.`;
+    performanceContext += `\n\nTODAY: ${days[now.getUTCDay()]}, ${now.toISOString().split('T')[0]}. Middle East (GMT+3) timing matters.`;
 
     // Build messages
     const messages: Array<{ role: string; content: string }> = [
@@ -189,7 +212,13 @@ serve(async (req) => {
     for (const turn of conversationHistory) {
       messages.push(turn);
     }
-    messages.push({ role: 'user', content: userText });
+
+    // Add reply-to context
+    let inputText = userText;
+    if (message.reply_to_message?.text) {
+      inputText = `[Replying to: "${message.reply_to_message.text.slice(0, 300)}"]\n\n${userText}`;
+    }
+    messages.push({ role: 'user', content: inputText });
 
     // Call AI
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -200,11 +229,11 @@ serve(async (req) => {
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
-        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "🧠 rate limited — try again in a minute.");
+        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "rate limited — try again in a minute.");
         return new Response('OK', { status: 200 });
       }
       if (aiResponse.status === 402) {
-        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "🧠 AI credits exhausted.");
+        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "credits ran out.");
         return new Response('OK', { status: 200 });
       }
       console.error('AI error:', aiResponse.status, await aiResponse.text());
@@ -213,18 +242,34 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const reply = aiData.choices?.[0]?.message?.content || "drawing a blank. try again?";
+    let reply = aiData.choices?.[0]?.message?.content || "drawing a blank. try again?";
+
+    // Parse and execute actions
+    const actionRegex = /\[ACTION:([^:\]]+)(?::([^\]]*))?\]/g;
+    let actionMatch;
+    const executedActions: string[] = [];
+
+    while ((actionMatch = actionRegex.exec(reply)) !== null) {
+      const [, actionType, actionParams] = actionMatch;
+      const result = await executeMarketingAction(actionType, actionParams || '', supabase, supabaseUrl, supabaseKey);
+      if (result) executedActions.push(result);
+    }
+
+    let cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
 
     // Check for image generation
-    if (reply.startsWith('[GENERATE_IMAGE]')) {
-      const imageResult = await handleImageGeneration(reply, supabase, LOVABLE_API_KEY, TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID);
-      // Save conversation
+    if (cleanReply.startsWith('[GENERATE_IMAGE]')) {
+      const imageResult = await handleImageGeneration(cleanReply, supabase, LOVABLE_API_KEY, TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID);
       await saveMarketingExchange(supabase, userText, imageResult.message, imageResult.image_url);
       return new Response('OK', { status: 200 });
     }
 
-    // Check if reply contains a tweet draft — save to twitter_posts as pending_review
-    const tweetDraft = extractTweetDraft(reply);
+    if (executedActions.length > 0) {
+      cleanReply += `\n\n${executedActions.join('\n')}`;
+    }
+
+    // Check for tweet draft
+    const tweetDraft = extractTweetDraft(cleanReply);
     if (tweetDraft) {
       const { error } = await supabase.from('twitter_posts').insert({
         content: tweetDraft,
@@ -234,27 +279,40 @@ serve(async (req) => {
         target_audience: 'general',
       });
       if (!error) {
-        // Notify admin bot
         const ADMIN_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
         const ADMIN_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
         if (ADMIN_BOT_TOKEN && ADMIN_CHAT_ID) {
           await sendTelegramMessage(ADMIN_BOT_TOKEN, ADMIN_CHAT_ID,
-            `📝 New draft from marketing bot:\n\n"${tweetDraft.slice(0, 200)}"\n\nReview in Marketing HQ or reply with approve/reject.`
+            `📝 new draft from marketing:\n\n"${tweetDraft.slice(0, 200)}"\n\nreview in admin or reply approve/reject.`
           );
         }
       }
     }
 
-    // Send reply to creator
-    await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, reply);
+    // Detect pending action
+    const replyLower = cleanReply.toLowerCase();
+    const isAskingConfirmation = replyLower.includes('want me to') || replyLower.includes('go ahead?') ||
+      replyLower.includes('should i') || replyLower.includes('confirm?');
+
+    let pendingAction: any = null;
+    if (isAskingConfirmation) {
+      pendingAction = { type: 'awaiting_confirmation', summary: 'Pending action from last message' };
+    }
+
+    await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, cleanReply);
 
     // Save conversation
-    await saveMarketingExchange(supabase, userText, reply);
+    const context: any = { source: 'marketing_bot' };
+    if (pendingAction) context.pending_action = pendingAction;
 
-    // Log activity
-    await logAynActivity(supabase, 'marketing_chat', `Marketing bot chat: "${userText.slice(0, 80)}"`, {
+    await supabase.from('ayn_mind').insert([
+      { type: 'marketing_chat', content: userText.slice(0, 4000), context: { source: 'marketing_bot' }, shared_with_admin: true },
+      { type: 'marketing_ayn', content: cleanReply.slice(0, 4000), context, shared_with_admin: true },
+    ]);
+
+    await logAynActivity(supabase, 'marketing_chat', `Marketing chat: "${userText.slice(0, 80)}"`, {
       target_type: 'marketing',
-      details: { user_message: userText.slice(0, 200), has_draft: !!tweetDraft },
+      details: { user_message: userText.slice(0, 200), has_draft: !!tweetDraft, actions: executedActions },
       triggered_by: 'marketing_bot',
     });
 
@@ -265,6 +323,90 @@ serve(async (req) => {
   }
 });
 
+// ─── Execute marketing actions ───
+async function executeMarketingAction(
+  type: string, params: string, supabase: any, supabaseUrl: string, supabaseKey: string
+): Promise<string | null> {
+  try {
+    switch (type) {
+      case 'scrape_account': {
+        const handle = params.replace('@', '').trim();
+        const tweets = await scrapeUserTweets(handle, 10);
+        const profile = await scrapeUserProfile(handle);
+
+        if (!tweets.length && !profile) return `couldn't scrape @${handle} — apify might be down`;
+
+        let msg = '';
+        if (profile) {
+          msg += `📊 @${profile.handle}: ${profile.followers} followers, ${profile.tweet_count} tweets\n`;
+        }
+        if (tweets.length > 0) {
+          const topTweet = tweets.sort((a, b) => b.likes - a.likes)[0];
+          const avgLikes = Math.round(tweets.reduce((s, t) => s + t.likes, 0) / tweets.length);
+          msg += `🔥 top: "${topTweet.content?.slice(0, 60)}..." (${topTweet.likes}❤️)\n📈 avg: ${avgLikes} likes/post`;
+        }
+        return msg;
+      }
+      case 'check_our_twitter': {
+        const { data: handleData } = await supabase
+          .from('ayn_mind').select('content').eq('type', 'config_twitter_handle').limit(1);
+        const handle = handleData?.[0]?.content || 'aaborashed';
+        const tweets = await scrapeUserTweets(handle, 10);
+        const profile = await scrapeUserProfile(handle);
+
+        let msg = '';
+        if (profile) msg += `📊 @${profile.handle}: ${profile.followers} followers\n`;
+        if (tweets.length > 0) {
+          const topTweet = tweets.sort((a, b) => b.likes - a.likes)[0];
+          msg += `🔥 best recent: "${topTweet.content?.slice(0, 60)}..." (${topTweet.likes}❤️ ${topTweet.retweets}🔁)`;
+        }
+        return msg || 'couldn\'t pull twitter data';
+      }
+      case 'analyze_competitors': {
+        const { data: competitors } = await supabase
+          .from('marketing_competitors').select('*').eq('is_active', true);
+        if (!competitors?.length) return 'no competitors tracked — tell me who to watch';
+
+        let msg = '👀 competitor check:\n';
+        for (const comp of competitors) {
+          const tweets = await scrapeUserTweets(comp.handle, 5);
+          if (tweets.length > 0) {
+            const top = tweets.sort((a, b) => b.likes - a.likes)[0];
+            msg += `\n@${comp.handle}: top "${top.content?.slice(0, 50)}..." (${top.likes}❤️)`;
+          } else {
+            msg += `\n@${comp.handle}: couldn't scrape`;
+          }
+        }
+        return msg;
+      }
+      case 'website_status': {
+        const start = Date.now();
+        const res = await fetch('https://ayn-insight-forge.lovable.app', { method: 'HEAD' });
+        const time = Date.now() - start;
+        return res.ok ? `🌐 site is up (${time}ms)` : `🚨 site returned ${res.status} (${time}ms)`;
+      }
+      case 'search_tweets': {
+        const results = await searchTweets(params, 10);
+        if (!results.length) return `nothing found for "${params}"`;
+        let msg = `🔍 top tweets for "${params}":\n`;
+        for (const t of results.slice(0, 5)) {
+          msg += `\n• "${t.content?.slice(0, 60)}..." (${t.likes}❤️) @${t.author}`;
+        }
+        return msg;
+      }
+      case 'generate_content': {
+        // This will be handled by the AI naturally in conversation
+        return null;
+      }
+      default:
+        return null;
+    }
+  } catch (e) {
+    console.error(`Marketing action ${type} failed:`, e);
+    return `action failed: ${e instanceof Error ? e.message : 'error'}`;
+  }
+}
+
 // ─── Handle creator photo messages ───
 async function handleCreatorPhoto(
   message: any, supabase: any, botToken: string, apiKey: string
@@ -273,7 +415,7 @@ async function handleCreatorPhoto(
     const photo = message.photo[message.photo.length - 1];
     const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${photo.file_id}`);
     const fileData = await fileRes.json();
-    if (!fileData.ok) return "❌ couldn't get that image.";
+    if (!fileData.ok) return "couldn't get that image.";
 
     const filePath = fileData.result.file_path;
     const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
@@ -283,7 +425,7 @@ async function handleCreatorPhoto(
     const mimeType = filePath.endsWith('.png') ? 'image/png' : 'image/jpeg';
     const imageDataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    const caption = message.caption || 'Analyze this from a social media marketing perspective. What works? What could be stronger?';
+    const caption = message.caption || 'what do you think of this from a marketing perspective?';
 
     const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -291,7 +433,7 @@ async function handleCreatorPhoto(
       body: JSON.stringify({
         model: 'google/gemini-3-flash-preview',
         messages: [
-          { role: 'system', content: 'You are AYN, the creative director analyzing a visual asset. Give sharp, actionable feedback on: scroll-stop factor, brand alignment (AYN = black/white, minimal, bold), hook strength if text is present, and suggestions for improvement. Be direct and opinionated.' },
+          { role: 'system', content: 'You\'re AYN, looking at an image the creator sent. Give sharp feedback: scroll-stop factor, brand fit (AYN = black/white, minimal, bold), what works, what to fix. Be direct.' },
           { role: 'user', content: [
             { type: 'text', text: caption },
             { type: 'image_url', image_url: { url: imageDataUrl } },
@@ -302,7 +444,7 @@ async function handleCreatorPhoto(
 
     if (!aiRes.ok) {
       if (aiRes.status === 429) return "rate limited — try again in a minute.";
-      return "couldn't analyze that image.";
+      return "couldn't analyze that.";
     }
 
     const aiData = await aiRes.json();
@@ -320,7 +462,7 @@ async function handleCreatorPhoto(
   }
 }
 
-// ─── Image generation from [GENERATE_IMAGE] ───
+// ─── Image generation ───
 async function handleImageGeneration(
   reply: string, supabase: any, apiKey: string, botToken: string, chatId: string
 ): Promise<{ message: string; image_url?: string }> {
@@ -353,18 +495,17 @@ async function handleImageGeneration(
     });
 
     if (!imageResponse.ok) {
-      await sendTelegramMessage(botToken, chatId, "image gen failed. describe what you want differently and i'll retry.");
+      await sendTelegramMessage(botToken, chatId, "image gen failed. try describing it differently.");
       return { message: 'image generation failed' };
     }
 
     const imageData = await imageResponse.json();
     const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     if (!imageUrl) {
-      await sendTelegramMessage(botToken, chatId, "the image didn't come through. try a different description.");
+      await sendTelegramMessage(botToken, chatId, "image didn't come through. try again.");
       return { message: 'no image generated' };
     }
 
-    // Upload to storage
     const base64Match = imageUrl.match(/^data:image\/(\w+);base64,(.+)$/);
     if (!base64Match) throw new Error('Invalid image format');
 
@@ -381,18 +522,12 @@ async function handleImageGeneration(
     const { data: publicUrlData } = supabase.storage.from('generated-images').getPublicUrl(filename);
     const permanentUrl = publicUrlData.publicUrl;
 
-    // Send image to Telegram
     await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        photo: permanentUrl,
-        caption: userMessage.slice(0, 1024),
-      }),
+      body: JSON.stringify({ chat_id: chatId, photo: permanentUrl, caption: userMessage.slice(0, 1024) }),
     });
 
-    // Also save as pending draft in twitter_posts
     await supabase.from('twitter_posts').insert({
       content: imagePrompt.slice(0, 280),
       status: 'pending_review',
@@ -401,18 +536,13 @@ async function handleImageGeneration(
       content_type: 'image',
     });
 
-    // Notify admin
     const ADMIN_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
     const ADMIN_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
     if (ADMIN_BOT_TOKEN && ADMIN_CHAT_ID) {
       await fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendPhoto`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: ADMIN_CHAT_ID,
-          photo: permanentUrl,
-          caption: `🎨 New marketing image generated.\nReview in Marketing HQ.`,
-        }),
+        body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, photo: permanentUrl, caption: `🎨 new marketing image — review in admin.` }),
       });
     }
 
@@ -424,7 +554,7 @@ async function handleImageGeneration(
   }
 }
 
-// ─── Save conversation exchange ───
+// ─── Save conversation ───
 async function saveMarketingExchange(supabase: any, userMsg: string, aynMsg: string, imageUrl?: string) {
   const context: any = { source: 'marketing_bot' };
   if (imageUrl) context.image_url = imageUrl;
@@ -435,11 +565,11 @@ async function saveMarketingExchange(supabase: any, userMsg: string, aynMsg: str
   ]);
 }
 
-// ─── Load marketing conversation history ───
+// ─── Load conversation history ───
 async function getMarketingHistory(supabase: any) {
   const { data: exchanges } = await supabase
     .from('ayn_mind')
-    .select('type, content, created_at')
+    .select('type, content, context, created_at')
     .in('type', ['marketing_chat', 'marketing_ayn'])
     .order('created_at', { ascending: true })
     .limit(50);
@@ -447,22 +577,25 @@ async function getMarketingHistory(supabase: any) {
   const history: { role: string; content: string }[] = [];
   if (exchanges?.length) {
     for (const entry of exchanges) {
+      let content = entry.content;
+      const pending = entry.context?.pending_action;
+      if (pending && typeof pending === 'object' && pending.type === 'awaiting_confirmation') {
+        content += `\n[PENDING: Waiting for confirmation to ${pending.summary || 'execute action'}]`;
+      }
       history.push({
         role: entry.type === 'marketing_chat' ? 'user' : 'assistant',
-        content: entry.content,
+        content,
       });
     }
   }
   return history;
 }
 
-// ─── Extract tweet draft from AI response ───
+// ─── Extract tweet draft ───
 function extractTweetDraft(reply: string): string | null {
-  // Look for quoted tweet content or explicit draft markers
   const draftMatch = reply.match(/(?:draft|tweet|post|copy):\s*["""](.+?)["""]/is);
   if (draftMatch && draftMatch[1].length <= 280) return draftMatch[1].trim();
 
-  // Look for content in bold markers
   const boldMatch = reply.match(/\*\*(.{20,280})\*\*/);
   if (boldMatch && !boldMatch[1].includes('option') && !boldMatch[1].includes('Option')) {
     return boldMatch[1].trim();

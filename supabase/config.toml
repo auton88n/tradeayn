@@ -234,3 +234,6 @@ verify_jwt = false
 
 [functions.ayn-marketing-webhook]
 verify_jwt = false
+
+[functions.ayn-marketing-proactive-loop]
+verify_jwt = false
