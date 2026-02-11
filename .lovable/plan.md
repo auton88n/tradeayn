@@ -1,88 +1,50 @@
 
 
-# Add File & Document Support to AYN's Telegram
+# Fix: Add Delay Between Email Sends to Avoid Rate Limits
 
-## Problem
+## The Problem
 
-When you send a file (PDF, Excel, Word, etc.) or a document via Telegram, AYN ignores it completely. The code only checks for `message.photo` and `message.text` — anything else gets silently dropped at line 206 (`if (!message.text) return`).
+Your SMTP provider (Resend) has a rate limit of **2 emails per second**. When AYN sends emails to multiple leads at once, the 3rd email fires too fast and gets rejected with a 429 error. You saw this with "The Crack Doctor" failing.
 
-## What Will Change
+## The Fix
 
-After this update, AYN will be able to receive and process:
-- **Documents** (PDF, Excel, CSV, Word, text files) — extracts text content and analyzes it
-- **Voice messages** — transcribes using AI and responds
-- **Files sent as photos with captions** — already works, no change needed
+Two changes in one file:
 
-## Technical Changes
+### 1. Add a 1-second delay between email-related actions
 
-### File: `supabase/functions/ayn-telegram-webhook/index.ts`
+In the action execution loop (line 348-356 of `ayn-telegram-webhook/index.ts`), add a `sleep(1000)` delay after any `send_outreach`, `send_email`, or `follow_up` action completes. This spaces out email sends so they never exceed the 2/second limit.
 
-#### 1. Add document handler (new function `handleDocument`)
+### 2. Add retry logic in `ayn-sales-outreach` for 429 errors
 
-Before the `if (!message.text)` check (line 206), add a new block:
+In `handleSendEmail` (line 332-356 of `ayn-sales-outreach/index.ts`), if the SMTP send fails, check if it's a rate limit error. If so, wait 1.5 seconds and retry once before giving up.
+
+## Technical Details
+
+### File 1: `supabase/functions/ayn-telegram-webhook/index.ts`
+
+In the action execution `while` loop (around line 348), after `executeAction` returns, check if the action was an email-sending type. If so, add a 1-second delay:
 
 ```text
-if (message.document) {
-  const reply = await handleDocument(message, supabase, botToken, chatId);
-  if (reply) await sendTelegramMessage(..., reply);
-  return new Response('OK', { status: 200 });
+while ((actionMatch = actionRegex.exec(reply)) !== null) {
+  const [, actionType, actionParams] = actionMatch;
+  // ... existing tracking code ...
+  const result = await executeAction(actionType, actionParams || '', supabase, supabaseUrl, supabaseKey);
+  if (result) executedActions.push(result);
+  
+  // Delay between email-sending actions to avoid SMTP rate limits (2/sec on Resend)
+  if (['send_outreach', 'send_email', 'follow_up'].includes(actionType)) {
+    await new Promise(r => setTimeout(r, 1500));
+  }
 }
 ```
 
-The `handleDocument` function will:
-1. Get the file info from Telegram API (`getFile`)
-2. Check file size (limit to 10MB to avoid memory issues)
-3. Check file type — support: PDF, CSV, TXT, JSON, XML, XLSX, DOCX, MD
-4. Download the file from Telegram's file server
-5. For text-based files (CSV, TXT, JSON, XML, MD): read as text directly
-6. For binary files (PDF, XLSX, DOCX): convert to base64 and send to Gemini with a prompt to extract and analyze the content
-7. Send AYN's analysis back as a Telegram message
-8. Log the exchange to `ayn_mind` for conversation memory
+### File 2: `supabase/functions/ayn-sales-outreach/index.ts`
 
-#### 2. Add voice message handler (new function `handleVoice`)
+In the `handleSendEmail` function, wrap the SMTP send in a retry:
 
-Similarly, add before the text check:
-
-```text
-if (message.voice || message.audio) {
-  const reply = await handleVoice(message, supabase, botToken, chatId);
-  if (reply) await sendTelegramMessage(..., reply);
-  return new Response('OK', { status: 200 });
-}
-```
-
-The `handleVoice` function will:
-1. Get the voice file from Telegram
-2. Convert to base64
-3. Send to Gemini with audio understanding capability
-4. Return AYN's response
-
-#### 3. Update the early return for unknown message types
-
-Change the `if (!message.text)` block to send a helpful message instead of silently ignoring:
-
-```text
-if (!message.text) {
-  await sendTelegramMessage(token, chatId, "Got your message but I can't process this type yet. Try sending text, photos, or documents.");
-  return new Response('OK', { status: 200 });
-}
-```
-
-### Supported File Types
-
-| Type | How AYN Reads It |
-|------|-----------------|
-| PDF | Base64 to Gemini vision (reads pages as images) |
-| CSV, TXT, JSON, XML, MD | Direct text extraction, sent to Gemini as text |
-| XLSX, DOCX | Base64 to Gemini for extraction |
-| Images (JPG, PNG) | Already works via existing `handlePhoto` |
-| Voice/Audio | Base64 to Gemini audio understanding |
-| Unsupported | Friendly "can't process this type" message |
-
-### Safety Limits
-- Max file size: 10MB (Telegram's limit is 20MB, but we cap lower for edge function memory)
-- Text content truncated to 50,000 characters before sending to AI
-- All file exchanges logged to `ayn_mind` for conversation continuity
+- If `client.send()` throws and the error message contains "rate_limit" or "429" or "Too many requests", wait 2 seconds and retry once
+- If the retry also fails, proceed with the existing failure handling
 
 ## Files Changed
-- `supabase/functions/ayn-telegram-webhook/index.ts` — Add `handleDocument` and `handleVoice` functions, update message routing
+- `supabase/functions/ayn-telegram-webhook/index.ts` -- Add delay between email actions in the action loop
+- `supabase/functions/ayn-sales-outreach/index.ts` -- Add retry-on-429 for SMTP sends
