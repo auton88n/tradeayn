@@ -190,6 +190,13 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:remove_competitor:handle] — Stop monitoring a competitor
 - [ACTION:competitor_report:all] — Show competitor analysis and top tweets (READ-ONLY)
 - [ACTION:autonomous_prospect:industry:region:count] — Batch-prospect companies by industry/region (max 10)
+- [ACTION:security_report:all] — Get Security Guard's latest findings (READ-ONLY)
+- [ACTION:investigate:lead_id] — Trigger Investigator AI to deep-research a lead
+- [ACTION:employee_status:all] — Show all employees' latest actions (READ-ONLY)
+- [ACTION:legal_review:topic] — Ask Lawyer AI for legal analysis on a topic
+- [ACTION:system_health:all] — Get QA Watchdog's latest health report (READ-ONLY)
+- [ACTION:advisor_report:all] — Get Advisor's latest strategic insights (READ-ONLY)
+- [ACTION:follow_up_status:all] — Get Follow-Up Agent's status on all leads (READ-ONLY)
 
 HONESTY ABOUT CAPABILITIES (NON-NEGOTIABLE):
 - If you don't have an ACTION tag that can do something, SAY SO. Never narrate fake steps.
@@ -1569,6 +1576,76 @@ async function executeAction(
         } catch (e) {
           return `Autonomous prospecting failed: ${e instanceof Error ? e.message : 'error'}`;
         }
+      }
+      // ─── AI Employee actions ───
+      case 'security_report': {
+        const { data: reports } = await supabase.from('ayn_mind').select('content, created_at')
+          .eq('type', 'employee_report').like('content', '%Security Guard%')
+          .order('created_at', { ascending: false }).limit(3);
+        if (!reports?.length) return '🛡️ No recent Security Guard reports.';
+        return reports.map((r: any) => r.content).join('\n\n---\n\n');
+      }
+      case 'investigate': {
+        try {
+          await supabase.from('employee_tasks').insert({
+            from_employee: 'co_founder', to_employee: 'investigator',
+            task_type: 'investigate_lead', input_data: { lead_id: params },
+          });
+          const res = await fetch(`${supabaseUrl}/functions/v1/ayn-investigator`, {
+            method: 'POST', headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lead_id: params }),
+          });
+          const data = await res.json();
+          if (data.success && data.dossier) {
+            return `🔍 Investigation of lead ${params.slice(0, 8)}:\nQuality: ${data.dossier.quality_score}/10\nSize: ${data.dossier.company_size}\nStrategy: ${data.dossier.approach_strategy?.slice(0, 300)}`;
+          }
+          return data.error || 'Investigation failed';
+        } catch (e) { return `Investigation failed: ${e instanceof Error ? e.message : 'error'}`; }
+      }
+      case 'employee_status': {
+        const { data: reports } = await supabase.from('ayn_mind').select('content, context, created_at')
+          .eq('type', 'employee_report').order('created_at', { ascending: false }).limit(10);
+        if (!reports?.length) return '📋 No recent employee reports.';
+        const byEmployee: Record<string, string> = {};
+        for (const r of reports) {
+          const emp = r.context?.from_employee || 'unknown';
+          if (!byEmployee[emp]) byEmployee[emp] = r.content?.slice(0, 200) || '';
+        }
+        return '📋 Employee Status:\n' + Object.entries(byEmployee).map(([e, c]) => `\n👤 ${e}:\n${c}`).join('\n');
+      }
+      case 'legal_review': {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/ayn-lawyer`, {
+            method: 'POST', headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'legal_review', topic: params }),
+          });
+          const data = await res.json();
+          return data.analysis ? `⚖️ Legal Review: ${params}\n\n${data.analysis}` : (data.error || 'Review failed');
+        } catch (e) { return `Legal review failed: ${e instanceof Error ? e.message : 'error'}`; }
+      }
+      case 'system_health': {
+        const { data: checks } = await supabase.from('system_health_checks')
+          .select('*').order('checked_at', { ascending: false }).limit(10);
+        if (!checks?.length) return '🔍 No health check data yet.';
+        return '🔍 System Health:\n' + checks.map((h: any) =>
+          `${h.is_healthy ? '✅' : '❌'} ${h.function_name}: ${h.response_time_ms}ms`
+        ).join('\n');
+      }
+      case 'advisor_report': {
+        const { data: insights } = await supabase.from('ayn_mind').select('content, created_at')
+          .eq('type', 'strategic_insight').order('created_at', { ascending: false }).limit(1);
+        return insights?.[0]?.content || '📊 No advisor insights yet.';
+      }
+      case 'follow_up_status': {
+        const { data: leads } = await supabase.from('ayn_sales_pipeline')
+          .select('company_name, status, emails_sent, next_follow_up_at, last_email_at')
+          .in('status', ['contacted', 'followed_up', 'replied', 'cold'])
+          .order('last_email_at', { ascending: false }).limit(15);
+        if (!leads?.length) return '📧 No leads in follow-up pipeline.';
+        return '📧 Follow-Up Status:\n' + leads.map((l: any) => {
+          const icon = l.status === 'replied' ? '💬' : l.status === 'cold' ? '🧊' : '📧';
+          return `${icon} ${l.company_name} [${l.status}] — ${l.emails_sent} email(s)`;
+        }).join('\n');
       }
       default:
         return `Unknown action: ${type}`;

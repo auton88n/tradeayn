@@ -237,3 +237,24 @@ verify_jwt = false
 
 [functions.ayn-marketing-proactive-loop]
 verify_jwt = false
+
+[functions.ayn-security-guard]
+verify_jwt = false
+
+[functions.ayn-investigator]
+verify_jwt = false
+
+[functions.ayn-customer-success]
+verify_jwt = false
+
+[functions.ayn-qa-watchdog]
+verify_jwt = false
+
+[functions.ayn-advisor]
+verify_jwt = false
+
+[functions.ayn-lawyer]
+verify_jwt = false
+
+[functions.ayn-follow-up-agent]
+verify_jwt = false
