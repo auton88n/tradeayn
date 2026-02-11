@@ -128,15 +128,16 @@ const ResponseCardComponent = ({
     return isDocument ? { url, name, type } : null;
   }, [visibleResponses]);
 
-  const sortedMessages = useMemo(
-    () =>
-      [...transcriptMessages].sort((a, b) => {
-        const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-        const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
-        return timeA - timeB;
-      }),
-    [transcriptMessages],
-  );
+  const sortedMessages = useMemo(() => {
+    const indexed = transcriptMessages.map((m, i) => ({ m, i }));
+    indexed.sort((a, b) => {
+      const timeA = a.m.timestamp instanceof Date ? a.m.timestamp.getTime() : new Date(a.m.timestamp).getTime();
+      const timeB = b.m.timestamp instanceof Date ? b.m.timestamp.getTime() : new Date(b.m.timestamp).getTime();
+      const diff = timeA - timeB;
+      return diff !== 0 ? diff : a.i - b.i;
+    });
+    return indexed.map(x => x.m);
+  }, [transcriptMessages]);
 
   const handleDesignThis = useCallback(async () => {
     if (detectedImageUrl) {

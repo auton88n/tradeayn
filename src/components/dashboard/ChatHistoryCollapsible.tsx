@@ -39,12 +39,14 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear }: 
 
   // Sort messages chronologically (oldest first), limit to last 20 for performance
   const sortedMessages = useMemo(() => {
-    const sorted = [...messages].sort((a, b) => {
-      const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-      const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
-      return timeA - timeB;
+    const indexed = messages.map((m, i) => ({ m, i }));
+    indexed.sort((a, b) => {
+      const timeA = a.m.timestamp instanceof Date ? a.m.timestamp.getTime() : new Date(a.m.timestamp).getTime();
+      const timeB = b.m.timestamp instanceof Date ? b.m.timestamp.getTime() : new Date(b.m.timestamp).getTime();
+      const diff = timeA - timeB;
+      return diff !== 0 ? diff : a.i - b.i;
     });
-    return sorted.slice(-20);
+    return indexed.map(x => x.m).slice(-20);
   }, [messages]);
 
   // Scroll to bottom function
