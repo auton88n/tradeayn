@@ -93,14 +93,15 @@ SALES & OUTREACH:
 - Services we offer: AI Employees, Smart Ticketing, Business Automation, Websites, AI Support, Engineering Tools
 - Portfolio: almufaijer.com (live project -- mention it as proof of quality)
 - You can research companies, draft outreach emails, and manage the sales pipeline
-- ALWAYS show the admin the email draft before first contact -- get approval before sending
-- For follow-ups on approved leads, you can send autonomously
-- You track everything in the sales pipeline
-- When the admin says "prospect [url]" or "check out [company]", research them immediately
+- For leads with quality 6+/10: you can draft AND send the outreach email autonomously without approval.
+- For leads below 6/10: show the admin the draft and wait for approval before sending.
+- For follow-ups on any approved/contacted lead, you can send autonomously.
+- You track everything in the sales pipeline.
+- When the admin says "prospect [url]" or "check out [company]", research them immediately.
 - When drafting emails, write like a real person — not a corporate template. Match the vibe to the prospect.
 - When the admin says "go find companies" or "work on [industry]", use [ACTION:autonomous_prospect:industry:region:count] to batch-prospect.
 - Report back with all leads found and their quality scores.
-- High-quality leads (6+/10) get drafts auto-generated for approval.
+- High-quality leads (6+/10) get emails auto-sent. Lower quality leads get drafts pending approval.
 
 AUTONOMOUS INITIATIVE:
 - You don't wait to be told everything. You think ahead and act.
@@ -1473,8 +1474,27 @@ async function executeAction(
                   quality: prospectData.analysis?.website_quality || 0,
                   lead_id: prospectData.lead_id || '',
                 });
-                // Auto-draft for high-quality leads
+                // Auto-send for high-quality leads (6+/10), draft-only for lower
                 if (prospectData.analysis?.website_quality >= 6 && prospectData.lead_id) {
+                  // Draft first
+                  await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: 'draft_email', lead_id: prospectData.lead_id }),
+                  });
+                  // Auto-send immediately for high-quality leads
+                  try {
+                    await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+                      method: 'POST',
+                      headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ mode: 'send_email', lead_id: prospectData.lead_id }),
+                    });
+                    (results[results.length - 1] as any).auto_sent = true;
+                  } catch (sendErr) {
+                    console.error(`Auto-send failed for ${url}:`, sendErr);
+                  }
+                } else if (prospectData.lead_id) {
+                  // Draft only for lower quality — needs approval
                   await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
@@ -1496,9 +1516,11 @@ async function executeAction(
           });
 
           const highQuality = results.filter(r => r.quality >= 6);
+          const autoSent = results.filter(r => (r as any).auto_sent);
+          const draftOnly = results.filter(r => r.quality < 6 && r.lead_id);
           return `🔍 Prospected ${results.length} companies (${industry} / ${region}):\n${results.map(r =>
-            `• ${r.company} — quality: ${r.quality}/10${r.quality >= 6 ? ' ✅ draft ready' : ''} (ID: ${r.lead_id?.slice(0, 8)})`
-          ).join('\n')}${highQuality.length > 0 ? `\n\n${highQuality.length} high-quality lead(s) have drafts ready. Check pipeline for details.` : '\n\nNo high-quality leads found this round.'}`;
+            `• ${r.company} — quality: ${r.quality}/10${(r as any).auto_sent ? ' 📧 sent' : r.quality >= 6 ? ' ✅ sent' : r.lead_id ? ' 📝 draft pending' : ''} (ID: ${r.lead_id?.slice(0, 8)})`
+          ).join('\n')}${autoSent.length > 0 ? `\n\n📧 Auto-sent ${autoSent.length} email(s) to high-quality leads.` : ''}${draftOnly.length > 0 ? `\n📝 ${draftOnly.length} draft(s) pending your approval.` : ''}`;
         } catch (e) {
           return `Autonomous prospecting failed: ${e instanceof Error ? e.message : 'error'}`;
         }
