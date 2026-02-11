@@ -46,7 +46,8 @@ export type AdminTabId =
   | 'twitter-marketing'
   | 'terms-consent'
   | 'ayn-logs'
-  | 'ayn-mind';
+  | 'ayn-mind'
+  | 'ai-workforce';
 
 interface AdminSection {
   id: AdminTabId;
@@ -81,6 +82,7 @@ const aiSections: AdminSection[] = [
   { id: 'twitter-marketing', title: 'Twitter Marketing', shortTitle: 'Twtr', icon: Twitter, gradient: 'from-sky-500 to-blue-600', adminOnly: true },
   { id: 'ayn-logs', title: 'AYN Logs', shortTitle: 'Logs', icon: Activity, gradient: 'from-orange-500 to-red-500', adminOnly: true },
   { id: 'ayn-mind', title: 'AYN Mind', shortTitle: 'Mind', icon: Brain, gradient: 'from-violet-500 to-purple-600', adminOnly: true },
+  { id: 'ai-workforce', title: 'AI Workforce', shortTitle: 'Team', icon: Users, gradient: 'from-indigo-500 to-violet-600', adminOnly: true },
 ];
 
 interface AdminSidebarProps {
