@@ -56,18 +56,18 @@ AYN BRAND DNA:
 - Tagline: "i see, i understand, i help"
 - Visual style: MINIMAL. B&W dominance, bold typography, max negative space.
 
-IMAGE GENERATION (CRITICAL RULES):
-When asked to create a marketing image:
+IMAGE GENERATION (CRITICAL FORMAT):
+When asked to create a marketing image, put [GENERATE_IMAGE] on its OWN line followed by the prompt on the NEXT line. Put your conversational message AFTER a blank line. NEVER put text before [GENERATE_IMAGE].
 - MAX 3-4 WORDS on any image. Not 5. Not 10. THREE TO FOUR.
 - Examples: "AI builds faster" / "Ship or die" / "Zero to deploy"
 - Black and white dominant. Blue accent for ONE word only.
 - The text IS the design. Huge, bold, centered.
-- Start your response with [GENERATE_IMAGE] followed by the prompt.
 
+FORMAT (follow EXACTLY):
 [GENERATE_IMAGE]
 Create a bold 1080x1080 social media image. [detailed visual description].
 
-your message after a blank line.
+Optional conversational text goes here, after a blank line.
 
 CONTENT CREATION:
 - When asked for content, propose 2-3 directions — don't ask open questions.
@@ -263,10 +263,19 @@ serve(async (req) => {
 
     let cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
 
-    // Check for image generation
-    if (cleanReply.startsWith('[GENERATE_IMAGE]')) {
-      const imageResult = await handleImageGeneration(cleanReply, supabase, LOVABLE_API_KEY, TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID);
-      await saveMarketingExchange(supabase, userText, imageResult.message, imageResult.image_url);
+    // Check for image generation anywhere in reply
+    if (cleanReply.includes('[GENERATE_IMAGE]')) {
+      const parts = cleanReply.split('[GENERATE_IMAGE]');
+      const textBefore = parts[0].replace(/\[ACTION:[^\]]+\]/g, '').trim();
+      const imagePrompt = '[GENERATE_IMAGE]' + (parts[1] || '');
+      
+      // Send conversational text first if any
+      if (textBefore) {
+        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, textBefore);
+      }
+      
+      const imageResult = await handleImageGeneration(imagePrompt, supabase, LOVABLE_API_KEY, TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID);
+      await saveMarketingExchange(supabase, userText, (textBefore ? textBefore + '\n\n' : '') + imageResult.message, imageResult.image_url);
       return new Response('OK', { status: 200 });
     }
 
@@ -511,10 +520,18 @@ async function handleCreatorVoice(
     const aiData = await aiRes.json();
     let reply = aiData.choices?.[0]?.message?.content?.trim() || "couldn't understand that. try again?";
 
-    // Check for image generation trigger
-    if (reply.startsWith('[GENERATE_IMAGE]')) {
-      const imageResult = await handleImageGeneration(reply, supabase, apiKey, botToken, chatId);
-      await saveMarketingExchange(supabase, '[Voice message]', imageResult.message, imageResult.image_url);
+    // Check for image generation trigger anywhere in reply
+    if (reply.includes('[GENERATE_IMAGE]')) {
+      const parts = reply.split('[GENERATE_IMAGE]');
+      const textBefore = parts[0].trim();
+      const imagePrompt = '[GENERATE_IMAGE]' + (parts[1] || '');
+      
+      if (textBefore) {
+        await sendTelegramMessage(botToken, chatId, textBefore);
+      }
+      
+      const imageResult = await handleImageGeneration(imagePrompt, supabase, apiKey, botToken, chatId);
+      await saveMarketingExchange(supabase, '[Voice message]', (textBefore ? textBefore + '\n\n' : '') + imageResult.message, imageResult.image_url);
       pruneMarketingHistory(supabase, apiKey).catch(e => console.error('Prune error:', e));
       return;
     }
