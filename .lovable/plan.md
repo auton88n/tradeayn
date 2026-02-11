@@ -1,55 +1,64 @@
 
 
-# Add Rolling Memory System to Marketing Bot
+# Add Voice Support and Image Sending to AYN Marketing Bot
 
-## The Problem
+## What's Changing
 
-The marketing bot saves conversations to `ayn_mind` and loads the last 50 messages as history -- but it has no rolling summary system. Once conversations go past 50 entries, older context is just gone. The admin bot solves this with a `telegram_summary` system that condenses old messages into summaries so AYN never forgets.
+Two upgrades to the marketing Telegram bot:
 
-## What Changes
+### 1. Voice Message Understanding
+The marketing bot currently rejects voice messages with "send me text or photos." We'll add a `handleVoice` function (mirroring the admin bot's existing voice handler) so the social media creator can speak ideas, feedback, or requests instead of typing.
 
-### Add a `marketing_summary` type to the memory system
+### 2. Image Generation + Telegram Delivery (Already Partially Working)
+The image generation and Telegram sending already works via `handleImageGeneration()` which calls `sendPhoto`. No changes needed here -- it already generates images with Gemini and sends them as photos in the marketing Telegram chat. We'll verify it's solid and ensure the voice handler can also trigger image generation if the creator asks via voice.
 
-Mirror the admin bot's approach:
+---
 
-1. **After each message exchange**, check the total count of `marketing_chat` + `marketing_ayn` entries
-2. **If count exceeds 100**, take the oldest 30 entries, send them to Gemini to summarize into a compact paragraph, save as a `marketing_summary` entry in `ayn_mind`, then delete the originals
-3. **When loading history**, first load all `marketing_summary` entries (chronological), then load the latest 50 live messages -- this gives AYN full long-term memory
+## Technical Details
 
-### Database change
+### File: `supabase/functions/ayn-marketing-webhook/index.ts`
 
-Add `marketing_summary` to the `ayn_mind` type CHECK constraint (alongside the existing types like `telegram_summary`).
+**Add voice/audio handler (new function):**
+- Add a `handleCreatorVoice` function that:
+  1. Downloads the voice file from Telegram API (`getFile` + fetch binary)
+  2. Converts to base64 using the existing `arrayBufferToBase64` helper
+  3. Sends to Gemini (`google/gemini-3-flash-preview`) with the marketing persona context for transcription + response
+  4. Checks if the AI response contains `[GENERATE_IMAGE]` -- if so, triggers image generation flow
+  5. Saves the exchange to `ayn_mind` as `marketing_chat` / `marketing_ayn`
+  6. Enforces 5-minute max duration limit
 
-### Files to modify
-
-| File | Change |
-|------|--------|
-| `supabase/functions/ayn-marketing-webhook/index.ts` | Add `pruneMarketingHistory()` function (mirrors admin's pruning logic). Call it after saving each exchange. Update `getMarketingHistory()` to load summaries first. |
-| Database migration | Add `marketing_summary` to `ayn_mind` type CHECK constraint |
-
-### How it works
-
+**Update message routing (lines 141-151):**
+- Add a voice/audio check before the text-only gate:
 ```text
-New message comes in
+if (message.voice || message.audio) {
+  -> handleCreatorVoice(...)
+  -> return
+}
+```
+- Update the fallback message from "send me text or photos" to "send me text, photos, or voice messages"
+
+**Voice handler flow:**
+```text
+Voice message received
   |
-  Save exchange to ayn_mind (marketing_chat + marketing_ayn)
+  Download audio from Telegram
   |
-  Count total marketing entries
+  Convert to base64
   |
-  > 100 entries?
-  |   YES --> Take oldest 30
-  |           Summarize with Gemini
-  |           Save as marketing_summary
-  |           Delete the 30 originals
-  |   NO  --> Done
+  Send to Gemini with marketing persona
+  "Transcribe and respond as the marketing brain"
   |
-  Next message: load summaries + last 50 = full memory
+  Check response for [GENERATE_IMAGE]
+  |   YES --> trigger handleImageGeneration()
+  |   NO  --> send text reply
+  |
+  Save to ayn_mind (marketing_chat + marketing_ayn)
+  |
+  Trigger pruneMarketingHistory() (non-blocking)
 ```
 
-### Updated getMarketingHistory flow
+### No database changes needed
+The existing `ayn_mind` table already supports all required types.
 
-1. Fetch all `marketing_summary` entries (ordered by date)
-2. Fetch latest 50 `marketing_chat` / `marketing_ayn` entries
-3. Combine: summaries first as system context, then live messages as conversation history
-4. AYN now remembers everything -- old stuff as summaries, recent stuff in detail
-
+### Deployment
+Redeploy `ayn-marketing-webhook` edge function after changes.
