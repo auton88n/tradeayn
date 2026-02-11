@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
-import { scrapeUserTweets, scrapeUserProfile, searchTweets } from "../_shared/apifyHelper.ts";
+import { analyzeOurTweets, analyzeCompetitorData, generateTweetDrafts } from "../_shared/apifyHelper.ts";
 
 /** Convert ArrayBuffer to base64 in chunks to avoid call stack overflow */
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -328,54 +328,67 @@ async function executeMarketingAction(
   type: string, params: string, supabase: any, supabaseUrl: string, supabaseKey: string
 ): Promise<string | null> {
   try {
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+
     switch (type) {
-      case 'scrape_account': {
-        const handle = params.replace('@', '').trim();
-        const tweets = await scrapeUserTweets(handle, 10);
-        const profile = await scrapeUserProfile(handle);
+      case 'scrape_account':
+      case 'check_our_twitter': {
+        // Pull data from our DB instead of live scraping
+        const { data: tweets } = await supabase
+          .from('twitter_posts')
+          .select('content, impressions, likes, retweets, replies, status, created_at')
+          .eq('status', 'posted')
+          .order('created_at', { ascending: false })
+          .limit(10);
 
-        if (!tweets.length && !profile) return `couldn't scrape @${handle} — apify might be down`;
+        if (!tweets?.length) return 'no posted tweets in the DB yet — post some and i\'ll track them';
 
-        let msg = '';
-        if (profile) {
-          msg += `📊 @${profile.handle}: ${profile.followers} followers, ${profile.tweet_count} tweets\n`;
+        const totalLikes = tweets.reduce((s: number, t: any) => s + (t.likes || 0), 0);
+        const avgLikes = Math.round(totalLikes / tweets.length);
+        const topTweet = tweets.sort((a: any, b: any) => (b.likes || 0) - (a.likes || 0))[0];
+
+        let msg = `📊 ${tweets.length} recent posts analyzed\n`;
+        msg += `📈 avg: ${avgLikes} likes/post\n`;
+        if (topTweet) {
+          msg += `🔥 best: "${topTweet.content?.slice(0, 60)}..." (${topTweet.likes || 0}❤️)`;
         }
-        if (tweets.length > 0) {
-          const topTweet = tweets.sort((a, b) => b.likes - a.likes)[0];
-          const avgLikes = Math.round(tweets.reduce((s, t) => s + t.likes, 0) / tweets.length);
-          msg += `🔥 top: "${topTweet.content?.slice(0, 60)}..." (${topTweet.likes}❤️)\n📈 avg: ${avgLikes} likes/post`;
+
+        if (LOVABLE_API_KEY) {
+          const analysis = await analyzeOurTweets(tweets, LOVABLE_API_KEY);
+          if (analysis.summary) msg += `\n💡 ${analysis.summary}`;
         }
         return msg;
       }
-      case 'check_our_twitter': {
-        const { data: handleData } = await supabase
-          .from('ayn_mind').select('content').eq('type', 'config_twitter_handle').limit(1);
-        const handle = handleData?.[0]?.content || 'aaborashed';
-        const tweets = await scrapeUserTweets(handle, 10);
-        const profile = await scrapeUserProfile(handle);
-
-        let msg = '';
-        if (profile) msg += `📊 @${profile.handle}: ${profile.followers} followers\n`;
-        if (tweets.length > 0) {
-          const topTweet = tweets.sort((a, b) => b.likes - a.likes)[0];
-          msg += `🔥 best recent: "${topTweet.content?.slice(0, 60)}..." (${topTweet.likes}❤️ ${topTweet.retweets}🔁)`;
-        }
-        return msg || 'couldn\'t pull twitter data';
-      }
       case 'analyze_competitors': {
         const { data: competitors } = await supabase
-          .from('marketing_competitors').select('*').eq('is_active', true);
+          .from('marketing_competitors').select('id, handle, name').eq('is_active', true);
         if (!competitors?.length) return 'no competitors tracked — tell me who to watch';
 
+        const compIds = competitors.map((c: any) => c.id);
+        const { data: compTweets } = await supabase
+          .from('competitor_tweets')
+          .select('competitor_id, content, likes, retweets')
+          .in('competitor_id', compIds)
+          .order('scraped_at', { ascending: false })
+          .limit(30);
+
+        if (!compTweets?.length) return 'no competitor data yet — add tweet data manually or wait for it to build up';
+
+        const idToHandle: Record<string, string> = {};
+        for (const c of competitors) idToHandle[c.id] = c.handle;
+
         let msg = '👀 competitor check:\n';
-        for (const comp of competitors) {
-          const tweets = await scrapeUserTweets(comp.handle, 5);
-          if (tweets.length > 0) {
-            const top = tweets.sort((a, b) => b.likes - a.likes)[0];
-            msg += `\n@${comp.handle}: top "${top.content?.slice(0, 50)}..." (${top.likes}❤️)`;
-          } else {
-            msg += `\n@${comp.handle}: couldn't scrape`;
-          }
+        // Group by competitor
+        const grouped: Record<string, any[]> = {};
+        for (const t of compTweets) {
+          const h = idToHandle[t.competitor_id] || 'unknown';
+          if (!grouped[h]) grouped[h] = [];
+          grouped[h].push(t);
+        }
+        for (const [handle, tweets] of Object.entries(grouped)) {
+          const top = tweets.sort((a: any, b: any) => (b.likes || 0) - (a.likes || 0))[0];
+          const avgEng = Math.round(tweets.reduce((s: number, t: any) => s + (t.likes || 0), 0) / tweets.length);
+          msg += `\n@${handle}: avg ${avgEng}❤️, top "${top?.content?.slice(0, 50)}..." (${top?.likes || 0}❤️)`;
         }
         return msg;
       }
@@ -386,11 +399,18 @@ async function executeMarketingAction(
         return res.ok ? `🌐 site is up (${time}ms)` : `🚨 site returned ${res.status} (${time}ms)`;
       }
       case 'search_tweets': {
-        const results = await searchTweets(params, 10);
-        if (!results.length) return `nothing found for "${params}"`;
-        let msg = `🔍 top tweets for "${params}":\n`;
-        for (const t of results.slice(0, 5)) {
-          msg += `\n• "${t.content?.slice(0, 60)}..." (${t.likes}❤️) @${t.author}`;
+        // Search our own DB for matching tweets
+        const { data: results } = await supabase
+          .from('twitter_posts')
+          .select('content, likes, retweets, status')
+          .ilike('content', `%${params}%`)
+          .order('likes', { ascending: false })
+          .limit(5);
+
+        if (!results?.length) return `nothing found for "${params}" in our tweets`;
+        let msg = `🔍 matching tweets for "${params}":\n`;
+        for (const t of results) {
+          msg += `\n• "${t.content?.slice(0, 60)}..." (${t.likes || 0}❤️)`;
         }
         return msg;
       }
