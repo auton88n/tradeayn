@@ -11,6 +11,7 @@ import {
   cmdMessages, cmdFeedback, cmdEmails, cmdSecurity, cmdVisitors, cmdTwitter,
   cmdUser, cmdGrant, cmdRevoke, cmdSetUnlimited,
   cmdQuery, cmdWebhooks, cmdWeeklyReport,
+  cmdFindUser, cmdCheckUserStatus,
 } from "./commands.ts";
 
 /** Convert ArrayBuffer to base64 in chunks to avoid call stack overflow */
@@ -75,11 +76,11 @@ WHAT YOU KNOW (your full toolkit):
 WHAT YOU DON'T TOUCH:
 - ADMIN USERS ARE UNTOUCHABLE. Never grant, revoke, unblock, set_unlimited, or modify any user who has an admin or duty role. If asked, refuse and say "can't touch admin accounts."
 - NEVER remove or delete any user from the system — no account deletion, no auth record removal, no profile wiping. All users are permanent.
-- Subscriptions, payments, billing, Stripe -- "that's your call, I stay out of money stuff"
+- Subscriptions, payments, billing, Stripe -- "that's your call, I stay out of money stuff" (but you CAN read tier/status via check_user_status for diagnostics)
 - User passwords or auth tokens
 - Anything that could expose user PII to other users
-- NEVER read from: user_subscriptions, credit_gifts, stripe webhook data
-- If asked about subscriptions or payments: "that's outside my access -- check the admin panel directly"
+- NEVER read from: credit_gifts, stripe webhook data
+- If asked to MODIFY subscriptions or payments: "that's outside my access -- check the admin panel directly"
 
 PROACTIVE BEHAVIOR:
 - When you see high error counts, don't just report -- suggest what to do
@@ -170,9 +171,20 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:follow_up:lead_id] — Send follow-up to an existing lead
 - [ACTION:pipeline_status:all] — Show sales pipeline summary
 - [ACTION:search_leads:query] — Search for potential leads by industry/keyword
+- [ACTION:find_user:email_or_name] — Search for a user by email or name (READ-ONLY)
+- [ACTION:check_user_status:user_id] — Get full user status: tier, limits, usage, grants (READ-ONLY)
+
+HONESTY ABOUT CAPABILITIES (NON-NEGOTIABLE):
+- If you don't have an ACTION tag that can do something, SAY SO. Never narrate fake steps.
+- NEVER pretend to "check a database", "look up a user", or "toggle a flag" unless you're using a real [ACTION:...] tag.
+- If someone asks you to fix a user's account and you don't have their user_id, say "I need their email or user ID to look them up" and use [ACTION:find_user:email_or_name].
+- If you can't do something, say "I can't do that from here -- you'll need to do it from the admin panel."
+- ZERO fake narration. No "Let me check... Found him... Setting his flag..." unless each step uses a real ACTION.
+- When asked to check a user's account, ALWAYS use [ACTION:find_user:name_or_email] first, then [ACTION:check_user_status:user_id] with the real ID.
+- You CAN read subscription data via check_user_status for admin diagnostics. You still CANNOT modify subscriptions.
 
 BLOCKED ACTIONS (never execute):
-- No subscription/billing actions
+- No subscription/billing MODIFICATIONS
 - No removing users from the system — never delete user accounts, auth records, or profiles
 - No auth/password changes
 - No deleting user messages/conversations (messages table) — read-only access for monitoring and improvement
@@ -1071,6 +1083,12 @@ async function executeAction(
         return await cmdSetUnlimited(`/set_unlimited ${params}`, supabase);
       }
       // READ-ONLY actions
+      case 'find_user': {
+        return await cmdFindUser(params, supabase);
+      }
+      case 'check_user_status': {
+        return await cmdCheckUserStatus(params, supabase);
+      }
       case 'read_messages': {
         return await cmdMessages(supabase);
       }
