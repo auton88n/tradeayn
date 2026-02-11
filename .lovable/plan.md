@@ -1,71 +1,69 @@
 
 
-# Add AYN Product Knowledge to the Marketing Bot's Persona
+# Fix Emotions, Colors, and Add Sound to Like/Dislike
 
-## What's Changing
+## What's Being Fixed
 
-The marketing bot currently knows nothing about what AYN actually offers. We'll add a comprehensive "AYN PRODUCT KNOWLEDGE" section to the `MARKETING_PERSONA` so the bot (and the creators using it) can reference real services, features, and selling points when creating content.
+### 1. Emotion Color Refinement
 
-## What Gets Added to the Persona
+The current emotion colors need better visual distinction and more natural feel:
 
-A new section injected into `MARKETING_PERSONA` in `supabase/functions/ayn-marketing-webhook/index.ts` covering:
+| Emotion | Current Color | New Color | Why |
+|---------|--------------|-----------|-----|
+| calm | Muted cyan (hsl 193) | Soft sky blue (hsl 200, 60%, 55%) | More soothing, less washed out |
+| happy | Orange-amber (hsl 36) | Warm golden (hsl 45, 95%, 60%) | Brighter, more joyful |
+| excited | Pure red (hsl 0) | Vibrant magenta-pink (hsl 330, 85%, 60%) | Red feels like anger, pink feels excited |
+| thinking | Deep indigo (hsl 239) | Electric blue-violet (hsl 250, 70%, 65%) | Softer, more "processing" feel |
+| frustrated | Red-orange (hsl 6) | Burnt orange (hsl 20, 70%, 50%) | Distinct from "mad" |
+| curious | Purple (hsl 282) | Teal-green (hsl 170, 60%, 50%) | More "exploring/discovery" feel |
+| sad | Muted purple (hsl 271) | Deep blue (hsl 220, 40%, 50%) | Classic "blue" sadness |
+| mad | Dark red (hsl 354) | Keep dark red | Already appropriate |
+| bored | Slate gray (hsl 197) | Keep but slightly warmer | Fine as is |
+| comfort | Rose pink (hsl 349) | Warm peach (hsl 25, 70%, 75%) | Softer, more comforting |
+| supportive | Light orange (hsl 10) | Soft lavender (hsl 280, 45%, 75%) | More nurturing feel |
 
-### AYN Platform Overview
-- AYN is a perceptive AI platform: "i see, i understand, i help"
-- Website: https://aynn.io / https://almufaijer.com (portfolio)
-- Multi-language: English, Arabic, French
+### 2. Sound for Each Emotion Color
 
-### Services We Offer
+The sound system already has sounds for every emotion, but the feedback buttons don't play the emotion-specific sound distinctly. Changes:
 
-1. **AI Agents** (`/services/ai-agents`)
-   - Custom AI chatbots for businesses
-   - Multi-channel: website, WhatsApp, Instagram, phone
-   - 24/7 customer support, lead qualification, multilingual
-   - Use case: replace or augment support teams
+- **Like (thumbs up)**: Play a dedicated "positive feedback" sound -- a bright, cheerful double chime (distinct from general "happy" emotion), then transition eye to happy
+- **Dislike (thumbs down)**: Play a dedicated "negative feedback" sound -- a gentle descending tone (empathetic, not punishing), then transition eye to sad
 
-2. **AI Employee** (`/services/ai-employee`)
-   - Full AI team members (not just chatbots)
-   - Roles: customer service, accounting, HR, travel booking, tutoring
-   - Work 24/7, no vacations, fraction of the cost
-   - Comparison angle: traditional employee vs AI employee
+### 3. Dedicated Feedback Sounds in Sound Generator
 
-3. **Automation** (`/services/automation`)
-   - Business workflow automation
-   - Email, scheduling, reporting, data entry, notifications
-   - Save hours per week on repetitive tasks
-   - Integrations with existing tools
+Add two new sound types to the sound system:
+- `feedback-positive`: Bright ascending two-note chime (higher pitch than happy emotion)
+- `feedback-negative`: Soft descending two-note (lower, gentler than sad emotion)
 
-4. **Influencer/Creator Sites** (`/services/influencer-sites`)
-   - Premium personal websites for content creators
-   - Analytics dashboards, brand kit, media kit
-   - Help creators land more brand partnerships
-   - Mobile-first, stunning design
-
-5. **Smart Ticketing** (`/services/ticketing`)
-   - AI-powered event ticketing system
-   - QR codes, real-time analytics, custom branding
-   - AI crowd management and marketing suggestions
-
-6. **Building Code Compliance** (`/compliance`)
-   - IRC 2024 / NBC 2025 compliance checks
-   - AI-powered building code analysis
-   - For engineers and construction professionals
-
-### Subscription Tiers
-- Free, Starter, Pro, Business, Enterprise
-
-### Key Selling Points for Content
-- AI that actually works for your business (not hype)
-- Fraction of the cost of traditional solutions
-- 24/7 availability
-- Multi-language support (EN/AR/FR)
-- Built by a real team, not a template
-
-## File to Change
+## Files to Change
 
 | File | Change |
 |------|--------|
-| `supabase/functions/ayn-marketing-webhook/index.ts` | Add "AYN PRODUCT KNOWLEDGE" block to `MARKETING_PERSONA` string |
+| `src/stores/emotionStore.ts` | Update all `EMOTION_CONFIGS` color values, glow colors, ring/glow classes |
+| `src/lib/soundGenerator.ts` | Add `feedback-positive` and `feedback-negative` sound configs |
+| `src/components/eye/ResponseCard.tsx` | Update `handleFeedback` to play feedback-specific sounds before emotion change |
 
-## No other files or database changes needed
+## Technical Details
+
+### ResponseCard.tsx - handleFeedback update
+```typescript
+const handleFeedback = async (type: "up" | "down") => {
+  const newFeedback = feedback === type ? null : type;
+  setFeedback(newFeedback);
+  if (newFeedback) {
+    // Play feedback-specific sound first
+    soundContext.playSound(type === "up" ? "feedback-positive" : "feedback-negative");
+    // Then transition eye emotion
+    orchestrateEmotionChange(type === "up" ? "happy" : "sad", { skipSound: true });
+    // ... rest of save logic
+  }
+};
+```
+
+### Sound Generator - New feedback sounds
+- `feedback-positive`: Two bright ascending notes (E5 to A5), quick and satisfying
+- `feedback-negative`: Two soft descending notes (D4 to Bb3), gentle and empathetic
+
+### Emotion Store - Updated colors
+All 11 emotion configs get refreshed HSL values with matching glow colors and Tailwind ring/glow classes for visual consistency.
 
