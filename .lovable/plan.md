@@ -1,32 +1,44 @@
 
 
-# Update Tutorial Illustrations with New Emotion Colors
+# Fix Chat Message Ordering (User/AYN disorder)
 
-## What's Changing
+## Problem
 
-The tutorial's `EmotionsIllustration` and `EmpathyIllustration` components in `src/components/tutorial/TutorialIllustrations.tsx` still use the old emotion colors. They need to match the updated `EMOTION_CONFIGS` from the emotion store.
+When you send a message, AYN's reply sometimes appears **before** your message in the chat history. This happens because:
 
-## Color Updates
+- Your message and AYN's streaming placeholder are both created with `new Date()` within milliseconds of each other
+- The sort function only compares timestamps, so when two messages have the same (or very close) timestamp, the order becomes random
+- This is especially noticeable with fast responses
 
-| Emotion | Old Tutorial Color | New Color |
-|---------|-------------------|-----------|
-| Calm | `hsl(193, 38%, 47%)` | `hsl(200, 60%, 55%)` |
-| Happy | `hsl(36, 100%, 65%)` | `hsl(45, 95%, 60%)` |
-| Excited | `hsl(0, 100%, 67%)` | `hsl(330, 85%, 60%)` |
-| Thinking | `hsl(239, 82%, 61%)` | `hsl(250, 70%, 65%)` |
-| Curious | `hsl(282, 56%, 62%)` | `hsl(170, 60%, 50%)` |
-| Comfort | `hsl(349, 49%, 69%)` | `hsl(25, 70%, 75%)` |
-| Supportive | `hsl(10, 61%, 78%)` | `hsl(280, 45%, 75%)` |
-| Frustrated | `hsl(6, 78%, 57%)` | `hsl(20, 70%, 50%)` |
-| Sad | `hsl(271, 11%, 59%)` | `hsl(220, 40%, 50%)` |
+## Solution
 
-Mad and Bored stay the same.
+Use the **array insertion order** as a tiebreaker when timestamps are equal. Messages are already added to the array in the correct order (user first, then AYN), so when timestamps match, preserving the original array position guarantees correct ordering.
 
-## File to Change
+## Files to Change
 
-**`src/components/tutorial/TutorialIllustrations.tsx`** -- Update the color values in:
-- `coreEmotions` array (lines 31-36)
-- `empathyEmotions` array (lines 40-42)
-- `negativeEmotions` array (lines 46-50)
-- `EmpathyIllustration` component -- update the warm glow and label colors to reflect the new comfort (peach/amber) and supportive (lavender/purple) tones
+| File | Change |
+|------|--------|
+| `src/components/eye/ResponseCard.tsx` | Update `sortedMessages` sort to use array index as tiebreaker |
+| `src/components/dashboard/ChatHistoryCollapsible.tsx` | Same fix for its `sortedMessages` sort |
 
+## Technical Detail
+
+In both files, the sort comparator changes from:
+
+```typescript
+.sort((a, b) => timeA - timeB)
+```
+
+to:
+
+```typescript
+// Preserve original array order when timestamps match
+const indexed = messages.map((m, i) => ({ m, i }));
+indexed.sort((a, b) => {
+  const diff = timeA - timeB;
+  return diff !== 0 ? diff : a.i - b.i;
+});
+return indexed.map(x => x.m);
+```
+
+This is a stable sort that respects the insertion order when timestamps collide -- which is always correct since user messages are always added before AYN's response in the code.
