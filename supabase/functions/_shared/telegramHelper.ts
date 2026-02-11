@@ -3,25 +3,45 @@
  */
 
 function markdownToTelegramHtml(text: string): string {
-  // 1. Escape HTML special chars
-  let html = text
+  let html = text;
+
+  // 0. Strip horizontal rules (---, ___, ***)
+  html = html.replace(/^[\-_\*]{3,}\s*$/gm, '');
+
+  // 1. Strip empty bold/italic markers: ****, ***, **, *
+  html = html.replace(/\*{4,}/g, '');        // **** or more
+  html = html.replace(/\*{2,3}(?=\s|$)/g, ''); // trailing ** or ***
+  html = html.replace(/(?:^|\s)\*{2,3}/g, (m) => m.replace(/\*/g, '')); // leading ** or ***
+
+  // 2. Escape HTML special chars
+  html = html
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // 2. Convert **bold** to <b>bold</b>
-  html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  // 3. Convert ***bold italic*** to <b><i>text</i></b>
+  html = html.replace(/\*{3}(.+?)\*{3}/g, '<b><i>$1</i></b>');
 
-  // 3. Convert *italic* to <i>italic</i> (but not inside <b> tags)
-  html = html.replace(/(?<!<b|<\/b)\*(.+?)\*/g, '<i>$1</i>');
+  // 4. Convert **bold** to <b>bold</b>
+  html = html.replace(/\*{2}(.+?)\*{2}/g, '<b>$1</b>');
 
-  // 4. Convert markdown headers (### Header) to bold
+  // 5. Convert *italic* to <i>italic</i>
+  html = html.replace(/\*([^\s*][^*]*?)\*/g, '<i>$1</i>');
+
+  // 6. Convert markdown headers (### Header) to bold
   html = html.replace(/^#{1,4}\s+(.+)$/gm, '<b>$1</b>');
 
-  // 5. Ensure paragraph spacing (double newlines become visible breaks)
+  // 7. Strip any remaining stray asterisks (not inside tags)
+  html = html.replace(/(?<![<\/\w])\*+(?![>\w])/g, '');
+
+  // 8. Ensure paragraph spacing
   html = html.replace(/\n{3,}/g, '\n\n');
 
-  return html;
+  // 9. Clean up extra whitespace from removals
+  html = html.replace(/^ +$/gm, '');
+  html = html.replace(/\n{3,}/g, '\n\n');
+
+  return html.trim();
 }
 
 export async function sendTelegramMessage(token: string, chatId: string, text: string) {
