@@ -1280,6 +1280,45 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          from_employee: string
+          id: string
+          input_data: Json | null
+          output_data: Json | null
+          priority: string
+          status: string
+          task_type: string
+          to_employee: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          from_employee: string
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          priority?: string
+          status?: string
+          task_type: string
+          to_employee: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          from_employee?: string
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          priority?: string
+          status?: string
+          task_type?: string
+          to_employee?: string
+        }
+        Relationships: []
+      }
       engineering_activity: {
         Row: {
           activity_type: string
@@ -2179,6 +2218,51 @@ export type Database = {
         }
         Relationships: []
       }
+      security_incidents: {
+        Row: {
+          action_taken: string | null
+          blocked_until: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          incident_type: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          strike_count: number
+          user_id: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          blocked_until?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          incident_type: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          strike_count?: number
+          user_id?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          blocked_until?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          incident_type?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          strike_count?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       security_logs: {
         Row: {
           action: string
@@ -2415,6 +2499,36 @@ export type Database = {
           updated_at?: string | null
           updated_by?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      system_health_checks: {
+        Row: {
+          checked_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          is_healthy: boolean | null
+          response_time_ms: number | null
+          status_code: number | null
+        }
+        Insert: {
+          checked_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          is_healthy?: boolean | null
+          response_time_ms?: number | null
+          status_code?: number | null
+        }
+        Update: {
+          checked_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          is_healthy?: boolean | null
+          response_time_ms?: number | null
+          status_code?: number | null
         }
         Relationships: []
       }
@@ -3184,6 +3298,7 @@ export type Database = {
       }
       cleanup_expired_memories: { Args: never; Returns: number }
       cleanup_location_data: { Args: never; Returns: undefined }
+      cleanup_old_health_checks_v2: { Args: never; Returns: undefined }
       cleanup_old_health_metrics: { Args: never; Returns: undefined }
       cleanup_old_security_logs: { Args: never; Returns: undefined }
       cleanup_old_system_reports: { Args: never; Returns: undefined }
