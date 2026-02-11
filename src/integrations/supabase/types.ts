@@ -2637,6 +2637,7 @@ export type Database = {
           content_type: string | null
           created_at: string
           created_by: string | null
+          created_by_name: string | null
           error_message: string | null
           id: string
           image_url: string | null
@@ -2656,6 +2657,7 @@ export type Database = {
           content_type?: string | null
           created_at?: string
           created_by?: string | null
+          created_by_name?: string | null
           error_message?: string | null
           id?: string
           image_url?: string | null
@@ -2675,6 +2677,7 @@ export type Database = {
           content_type?: string | null
           created_at?: string
           created_by?: string | null
+          created_by_name?: string | null
           error_message?: string | null
           id?: string
           image_url?: string | null

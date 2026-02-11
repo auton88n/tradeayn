@@ -173,6 +173,9 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:search_leads:query] — Search for potential leads by industry/keyword
 - [ACTION:find_user:email_or_name] — Search for a user by email or name (READ-ONLY)
 - [ACTION:check_user_status:user_id] — Get full user status: tier, limits, usage, grants (READ-ONLY)
+- [ACTION:marketing_report:all] — Show marketing bot drafts, quality scores, and activity (READ-ONLY)
+- [ACTION:approve_post:post_id] — Approve a pending marketing post for publishing
+- [ACTION:reject_post:post_id:reason] — Reject a pending marketing post with feedback
 
 HONESTY ABOUT CAPABILITIES (NON-NEGOTIABLE):
 - If you don't have an ACTION tag that can do something, SAY SO. Never narrate fake steps.
@@ -1286,6 +1289,59 @@ async function executeAction(
           }
           return data.error || 'Search failed';
         } catch (e) { return `Search failed: ${e instanceof Error ? e.message : 'error'}`; }
+      }
+      // ─── Marketing oversight actions ───
+      case 'marketing_report': {
+        const { data: drafts } = await supabase
+          .from('twitter_posts')
+          .select('id, content, status, quality_score, image_url, created_at, created_by_name')
+          .eq('created_by_name', 'marketing_bot')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (!drafts?.length) return '📝 No marketing bot drafts yet.';
+        let msg = `📝 Marketing Bot Drafts (${drafts.length}):\n`;
+        for (const d of drafts) {
+          const ago = Math.round((Date.now() - new Date(d.created_at).getTime()) / 3600000);
+          msg += `\n${d.status === 'pending_review' ? '⏳' : d.status === 'approved' ? '✅' : '❌'} "${d.content?.slice(0, 60)}..."`;
+          msg += `\n   [${d.status}] ${d.quality_score ? `Q:${d.quality_score}` : ''} ${d.image_url ? '🖼️' : ''} (${ago}h ago)`;
+          msg += `\n   ID: ${d.id.slice(0, 8)}`;
+        }
+        return msg;
+      }
+      case 'approve_post': {
+        const { data } = await supabase.from('twitter_posts')
+          .select('id, content').ilike('id', `${params}%`).eq('status', 'pending_review').limit(1);
+        if (!data?.length) return 'No pending post found with that ID.';
+        await supabase.from('twitter_posts').update({ status: 'approved' }).eq('id', data[0].id);
+        await logAynActivity(supabase, 'marketing_post_approved', `Approved post: "${data[0].content?.slice(0, 60)}"`, {
+          target_id: data[0].id, target_type: 'twitter_post', triggered_by: 'admin_chat',
+        });
+        // Notify marketing bot
+        const MKT_TOKEN = Deno.env.get('TELEGRAM_MARKETING_BOT_TOKEN');
+        const MKT_CHAT = Deno.env.get('TELEGRAM_MARKETING_CHAT_ID');
+        if (MKT_TOKEN && MKT_CHAT) {
+          await sendTelegramMessage(MKT_TOKEN, MKT_CHAT, `✅ your post was approved! "${data[0].content?.slice(0, 100)}..."`);
+        }
+        return `Approved post ${data[0].id.slice(0, 8)}: "${data[0].content?.slice(0, 60)}..."`;
+      }
+      case 'reject_post': {
+        const colonIdx = params.indexOf(':');
+        const postId = colonIdx > -1 ? params.slice(0, colonIdx) : params;
+        const reason = colonIdx > -1 ? params.slice(colonIdx + 1) : 'not approved';
+        const { data } = await supabase.from('twitter_posts')
+          .select('id, content').ilike('id', `${postId}%`).eq('status', 'pending_review').limit(1);
+        if (!data?.length) return 'No pending post found with that ID.';
+        await supabase.from('twitter_posts').update({ status: 'rejected' }).eq('id', data[0].id);
+        await logAynActivity(supabase, 'marketing_post_rejected', `Rejected post: "${data[0].content?.slice(0, 60)}" — ${reason}`, {
+          target_id: data[0].id, target_type: 'twitter_post', triggered_by: 'admin_chat',
+        });
+        // Notify marketing bot
+        const MKT_TOKEN2 = Deno.env.get('TELEGRAM_MARKETING_BOT_TOKEN');
+        const MKT_CHAT2 = Deno.env.get('TELEGRAM_MARKETING_CHAT_ID');
+        if (MKT_TOKEN2 && MKT_CHAT2) {
+          await sendTelegramMessage(MKT_TOKEN2, MKT_CHAT2, `❌ post rejected: "${data[0].content?.slice(0, 80)}..."\nreason: ${reason}`);
+        }
+        return `Rejected post ${data[0].id.slice(0, 8)}: ${reason}`;
       }
       default:
         return `Unknown action: ${type}`;
