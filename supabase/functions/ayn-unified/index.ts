@@ -545,35 +545,24 @@ serve(async (req) => {
     const MAX_MESSAGES_PER_CHAT = 100;
     
     if (sessionId && !isInternalCall) {
-      // Check if user is unlimited before enforcing chat limit
-      const { data: limitsData } = await supabase
-        .from('user_ai_limits')
-        .select('is_unlimited')
-        .eq('user_id', userId)
-        .single();
+      const { count, error: countError } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('session_id', sessionId)
+        .eq('user_id', userId);
       
-      const userIsUnlimited = limitsData?.is_unlimited === true;
-
-      if (!userIsUnlimited) {
-        const { count, error: countError } = await supabase
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .eq('session_id', sessionId)
-          .eq('user_id', userId);
-        
-        if (!countError && count !== null && count >= MAX_MESSAGES_PER_CHAT) {
-          console.log(`[ayn-unified] Chat limit reached: ${count}/${MAX_MESSAGES_PER_CHAT} for session ${sessionId}`);
-          return new Response(JSON.stringify({ 
-            error: 'Chat limit reached',
-            message: 'This chat has reached the 100 message limit. Please start a new chat to continue.',
-            chatLimitExceeded: true,
-            messageCount: count,
-            limit: MAX_MESSAGES_PER_CHAT
-          }), {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
+      if (!countError && count !== null && count >= MAX_MESSAGES_PER_CHAT) {
+        console.log(`[ayn-unified] Chat limit reached: ${count}/${MAX_MESSAGES_PER_CHAT} for session ${sessionId}`);
+        return new Response(JSON.stringify({ 
+          error: 'Chat limit reached',
+          message: 'This chat has reached the 100 message limit. Please start a new chat to continue.',
+          chatLimitExceeded: true,
+          messageCount: count,
+          limit: MAX_MESSAGES_PER_CHAT
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
     }
 
