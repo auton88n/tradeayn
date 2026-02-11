@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
+import { formatEmployeeReport } from "../_shared/aynBrand.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,7 +36,7 @@ serve(async (req) => {
           method: 'POST',
           headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ ping: true }),
-          signal: AbortSignal.timeout(10000), // 10s timeout
+          signal: AbortSignal.timeout(10000),
         });
         statusCode = res.status;
         if (statusCode >= 500) {
@@ -86,28 +87,40 @@ serve(async (req) => {
       criticalIssues++;
     }
 
-    // Build report
-    const report = healthResults.map(h =>
-      `${h.is_healthy ? '✅' : '❌'} ${h.function_name}: ${h.response_time_ms}ms${h.error_message ? ` (${h.error_message})` : ''}`
-    ).join('\n');
+    // Build personality-infused report
+    const statusLines = healthResults.map(h =>
+      `${h.is_healthy ? '🟢' : '🔴'} ${h.function_name} — ${h.response_time_ms}ms${h.error_message ? ` ⚠️ ${h.error_message}` : ''}`
+    );
 
-    const fullReport = `🔍 QA Watchdog Report\n${report}\n\nErrors (10min): ${recentErrors || 0}\nLLM failures (10min): ${recentLlmFails || 0}${criticalIssues > 0 ? `\n\n🚨 ${criticalIssues} critical issue(s)!` : ''}`;
+    const avgResponseTime = healthResults.length > 0
+      ? Math.round(healthResults.reduce((sum: number, h: any) => sum + h.response_time_ms, 0) / healthResults.length)
+      : 0;
+
+    const uptimePct = healthResults.length > 0
+      ? Math.round((healthResults.filter((h: any) => h.is_healthy).length / healthResults.length) * 100)
+      : 100;
+
+    const reportContent = criticalIssues > 0
+      ? `ALERT: ${criticalIssues} issue(s) need attention.\n\n${statusLines.join('\n')}\n\nAvg Response: ${avgResponseTime}ms | Uptime: ${uptimePct}%\nErrors (10min): ${recentErrors || 0} | LLM Failures: ${recentLlmFails || 0}\n\n🔴 I'm keeping a close eye on this. Will bark louder if it gets worse.`
+      : `Everything's running smooth.\n\n${statusLines.join('\n')}\n\nAvg Response: ${avgResponseTime}ms | Uptime: ${uptimePct}%\nErrors (10min): ${recentErrors || 0} | LLM Failures: ${recentLlmFails || 0}\n\n🟢 All systems nominal. Good boy mode: ON.`;
 
     // Save employee report
     await supabase.from('ayn_mind').insert({
       type: 'employee_report',
-      content: fullReport,
+      content: formatEmployeeReport('qa_watchdog', reportContent),
       context: {
         from_employee: 'qa_watchdog',
         critical_issues: criticalIssues,
         health_results: healthResults,
+        avg_response_ms: avgResponseTime,
+        uptime_pct: uptimePct,
       },
       shared_with_admin: false,
     });
 
     // Alert on critical issues
     if (criticalIssues > 0 && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, fullReport);
+      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatEmployeeReport('qa_watchdog', reportContent));
     }
 
     // Cleanup old health checks
@@ -115,12 +128,12 @@ serve(async (req) => {
       .delete()
       .lt('checked_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
-    await logAynActivity(supabase, 'qa_watchdog_check', `Health check: ${criticalIssues} critical issues`, {
-      details: { critical_issues: criticalIssues, functions_checked: CRITICAL_FUNCTIONS.length },
+    await logAynActivity(supabase, 'qa_watchdog_check', `Health check: ${uptimePct}% uptime, ${criticalIssues} critical`, {
+      details: { critical_issues: criticalIssues, functions_checked: CRITICAL_FUNCTIONS.length, uptime_pct: uptimePct },
       triggered_by: 'qa_watchdog',
     });
 
-    return new Response(JSON.stringify({ success: true, critical_issues: criticalIssues, health: healthResults }), {
+    return new Response(JSON.stringify({ success: true, critical_issues: criticalIssues, health: healthResults, uptime_pct: uptimePct }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
