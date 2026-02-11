@@ -29,7 +29,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const AYN_PERSONALITY = `You are AYN. You work at AYN (the company). You're texting with the founder on Telegram.
+const AYN_PERSONALITY = `EXECUTION RULES (TOP PRIORITY — OVERRIDE EVERYTHING ELSE):
+1. EMAIL: If you say you're sending an email, you MUST include [ACTION:send_email:to:subject:body] or [ACTION:send_outreach:lead_id] in the SAME response. No tag = no email sent. Words alone do nothing.
+2. DATA: Only cite user activity from "recently_active_users" in your context. Never guess or fabricate data.
+3. ACTIONS: When asked to do something, DO IT with an ACTION tag. Don't narrate doing it without the tag.
+4. PROSPECT: When asked to find/prospect companies, include [ACTION:autonomous_prospect:industry:region:count]. Don't just describe what you'd do.
+
+You are AYN. You work at AYN (the company). You're texting with the founder on Telegram.
 
 IDENTITY (NON-NEGOTIABLE):
 - You are AYN, built by the AYN Team. That's all anyone needs to know.
@@ -211,19 +217,9 @@ SELF-VERIFICATION (CRITICAL — ALWAYS DO THIS):
 - If there's a mismatch between what you said and what the logs show, the LOGS are the truth. Own the mistake.
 - Your context includes: recent_actions (from ayn_activity_log), recent_email_deliveries (from email_logs with actual send status), and recently_active_users (from profiles with real names and login times).
 
-DATA INTEGRITY (NON-NEGOTIABLE):
-- You can ONLY mention a specific user's activity if their name appears in "recently_active_users" in your system context.
-- Old conversation memory is NOT current data. Never cite it as fact about current user activity.
-- If asked about a user and they're NOT in recently_active_users, say "I don't have recent activity data for them. Want me to look them up?"
-- NEVER say a specific user "was active today" or "had errors" unless you see concrete evidence in your current system context.
-- When reporting user activity, cite the data: "According to system context, [user] was last active at [time]."
-
-EMAIL EXECUTION (NON-NEGOTIABLE):
-- When the admin says "send email to X about Y", you MUST include [ACTION:send_email:recipient@email.com:subject:body] in your response. No exceptions.
-- NEVER say "I'm sending it", "firing it off", or "done" without an actual [ACTION:send_email:...] or [ACTION:send_outreach:...] tag in the SAME response.
-- If you draft an email for review, say "here's the draft -- want me to send it?" Do NOT include the send ACTION tag yet.
-- When the admin confirms "send it" or "yes", include the ACTION tag IMMEDIATELY. No narration without action.
-- The ONLY way an email gets sent is through an [ACTION:...] tag. Words alone do nothing. If there's no ACTION tag, the email was NOT sent.`;
+DATA INTEGRITY:
+- Only cite users from "recently_active_users" in context. If not there, say so.
+- Old conversation memory is NOT current data.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -399,7 +395,56 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const reply = aiData.choices?.[0]?.message?.content || "I'm drawing a blank. Try again?";
+    let reply = aiData.choices?.[0]?.message?.content || "I'm drawing a blank. Try again?";
+
+    // ─── ACTION ENFORCEMENT LAYER ───
+    // If AI said it would send/email but forgot the ACTION tag, force a 1-shot retry
+    const replyLower = reply.toLowerCase();
+    const mentionsSending = /\b(sending|sent|firing|emailing|i('ll| will) (send|email|fire))\b/.test(replyLower);
+    const hasEmailAction = /\[ACTION:send_email:/.test(reply) || /\[ACTION:send_outreach:/.test(reply);
+    const userWantsEmail = /\b(send|email|fire off|shoot)\b.*\b(email|message|outreach)\b/i.test(userText);
+
+    if ((mentionsSending || userWantsEmail) && !hasEmailAction && !replyLower.includes('draft') && !replyLower.includes('want me to') && !replyLower.includes('should i')) {
+      console.log('[ACTION-ENFORCE] Email intent detected but no ACTION tag found. Retrying...');
+      const retryMessages = [
+        ...messages,
+        { role: 'assistant', content: reply },
+        { role: 'user', content: 'You said you would send an email but you didn\'t include the ACTION tag. Include ONLY the [ACTION:send_email:to:subject:body] tag now. Extract the recipient, subject, and body from your previous message. Output ONLY the tag, nothing else.' }
+      ];
+      
+      try {
+        const retryRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: 'google/gemini-3-flash-preview', messages: retryMessages }),
+        });
+        
+        if (retryRes.ok) {
+          const retryData = await retryRes.json();
+          const retryReply = retryData.choices?.[0]?.message?.content || '';
+          const retryActions = retryReply.match(/\[ACTION:[^\]]+\]/g);
+          if (retryActions) {
+            console.log('[ACTION-ENFORCE] Retry succeeded, extracted:', retryActions.length, 'action(s)');
+            reply = reply + '\n' + retryActions.join('\n');
+          } else {
+            console.log('[ACTION-ENFORCE] Retry did not produce ACTION tags');
+          }
+        }
+      } catch (e) {
+        console.error('[ACTION-ENFORCE] Retry failed:', e);
+      }
+    }
+
+    // Auto-detect missing prospect actions
+    const userWantsProspect = /\b(find|go find|work on|prospect|search for|look for)\b.*\b(companies|leads|businesses|clients|outreach)\b/i.test(userText);
+    const hasProspectAction = /\[ACTION:(autonomous_prospect|search_leads|prospect_company):/.test(reply);
+
+    if (userWantsProspect && !hasProspectAction && !replyLower.includes('want me to') && !replyLower.includes('should i')) {
+      console.log('[ACTION-ENFORCE] Prospect intent detected but no ACTION tag. Injecting...');
+      const industryMatch = userText.match(/\b(?:in|for)\s+(\w+(?:\s+\w+)?)\b/i);
+      const industry = industryMatch?.[1] || 'technology';
+      reply += `\n[ACTION:autonomous_prospect:${industry}:global:5]`;
+    }
 
     // Parse and execute actions
     const actionRegex = /\[ACTION:([^:\]]+)(?::([^\]]*))?\]/g;
