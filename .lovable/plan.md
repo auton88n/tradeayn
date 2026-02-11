@@ -1,133 +1,112 @@
 
+# Fix AYN: Code-Level Action Enforcement (Stop Relying on Prompt Rules)
 
-# Fix AYN Telegram: Accuracy, Email Execution, and Autonomous Company Work
+## The Real Problem
 
-## Problems
+The current approach adds more and more text to AYN's system prompt hoping the AI will follow rules. But the prompt is already **226 lines long** and growing. The AI model (Gemini) loses focus in long prompts and sometimes:
+- Says "I'm sending the email" without including the `[ACTION:send_email:...]` tag
+- Fabricates data despite rules saying not to
+- Ignores instructions buried in the middle of a massive prompt
 
-1. **AYN lies about users**: Says "Mouad was active today" when he wasn't (last activity was Feb 5). The system context only has anonymous message counts -- no user names or login times. AYN fills the gap with hallucinations from old conversation memory.
+**Adding more prompt rules won't fix this.** The fix is to add **code after the AI responds** that catches failures and forces correct behavior.
 
-2. **AYN says "sending" but doesn't send**: When you say "send email", AYN often writes "I'm sending it now" or "firing it off" as narration text instead of including the actual `[ACTION:send_email:to:subject:body]` tag that triggers real execution.
+## Solution: Three Code-Level Safety Nets
 
-3. **No autonomous company work**: When you tell AYN "go find companies" or "work on outreach", it can't batch-prospect multiple companies on its own. It needs a new action to autonomously research and queue multiple leads.
+### 1. Auto-Detect Missing Email Actions (Code Enforcement)
 
-## Solution
-
-### 1. Add Real User Data to System Context
-
-In `gatherSystemContext`, add a query for recently active users with actual names and login times:
-
-```sql
-SELECT p.contact_person, p.last_login, ag.current_month_usage
-FROM profiles p
-JOIN access_grants ag ON p.user_id = ag.user_id
-WHERE p.last_login > now() - interval '24 hours'
-ORDER BY p.last_login DESC
-LIMIT 10
-```
-
-Add `recently_active_users` to the context object so AYN can only cite users it actually sees.
-
-### 2. Force Email Execution with Stronger Prompt Rules
-
-Add to `AYN_PERSONALITY`:
+After the AI responds, scan the reply for phrases like "sending", "firing off", "I'll email" -- and if there's NO `[ACTION:send_email:...]` tag in the response, **re-prompt the AI** with a short, focused instruction:
 
 ```
-DATA INTEGRITY (NON-NEGOTIABLE):
-- You can ONLY mention a specific user's activity if their name appears in 
-  "recently_active_users" in your system context.
-- Old conversation memory is NOT current data. Never cite it as fact.
-- If asked about a user and they're not in your context, say "I don't 
-  have recent data for them. Want me to look them up?"
-
-EMAIL EXECUTION (NON-NEGOTIABLE):
-- When the admin says "send email to X about Y" -- you MUST include 
-  [ACTION:send_email:recipient@email.com:subject:body] in your response.
-- NEVER say "I'm sending it" or "done" without an actual ACTION tag.
-- If you draft an email for review, say "here's the draft -- want me 
-  to send it?" Do NOT include the send ACTION yet.
-- When the admin confirms "send it" or "yes", include the ACTION tag 
-  immediately. No narration without action.
-- The ONLY way an email gets sent is through an [ACTION:...] tag. 
-  Words alone do nothing.
+"You said you'd send an email but didn't include an [ACTION:send_email:to:subject:body] tag. 
+Include the exact ACTION tag now. Nothing else."
 ```
 
-### 3. Add Autonomous Company Prospecting Mode
+This is a 1-shot retry that forces the AI to emit the tag. If it still fails, tell the admin honestly.
 
-Add a new action `[ACTION:autonomous_prospect:industry:region:count]` that triggers the `ayn-sales-outreach` function in a batch loop:
+### 2. Auto-Detect Missing Prospect Actions
 
-- AYN calls `search_leads` to find companies matching industry/region
-- For each result, it calls `prospect_company` to research them
-- It drafts outreach emails for the top-quality leads
-- It sends a summary back to Telegram with all leads found and drafts pending approval
+Same pattern: if the user says "go find companies" or "work on outreach" and the AI responds with text but no `[ACTION:autonomous_prospect:...]`, force a retry.
 
-In `executeAction`, add:
+### 3. Slim Down the Prompt
+
+The current prompt has redundant and overlapping sections. Consolidate the critical rules into a compact block at the very top (where AI models pay most attention) and remove duplicate instructions. This alone will improve compliance significantly.
+
+## File to Change
+
+`supabase/functions/ayn-telegram-webhook/index.ts`
+
+### Change A: Add action enforcement after AI response (lines ~401-423)
+
+After getting the AI reply, before executing actions, add a check:
 
 ```typescript
-case 'autonomous_prospect': {
-  // Parse params: "industry:region:count"
-  const [industry, region, countStr] = params.split(':');
-  const count = Math.min(parseInt(countStr) || 5, 10); // Max 10
+// --- ACTION ENFORCEMENT ---
+// If AI said it would send/email but forgot the ACTION tag, force a retry
+const replyLower = reply.toLowerCase();
+const mentionsSending = /\b(sending|sent|firing|emailing|i('ll| will) (send|email|fire))\b/.test(replyLower);
+const hasEmailAction = /\[ACTION:send_email:/.test(reply) || /\[ACTION:send_outreach:/.test(reply);
+const userWantsEmail = /\b(send|email|fire off|shoot)\b.*\b(email|message|outreach)\b/i.test(userText);
+
+if ((mentionsSending || userWantsEmail) && !hasEmailAction && !replyLower.includes('draft') && !replyLower.includes('want me to')) {
+  // AI forgot the action tag -- retry with a focused prompt
+  const retryMessages = [
+    ...messages,
+    { role: 'assistant', content: reply },
+    { role: 'user', content: 'You said you would send an email but you didn\'t include the ACTION tag. Include ONLY the [ACTION:send_email:to:subject:body] tag now. Extract the recipient, subject, and body from your previous message.' }
+  ];
   
-  // Step 1: Search for leads
-  const searchRes = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+  const retryRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mode: 'search_leads', search_query: `${industry} ${region}` }),
+    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'google/gemini-3-flash-preview', messages: retryMessages }),
   });
-  const searchData = await searchRes.json();
-  const leads = searchData.leads?.slice(0, count) || [];
   
-  // Step 2: Prospect each lead
-  const results = [];
-  for (const lead of leads) {
-    const prospectRes = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'prospect', url: lead.url || lead.website }),
-    });
-    const prospectData = await prospectRes.json();
-    if (prospectData.success) {
-      results.push({
-        company: prospectData.analysis?.company_name || lead.url,
-        quality: prospectData.analysis?.website_quality,
-        lead_id: prospectData.lead_id,
-      });
-      // Draft email for high-quality leads (quality >= 6)
-      if (prospectData.analysis?.website_quality >= 6) {
-        await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mode: 'draft_email', lead_id: prospectData.lead_id }),
-        });
-      }
-      await new Promise(r => setTimeout(r, 2000)); // Rate limit
+  if (retryRes.ok) {
+    const retryData = await retryRes.json();
+    const retryReply = retryData.choices?.[0]?.message?.content || '';
+    // Extract any ACTION tags from retry and append to original reply
+    const retryActions = retryReply.match(/\[ACTION:[^\]]+\]/g);
+    if (retryActions) {
+      reply = reply + '\n' + retryActions.join('\n');
     }
   }
-  
-  return `Prospected ${results.length} companies:\n${results.map(r => 
-    `- ${r.company} (quality: ${r.quality}/10, ID: ${r.lead_id?.slice(0,8)})`
-  ).join('\n')}\n\nDrafts ready for high-quality leads. Check pipeline for details.`;
+}
+
+// Same pattern for prospect commands
+const userWantsProspect = /\b(find|go find|work on|prospect|search for)\b.*\b(companies|leads|businesses|clients|outreach)\b/i.test(userText);
+const hasProspectAction = /\[ACTION:(autonomous_prospect|search_leads|prospect_company):/.test(reply);
+
+if (userWantsProspect && !hasProspectAction) {
+  // Force autonomous_prospect with defaults extracted from message
+  const industryMatch = userText.match(/\b(?:in|for)\s+(\w+(?:\s+\w+)?)\b/i);
+  const industry = industryMatch?.[1] || 'technology';
+  reply += `\n[ACTION:autonomous_prospect:${industry}:global:5]`;
 }
 ```
 
-### 4. Add the action to AYN's toolkit list
+### Change B: Consolidate and slim down the prompt
 
-Add to the AVAILABLE AI ACTIONS section:
-```
-- [ACTION:autonomous_prospect:industry:region:count] -- Batch-prospect companies by industry/region (max 10)
-```
+Move the 3 most critical rules to the **very top** of AYN_PERSONALITY (before identity/personality):
 
-And update SALES & OUTREACH instructions:
 ```
-- When the admin says "go find companies" or "work on [industry]", use 
-  [ACTION:autonomous_prospect:industry:region:count] to batch-prospect.
-- Report back with all leads found and their quality scores.
-- High-quality leads (6+/10) get drafts auto-generated for approval.
+EXECUTION RULES (TOP PRIORITY -- OVERRIDE EVERYTHING ELSE):
+1. EMAIL: If you mention sending an email, you MUST include [ACTION:send_email:to:subject:body]. No tag = no email sent.
+2. DATA: Only cite user activity from "recently_active_users" in your context. No guessing.
+3. ACTIONS: When asked to do something, DO IT with an ACTION tag. Don't describe doing it.
 ```
 
-## Files to Change
+Remove the duplicated email/data rules from later sections (lines 214-226) since they're now at the top AND enforced by code.
 
-| File | Change |
-|------|--------|
-| `supabase/functions/ayn-telegram-webhook/index.ts` | Add user activity query to `gatherSystemContext`, add `autonomous_prospect` to `executeAction`, update `AYN_PERSONALITY` with data integrity + email execution rules, add action to toolkit list |
+### Change C: Add prospect auto-detection for confirmation flow
 
+When the user confirms "yes" or "send it" and the AI still doesn't include the action, the existing confirmation handler (lines 316-362) already handles this -- but only for leads with `pending_action`. Extend it to also catch direct email commands where the AI included a draft in its text.
+
+## Summary
+
+| Change | What it does |
+|--------|-------------|
+| Action enforcement layer | Code catches when AI says "sending" without ACTION tag, forces a retry |
+| Prospect auto-detection | Code catches "find companies" without ACTION tag, injects it automatically |
+| Prompt consolidation | Moves critical rules to top, removes duplicates, shrinks prompt size |
+
+This makes AYN reliable through **code**, not through hoping the AI reads the prompt correctly.
