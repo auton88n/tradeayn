@@ -98,6 +98,9 @@ SALES & OUTREACH:
 - You track everything in the sales pipeline
 - When the admin says "prospect [url]" or "check out [company]", research them immediately
 - When drafting emails, write like a real person — not a corporate template. Match the vibe to the prospect.
+- When the admin says "go find companies" or "work on [industry]", use [ACTION:autonomous_prospect:industry:region:count] to batch-prospect.
+- Report back with all leads found and their quality scores.
+- High-quality leads (6+/10) get drafts auto-generated for approval.
 
 AUTONOMOUS INITIATIVE:
 - You don't wait to be told everything. You think ahead and act.
@@ -179,6 +182,7 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:add_competitor:handle] — Add a Twitter account to competitor monitoring
 - [ACTION:remove_competitor:handle] — Stop monitoring a competitor
 - [ACTION:competitor_report:all] — Show competitor analysis and top tweets (READ-ONLY)
+- [ACTION:autonomous_prospect:industry:region:count] — Batch-prospect companies by industry/region (max 10)
 
 HONESTY ABOUT CAPABILITIES (NON-NEGOTIABLE):
 - If you don't have an ACTION tag that can do something, SAY SO. Never narrate fake steps.
@@ -204,7 +208,21 @@ SELF-VERIFICATION (CRITICAL — ALWAYS DO THIS):
 - If asked about an action and there's no matching entry in your activity log — say so: "I don't see that in my action log. Let me check..."
 - Never say "I sent it" or "I did it" based purely on what you said in a previous message. Cross-reference with the real logs.
 - If there's a mismatch between what you said and what the logs show, the LOGS are the truth. Own the mistake.
-- Your context includes: recent_actions (from ayn_activity_log) and recent_email_deliveries (from email_logs with actual send status).`;
+- Your context includes: recent_actions (from ayn_activity_log), recent_email_deliveries (from email_logs with actual send status), and recently_active_users (from profiles with real names and login times).
+
+DATA INTEGRITY (NON-NEGOTIABLE):
+- You can ONLY mention a specific user's activity if their name appears in "recently_active_users" in your system context.
+- Old conversation memory is NOT current data. Never cite it as fact about current user activity.
+- If asked about a user and they're NOT in recently_active_users, say "I don't have recent activity data for them. Want me to look them up?"
+- NEVER say a specific user "was active today" or "had errors" unless you see concrete evidence in your current system context.
+- When reporting user activity, cite the data: "According to system context, [user] was last active at [time]."
+
+EMAIL EXECUTION (NON-NEGOTIABLE):
+- When the admin says "send email to X about Y", you MUST include [ACTION:send_email:recipient@email.com:subject:body] in your response. No exceptions.
+- NEVER say "I'm sending it", "firing it off", or "done" without an actual [ACTION:send_email:...] or [ACTION:send_outreach:...] tag in the SAME response.
+- If you draft an email for review, say "here's the draft -- want me to send it?" Do NOT include the send ACTION tag yet.
+- When the admin confirms "send it" or "yes", include the ACTION tag IMMEDIATELY. No narration without action.
+- The ONLY way an email gets sent is through an [ACTION:...] tag. Words alone do nothing. If there's no ACTION tag, the email was NOT sent.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -954,7 +972,7 @@ async function gatherSystemContext(supabase: any) {
     supabase.from('service_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('status', 'new'),
     supabase.from('error_logs').select('error_message, created_at').order('created_at', { ascending: false }).limit(3),
-    supabase.from('messages').select('content, sender, mode_used, created_at').order('created_at', { ascending: false }).limit(5),
+    supabase.from('messages').select('content, sender, mode_used, created_at, user_id').order('created_at', { ascending: false }).limit(5),
     supabase.from('chat_sessions').select('*', { count: 'exact', head: true }),
     supabase.from('message_ratings').select('rating, created_at').order('created_at', { ascending: false }).limit(10),
     supabase.from('beta_feedback').select('overall_rating, improvement_suggestions, submitted_at').order('submitted_at', { ascending: false }).limit(3),
@@ -964,6 +982,29 @@ async function gatherSystemContext(supabase: any) {
     supabase.from('ayn_activity_log').select('action_type, summary, created_at, details').order('created_at', { ascending: false }).limit(10),
     supabase.from('email_logs').select('email_type, recipient_email, status, error_message, sent_at').order('sent_at', { ascending: false }).limit(10),
   ]);
+
+  // Fetch recently active users with real names
+  const { data: recentlyActiveUsers } = await supabase
+    .from('profiles')
+    .select('contact_person, last_login, user_id')
+    .gte('last_login', now24h)
+    .order('last_login', { ascending: false })
+    .limit(10);
+
+  // Match recent messages to user names
+  const userIds = [...new Set(recentMessages?.map((m: any) => m.user_id).filter(Boolean) || [])];
+  let userNameMap: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, contact_person')
+      .in('user_id', userIds);
+    if (profiles) {
+      for (const p of profiles) {
+        if (p.contact_person) userNameMap[p.user_id] = p.contact_person;
+      }
+    }
+  }
 
   const positiveRatings = recentRatings?.filter((r: any) => r.rating === 'positive').length || 0;
   const totalRatings = recentRatings?.length || 0;
@@ -983,6 +1024,11 @@ async function gatherSystemContext(supabase: any) {
       preview: m.content?.slice(0, 60),
       sender: m.sender,
       mode: m.mode_used,
+      user_name: userNameMap[m.user_id] || null,
+    })) || [],
+    recently_active_users: recentlyActiveUsers?.map((u: any) => ({
+      name: u.contact_person,
+      last_login: u.last_login,
     })) || [],
     active_sessions: activeSessions || 0,
     feedback_ratio: totalRatings > 0 ? `${positiveRatings}/${totalRatings} positive` : 'no recent feedback',
@@ -1387,6 +1433,75 @@ async function executeAction(
           }
         }
         return msg;
+      }
+      // ─── Autonomous prospecting ───
+      case 'autonomous_prospect': {
+        try {
+          // Parse params: "industry:region:count"
+          const parts = params.split(':');
+          const industry = parts[0] || 'technology';
+          const region = parts[1] || 'global';
+          const count = Math.min(parseInt(parts[2]) || 5, 10);
+
+          // Step 1: Search for leads
+          const searchRes = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'search_leads', search_query: `${industry} ${region}` }),
+          });
+          const searchData = await searchRes.json();
+          const leads = searchData.prospected?.slice(0, count) || searchData.leads?.slice(0, count) || [];
+
+          if (!leads.length) return `No leads found for "${industry} ${region}". Try different keywords.`;
+
+          // Step 2: Prospect each lead
+          const results: Array<{ company: string; quality: number; lead_id: string }> = [];
+          for (const lead of leads) {
+            const url = lead.url || lead.website || lead.analysis?.company_url;
+            if (!url) continue;
+
+            try {
+              const prospectRes = await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: 'prospect', url }),
+              });
+              const prospectData = await prospectRes.json();
+              if (prospectData.success) {
+                results.push({
+                  company: prospectData.analysis?.company_name || url,
+                  quality: prospectData.analysis?.website_quality || 0,
+                  lead_id: prospectData.lead_id || '',
+                });
+                // Auto-draft for high-quality leads
+                if (prospectData.analysis?.website_quality >= 6 && prospectData.lead_id) {
+                  await fetch(`${supabaseUrl}/functions/v1/ayn-sales-outreach`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: 'draft_email', lead_id: prospectData.lead_id }),
+                  });
+                }
+                await new Promise(r => setTimeout(r, 2000)); // Rate limit
+              }
+            } catch (e) {
+              console.error(`Prospect failed for ${url}:`, e);
+            }
+          }
+
+          if (!results.length) return `Searched for "${industry} ${region}" but couldn't prospect any leads. Try different keywords.`;
+
+          await logAynActivity(supabase, 'autonomous_prospect', `Batch prospected ${results.length} companies for ${industry} ${region}`, {
+            details: { industry, region, count: results.length, results },
+            triggered_by: 'admin_chat',
+          });
+
+          const highQuality = results.filter(r => r.quality >= 6);
+          return `🔍 Prospected ${results.length} companies (${industry} / ${region}):\n${results.map(r =>
+            `• ${r.company} — quality: ${r.quality}/10${r.quality >= 6 ? ' ✅ draft ready' : ''} (ID: ${r.lead_id?.slice(0, 8)})`
+          ).join('\n')}${highQuality.length > 0 ? `\n\n${highQuality.length} high-quality lead(s) have drafts ready. Check pipeline for details.` : '\n\nNo high-quality leads found this round.'}`;
+        } catch (e) {
+          return `Autonomous prospecting failed: ${e instanceof Error ? e.message : 'error'}`;
+        }
       }
       default:
         return `Unknown action: ${type}`;
