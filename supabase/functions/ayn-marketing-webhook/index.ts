@@ -112,6 +112,7 @@ serve(async (req) => {
   try {
     const TELEGRAM_MARKETING_BOT_TOKEN = Deno.env.get('TELEGRAM_MARKETING_BOT_TOKEN');
     const TELEGRAM_MARKETING_CHAT_ID = Deno.env.get('TELEGRAM_MARKETING_CHAT_ID');
+    const TELEGRAM_MARKETING_CHAT_ID_2 = Deno.env.get('TELEGRAM_MARKETING_CHAT_ID_2');
 
     if (!TELEGRAM_MARKETING_BOT_TOKEN || !TELEGRAM_MARKETING_CHAT_ID) {
       console.error('Marketing bot credentials not configured');
@@ -123,10 +124,15 @@ serve(async (req) => {
 
     if (!message?.chat?.id) return new Response('OK', { status: 200 });
 
-    if (String(message.chat.id) !== TELEGRAM_MARKETING_CHAT_ID) {
+    const allowedChatIds = [TELEGRAM_MARKETING_CHAT_ID, TELEGRAM_MARKETING_CHAT_ID_2].filter(Boolean);
+    const senderChatId = String(message.chat.id);
+
+    if (!allowedChatIds.includes(senderChatId)) {
       console.warn('Unauthorized marketing chat_id:', message.chat.id);
       return new Response('OK', { status: 200 });
     }
+
+    const senderName = message.from?.first_name || message.from?.username || senderChatId;
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -134,25 +140,25 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
-      await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "brain's not configured yet.");
+      await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, senderChatId, "brain's not configured yet.");
       return new Response('OK', { status: 200 });
     }
 
     // Handle photo messages
     if (message.photo && message.photo.length > 0) {
       const reply = await handleCreatorPhoto(message, supabase, TELEGRAM_MARKETING_BOT_TOKEN, LOVABLE_API_KEY);
-      if (reply) await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, reply);
+      if (reply) await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, senderChatId, reply);
       return new Response('OK', { status: 200 });
     }
 
     // Handle voice/audio messages
     if (message.voice || message.audio) {
-      await handleCreatorVoice(message, supabase, TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, LOVABLE_API_KEY);
+      await handleCreatorVoice(message, supabase, TELEGRAM_MARKETING_BOT_TOKEN, senderChatId, LOVABLE_API_KEY);
       return new Response('OK', { status: 200 });
     }
 
     if (!message.text) {
-      await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "send me text, photos, or voice messages — i'll work with those.");
+      await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, senderChatId, "send me text, photos, or voice messages — i'll work with those.");
       return new Response('OK', { status: 200 });
     }
 
@@ -173,7 +179,7 @@ serve(async (req) => {
       if (pending && typeof pending === 'object' && pending.type === 'awaiting_confirmation') {
         const result = await executeMarketingAction(pending.action, pending.params || '', supabase, supabaseUrl, supabaseKey);
         const confirmMsg = result || `done — ${pending.summary || 'executed'}`;
-        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, confirmMsg);
+        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, senderChatId, confirmMsg);
         await saveMarketingExchange(supabase, userText, confirmMsg);
         return new Response('OK', { status: 200 });
       }
@@ -235,15 +241,15 @@ serve(async (req) => {
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
-        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "rate limited — try again in a minute.");
+        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, senderChatId, "rate limited — try again in a minute.");
         return new Response('OK', { status: 200 });
       }
       if (aiResponse.status === 402) {
-        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "credits ran out.");
+        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, senderChatId, "credits ran out.");
         return new Response('OK', { status: 200 });
       }
       console.error('AI error:', aiResponse.status, await aiResponse.text());
-      await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "brain glitch. try again.");
+      await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, senderChatId, "brain glitch. try again.");
       return new Response('OK', { status: 200 });
     }
 
@@ -271,10 +277,10 @@ serve(async (req) => {
       
       // Send conversational text first if any
       if (textBefore) {
-        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, textBefore);
+        await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, senderChatId, textBefore);
       }
       
-      const imageResult = await handleImageGeneration(imagePrompt, supabase, LOVABLE_API_KEY, TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID);
+      const imageResult = await handleImageGeneration(imagePrompt, supabase, LOVABLE_API_KEY, TELEGRAM_MARKETING_BOT_TOKEN, senderChatId);
       await saveMarketingExchange(supabase, userText, (textBefore ? textBefore + '\n\n' : '') + imageResult.message, imageResult.image_url);
       return new Response('OK', { status: 200 });
     }
@@ -314,14 +320,14 @@ serve(async (req) => {
       pendingAction = { type: 'awaiting_confirmation', summary: 'Pending action from last message' };
     }
 
-    await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, cleanReply);
+    await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, senderChatId, cleanReply);
 
     // Save conversation
-    const context: any = { source: 'marketing_bot' };
+    const context: any = { source: 'marketing_bot', sender_chat_id: senderChatId, sender_name: senderName };
     if (pendingAction) context.pending_action = pendingAction;
 
     await supabase.from('ayn_mind').insert([
-      { type: 'marketing_chat', content: userText.slice(0, 4000), context: { source: 'marketing_bot' }, shared_with_admin: true },
+      { type: 'marketing_chat', content: userText.slice(0, 4000), context: { source: 'marketing_bot', sender_chat_id: senderChatId, sender_name: senderName }, shared_with_admin: true },
       { type: 'marketing_ayn', content: cleanReply.slice(0, 4000), context, shared_with_admin: true },
     ]);
 
