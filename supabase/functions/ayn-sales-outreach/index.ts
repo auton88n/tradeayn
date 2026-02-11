@@ -329,7 +329,8 @@ async function handleSendEmail(supabase: any, lead_id: string, email_draft: any)
 
   let sent = false;
   let emailResult: any = {};
-  try {
+
+  const attemptSmtpSend = async () => {
     const client = new SMTPClient({
       connection: {
         hostname: SMTP_HOST,
@@ -349,11 +350,31 @@ async function handleSendEmail(supabase: any, lead_id: string, email_draft: any)
     });
 
     await client.close();
+  };
+
+  try {
+    await attemptSmtpSend();
     sent = true;
     emailResult = { status: 'sent', method: 'smtp' };
   } catch (smtpErr) {
-    console.error('SMTP send failed:', smtpErr);
-    emailResult = { status: 'failed', error: smtpErr instanceof Error ? smtpErr.message : 'SMTP error' };
+    const errMsg = smtpErr instanceof Error ? smtpErr.message : String(smtpErr);
+    const isRateLimit = /rate.?limit|429|too many request/i.test(errMsg);
+
+    if (isRateLimit) {
+      console.log('Rate limited, retrying after 2s delay...');
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        await attemptSmtpSend();
+        sent = true;
+        emailResult = { status: 'sent', method: 'smtp', retried: true };
+      } catch (retryErr) {
+        console.error('SMTP retry also failed:', retryErr);
+        emailResult = { status: 'failed', error: retryErr instanceof Error ? retryErr.message : 'SMTP retry error', retried: true };
+      }
+    } else {
+      console.error('SMTP send failed:', smtpErr);
+      emailResult = { status: 'failed', error: errMsg };
+    }
   }
 
   const nextFollowUp = new Date();

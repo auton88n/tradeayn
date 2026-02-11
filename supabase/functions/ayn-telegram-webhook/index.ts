@@ -353,6 +353,11 @@ serve(async (req) => {
       }
       const result = await executeAction(actionType, actionParams || '', supabase, supabaseUrl, supabaseKey);
       if (result) executedActions.push(result);
+
+      // Delay between email-sending actions to avoid SMTP rate limits (2/sec on Resend)
+      if (['send_outreach', 'send_email', 'follow_up'].includes(actionType)) {
+        await new Promise(r => setTimeout(r, 1500));
+      }
     }
 
     let cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
