@@ -1,92 +1,93 @@
 
 
-# Stop AYN From Faking Actions It Can't Do
+# Corrected: AYN Marketing Bot -- Brand and Design Rules
 
-## The Problem
+## What Was Wrong in the Previous Plan
 
-AYN just "performed" a 6-step troubleshooting process for a user named "mouad" -- checking flags, setting unlimited access, finding 403 errors -- but none of it actually happened. It was pure narration. The final line even admitted it: "No access grant found for user starting with mouad_user_id".
+1. **Brand colors wrong**: Said "Primary Blue #0EA5E9" as AYN's identity color. **Correction**: AYN's brand is **black and white**. The blue is just an accent, not the identity.
+2. **Image text too long**: Said "5-10 words max on visuals". **Correction**: **3-4 words MAX** on any generated image. Ultra-short, punchy, impossible to miss.
+3. **Icon wrong**: Said "AYN eye icon watermark". **Correction**: AYN uses whatever logo/icon the admin provides via Telegram (brain icon, custom logo, etc.) -- not a hardcoded eye. The bot should accept a logo image from the admin and use it.
+4. **"Color theory, typography hierarchy, visual weight" and "Competitive positioning"**: These were listed as brand elements. **Correction**: These are AYN's **skills/knowledge**, not brand attributes. AYN knows these disciplines and applies them -- they're not part of the brand kit itself.
 
-AYN hallucinated the entire process because:
-1. It has no way to look up users by name or email -- only by UUID prefix
-2. It can't read or modify `user_subscriptions` (blocked by its own rules)
-3. It doesn't have a "find user" action, so it faked a lookup narrative
-4. Nothing in the prompt tells it "if you can't do it, say so"
-
-## What Changes
-
-### 1. Add a "lookup user by email" action
-
-A new action `[ACTION:find_user:email_or_name]` that searches `profiles` by `contact_person` or looks up `auth.users` by email. This gives AYN the ability to actually find a user before trying to act on them.
-
-**In `commands.ts`**: Add `cmdFindUser` function that:
-- Accepts an email or partial name
-- Searches `profiles.contact_person` (ilike) and auth users by email
-- Returns the user_id, name, email, subscription tier, access grant status
-- This gives AYN real data to work with instead of guessing
-
-**In `index.ts`**: Wire up the new action in `executeAction` and add it to the prompt's action list.
-
-### 2. Add anti-hallucination rules to the prompt
-
-Add a new section to `AYN_PERSONALITY`:
+## Corrected Brand DNA (Baked Into the Bot)
 
 ```text
-HONESTY ABOUT CAPABILITIES (NON-NEGOTIABLE):
-- If you don't have an ACTION tag that can do something, SAY SO. Never narrate fake steps.
-- NEVER pretend to "check a database", "look up a user", or "toggle a flag" unless you're using a real [ACTION:...] tag.
-- If someone asks you to fix a user's account and you don't have their user_id, say "I need their email or user ID to look them up" and use [ACTION:find_user:email].
-- If you can't do something, say "I can't do that from here -- you'll need to do it from the admin panel."
-- ZERO fake narration. No "Let me check... Found him... Setting his flag..." unless each step uses a real ACTION.
+AYN BRAND IDENTITY:
+- Colors: BLACK (#000000) and WHITE (#FFFFFF). That's it. Clean, bold, monochrome.
+- Blue (#0EA5E9) is an ACCENT only -- used sparingly for highlights, not as brand identity
+- Typography: Inter (primary), JetBrains Mono (technical), Playfair Display (accent headlines)
+- Tagline: "i see, i understand, i help"
+- Personality traits: Perceptive, Friendly, Intelligent
+- Logo: provided by admin via Telegram (brain, custom icon, etc.) -- stored and reused
+- Visual style: MINIMAL. Black/white dominance, bold typography, max negative space
+- Identity: "AYN, built by the AYN Team" -- NEVER mention Google, Lovable, Gemini, or any provider
 ```
 
-### 3. Add subscription-related read access for admins
+## Corrected Image Generation Rules
 
-Currently AYN is blocked from even reading subscription data, but the admin legitimately needs AYN to check a user's tier. Add a read-only action:
+```text
+IMAGE RULES (NON-NEGOTIABLE):
+- MAX 3-4 WORDS on any image. Not 5. Not 10. THREE TO FOUR.
+- Examples of good overlay text: "AI builds faster" / "Ship or die" / "Zero to deploy"
+- Black and white dominant. Blue accent ONLY for one highlighted word or element.
+- The text IS the design. Huge, bold, centered.
+- Logo/watermark: use whatever the admin has provided, bottom-right corner, subtle
+- Every image should look like a premium black-and-white print ad with one pop of blue
+```
 
-`[ACTION:check_user_status:user_id]` -- reads the user's subscription tier, access grant, and recent activity in one shot. Read-only, no modifications.
+## Corrected Bot Knowledge (Skills, Not Brand)
 
-**In `commands.ts`**: Add `cmdCheckUserStatus` that reads from `user_subscriptions`, `access_grants`, and `user_ai_limits` for a given user_id and returns a formatted status report.
+AYN knows and applies these as **expertise**, not brand elements:
+- **Color theory**: contrast, complementary colors, visual hierarchy
+- **Typography hierarchy**: font weight, size ratios, kerning for impact
+- **Visual weight**: where the eye goes first, focal points, balance
+- **Competitive positioning**: analyzing competitors, finding gaps, differentiation angles
+- **Human psychology**: Cialdini, AIDA, PAS, loss aversion, FOMO, social proof
+- **X/Twitter strategy**: hooks (first 7 words), threads, engagement psychology, timing
 
-## Technical Details
+## Technical Changes
+
+### File: `supabase/functions/ayn-marketing-webhook/index.ts` (NEW)
+
+The system prompt will embed the corrected brand DNA above and the corrected image rules. Key differences from previous plan:
+
+1. **Brand section** uses black/white as primary, blue as accent only
+2. **Image generation prompts** enforce 3-4 word limit, black/white dominance
+3. **Logo handling**: bot accepts a logo image via `/setlogo` command, stores it in Supabase storage, and references it in all image generation prompts
+4. **Identity guard**: hard block on revealing AI providers
 
 ### File: `supabase/functions/ayn-telegram-webhook/commands.ts`
 
-**Add `cmdFindUser` function:**
-- Takes email or partial name string
-- Searches `profiles` table using `ilike` on `contact_person` column
-- Also searches auth users by email via `supabase.auth.admin.listUsers()`
-- Returns: user_id, name, company, account status, subscription tier, access grant status
-- If multiple matches, shows up to 5 with their IDs so admin can pick
-
-**Add `cmdCheckUserStatus` function:**
-- Takes user_id (or prefix)
-- Reads from `profiles`, `user_subscriptions`, `access_grants`, `user_ai_limits`
-- Returns a comprehensive status showing tier, limits, usage, grant status, last login
-- Read-only -- no modifications
+Add admin oversight commands (same as before):
+- `cmdMarketingReport` -- shows creator's drafts, quality scores
+- `cmdApprovePost` / `cmdRejectPost` -- approve/reject from admin bot
 
 ### File: `supabase/functions/ayn-telegram-webhook/index.ts`
 
-**Update `AYN_PERSONALITY` prompt:**
-- Add "HONESTY ABOUT CAPABILITIES" section (anti-hallucination rules)
-- Add `find_user` and `check_user_status` to the available actions list
-- Remove the blanket "NEVER read from user_subscriptions" rule (replace with "read-only access for admin user status checks")
+Wire the new admin actions and update prompt to include them.
 
-**Update `executeAction` switch:**
-- Add `find_user` case calling `cmdFindUser`
-- Add `check_user_status` case calling `cmdCheckUserStatus`
+### File: `supabase/functions/twitter-brand-scan/index.ts`
 
-**Update command imports:**
-- Import `cmdFindUser` and `cmdCheckUserStatus` from commands.ts
+Fix the base64 overflow bug (chunked approach).
 
-### Deployment
-- Redeploy `ayn-telegram-webhook`
+### File: `supabase/functions/twitter-creative-chat/index.ts`
+
+Update the image generation section to enforce 3-4 word max and black/white dominant design.
+
+### File: `supabase/functions/twitter-generate-image/index.ts`
+
+Update the image prompt builder to default to black/white with blue accent, and enforce the 3-4 word text limit.
+
+### Database Migration
+
+- Add `marketing_chat` and `marketing_ayn` to `ayn_mind_type_check` constraint
+- Add `created_by_name` column to `twitter_posts`
+
+### Secrets Needed
+
+- `TELEGRAM_MARKETING_BOT_TOKEN` -- new bot from @BotFather
+- `TELEGRAM_MARKETING_CHAT_ID` -- creator's Telegram chat ID
 
 ## Result
 
-When you say "check mouad's account", AYN will:
-1. Use `[ACTION:find_user:mouad]` to actually search by name
-2. Get back a real user_id and status
-3. If something needs fixing, use `[ACTION:set_unlimited:actual_uuid]` with the real ID
-4. If it can't fix something, honestly say "you'll need to do that from the admin panel"
-
-No more fake narration.
+AYN Marketing Bot with the **correct** brand identity (black/white, not blue), **correct** image rules (3-4 words max), and real social media expertise baked in as knowledge -- not confused with brand elements.
