@@ -176,6 +176,9 @@ AVAILABLE AI ACTIONS (use exact format in your responses when you want to execut
 - [ACTION:marketing_report:all] — Show marketing bot drafts, quality scores, and activity (READ-ONLY)
 - [ACTION:approve_post:post_id] — Approve a pending marketing post for publishing
 - [ACTION:reject_post:post_id:reason] — Reject a pending marketing post with feedback
+- [ACTION:add_competitor:handle] — Add a Twitter account to competitor monitoring
+- [ACTION:remove_competitor:handle] — Stop monitoring a competitor
+- [ACTION:competitor_report:all] — Show competitor analysis and top tweets (READ-ONLY)
 
 HONESTY ABOUT CAPABILITIES (NON-NEGOTIABLE):
 - If you don't have an ACTION tag that can do something, SAY SO. Never narrate fake steps.
@@ -1342,6 +1345,48 @@ async function executeAction(
           await sendTelegramMessage(MKT_TOKEN2, MKT_CHAT2, `❌ post rejected: "${data[0].content?.slice(0, 80)}..."\nreason: ${reason}`);
         }
         return `Rejected post ${data[0].id.slice(0, 8)}: ${reason}`;
+      }
+      // ─── Competitor management actions ───
+      case 'add_competitor': {
+        const handle = params.replace('@', '').trim();
+        if (!handle) return 'need a twitter handle to add';
+        const { data: existing } = await supabase.from('marketing_competitors')
+          .select('id').eq('handle', handle).limit(1);
+        if (existing?.length) return `@${handle} is already being tracked`;
+        await supabase.from('marketing_competitors').insert({ handle, name: handle, is_active: true });
+        await logAynActivity(supabase, 'competitor_added', `Added @${handle} to competitor tracking`, {
+          target_type: 'competitor', triggered_by: 'admin_chat',
+        });
+        return `Added @${handle} to competitor tracking`;
+      }
+      case 'remove_competitor': {
+        const handle = params.replace('@', '').trim();
+        const { data: comp } = await supabase.from('marketing_competitors')
+          .select('id').eq('handle', handle).limit(1);
+        if (!comp?.length) return `@${handle} isn't being tracked`;
+        await supabase.from('marketing_competitors').update({ is_active: false }).eq('id', comp[0].id);
+        return `Stopped tracking @${handle}`;
+      }
+      case 'competitor_report': {
+        const { data: comps } = await supabase.from('marketing_competitors')
+          .select('handle, name, last_scraped_at, is_active').eq('is_active', true);
+        if (!comps?.length) return '👀 No competitors tracked yet. Use [ACTION:add_competitor:handle] to start.';
+        let msg = `👀 Tracked Competitors (${comps.length}):\n`;
+        for (const c of comps) {
+          const { data: topTweets } = await supabase.from('competitor_tweets')
+            .select('content, likes, retweets')
+            .eq('competitor_id', c.handle)
+            .order('likes', { ascending: false })
+            .limit(3);
+          const ago = c.last_scraped_at ? `${Math.round((Date.now() - new Date(c.last_scraped_at).getTime()) / 3600000)}h ago` : 'never';
+          msg += `\n@${c.handle} (scraped: ${ago})`;
+          if (topTweets?.length) {
+            for (const t of topTweets) {
+              msg += `\n  • "${t.content?.slice(0, 50)}..." (${t.likes}❤️)`;
+            }
+          }
+        }
+        return msg;
       }
       default:
         return `Unknown action: ${type}`;

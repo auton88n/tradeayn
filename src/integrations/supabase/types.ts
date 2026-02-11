@@ -636,6 +636,53 @@ export type Database = {
         }
         Relationships: []
       }
+      competitor_tweets: {
+        Row: {
+          competitor_id: string
+          content: string | null
+          id: string
+          impressions: number | null
+          likes: number | null
+          posted_at: string | null
+          replies: number | null
+          retweets: number | null
+          scraped_at: string
+          tweet_id: string | null
+        }
+        Insert: {
+          competitor_id: string
+          content?: string | null
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          posted_at?: string | null
+          replies?: number | null
+          retweets?: number | null
+          scraped_at?: string
+          tweet_id?: string | null
+        }
+        Update: {
+          competitor_id?: string
+          content?: string | null
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          posted_at?: string | null
+          replies?: number | null
+          retweets?: number | null
+          scraped_at?: string
+          tweet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_tweets_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_inputs: {
         Row: {
           ceiling_height: number | null
@@ -1738,6 +1785,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      marketing_competitors: {
+        Row: {
+          created_at: string
+          handle: string
+          id: string
+          is_active: boolean
+          last_scraped_at: string | null
+          name: string | null
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          handle: string
+          id?: string
+          is_active?: boolean
+          last_scraped_at?: string | null
+          name?: string | null
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          handle?: string
+          id?: string
+          is_active?: boolean
+          last_scraped_at?: string | null
+          name?: string | null
+          notes?: string | null
+        }
+        Relationships: []
       }
       material_prices: {
         Row: {
