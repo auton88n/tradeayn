@@ -197,8 +197,11 @@ const ResponseCardComponent = ({
     const newFeedback = feedback === type ? null : type;
     setFeedback(newFeedback);
     if (newFeedback) {
-      // Trigger eye emotion reaction
-      orchestrateEmotionChange(type === "up" ? "happy" : "sad");
+      // Play dedicated feedback sound, then transition eye emotion (skip its own sound)
+      const { getSoundGenerator } = await import("@/lib/soundGenerator");
+      const sound = getSoundGenerator();
+      await sound.playEmotion(type === "up" ? "feedback-positive" : "feedback-negative");
+      orchestrateEmotionChange(type === "up" ? "happy" : "sad", { skipSound: true });
       try {
         const {
           data: { user },

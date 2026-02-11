@@ -12,7 +12,9 @@ export type SoundType =
   // Conversational sounds
   | 'understanding' | 'empathy' | 'anticipation' | 'recognition' | 'comfort'
   // Typing context sounds
-  | 'listening' | 'attentive-blink' | 'thoughtful-blink' | 'processing';
+  | 'listening' | 'attentive-blink' | 'thoughtful-blink' | 'processing'
+  // Feedback sounds
+  | 'feedback-positive' | 'feedback-negative';
 
 interface SoundConfig {
   type: OscillatorType;
@@ -173,6 +175,24 @@ const EMOTION_SOUND_CONFIGS: Record<string, EmotionSoundConfig> = {
       { frequency: 262, delay: 0, duration: 0.12, gain: 0.4, type: 'sine' },     // C4
       { frequency: 294, delay: 0.1, duration: 0.12, gain: 0.45, type: 'sine' },  // D4
       { frequency: 330, delay: 0.2, duration: 0.15, gain: 0.5, type: 'sine' },   // E4
+    ]
+  },
+
+  // Feedback Positive - Bright ascending chime (E5 → A5)
+  'feedback-positive': {
+    masterGain: 0.3,
+    notes: [
+      { frequency: 659, delay: 0, duration: 0.12, gain: 0.5, type: 'sine' },     // E5
+      { frequency: 880, delay: 0.08, duration: 0.18, gain: 0.55, type: 'sine' }, // A5
+    ]
+  },
+
+  // Feedback Negative - Gentle descending tone (D4 → Bb3)
+  'feedback-negative': {
+    masterGain: 0.22,
+    notes: [
+      { frequency: 294, delay: 0, duration: 0.2, gain: 0.45, type: 'sine' },     // D4
+      { frequency: 233, delay: 0.1, duration: 0.3, gain: 0.35, type: 'sine' },   // Bb3
     ]
   },
 };
