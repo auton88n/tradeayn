@@ -145,8 +145,14 @@ serve(async (req) => {
       return new Response('OK', { status: 200 });
     }
 
+    // Handle voice/audio messages
+    if (message.voice || message.audio) {
+      await handleCreatorVoice(message, supabase, TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, LOVABLE_API_KEY);
+      return new Response('OK', { status: 200 });
+    }
+
     if (!message.text) {
-      await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "send me text or photos — i'll work with those.");
+      await sendTelegramMessage(TELEGRAM_MARKETING_BOT_TOKEN, TELEGRAM_MARKETING_CHAT_ID, "send me text, photos, or voice messages — i'll work with those.");
       return new Response('OK', { status: 200 });
     }
 
@@ -427,6 +433,110 @@ async function executeMarketingAction(
   } catch (e) {
     console.error(`Marketing action ${type} failed:`, e);
     return `action failed: ${e instanceof Error ? e.message : 'error'}`;
+  }
+}
+
+// ─── Handle creator voice messages ───
+async function handleCreatorVoice(
+  message: any, supabase: any, botToken: string, chatId: string, apiKey: string
+) {
+  try {
+    const voiceData = message.voice || message.audio;
+    
+    // Enforce 5-minute max duration
+    if (voiceData.duration && voiceData.duration > 300) {
+      await sendTelegramMessage(botToken, chatId, "that's too long — keep voice messages under 5 minutes.");
+      return;
+    }
+
+    // Download voice file from Telegram
+    const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${voiceData.file_id}`);
+    const fileInfo = await fileRes.json();
+    if (!fileInfo.ok) {
+      await sendTelegramMessage(botToken, chatId, "couldn't get that voice message.");
+      return;
+    }
+
+    const filePath = fileInfo.result.file_path;
+    const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+    const audioRes = await fetch(fileUrl);
+    const audioBuffer = await audioRes.arrayBuffer();
+    const base64Audio = arrayBufferToBase64(audioBuffer);
+
+    // Determine MIME type
+    let mimeType = 'audio/ogg';
+    if (filePath.endsWith('.mp3')) mimeType = 'audio/mp3';
+    else if (filePath.endsWith('.m4a')) mimeType = 'audio/m4a';
+    else if (filePath.endsWith('.wav')) mimeType = 'audio/wav';
+
+    const audioDataUrl = `data:${mimeType};base64,${base64Audio}`;
+
+    // Load conversation history for context
+    const conversationHistory = await getMarketingHistory(supabase);
+
+    const messages: Array<{ role: string; content: any }> = [
+      { role: 'system', content: MARKETING_PERSONA + '\n\nThe creator just sent a voice message. Transcribe what they said and respond naturally as their marketing teammate. If they ask you to create an image, start your response with [GENERATE_IMAGE] followed by the prompt.' },
+    ];
+    for (const turn of conversationHistory) {
+      messages.push(turn);
+    }
+    messages.push({
+      role: 'user',
+      content: [
+        { type: 'text', text: 'Voice message from the creator:' },
+        { type: 'image_url', image_url: { url: audioDataUrl } },
+      ],
+    });
+
+    const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'google/gemini-3-flash-preview', messages }),
+    });
+
+    if (!aiRes.ok) {
+      if (aiRes.status === 429) {
+        await sendTelegramMessage(botToken, chatId, "rate limited — try again in a minute.");
+        return;
+      }
+      if (aiRes.status === 402) {
+        await sendTelegramMessage(botToken, chatId, "credits ran out.");
+        return;
+      }
+      console.error('Voice AI error:', aiRes.status, await aiRes.text());
+      await sendTelegramMessage(botToken, chatId, "couldn't process that voice message.");
+      return;
+    }
+
+    const aiData = await aiRes.json();
+    let reply = aiData.choices?.[0]?.message?.content?.trim() || "couldn't understand that. try again?";
+
+    // Check for image generation trigger
+    if (reply.startsWith('[GENERATE_IMAGE]')) {
+      const imageResult = await handleImageGeneration(reply, supabase, apiKey, botToken, chatId);
+      await saveMarketingExchange(supabase, '[Voice message]', imageResult.message, imageResult.image_url);
+      pruneMarketingHistory(supabase, apiKey).catch(e => console.error('Prune error:', e));
+      return;
+    }
+
+    await sendTelegramMessage(botToken, chatId, reply);
+
+    // Save exchange
+    await supabase.from('ayn_mind').insert([
+      { type: 'marketing_chat', content: '[Voice message]', context: { source: 'marketing_bot', type: 'voice' }, shared_with_admin: true },
+      { type: 'marketing_ayn', content: reply.slice(0, 4000), context: { source: 'marketing_bot', type: 'voice_response' }, shared_with_admin: true },
+    ]);
+
+    await logAynActivity(supabase, 'marketing_chat', `Marketing voice: processed ${voiceData.duration || 0}s voice message`, {
+      target_type: 'marketing',
+      details: { type: 'voice', duration: voiceData.duration },
+      triggered_by: 'marketing_bot',
+    });
+
+    pruneMarketingHistory(supabase, apiKey).catch(e => console.error('Prune error:', e));
+  } catch (e) {
+    console.error('Marketing voice handler error:', e);
+    await sendTelegramMessage(botToken, chatId, `voice processing failed: ${e instanceof Error ? e.message : 'error'}`);
   }
 }
 
