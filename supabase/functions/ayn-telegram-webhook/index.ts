@@ -167,7 +167,16 @@ BLOCKED ACTIONS (never execute):
 - No auth/password changes
 - No deleting user messages/conversations (messages table) — read-only access for monitoring and improvement
 - No deleting AYN activity logs, security logs, or error logs — these are audit trails
-- No deleting engineering calculation data or tool usage history`;
+- No deleting engineering calculation data or tool usage history
+
+SELF-VERIFICATION (CRITICAL — ALWAYS DO THIS):
+- You have access to your ACTUAL action audit trail (ayn_activity_log) and email delivery logs (email_logs) in your system context.
+- When asked "did you do X?", "did you send that email?", "what happened with Y?" — ALWAYS check the audit trail data in your context FIRST. Don't rely on memory alone.
+- If your conversation memory says you sent an email but email_logs shows it failed — be honest: "I tried to send it but the delivery failed."
+- If asked about an action and there's no matching entry in your activity log — say so: "I don't see that in my action log. Let me check..."
+- Never say "I sent it" or "I did it" based purely on what you said in a previous message. Cross-reference with the real logs.
+- If there's a mismatch between what you said and what the logs show, the LOGS are the truth. Own the mistake.
+- Your context includes: recent_actions (from ayn_activity_log) and recent_email_deliveries (from email_logs with actual send status).`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -444,6 +453,9 @@ serve(async (req) => {
         triggered_by: 'admin_chat',
       });
     }
+
+    // Fire-and-forget: prune old messages if needed
+    pruneAndSummarize(supabase).catch(e => console.error('[AYN-MEMORY] Prune error:', e));
 
     return new Response('OK', { status: 200 });
   } catch (error) {
@@ -761,27 +773,122 @@ async function handleCommand(
   return null;
 }
 
-// ─── Conversation history ───
+// ─── Conversation history (with long-term memory summaries) ───
 async function getConversationHistory(supabase: any) {
+  // 1. Load long-term memory summaries first
+  const { data: summaries } = await supabase
+    .from('ayn_mind')
+    .select('content, created_at')
+    .eq('type', 'telegram_summary')
+    .order('created_at', { ascending: true });
+
+  // 2. Load recent 150 messages
   const { data: exchanges } = await supabase
     .from('ayn_mind')
     .select('type, content, context, created_at')
     .in('type', ['telegram_admin', 'telegram_ayn'])
     .order('created_at', { ascending: true })
-    .limit(80);
+    .limit(150);
 
-  if (!exchanges?.length) return [];
+  const history: { role: string; content: string }[] = [];
 
-  return exchanges.map((entry: any) => {
-    let content = entry.content;
-    const pending = entry.context?.pending_action;
-    if (pending && typeof pending === 'object' && pending.type === 'awaiting_confirmation') {
-      content += `\n[PENDING: Waiting for confirmation to ${pending.summary || pending.action || 'execute action'}${pending.lead_id ? ` (lead_id: ${pending.lead_id})` : ''}]`;
-    } else if (pending === 'awaiting_confirmation') {
-      content += `\n[Pending action: awaiting_confirmation]`;
+  // Prepend summaries as long-term context
+  if (summaries?.length) {
+    const summaryText = summaries.map((s: any) => s.content).join('\n\n');
+    history.push({
+      role: 'system',
+      content: `[LONG-TERM MEMORY — Summary of older conversations]\n${summaryText}`,
+    });
+  }
+
+  if (exchanges?.length) {
+    for (const entry of exchanges) {
+      let content = entry.content;
+      const pending = entry.context?.pending_action;
+      if (pending && typeof pending === 'object' && pending.type === 'awaiting_confirmation') {
+        content += `\n[PENDING: Waiting for confirmation to ${pending.summary || pending.action || 'execute action'}${pending.lead_id ? ` (lead_id: ${pending.lead_id})` : ''}]`;
+      } else if (pending === 'awaiting_confirmation') {
+        content += `\n[Pending action: awaiting_confirmation]`;
+      }
+      history.push({ role: entry.type === 'telegram_admin' ? 'user' : 'assistant', content });
     }
-    return { role: entry.type === 'telegram_admin' ? 'user' : 'assistant', content };
-  });
+  }
+
+  return history;
+}
+
+// ─── Prune old messages and summarize (fire-and-forget) ───
+async function pruneAndSummarize(supabase: any) {
+  try {
+    const { count } = await supabase
+      .from('ayn_mind')
+      .select('*', { count: 'exact', head: true })
+      .in('type', ['telegram_admin', 'telegram_ayn']);
+
+    if (!count || count <= 200) return;
+
+    console.log(`[AYN-MEMORY] ${count} telegram entries — pruning oldest 50...`);
+
+    // Fetch oldest 50
+    const { data: oldest } = await supabase
+      .from('ayn_mind')
+      .select('id, type, content, created_at')
+      .in('type', ['telegram_admin', 'telegram_ayn'])
+      .order('created_at', { ascending: true })
+      .limit(50);
+
+    if (!oldest?.length) return;
+
+    // Build conversation text for summarization
+    const convoText = oldest.map((e: any) => {
+      const role = e.type === 'telegram_admin' ? 'Admin' : 'AYN';
+      return `[${e.created_at}] ${role}: ${e.content}`;
+    }).join('\n');
+
+    // Call AI to summarize
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) return;
+
+    const summaryResponse = await fetch('https://api.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemini-2.0-flash',
+        messages: [
+          { role: 'system', content: 'Summarize this conversation into concise bullet points. Capture key decisions, actions taken, important facts learned, and any pending items. Keep it under 2000 characters. Use bullet points. Include dates where relevant.' },
+          { role: 'user', content: convoText },
+        ],
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!summaryResponse.ok) {
+      console.error('[AYN-MEMORY] Summary API failed:', summaryResponse.status);
+      return;
+    }
+
+    const summaryData = await summaryResponse.json();
+    const summaryText = summaryData.choices?.[0]?.message?.content;
+    if (!summaryText) return;
+
+    const dateRange = `${oldest[0].created_at.slice(0, 10)} to ${oldest[oldest.length - 1].created_at.slice(0, 10)}`;
+
+    // Insert summary
+    await supabase.from('ayn_mind').insert({
+      type: 'telegram_summary',
+      content: `[Summary: ${dateRange}]\n${summaryText}`.slice(0, 4000),
+      context: { source: 'auto_prune', entries_summarized: oldest.length, date_range: dateRange },
+      shared_with_admin: true,
+    });
+
+    // Delete the originals
+    const idsToDelete = oldest.map((e: any) => e.id);
+    await supabase.from('ayn_mind').delete().in('id', idsToDelete);
+
+    console.log(`[AYN-MEMORY] Pruned ${oldest.length} entries, saved summary for ${dateRange}`);
+  } catch (e) {
+    console.error('[AYN-MEMORY] Prune failed (non-critical):', e);
+  }
 }
 
 // ─── Expanded system context ───
@@ -806,6 +913,8 @@ async function gatherSystemContext(supabase: any) {
     { data: recentEmails },
     { data: recentSecurityLogs },
     { data: recentEngineering },
+    { data: recentActions },
+    { data: recentEmailDeliveries },
   ] = await Promise.all([
     supabase.from('error_logs').select('*', { count: 'exact', head: true }).gte('created_at', now24h),
     supabase.from('llm_failures').select('*', { count: 'exact', head: true }).gte('created_at', now24h),
@@ -824,6 +933,8 @@ async function gatherSystemContext(supabase: any) {
     supabase.from('email_logs').select('email_type, recipient_email, status, sent_at').order('sent_at', { ascending: false }).limit(5),
     supabase.from('security_logs').select('action, severity, created_at').order('created_at', { ascending: false }).limit(3),
     supabase.from('engineering_activity').select('activity_type, created_at').order('created_at', { ascending: false }).limit(5),
+    supabase.from('ayn_activity_log').select('action_type, summary, created_at, details').order('created_at', { ascending: false }).limit(10),
+    supabase.from('email_logs').select('email_type, recipient_email, status, error_message, sent_at').order('sent_at', { ascending: false }).limit(10),
   ]);
 
   const positiveRatings = recentRatings?.filter((r: any) => r.rating === 'positive').length || 0;
@@ -860,6 +971,18 @@ async function gatherSystemContext(supabase: any) {
       severity: s.severity,
     })) || [],
     recent_engineering: recentEngineering?.length || 0,
+    recent_actions: recentActions?.map((a: any) => ({
+      action: a.action_type,
+      summary: a.summary,
+      when: a.created_at,
+    })) || [],
+    recent_email_deliveries: recentEmailDeliveries?.map((e: any) => ({
+      type: e.email_type,
+      to: e.recipient_email,
+      status: e.status,
+      error: e.error_message,
+      when: e.sent_at,
+    })) || [],
   };
 }
 
