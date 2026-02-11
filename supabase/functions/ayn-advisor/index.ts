@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
+import { getEmployeeSystemPrompt, formatEmployeeReport } from "../_shared/aynBrand.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,7 +30,7 @@ serve(async (req) => {
       .limit(20);
 
     if (!reports?.length || reports.length < 3) {
-      return new Response(JSON.stringify({ success: true, message: 'Not enough reports to synthesize yet' }), {
+      return new Response(JSON.stringify({ success: true, message: 'Not enough reports to synthesize yet. I need at least 3 employee reports to give you a meaningful briefing.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -56,7 +57,18 @@ serve(async (req) => {
       pipelineSummary[p.status] = (pipelineSummary[p.status] || 0) + 1;
     }
 
-    // Synthesize with AI
+    // Synthesize with AI and personality
+    const systemPrompt = getEmployeeSystemPrompt('advisor', `Synthesize reports from all AYN AI employees into a strategic briefing for the founder.
+
+Write exactly 5 numbered insights covering:
+1. 🎯 Biggest opportunity right now
+2. ⚠️ Biggest risk or threat
+3. ✅ What's working well
+4. 🔧 What needs attention
+5. 💡 One bold recommendation
+
+Be direct. Be specific. Reference actual data from the reports. No fluff — the founder's time is valuable.`);
+
     const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
@@ -64,16 +76,7 @@ serve(async (req) => {
         model: 'google/gemini-3-flash-preview',
         messages: [{
           role: 'system',
-          content: `You are AYN's Strategic Advisor. You synthesize reports from all AI employees into actionable strategic insights for the founder.
-
-Write a brief executive briefing (max 5 bullet points) covering:
-1. Biggest opportunity right now
-2. Biggest risk/threat
-3. What's working well
-4. What needs attention
-5. One bold recommendation
-
-Be direct and specific. No fluff. Reference actual data.`,
+          content: systemPrompt,
         }, {
           role: 'user',
           content: `Employee Reports:\n${reports.map(r => `• [${r.context?.from_employee || 'unknown'}] ${r.content}`).join('\n\n')}
@@ -93,10 +96,10 @@ Context:
     const aiData = await aiRes.json();
     const insight = aiData.choices?.[0]?.message?.content?.trim() || 'Could not generate insights';
 
-    // Save strategic insight
+    // Save strategic insight with personality
     await supabase.from('ayn_mind').insert({
       type: 'strategic_insight',
-      content: insight,
+      content: formatEmployeeReport('advisor', insight),
       context: {
         from_employee: 'advisor',
         reports_analyzed: reports.length,
@@ -106,10 +109,6 @@ Context:
     });
 
     // Mark reports as shared
-    const reportIds = reports.map(r => {
-      // We don't have IDs from the select, so mark by type
-      return true;
-    });
     await supabase.from('ayn_mind')
       .update({ shared_with_admin: true })
       .eq('type', 'employee_report')
@@ -117,10 +116,10 @@ Context:
 
     // Send directly to founder via Telegram
     if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, `📊 Advisor Briefing\n\n${insight}`);
+      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatEmployeeReport('advisor', `${reports.length} reports analyzed.\n\n${insight}`));
     }
 
-    await logAynActivity(supabase, 'advisor_briefing', `Strategic briefing: ${reports.length} reports synthesized`, {
+    await logAynActivity(supabase, 'advisor_briefing', `Strategic briefing: ${reports.length} reports → 5 insights`, {
       details: { reports_count: reports.length },
       triggered_by: 'advisor',
     });

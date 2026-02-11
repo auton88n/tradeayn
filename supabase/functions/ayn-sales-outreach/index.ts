@@ -2,20 +2,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { logAynActivity } from "../_shared/aynLogger.ts";
+import { AYN_BRAND, getEmployeeSystemPrompt, formatEmployeeReport } from "../_shared/aynBrand.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SERVICES = [
-  { name: 'AI Employees', desc: 'Custom AI agents that handle customer support, scheduling, data entry, and internal operations 24/7' },
-  { name: 'Smart Ticketing Systems', desc: 'AI-powered support ticket management with auto-routing, priority detection, and smart responses' },
-  { name: 'Business Automation', desc: 'End-to-end workflow automation — from lead capture to invoicing to reporting' },
-  { name: 'Company & Influencer Websites', desc: 'High-performance, beautifully designed websites with AI-powered features built in' },
-  { name: 'AI-Powered Customer Support', desc: 'Conversational AI chatbots trained on your business, handling inquiries in multiple languages' },
-  { name: 'Engineering Consultation Tools', desc: 'Specialized calculators, compliance checkers, and project management tools for engineering firms' },
-];
+const SERVICES = AYN_BRAND.services;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -179,7 +173,7 @@ Respond in JSON format:
 
   await supabase.from('ayn_mind').insert({
     type: 'sales_lead',
-    content: `Found potential lead: ${analysis.company_name} (${analysis.industry}). Pain points: ${analysis.pain_points?.join(', ')}. Recommended: ${analysis.recommended_services?.join(', ')}`,
+    content: formatEmployeeReport('sales', `New target acquired: ${analysis.company_name} (${analysis.industry})\n\nPain points: ${analysis.pain_points?.join(', ')}\nOur play: ${analysis.recommended_services?.join(', ')}\nWebsite quality: ${analysis.website_quality}/10\n\n${analysis.notes || 'Looks promising — needs investigation.'}`),
     context: { lead_id: newLead.id, company_url: formattedUrl, ...analysis },
     shared_with_admin: false,
   });

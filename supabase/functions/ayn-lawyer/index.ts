@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
+import { getEmployeeSystemPrompt, formatEmployeeReport } from "../_shared/aynBrand.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,19 +25,18 @@ serve(async (req) => {
     const mode = body.mode || 'compliance_scan';
 
     if (mode === 'legal_review') {
-      // Telegram command: /legal_review topic
       const topic = body.topic || 'general compliance';
-      const analysis = await aiLegalAnalysis(LOVABLE_API_KEY, `Provide a legal analysis for a SaaS platform regarding: ${topic}. Consider GDPR, data protection, ToS requirements, and liability.`);
+      const analysis = await aiLegalAnalysis(LOVABLE_API_KEY, `Provide a legal analysis for AYN (aynn.io), a SaaS platform operating in Saudi Arabia, regarding: ${topic}. Consider GDPR, PDPL (Saudi Personal Data Protection Law), data protection, ToS requirements, and liability.`);
 
       await supabase.from('ayn_mind').insert({
         type: 'legal_analysis',
-        content: `⚖️ Legal Review: ${topic}\n\n${analysis}`,
+        content: formatEmployeeReport('lawyer', `Topic: ${topic}\n\n${analysis}`),
         context: { from_employee: 'lawyer', topic },
         shared_with_admin: true,
       });
 
       if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-        await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, `⚖️ Legal Review: ${topic}\n\n${analysis}`);
+        await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatEmployeeReport('lawyer', `Legal Review: ${topic}\n\n${analysis}`));
       }
 
       return jsonRes({ success: true, topic, analysis });
@@ -46,11 +46,11 @@ serve(async (req) => {
       const contractText = body.text || '';
       if (!contractText) return jsonRes({ error: 'No contract text provided' }, 400);
 
-      const analysis = await aiLegalAnalysis(LOVABLE_API_KEY, `Review this contract/agreement and identify:\n1. Potential risks\n2. Missing clauses\n3. Unfavorable terms\n4. Recommendations\n\nContract:\n${contractText.slice(0, 8000)}`);
+      const analysis = await aiLegalAnalysis(LOVABLE_API_KEY, `Review this contract/agreement for AYN (aynn.io) and identify:\n1. Potential risks (with severity: HIGH/MEDIUM/LOW)\n2. Missing clauses we should insist on\n3. Unfavorable terms to negotiate\n4. Specific recommendations\n\nContract:\n${contractText.slice(0, 8000)}`);
 
       await supabase.from('ayn_mind').insert({
         type: 'legal_analysis',
-        content: `📜 Contract Review\n\n${analysis}`,
+        content: formatEmployeeReport('lawyer', `Contract Review\n\n${analysis}`),
         context: { from_employee: 'lawyer', type: 'contract_review' },
         shared_with_admin: true,
       });
@@ -61,7 +61,7 @@ serve(async (req) => {
     // Default: Daily compliance scan
     const findings: string[] = [];
 
-    // 1. Check if data handling has privacy issues
+    // 1. Check for high/critical security events
     const ago24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: securityLogs } = await supabase
       .from('security_logs')
@@ -71,19 +71,19 @@ serve(async (req) => {
       .limit(20);
 
     if (securityLogs?.length) {
-      findings.push(`${securityLogs.length} high/critical security event(s) in 24h`);
+      findings.push(`[HIGH] ${securityLogs.length} high/critical security event(s) in 24h — requires review per PDPL Article 22`);
       const types = [...new Set(securityLogs.map((l: any) => l.action))];
-      findings.push(`Types: ${types.join(', ')}`);
+      findings.push(`Event types: ${types.join(', ')}`);
     }
 
-    // 2. Check for unencrypted sensitive data patterns
+    // 2. Check for unencrypted sensitive data
     const { count: unencryptedAlerts } = await supabase
       .from('alert_history')
       .select('*', { count: 'exact', head: true })
       .is('recipient_email_encrypted', null);
 
     if (unencryptedAlerts && unencryptedAlerts > 0) {
-      findings.push(`⚠️ ${unencryptedAlerts} alert(s) with unencrypted email addresses`);
+      findings.push(`[MEDIUM] ${unencryptedAlerts} alert(s) with unencrypted email addresses — GDPR Art. 32 / PDPL Art. 19 violation risk`);
     }
 
     // 3. Check data retention
@@ -94,7 +94,7 @@ serve(async (req) => {
       .lt('created_at', ago90d);
 
     if (oldLogs && oldLogs > 1000) {
-      findings.push(`📋 ${oldLogs} security logs older than 90 days — consider retention policy`);
+      findings.push(`[LOW] ${oldLogs} security logs older than 90 days — review data minimization obligations under PDPL Art. 10`);
     }
 
     // 4. Check user data exposure
@@ -103,26 +103,28 @@ serve(async (req) => {
       .select('*', { count: 'exact', head: true })
       .eq('is_published', true);
 
-    findings.push(`${publicProfiles || 0} public creator profiles — ensure privacy toggle compliance`);
+    findings.push(`[INFO] ${publicProfiles || 0} public creator profiles — ensure consent mechanisms comply with PDPL Art. 6`);
 
-    // AI compliance summary
-    const complianceSummary = await aiLegalAnalysis(LOVABLE_API_KEY, `Based on these findings from a SaaS platform's daily compliance scan, provide a brief risk assessment and priority actions:\n\n${findings.join('\n')}`);
+    // AI compliance summary with personality
+    const complianceSummary = await aiLegalAnalysis(LOVABLE_API_KEY, `Based on these findings from AYN's daily compliance scan, provide a brief risk assessment with severity levels and priority actions:\n\n${findings.join('\n')}`);
 
-    // Save report
+    // Save report with personality
+    const reportContent = `Daily Compliance Scan Complete\n\nFindings:\n${findings.map(f => `• ${f}`).join('\n')}\n\nRisk Assessment:\n${complianceSummary}`;
+
     await supabase.from('ayn_mind').insert({
       type: 'legal_analysis',
-      content: `⚖️ Daily Compliance Scan\n\nFindings:\n${findings.map(f => `• ${f}`).join('\n')}\n\nAssessment:\n${complianceSummary}`,
+      content: formatEmployeeReport('lawyer', reportContent),
       context: { from_employee: 'lawyer', scan_type: 'daily_compliance', findings_count: findings.length },
       shared_with_admin: true,
     });
 
-    if (findings.some(f => f.includes('⚠️')) && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+    if (findings.some(f => f.includes('[HIGH]')) && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
       await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-        `⚖️ Lawyer — Compliance Alert\n\n${findings.filter(f => f.includes('⚠️')).join('\n')}`
+        formatEmployeeReport('lawyer', `⚠️ Compliance Alert — HIGH severity findings detected\n\n${findings.filter(f => f.includes('[HIGH]')).join('\n')}\n\nRecommendation: Review within 24 hours.`)
       );
     }
 
-    await logAynActivity(supabase, 'compliance_scan', `Daily compliance: ${findings.length} finding(s)`, {
+    await logAynActivity(supabase, 'compliance_scan', `Compliance scan: ${findings.length} finding(s)`, {
       details: { findings },
       triggered_by: 'lawyer',
     });
@@ -135,6 +137,8 @@ serve(async (req) => {
 });
 
 async function aiLegalAnalysis(apiKey: string, prompt: string): Promise<string> {
+  const systemPrompt = getEmployeeSystemPrompt('lawyer', `You provide concise legal analysis for AYN (aynn.io), a SaaS platform operating from Saudi Arabia. Cover GDPR, PDPL (Saudi Personal Data Protection Law), data protection, liability, and regulatory compliance. Be specific — cite actual regulations. Provide actionable recommendations, not just warnings. Max 500 words.`);
+
   try {
     const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -143,18 +147,18 @@ async function aiLegalAnalysis(apiKey: string, prompt: string): Promise<string> 
         model: 'google/gemini-3-flash-preview',
         messages: [{
           role: 'system',
-          content: `You are AYN's Legal AI. You provide concise legal analysis focused on tech/SaaS businesses. Cover GDPR, data protection, liability, and regulatory compliance. Be specific and actionable. Max 500 words.`,
+          content: systemPrompt,
         }, {
           role: 'user',
           content: prompt,
         }],
       }),
     });
-    if (!res.ok) return 'Legal analysis unavailable';
+    if (!res.ok) return 'Legal analysis unavailable — will retry on next scan.';
     const data = await res.json();
     return data.choices?.[0]?.message?.content?.trim() || 'No analysis generated';
   } catch {
-    return 'Legal analysis failed';
+    return 'Legal analysis failed — flagging for manual review.';
   }
 }
 

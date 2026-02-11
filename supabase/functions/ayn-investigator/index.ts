@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
+import { getEmployeeSystemPrompt, formatEmployeeReport } from "../_shared/aynBrand.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,12 +19,10 @@ serve(async (req) => {
     let body: any = {};
     try { body = await req.json(); } catch {}
 
-    // Can be triggered by employee_tasks INSERT or direct call
     const taskId = body.task_id || body.record?.id;
     const leadId = body.lead_id || body.record?.input_data?.lead_id;
 
     if (!leadId && taskId) {
-      // Fetch task to get lead_id
       const { data: task } = await supabase.from('employee_tasks').select('*').eq('id', taskId).single();
       if (!task) return jsonRes({ error: 'Task not found' }, 404);
       if (task.to_employee !== 'investigator') return jsonRes({ error: 'Not for investigator' }, 400);
@@ -88,22 +87,17 @@ async function investigateLead(supabase: any, apiKey: string, leadId: string, ta
     }
   }
 
-  // AI deep analysis
-  const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'google/gemini-3-flash-preview',
-      messages: [{
-        role: 'system',
-        content: `You are an AI investigator creating a detailed company dossier. Research thoroughly and provide:
+  // AI deep analysis with personality
+  const systemPrompt = getEmployeeSystemPrompt('investigator', `You're creating a detailed company dossier. Dig deep. Leave no stone unturned. Provide:
 1. Company size estimate (employees, revenue range)
 2. Tech stack they likely use (based on website)
 3. Key decision makers (if visible on website)
-4. Specific pain points that our services could solve
+4. Specific pain points that AYN's services could solve
 5. Competitor analysis — who else serves them?
 6. Best approach strategy for outreach
-7. Lead quality score (1-10) with justification
+7. Lead quality score (1-10) with honest justification
+
+Be thorough. I'd rather you say "insufficient data — confidence: LOW" than guess.
 
 Respond in JSON:
 {
@@ -116,8 +110,18 @@ Respond in JSON:
   "approach_strategy": "...",
   "quality_score": 8,
   "quality_justification": "...",
+  "confidence_level": "HIGH/MEDIUM/LOW",
   "dossier_summary": "..."
-}`,
+}`);
+
+  const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'google/gemini-3-flash-preview',
+      messages: [{
+        role: 'system',
+        content: systemPrompt,
       }, {
         role: 'user',
         content: `Company: ${lead.company_name}\nURL: ${lead.company_url || 'N/A'}\nIndustry: ${lead.industry || 'Unknown'}\nExisting notes: ${lead.notes || 'None'}\nPain points so far: ${lead.pain_points?.join(', ') || 'None'}\n\nWebsite content:\n${websiteContent || 'Could not fetch'}`,
@@ -152,17 +156,19 @@ Respond in JSON:
     }).eq('id', taskId);
   }
 
-  // Employee report
+  // Employee report with personality
+  const reportContent = `Subject: ${lead.company_name}\nQuality Score: ${dossier?.quality_score || '?'}/10 (Confidence: ${dossier?.confidence_level || 'UNKNOWN'})\n\nSummary: ${dossier?.dossier_summary || 'Analysis incomplete'}\n\nPain Points Identified:\n${(dossier?.detailed_pain_points || []).map((p: string) => `• ${p}`).join('\n') || '• None identified'}\n\nRecommended Approach: ${dossier?.approach_strategy || 'Needs further analysis'}`;
+
   await supabase.from('ayn_mind').insert({
     type: 'employee_report',
-    content: `🔍 Investigation complete: ${lead.company_name}\nQuality: ${dossier?.quality_score}/10\nStrategy: ${dossier?.approach_strategy?.slice(0, 200)}`,
+    content: formatEmployeeReport('investigator', reportContent),
     context: { from_employee: 'investigator', lead_id: leadId, dossier_summary: dossier?.dossier_summary },
     shared_with_admin: false,
   });
 
-  await logAynActivity(supabase, 'investigation_complete', `Investigated ${lead.company_name}`, {
+  await logAynActivity(supabase, 'investigation_complete', `Dossier complete: ${lead.company_name} — Score: ${dossier?.quality_score}/10`, {
     target_id: leadId, target_type: 'sales_lead',
-    details: { quality_score: dossier?.quality_score },
+    details: { quality_score: dossier?.quality_score, confidence: dossier?.confidence_level },
     triggered_by: 'investigator',
   });
 

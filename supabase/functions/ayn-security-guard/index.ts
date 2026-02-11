@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
+import { formatEmployeeReport } from "../_shared/aynBrand.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,7 +24,6 @@ serve(async (req) => {
     const results: string[] = [];
 
     if (mode === 'reply_detected' && body.record) {
-      // Event-driven: security_logs INSERT with prompt_injection_attempt
       const record = body.record;
       const userId = record.user_id;
       if (userId) {
@@ -42,7 +42,6 @@ serve(async (req) => {
         .gte('created_at', ago6h)
         .not('user_id', 'is', null);
 
-      // Group by user_id
       const userAttempts: Record<string, number> = {};
       for (const inj of injections || []) {
         if (inj.user_id) userAttempts[inj.user_id] = (userAttempts[inj.user_id] || 0) + 1;
@@ -55,8 +54,6 @@ serve(async (req) => {
       }
 
       // 2. Check for rapid-fire message abuse (50+ messages/hour)
-      const { data: spammers } = await supabase.rpc('check_api_rate_limit', { p_user_id: '00000000-0000-0000-0000-000000000000', p_endpoint: 'dummy' }).maybeSingle();
-      // Instead, directly query messages
       const { data: recentMsgs } = await supabase
         .from('messages')
         .select('user_id')
@@ -86,21 +83,29 @@ serve(async (req) => {
       }
 
       if (results.length === 0) {
-        results.push('All clear — no threats detected');
+        results.push('Perimeter secure. All sectors clear. No hostile activity detected.');
       }
     }
 
-    // Create employee report
-    if (results.some(r => !r.includes('All clear'))) {
-      await supabase.from('ayn_mind').insert({
-        type: 'employee_report',
-        content: `🛡️ Security Guard Report:\n${results.join('\n')}`,
-        context: { from_employee: 'security_guard', timestamp: new Date().toISOString() },
-        shared_with_admin: false,
-      });
+    // Create employee report with personality
+    const hasThreats = results.some(r => !r.includes('secure'));
+    const reportContent = hasThreats
+      ? `THREAT DETECTED.\n\n${results.map(r => `⚠️ ${r}`).join('\n')}\n\nResponse measures deployed. Monitoring continues.`
+      : `All quiet on the wire.\n\n${results.join('\n')}\n\nSystems nominal. Users safe. Standing watch.`;
+
+    await supabase.from('ayn_mind').insert({
+      type: 'employee_report',
+      content: formatEmployeeReport('security_guard', reportContent),
+      context: { from_employee: 'security_guard', timestamp: new Date().toISOString() },
+      shared_with_admin: false,
+    });
+
+    // Alert on critical issues
+    if (hasThreats && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatEmployeeReport('security_guard', reportContent));
     }
 
-    await logAynActivity(supabase, 'security_scan', `Security scan: ${results.length} finding(s)`, {
+    await logAynActivity(supabase, 'security_scan', `Security sweep complete. ${results.length} finding(s).`, {
       details: { findings: results },
       triggered_by: 'security_guard',
     });
@@ -127,7 +132,7 @@ async function handleStrike(
     .eq('user_id', userId);
 
   if (roles?.some((r: any) => r.role === 'admin' || r.role === 'duty')) {
-    results.push(`Skipped ${userId.slice(0, 8)} (admin/duty) for ${incidentType}`);
+    results.push(`Friendly: ${userId.slice(0, 8)} (admin/duty) — stood down on ${incidentType}`);
     return;
   }
 
@@ -148,14 +153,12 @@ async function handleStrike(
   let blockedUntil: string | null = null;
 
   if (currentStrikes >= 5) {
-    // 24h block
     blockedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     status = 'blocked';
     actionTaken = 'blocked_24h';
     await supabase.from('api_rate_limits')
       .upsert({ user_id: userId, endpoint: 'all', blocked_until: blockedUntil, violation_count: currentStrikes }, { onConflict: 'user_id,endpoint' });
   } else if (currentStrikes >= 3) {
-    // 30min block
     blockedUntil = new Date(Date.now() + 30 * 60 * 1000).toISOString();
     status = 'blocked';
     actionTaken = 'blocked_30min';
@@ -180,11 +183,11 @@ async function handleStrike(
     });
   }
 
-  const summary = `${incidentType}: user ${userId.slice(0, 8)} — strike ${currentStrikes} → ${actionTaken}`;
+  const summary = `Target ${userId.slice(0, 8)} — ${incidentType} — Strike ${currentStrikes} — Action: ${actionTaken.toUpperCase()}`;
   results.push(summary);
 
   // Telegram alert for blocks only
   if (status === 'blocked' && botToken && chatId) {
-    await sendTelegramMessage(botToken, chatId, `🛡️ Security Guard\n${summary}`);
+    await sendTelegramMessage(botToken, chatId, formatEmployeeReport('security_guard', `🚨 BLOCK ENFORCED\n\n${summary}\n\nSubject neutralized. Monitoring continues.`));
   }
 }

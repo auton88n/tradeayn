@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
+import { formatEmployeeReport } from "../_shared/aynBrand.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,21 +23,17 @@ serve(async (req) => {
     const insights: string[] = [];
 
     if (mode === 'new_application' && body.record) {
-      // Event-driven: new service application
       const app = body.record;
-      insights.push(`New application from ${app.full_name || 'unknown'} for ${app.service_type || 'service'}`);
+      insights.push(`New friend alert! ${app.full_name || 'Someone new'} just applied for ${app.service_type || 'our services'} 🎉`);
 
-      // Notify co-founder
       await supabase.from('ayn_mind').insert({
         type: 'employee_report',
-        content: `👋 Customer Success: New application from ${app.full_name} (${app.email}) for ${app.service_type}. Application pending review.`,
+        content: formatEmployeeReport('customer_success', `We've got a new applicant! 🎉\n\n${app.full_name} (${app.email}) is interested in ${app.service_type}.\nTheir application is pending review — let's not keep them waiting!`),
         context: { from_employee: 'customer_success', application_id: app.id },
         shared_with_admin: false,
       });
     } else if (mode === 'negative_feedback' && body.record) {
-      // Event-driven: negative message rating
       const rating = body.record;
-      // Check if 3+ negatives in 24h from same user
       const ago24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { count } = await supabase
         .from('message_ratings')
@@ -46,10 +43,10 @@ serve(async (req) => {
         .gte('created_at', ago24h);
 
       if (count && count >= 3) {
-        insights.push(`⚠️ User ${rating.user_id?.slice(0, 8)} gave ${count} negative ratings in 24h — possible churn risk`);
+        insights.push(`🚨 Heads up — user ${rating.user_id?.slice(0, 8)} has given ${count} negative ratings in 24h. They might need some love.`);
         await supabase.from('ayn_mind').insert({
           type: 'employee_report',
-          content: `⚠️ Churn alert: User ${rating.user_id?.slice(0, 8)} has ${count} negative ratings in 24h. Needs attention.`,
+          content: formatEmployeeReport('customer_success', `I'm worried about user ${rating.user_id?.slice(0, 8)}.\n\nThey've given ${count} negative ratings in the last 24 hours. That's a churn signal.\n\nMaybe we should reach out? A quick "hey, is everything okay?" goes a long way. 💛`),
           context: { from_employee: 'customer_success', user_id: rating.user_id, negative_count: count },
           shared_with_admin: false,
         });
@@ -68,7 +65,7 @@ serve(async (req) => {
         .limit(20);
 
       if (inactiveUsers?.length) {
-        insights.push(`${inactiveUsers.length} user(s) inactive for 7+ days`);
+        insights.push(`${inactiveUsers.length} user(s) haven't logged in for 7+ days — they might be slipping away 😟`);
       }
 
       // 2. Pending applications older than 4 hours
@@ -79,7 +76,7 @@ serve(async (req) => {
         .lt('created_at', ago4h);
 
       if (staleApps?.length) {
-        insights.push(`${staleApps.length} application(s) pending for 4+ hours: ${staleApps.map(a => a.full_name).join(', ')}`);
+        insights.push(`${staleApps.length} application(s) have been waiting 4+ hours: ${staleApps.map(a => a.full_name).join(', ')} — let's get back to them!`);
       }
 
       // 3. Recent negative feedback ratio
@@ -94,9 +91,9 @@ serve(async (req) => {
         const total = recentRatings.length;
         const ratio = Math.round((negative / total) * 100);
         if (ratio > 30) {
-          insights.push(`⚠️ High negative feedback: ${negative}/${total} (${ratio}%) in 24h`);
+          insights.push(`⚠️ Feedback health: ${negative}/${total} negative (${ratio}%) — that's higher than we'd like`);
         } else {
-          insights.push(`Feedback: ${negative}/${total} negative (${ratio}%) — healthy`);
+          insights.push(`Feedback looking healthy! ${negative}/${total} negative (${ratio}%) — our users are happy 😊`);
         }
       }
 
@@ -106,13 +103,13 @@ serve(async (req) => {
         .select('user_id', { count: 'exact', head: true })
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-      insights.push(`${activeToday || 0} message(s) sent in last 24h`);
+      insights.push(`${activeToday || 0} message(s) sent in the last 24h — ${(activeToday || 0) > 10 ? 'nice engagement!' : 'could be more active'}`);
 
       // Report
       if (insights.length > 0) {
         await supabase.from('ayn_mind').insert({
           type: 'employee_report',
-          content: `👥 Customer Success Report:\n${insights.map(i => `• ${i}`).join('\n')}`,
+          content: formatEmployeeReport('customer_success', insights.map(i => `• ${i}`).join('\n')),
           context: {
             from_employee: 'customer_success',
             inactive_users: inactiveUsers?.length || 0,
@@ -123,7 +120,7 @@ serve(async (req) => {
       }
     }
 
-    await logAynActivity(supabase, 'customer_success_check', `Customer success: ${insights.length} insight(s)`, {
+    await logAynActivity(supabase, 'customer_success_check', `Customer pulse: ${insights.length} insight(s)`, {
       details: { insights },
       triggered_by: 'customer_success',
     });
