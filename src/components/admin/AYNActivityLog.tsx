@@ -68,10 +68,24 @@ const FILTER_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
 };
 
+const AI_EMPLOYEES: Record<string, { name: string; emoji: string }> = {
+  system: { name: 'AYN (Co-Founder)', emoji: '🧠' },
+  advisor: { name: 'Advisor', emoji: '📊' },
+  lawyer: { name: 'Lawyer', emoji: '⚖️' },
+  security_guard: { name: 'Security Guard', emoji: '🛡️' },
+  sales: { name: 'Sales', emoji: '💼' },
+  investigator: { name: 'Investigator', emoji: '🔍' },
+  follow_up: { name: 'Follow-Up Agent', emoji: '📬' },
+  customer_success: { name: 'Customer Success', emoji: '🤝' },
+  qa_watchdog: { name: 'QA Watchdog', emoji: '🐕' },
+  marketing: { name: 'Marketing Strategist', emoji: '📣' },
+};
+
 export const AYNActivityLog = () => {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [employeeFilter, setEmployeeFilter] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isLive, setIsLive] = useState(false);
   const liveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -86,6 +100,9 @@ export const AYNActivityLog = () => {
 
     if (filter !== 'all' && FILTER_GROUPS[filter]) {
       query = query.in('action_type', FILTER_GROUPS[filter]);
+    }
+    if (employeeFilter !== 'all') {
+      query = query.eq('triggered_by', employeeFilter);
     }
 
     const { data, error } = await query;
@@ -117,7 +134,7 @@ export const AYNActivityLog = () => {
       supabase.removeChannel(channel);
       if (liveTimeout.current) clearTimeout(liveTimeout.current);
     };
-  }, [filter]);
+  }, [filter, employeeFilter]);
 
   const getConfig = (type: string) => ACTION_CONFIG[type] || ACTION_CONFIG.command;
 
@@ -175,7 +192,7 @@ export const AYNActivityLog = () => {
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Action type filters */}
       <div className="flex items-center gap-2 flex-wrap">
         <Filter className="w-4 h-4 text-muted-foreground" />
         {Object.keys(FILTER_LABELS).map(f => (
@@ -187,6 +204,30 @@ export const AYNActivityLog = () => {
             className="text-xs"
           >
             {FILTER_LABELS[f]}
+          </Button>
+        ))}
+      </div>
+
+      {/* Employee filters */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-muted-foreground font-medium">Employee:</span>
+        <Button
+          variant={employeeFilter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setEmployeeFilter('all')}
+          className="text-xs"
+        >
+          All Employees
+        </Button>
+        {Object.entries(AI_EMPLOYEES).map(([key, { name, emoji }]) => (
+          <Button
+            key={key}
+            variant={employeeFilter === key ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setEmployeeFilter(key)}
+            className="text-xs"
+          >
+            {emoji} {name}
           </Button>
         ))}
       </div>
@@ -220,7 +261,9 @@ export const AYNActivityLog = () => {
                           {format(new Date(log.created_at), 'MMM d, HH:mm:ss')}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          by {log.triggered_by}
+                          by {AI_EMPLOYEES[log.triggered_by]
+                            ? `${AI_EMPLOYEES[log.triggered_by].emoji} ${AI_EMPLOYEES[log.triggered_by].name}`
+                            : log.triggered_by}
                         </span>
                       </div>
                       <p className={`text-sm mt-1 font-medium ${isDeletion ? 'line-through text-red-400' : ''}`}>
