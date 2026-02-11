@@ -13,6 +13,16 @@ import {
   cmdQuery, cmdWebhooks, cmdWeeklyReport,
 } from "./commands.ts";
 
+/** Convert ArrayBuffer to base64 in chunks to avoid call stack overflow */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  }
+  return btoa(binary);
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -487,7 +497,7 @@ async function handlePhoto(
     // Download and convert to base64
     const imageRes = await fetch(fileUrl);
     const imageBuffer = await imageRes.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+    const base64Image = arrayBufferToBase64(imageBuffer);
     const mimeType = filePath.endsWith('.png') ? 'image/png' : 'image/jpeg';
     const imageDataUrl = `data:${mimeType};base64,${base64Image}`;
 
@@ -598,7 +608,7 @@ async function handleDocument(
       ];
     } else {
       const buffer = await fileResponse.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const base64 = arrayBufferToBase64(buffer);
       const mimeMap: Record<string, string> = {
         pdf: 'application/pdf',
         xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -678,7 +688,7 @@ async function handleVoice(
     const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
     const audioRes = await fetch(fileUrl);
     const audioBuffer = await audioRes.arrayBuffer();
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+    const base64Audio = arrayBufferToBase64(audioBuffer);
 
     const mimeType = filePath.endsWith('.oga') || filePath.endsWith('.ogg')
       ? 'audio/ogg'
