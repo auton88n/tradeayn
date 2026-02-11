@@ -202,8 +202,27 @@ serve(async (req) => {
       return new Response('OK', { status: 200 });
     }
 
+    // ─── Handle document/file messages ───
+    if (message.document) {
+      const reply = await handleDocument(message, supabase, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID);
+      if (reply) {
+        await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, reply);
+      }
+      return new Response('OK', { status: 200 });
+    }
+
+    // ─── Handle voice/audio messages ───
+    if (message.voice || message.audio) {
+      const reply = await handleVoice(message, supabase, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID);
+      if (reply) {
+        await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, reply);
+      }
+      return new Response('OK', { status: 200 });
+    }
+
     // Text messages only from here
     if (!message.text) {
+      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, "Got your message but I can't process this type yet. Try sending text, photos, documents, or voice messages.");
       return new Response('OK', { status: 200 });
     }
 
@@ -503,6 +522,187 @@ async function handlePhoto(
   } catch (e) {
     console.error('Vision AI error:', e);
     return `❌ Vision failed: ${e instanceof Error ? e.message : 'Unknown error'}`;
+  }
+}
+
+// ─── Handle document/file messages ───
+const SUPPORTED_TEXT_EXTENSIONS = ['csv', 'txt', 'json', 'xml', 'md', 'html', 'yaml', 'yml', 'log'];
+const SUPPORTED_BINARY_EXTENSIONS = ['pdf', 'xlsx', 'xls', 'docx', 'doc', 'pptx'];
+const ALL_SUPPORTED = [...SUPPORTED_TEXT_EXTENSIONS, ...SUPPORTED_BINARY_EXTENSIONS];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+async function handleDocument(
+  message: any, supabase: any, botToken: string, chatId: string
+): Promise<string | null> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) return "⚠️ File analysis not available — LOVABLE_API_KEY not configured.";
+
+  try {
+    const doc = message.document;
+    const fileName = doc.file_name || 'unknown';
+    const fileSize = doc.file_size || 0;
+    const caption = message.caption || '';
+
+    if (fileSize > MAX_FILE_SIZE) {
+      return `❌ File too large (${(fileSize / 1024 / 1024).toFixed(1)}MB). Max is 10MB.`;
+    }
+
+    const ext = fileName.split('.').pop()?.toLowerCase() || '';
+    if (!ALL_SUPPORTED.includes(ext)) {
+      return `❌ Can't read .${ext} files yet. Supported: ${ALL_SUPPORTED.join(', ')}`;
+    }
+
+    const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${doc.file_id}`);
+    const fileData = await fileRes.json();
+    if (!fileData.ok) return "❌ Couldn't retrieve the file from Telegram.";
+
+    const filePath = fileData.result.file_path;
+    const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+    const fileResponse = await fetch(fileUrl);
+
+    const systemPrompt = `You are AYN, analyzing a file sent by the founder on Telegram. The file is "${fileName}". ${caption ? `They said: "${caption}"` : 'Analyze the content and provide actionable insights.'} Be concise and useful.`;
+    let aiMessages: any[];
+
+    if (SUPPORTED_TEXT_EXTENSIONS.includes(ext)) {
+      let textContent = await fileResponse.text();
+      if (textContent.length > 50000) {
+        textContent = textContent.slice(0, 50000) + '\n\n... [truncated at 50,000 chars]';
+      }
+      const aiPrompt = caption || `Analyze this ${ext.toUpperCase()} file and give me the key takeaways.`;
+      aiMessages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `${aiPrompt}\n\nFile content (${fileName}):\n\`\`\`\n${textContent}\n\`\`\`` },
+      ];
+    } else {
+      const buffer = await fileResponse.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const mimeMap: Record<string, string> = {
+        pdf: 'application/pdf',
+        xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        xls: 'application/vnd.ms-excel',
+        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        doc: 'application/msword',
+        pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      };
+      const mimeType = mimeMap[ext] || 'application/octet-stream';
+      const aiPrompt = caption || `Extract and analyze the content of this ${ext.toUpperCase()} file. Summarize key points.`;
+
+      aiMessages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: [
+          { type: 'text', text: aiPrompt },
+          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}` } },
+        ]},
+      ];
+    }
+
+    const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'google/gemini-3-flash-preview', messages: aiMessages }),
+    });
+
+    if (!aiRes.ok) {
+      if (aiRes.status === 429) return "🧠 Rate limited — try again in a minute.";
+      if (aiRes.status === 402) return "🧠 AI credits exhausted.";
+      console.error('Document AI error:', aiRes.status, await aiRes.text());
+      return "❌ File analysis failed.";
+    }
+
+    const aiData = await aiRes.json();
+    const analysis = aiData.choices?.[0]?.message?.content?.trim() || "Couldn't analyze the file.";
+
+    await logAynActivity(supabase, 'document_analysis', `Analyzed file: "${fileName}"`, {
+      target_type: 'document',
+      details: { fileName, fileSize, ext, caption, analysis_preview: analysis.slice(0, 200) },
+      triggered_by: 'telegram_document',
+    });
+
+    await supabase.from('ayn_mind').insert([
+      { type: 'telegram_admin', content: `[Document: ${fileName}] ${caption || '(no caption)'}`.slice(0, 4000), context: { source: 'telegram', type: 'document', fileName, ext, fileSize }, shared_with_admin: true },
+      { type: 'telegram_ayn', content: analysis.slice(0, 4000), context: { source: 'telegram', type: 'document_response', fileName }, shared_with_admin: true },
+    ]);
+
+    return analysis;
+  } catch (e) {
+    console.error('Document handler error:', e);
+    return `❌ File analysis failed: ${e instanceof Error ? e.message : 'Unknown error'}`;
+  }
+}
+
+// ─── Handle voice/audio messages ───
+async function handleVoice(
+  message: any, supabase: any, botToken: string, chatId: string
+): Promise<string | null> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) return "⚠️ Voice processing not available — LOVABLE_API_KEY not configured.";
+
+  try {
+    const voiceOrAudio = message.voice || message.audio;
+    const fileId = voiceOrAudio.file_id;
+    const duration = voiceOrAudio.duration || 0;
+    const caption = message.caption || '';
+
+    if (duration > 300) {
+      return "❌ Voice message too long (max 5 minutes). Send a shorter one.";
+    }
+
+    const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
+    const fileData = await fileRes.json();
+    if (!fileData.ok) return "❌ Couldn't retrieve the audio from Telegram.";
+
+    const filePath = fileData.result.file_path;
+    const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+    const audioRes = await fetch(fileUrl);
+    const audioBuffer = await audioRes.arrayBuffer();
+    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+
+    const mimeType = filePath.endsWith('.oga') || filePath.endsWith('.ogg')
+      ? 'audio/ogg'
+      : filePath.endsWith('.mp3') ? 'audio/mpeg'
+      : filePath.endsWith('.m4a') ? 'audio/mp4'
+      : 'audio/ogg';
+
+    const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [
+          { role: 'system', content: 'You are AYN, receiving a voice message from the founder on Telegram. First transcribe what they said, then respond naturally. Format: start with "🎙️ [transcription]" then your response below.' },
+          { role: 'user', content: [
+            { type: 'text', text: caption || 'Transcribe this voice message and respond to it.' },
+            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Audio}` } },
+          ]},
+        ],
+      }),
+    });
+
+    if (!aiRes.ok) {
+      if (aiRes.status === 429) return "🧠 Rate limited — try again in a minute.";
+      if (aiRes.status === 402) return "🧠 AI credits exhausted.";
+      console.error('Voice AI error:', aiRes.status, await aiRes.text());
+      return "❌ Voice processing failed.";
+    }
+
+    const aiData = await aiRes.json();
+    const response = aiData.choices?.[0]?.message?.content?.trim() || "Couldn't process the voice message.";
+
+    await logAynActivity(supabase, 'voice_analysis', `Processed voice message (${duration}s)`, {
+      target_type: 'voice',
+      details: { duration, response_preview: response.slice(0, 200) },
+      triggered_by: 'telegram_voice',
+    });
+
+    await supabase.from('ayn_mind').insert([
+      { type: 'telegram_admin', content: `[Voice message: ${duration}s] ${caption || ''}`.slice(0, 4000), context: { source: 'telegram', type: 'voice', duration }, shared_with_admin: true },
+      { type: 'telegram_ayn', content: response.slice(0, 4000), context: { source: 'telegram', type: 'voice_response' }, shared_with_admin: true },
+    ]);
+
+    return response;
+  } catch (e) {
+    console.error('Voice handler error:', e);
+    return `❌ Voice processing failed: ${e instanceof Error ? e.message : 'Unknown error'}`;
   }
 }
 
