@@ -28,25 +28,25 @@ export const MeetAynIllustration = () => (
 export const EmotionsIllustration = () => {
   // Core emotions (Row 1)
   const coreEmotions = [
-    { color: 'hsl(193, 38%, 47%)', label: 'Calm', emoji: '😌', meaning: 'Peaceful' },
-    { color: 'hsl(36, 100%, 65%)', label: 'Happy', emoji: '😊', meaning: 'Joyful' },
-    { color: 'hsl(0, 100%, 67%)', label: 'Excited', emoji: '🤩', meaning: 'Energetic' },
-    { color: 'hsl(239, 82%, 61%)', label: 'Thinking', emoji: '🤔', meaning: 'Processing' },
-    { color: 'hsl(282, 56%, 62%)', label: 'Curious', emoji: '🧐', meaning: 'Exploring' },
+    { color: 'hsl(200, 60%, 55%)', label: 'Calm', emoji: '😌', meaning: 'Peaceful' },
+    { color: 'hsl(45, 95%, 60%)', label: 'Happy', emoji: '😊', meaning: 'Joyful' },
+    { color: 'hsl(330, 85%, 60%)', label: 'Excited', emoji: '🤩', meaning: 'Energetic' },
+    { color: 'hsl(250, 70%, 65%)', label: 'Thinking', emoji: '🤔', meaning: 'Processing' },
+    { color: 'hsl(170, 60%, 50%)', label: 'Curious', emoji: '🧐', meaning: 'Exploring' },
   ];
   
   // Empathy emotions (Row 2)
   const empathyEmotions = [
-    { color: 'hsl(349, 49%, 69%)', label: 'Comfort', emoji: '🤗', meaning: 'Nurturing' },
-    { color: 'hsl(10, 61%, 78%)', label: 'Supportive', emoji: '💪', meaning: 'Encouraging' },
+    { color: 'hsl(25, 70%, 75%)', label: 'Comfort', emoji: '🤗', meaning: 'Nurturing' },
+    { color: 'hsl(280, 45%, 75%)', label: 'Supportive', emoji: '💪', meaning: 'Encouraging' },
   ];
   
   // Negative/low energy emotions (Row 3)
   const negativeEmotions = [
-    { color: 'hsl(6, 78%, 57%)', label: 'Frustrated', emoji: '😤', meaning: 'Tense' },
+    { color: 'hsl(20, 70%, 50%)', label: 'Frustrated', emoji: '😤', meaning: 'Tense' },
     { color: 'hsl(354, 80%, 42%)', label: 'Mad', emoji: '😠', meaning: 'Intense' },
-    { color: 'hsl(271, 11%, 59%)', label: 'Sad', emoji: '😢', meaning: 'Melancholy' },
-    { color: 'hsl(197, 9%, 58%)', label: 'Bored', emoji: '😑', meaning: 'Low Energy' },
+    { color: 'hsl(220, 40%, 50%)', label: 'Sad', emoji: '😢', meaning: 'Melancholy' },
+    { color: 'hsl(200, 12%, 58%)', label: 'Bored', emoji: '😑', meaning: 'Low Energy' },
   ];
 
   const EmotionCircle = ({ emotion, index, baseDelay = 0, small = false }: { emotion: typeof coreEmotions[0], index: number, baseDelay?: number, small?: boolean }) => (
@@ -84,12 +84,12 @@ export const EmotionsIllustration = () => {
         
         {/* Row 2: Empathy emotions with warm background */}
         <motion.div 
-          className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500/10 to-rose-500/10 border border-amber-500/20"
+          className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-300/10 to-purple-400/10 border border-orange-300/20"
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <span className="text-[8px] text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wider">Empathy</span>
+          <span className="text-[8px] text-orange-500 dark:text-orange-300 font-medium uppercase tracking-wider">Empathy</span>
           {empathyEmotions.map((emotion, i) => (
             <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.5} />
           ))}
@@ -303,7 +303,7 @@ export const EmpathyIllustration = () => (
       animate={{ opacity: [0.3, 0.5, 0.3] }}
       transition={{ duration: 3, repeat: Infinity }}
     >
-      <div className="w-48 h-48 rounded-full bg-gradient-to-r from-amber-500/20 to-rose-400/20 blur-3xl" />
+      <div className="w-48 h-48 rounded-full bg-gradient-to-r from-orange-300/20 to-purple-400/20 blur-3xl" />
     </motion.div>
     
     {/* Eye with warm glow */}
@@ -311,13 +311,13 @@ export const EmpathyIllustration = () => (
       <motion.div
         className="relative w-28 h-28 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center shadow-2xl"
         style={{
-          boxShadow: '0 0 60px rgba(245, 158, 11, 0.4), 0 0 100px rgba(244, 63, 94, 0.2)'
+          boxShadow: '0 0 60px hsl(25, 70%, 75%, 0.4), 0 0 100px hsl(280, 45%, 75%, 0.2)'
         }}
       >
         {/* Iris with warm color */}
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400/40 to-rose-400/30 flex items-center justify-center">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-300/40 to-purple-400/30 flex items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-foreground/90 flex items-center justify-center">
-            <Heart className="w-5 h-5 text-amber-400" />
+            <Heart className="w-5 h-5 text-orange-300" />
           </div>
         </div>
       </motion.div>
@@ -328,8 +328,12 @@ export const EmpathyIllustration = () => (
           key={i}
           className="absolute w-2 h-2 rounded-full"
           style={{
-            background: 'radial-gradient(circle, hsl(35, 95%, 70%) 0%, transparent 100%)',
-            boxShadow: '0 0 8px hsl(30, 90%, 60%)',
+            background: i % 2 === 0 
+              ? 'radial-gradient(circle, hsl(25, 70%, 75%) 0%, transparent 100%)'
+              : 'radial-gradient(circle, hsl(280, 45%, 75%) 0%, transparent 100%)',
+            boxShadow: i % 2 === 0 
+              ? '0 0 8px hsl(25, 70%, 65%)'
+              : '0 0 8px hsl(280, 45%, 65%)',
             left: '50%',
             top: '50%',
           }}
@@ -350,13 +354,13 @@ export const EmpathyIllustration = () => (
     
     {/* Labels */}
     <div className="absolute bottom-4 flex gap-4">
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30">
-        <div className="w-2 h-2 rounded-full bg-amber-400" />
-        <span className="text-xs text-amber-600 dark:text-amber-400">Comfort</span>
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-300/20 border border-orange-300/30">
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'hsl(25, 70%, 75%)' }} />
+        <span className="text-xs text-orange-500 dark:text-orange-300">Comfort</span>
       </div>
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/30">
-        <div className="w-2 h-2 rounded-full bg-rose-400" />
-        <span className="text-xs text-rose-600 dark:text-rose-400">Support</span>
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-400/20 border border-purple-400/30">
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'hsl(280, 45%, 75%)' }} />
+        <span className="text-xs text-purple-500 dark:text-purple-300">Support</span>
       </div>
     </div>
   </div>
