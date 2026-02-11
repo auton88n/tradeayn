@@ -29,6 +29,7 @@ import { MarketingCommandCenter } from '@/components/admin/marketing/MarketingCo
 import { AYNActivityLog } from '@/components/admin/AYNActivityLog';
 import { TermsConsentViewer } from '@/components/admin/TermsConsentViewer';
 import { AYNMindDashboard } from '@/components/admin/AYNMindDashboard';
+import { WorkforceDashboard } from '@/components/admin/workforce/WorkforceDashboard';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
 
@@ -451,6 +452,7 @@ export const AdminPanel = ({
                     {activeTab === 'terms-consent' && <TermsConsentViewer />}
                     {activeTab === 'ayn-logs' && <AYNActivityLog />}
                     {activeTab === 'ayn-mind' && <AYNMindDashboard />}
+                    {activeTab === 'ai-workforce' && <WorkforceDashboard />}
                   </ErrorBoundary>
                 </motion.div>
               </AnimatePresence>
