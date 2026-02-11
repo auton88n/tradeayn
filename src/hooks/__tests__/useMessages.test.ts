@@ -89,7 +89,7 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -121,7 +121,7 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -156,7 +156,7 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -180,7 +180,7 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -202,7 +202,7 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -225,7 +225,7 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -246,7 +246,7 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -269,7 +269,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       act(() => {
@@ -290,7 +290,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       act(() => {
@@ -311,7 +311,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -342,7 +342,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -364,7 +364,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -384,7 +384,7 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -418,7 +418,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {
@@ -450,7 +450,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession)
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, mockSession, false)
       );
 
       await act(async () => {

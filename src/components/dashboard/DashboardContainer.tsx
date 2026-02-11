@@ -75,7 +75,8 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
     selectedMode,
     auth.userProfile,
     allowPersonalization,
-    session
+    session,
+    usageTracking.isUnlimited
   );
 
   // Get modes (English only)
