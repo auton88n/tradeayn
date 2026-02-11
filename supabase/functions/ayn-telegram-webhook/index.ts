@@ -476,14 +476,14 @@ serve(async (req) => {
 
     // Log conversation + activity
     // Detect if AYN is asking for confirmation and extract actionable data
-    const replyLower = cleanReply.toLowerCase();
-    const isAskingConfirmation = replyLower.includes('should i go ahead') || 
-      replyLower.includes('go ahead?') || 
-      replyLower.includes('want me to') ||
-      replyLower.includes('confirm?') ||
-      replyLower.includes('shall i') ||
-      replyLower.includes('want me to send') ||
-      replyLower.includes('ready to send');
+    const cleanReplyLower = cleanReply.toLowerCase();
+    const isAskingConfirmation = cleanReplyLower.includes('should i go ahead') || 
+      cleanReplyLower.includes('go ahead?') || 
+      cleanReplyLower.includes('want me to') ||
+      cleanReplyLower.includes('confirm?') ||
+      cleanReplyLower.includes('shall i') ||
+      cleanReplyLower.includes('want me to send') ||
+      cleanReplyLower.includes('ready to send');
 
     let pendingAction: any = null;
     if (isAskingConfirmation) {
@@ -509,8 +509,8 @@ serve(async (req) => {
       detectedSummary = companyMatch ? `Send outreach to ${companyMatch[1].trim()}` : 'Send pending outreach email';
 
       // Detect action type from context
-      if (replyLower.includes('follow-up') || replyLower.includes('follow up')) detectedAction = 'follow_up';
-      if (replyLower.includes('draft')) detectedAction = 'send_outreach';
+      if (cleanReplyLower.includes('follow-up') || cleanReplyLower.includes('follow up')) detectedAction = 'follow_up';
+      if (cleanReplyLower.includes('draft')) detectedAction = 'send_outreach';
 
       pendingAction = {
         type: 'awaiting_confirmation',
