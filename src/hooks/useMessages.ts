@@ -118,7 +118,8 @@ export const useMessages = (
   selectedMode: AIMode,
   userProfile: UserProfile | null,
   allowPersonalization: boolean,
-  session: Session | null
+  session: Session | null,
+  isUnlimited: boolean = false
 ): UseMessagesReturn => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -230,54 +231,56 @@ export const useMessages = (
       return;
     }
 
-    // Check usage limits via direct REST API call
-    try {
-      const rpcResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_usage`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          _user_id: userId,
-          _action_type: 'message',
-          _count: 1
-        })
-      });
+    // Check usage limits via legacy system (skip for unlimited users - server handles their limits)
+    if (!isUnlimited) {
+      try {
+        const rpcResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_usage`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            _user_id: userId,
+            _action_type: 'message',
+            _count: 1
+          })
+        });
 
-      if (!rpcResponse.ok) {
-        console.warn('[useMessages] Usage check failed');
+        if (!rpcResponse.ok) {
+          console.warn('[useMessages] Usage check failed');
+          setIsTyping(false);
+          toast({
+            title: "Usage Check Failed",
+            description: "We couldn't verify your usage. Please try again.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const canUse = await rpcResponse.json();
+
+        if (!canUse) {
+          console.warn('[useMessages] Usage limit reached');
+          setIsTyping(false);
+          toast({
+            title: "Usage Limit Reached",
+            description: "You've reached your monthly message limit. Check Settings for details.",
+            variant: "destructive"
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('[useMessages] Usage check error:', error);
         setIsTyping(false);
         toast({
-          title: "Usage Check Failed",
-          description: "We couldn't verify your usage. Please try again.",
+          title: "Something Went Wrong",
+          description: "An unexpected error occurred. Please try again.",
           variant: "destructive"
         });
         return;
       }
-
-      const canUse = await rpcResponse.json();
-
-      if (!canUse) {
-        console.warn('[useMessages] Usage limit reached');
-        setIsTyping(false);
-        toast({
-          title: "Usage Limit Reached",
-          description: "You've reached your monthly message limit. Check Settings for details.",
-          variant: "destructive"
-        });
-        return;
-      }
-    } catch (error) {
-      console.error('[useMessages] Usage check error:', error);
-      setIsTyping(false);
-      toast({
-        title: "Something Went Wrong",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
-      return;
     }
 
     // Create user message with UUID for robust deduplication
@@ -727,42 +730,7 @@ export const useMessages = (
         });
       }
 
-      // Check usage and show in-app warning if approaching limit
-      try {
-        const usageData = await supabaseApi.get<any[]>(
-          `access_grants?user_id=eq.${userId}&select=current_month_usage,monthly_limit`,
-          session.access_token
-        );
-
-        if (usageData?.[0]?.monthly_limit && usageData[0].monthly_limit > 0) {
-          const currentUsage = usageData[0].current_month_usage || 0;
-          const monthlyLimit = usageData[0].monthly_limit;
-          const percentageUsed = Math.round((currentUsage / monthlyLimit) * 100);
-          const remaining = monthlyLimit - currentUsage;
-
-          if (percentageUsed >= 100) {
-            toast({
-              title: "Monthly Limit Reached",
-              description: `You've used all ${monthlyLimit} messages. Your limit resets next month.`,
-              variant: "destructive"
-            });
-          } else if (percentageUsed >= 90) {
-            toast({
-              title: "Almost at Limit",
-              description: `You've used ${percentageUsed}% of your messages. Only ${remaining} remaining.`,
-              variant: "destructive"
-            });
-          } else if (percentageUsed >= 75) {
-            toast({
-              title: "Usage Update",
-              description: `You've used ${percentageUsed}% of your monthly messages. ${remaining} remaining.`,
-            });
-          }
-        }
-      } catch (usageError) {
-        // Silent fail - don't disrupt the chat experience
-        console.warn('[useMessages] Error checking usage:', usageError);
-      }
+      // Usage warnings are handled by SystemNotificationBanner from user_ai_limits data
 
     } catch (error) {
       setIsTyping(false);
@@ -819,7 +787,8 @@ export const useMessages = (
     userProfile, 
     allowPersonalization, 
     toast,
-    session
+    session,
+    isUnlimited
   ]);
 
   // Wrapper to set messages from history with proper flag management
