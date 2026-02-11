@@ -316,6 +316,9 @@ serve(async (req) => {
       triggered_by: 'marketing_bot',
     });
 
+    // Prune old messages into summaries (non-blocking)
+    pruneMarketingHistory(supabase, LOVABLE_API_KEY).catch(e => console.error('Prune error:', e));
+
     return new Response('OK', { status: 200 });
   } catch (error) {
     console.error('ayn-marketing-webhook error:', error);
@@ -585,8 +588,26 @@ async function saveMarketingExchange(supabase: any, userMsg: string, aynMsg: str
   ]);
 }
 
-// ─── Load conversation history ───
+// ─── Load conversation history (summaries + recent messages) ───
 async function getMarketingHistory(supabase: any) {
+  const history: { role: string; content: string }[] = [];
+
+  // 1. Load all summaries as long-term memory
+  const { data: summaries } = await supabase
+    .from('ayn_mind')
+    .select('content, created_at')
+    .eq('type', 'marketing_summary')
+    .order('created_at', { ascending: true });
+
+  if (summaries?.length) {
+    const summaryText = summaries.map((s: any) => s.content).join('\n\n');
+    history.push({
+      role: 'system',
+      content: `[CONVERSATION MEMORY — summarized from older messages]\n${summaryText}`,
+    });
+  }
+
+  // 2. Load latest 50 live messages
   const { data: exchanges } = await supabase
     .from('ayn_mind')
     .select('type, content, context, created_at')
@@ -594,7 +615,6 @@ async function getMarketingHistory(supabase: any) {
     .order('created_at', { ascending: true })
     .limit(50);
 
-  const history: { role: string; content: string }[] = [];
   if (exchanges?.length) {
     for (const entry of exchanges) {
       let content = entry.content;
@@ -609,6 +629,76 @@ async function getMarketingHistory(supabase: any) {
     }
   }
   return history;
+}
+
+// ─── Prune old marketing messages into summaries ───
+async function pruneMarketingHistory(supabase: any, apiKey: string) {
+  // Count total marketing_chat + marketing_ayn entries
+  const { count } = await supabase
+    .from('ayn_mind')
+    .select('id', { count: 'exact', head: true })
+    .in('type', ['marketing_chat', 'marketing_ayn']);
+
+  if (!count || count <= 100) return;
+
+  console.log(`[PRUNE] Marketing history at ${count} entries — summarizing oldest 30`);
+
+  // Get oldest 30 entries
+  const { data: oldest } = await supabase
+    .from('ayn_mind')
+    .select('id, type, content, created_at')
+    .in('type', ['marketing_chat', 'marketing_ayn'])
+    .order('created_at', { ascending: true })
+    .limit(30);
+
+  if (!oldest?.length) return;
+
+  // Build conversation text for summarization
+  const conversationText = oldest
+    .map((e: any) => `[${e.type === 'marketing_chat' ? 'Creator' : 'AYN'}] ${e.content}`)
+    .join('\n');
+
+  const dateRange = `${oldest[0].created_at?.split('T')[0]} to ${oldest[oldest.length - 1].created_at?.split('T')[0]}`;
+
+  // Summarize with Gemini
+  const summaryRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'google/gemini-3-flash-preview',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a conversation summarizer. Condense the following marketing team conversation into a compact paragraph. Preserve: key decisions, content strategies discussed, brand guidelines mentioned, any pending tasks or ideas, and important context. Be concise but thorough. Output ONLY the summary paragraph.',
+        },
+        { role: 'user', content: `Summarize this conversation (${dateRange}):\n\n${conversationText}` },
+      ],
+      max_tokens: 500,
+    }),
+  });
+
+  if (!summaryRes.ok) {
+    console.error('[PRUNE] Summary generation failed:', summaryRes.status);
+    return;
+  }
+
+  const summaryData = await summaryRes.json();
+  const summary = summaryData.choices?.[0]?.message?.content?.trim();
+  if (!summary) return;
+
+  // Save summary
+  await supabase.from('ayn_mind').insert({
+    type: 'marketing_summary',
+    content: `[${dateRange}] ${summary}`,
+    context: { source: 'auto_prune', entries_summarized: oldest.length },
+    shared_with_admin: true,
+  });
+
+  // Delete originals
+  const idsToDelete = oldest.map((e: any) => e.id);
+  await supabase.from('ayn_mind').delete().in('id', idsToDelete);
+
+  console.log(`[PRUNE] Summarized ${oldest.length} entries, saved as marketing_summary`);
 }
 
 // ─── Extract tweet draft ───
