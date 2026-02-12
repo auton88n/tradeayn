@@ -1,98 +1,65 @@
 
-# Fix PDF/Excel Downloads, Image Generation, and Image Display
 
-## Problems Found
+# Fix PDF/Excel Downloads, Image Generation, and Display
 
-1. **PDF/Excel downloads redirect to landing page** -- The download function opens data URLs with `target="_blank"`, which navigates to the AYN website instead of downloading. For base64 data URLs, `target="_blank"` should not be used.
+## Root Causes Found
 
-2. **Image generation uses a non-existent model** -- The code calls `google/gemini-2.5-flash-image-preview`, which does not exist. The correct model ID is `google/gemini-2.5-flash-image`.
+### Problem 1: Image intent never reaches the server
+The **client-side** `detectIntent()` function in `src/hooks/useMessages.ts` (lines 308-328) has **zero image keywords**. It only returns `'image'` when `selectedMode === 'LAB'`. Since most users type naturally (e.g., "show me an image of Halifax"), the client sends `intent: 'chat'` to the server. The server then uses this forced intent (`forcedIntent || detectIntent(...)`) and never runs its own image detection. The LLM then hallucinates a fake `dalle.text2im` JSON tool call.
 
-3. **Image intent rarely triggers** -- Only 4 keywords are checked: "generate image", "create image", "draw", "picture of". Common phrases like "show me an image", "make me a picture", "image of", etc. all miss and fall through to regular chat. The LLM then hallucinates a fake `dalle.text2im` JSON tool call instead of actually generating an image.
+### Problem 2: Documents -- server expects structured JSON from LLM but LLM returns prose
+When the document intent IS detected, `ayn-unified` asks the LLM to return structured JSON with `type`, `title`, and `sections`. But the LLM often returns natural language instead, causing `JSON.parse` to fail at line 690-692, which triggers the "I need more details" clarification response instead of generating the document.
 
-4. **Generated images are never displayed** -- When image generation succeeds, the base64 image URL is stored in `labData` on the message object, but no component ever reads `labData`. The ResponseCard only looks for image URLs in the message *text* via regex matching `https://` URLs -- base64 data URLs never match.
+### Problem 3: The `documentUrlUtils.ts` fix was already applied but may not be deployed
+The `openDocumentUrl` function already has the correct fix (no `target="_blank"` for data URLs). The issue may be that documents are simply never being generated successfully due to Problem 2.
 
 ## Fixes
 
-### Fix 1: Document download function (`src/lib/documentUrlUtils.ts`)
-- Remove `target="_blank"` for data URLs (they should use `download` attribute only)
-- Keep `target="_blank"` only for regular HTTP URLs
+### Fix 1: Add image keywords to client-side intent detection (`src/hooks/useMessages.ts`)
+Add image keyword detection in the client-side `detectIntent()` function so that image requests are sent with `intent: 'image'` and `stream: false`:
 
-### Fix 2: Correct image model ID (`supabase/functions/ayn-unified/index.ts`)
-- Change `google/gemini-2.5-flash-image-preview` to `google/gemini-2.5-flash-image` in both the fallback chain and the `generateImage` function
+```
+// After document detection (around line 321), add:
+if (/generate image|create image|draw|picture of|image of|make image|photo of|illustration of|visualize|صورة|ارسم|dessine/.test(lower)) return 'image';
+```
 
-### Fix 3: Expand image intent keywords (`supabase/functions/ayn-unified/intentDetector.ts`)
-- Add missing keywords: "image of", "make image", "show me", "make a picture", "make me a picture", "photo of", "illustration of", "visualize", "render", "صورة", "ارسم", "image de", "dessine", "montre moi"
+### Fix 2: Make server-side intent detection work as fallback (`supabase/functions/ayn-unified/index.ts`)
+Change line 521 from:
+```
+const intent = forcedIntent || detectIntent(lastMessage);
+```
+to:
+```
+const intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : detectIntent(lastMessage);
+```
+This way, if the client sends `'chat'` as a fallback, the server still runs its own keyword detection which has a broader keyword list.
 
-### Fix 4: Render generated images in ResponseCard (`src/components/eye/ResponseCard.tsx`)
-- Extend `detectedImageUrl` to also check for base64 data URLs in message content
-- Also check the message's `labData.json.image_url` field as a fallback source for image URLs
+### Fix 3: Improve document JSON extraction robustness (`supabase/functions/ayn-unified/index.ts`)
+The document generation system prompt needs to be more explicit about returning JSON. Additionally, add a retry mechanism or use tool calling to force structured output from the LLM.
 
-### Fix 5: Also fix the ai-edit-image function model (`supabase/functions/ai-edit-image/index.ts`)
-- Change `google/gemini-2.5-flash-image-preview` to `google/gemini-2.5-flash-image`
+### Fix 4: Add image generation visual state (`src/hooks/useMessages.ts`)
+After detecting `image` intent, set a loading state so the user sees feedback while the image generates.
 
 ## Technical Details
 
-### `src/lib/documentUrlUtils.ts` -- lines 18-31
+### `src/hooks/useMessages.ts` -- client-side intent detection (around line 321)
+Add image intent detection:
 ```typescript
-export const openDocumentUrl = (url: string, filename?: string): void => {
-  if (!url) return;
-  
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename || 'document';
-  
-  // Only use target="_blank" for HTTP URLs, not data URLs
-  if (!url.startsWith('data:')) {
-    anchor.target = '_blank';
-    anchor.rel = 'noopener noreferrer';
-  }
-  
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-};
+// Image generation detection
+if (/generate image|create image|draw |picture of|image of|make image|make me a picture|photo of|illustration of|visualize|render a |render an |صورة|ارسم|dessine|montre moi/.test(lower)) return 'image';
 ```
 
-### `supabase/functions/ayn-unified/intentDetector.ts` -- line 28
+### `supabase/functions/ayn-unified/index.ts` -- line 521
+Allow server-side re-detection when client sends generic 'chat':
 ```typescript
-const imageKeywords = [
-  'generate image', 'create image', 'draw', 'picture of',
-  'image of', 'make image', 'make a picture', 'make me a picture',
-  'show me an image', 'photo of', 'illustration of', 'visualize',
-  'render a', 'render an',
-  'صورة', 'ارسم', 'ارسم لي', 'اعطني صورة',
-  'image de', 'dessine', 'montre moi', 'genere une image'
-];
+const intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : detectIntent(lastMessage);
 ```
 
-### `supabase/functions/ayn-unified/index.ts` -- model fix
-Change both occurrences of `google/gemini-2.5-flash-image-preview` to `google/gemini-2.5-flash-image`.
-
-### `src/components/eye/ResponseCard.tsx` -- image detection
-Extend `detectedImageUrl` to also detect base64 image data URLs and check `labData`:
-```typescript
-const detectedImageUrl = useMemo(() => {
-  // Check labData first (from image generation)
-  const firstResponse = visibleResponses[0];
-  if (firstResponse && 'labData' in firstResponse) {
-    const labUrl = (firstResponse as any).labData?.json?.image_url;
-    if (labUrl) return labUrl;
-  }
-  // Existing: markdown image URLs
-  const markdownMatch = combinedContent.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/);
-  if (markdownMatch) return markdownMatch[1];
-  // Existing: plain HTTP image URLs
-  const urlMatch = combinedContent.match(/(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg))/i);
-  if (urlMatch) return urlMatch[1];
-  // New: base64 data URL images
-  const dataUrlMatch = combinedContent.match(/(data:image\/[^;]+;base64,[A-Za-z0-9+/=]+)/);
-  if (dataUrlMatch) return dataUrlMatch[1];
-  return null;
-}, [combinedContent, visibleResponses]);
-```
+### `supabase/functions/ayn-unified/index.ts` -- document JSON prompt
+The system prompt for document generation needs to explicitly instruct the LLM to return ONLY valid JSON. Add tool calling for structured output extraction to ensure consistent JSON responses.
 
 ## Expected Outcome
-- PDF and Excel downloads will trigger a file download instead of navigating away
-- Image generation will use the correct model and actually produce images
-- More natural language phrases will trigger image generation instead of showing raw JSON
-- Generated images will be visible in the chat response card
+- Image generation will trigger correctly from natural language prompts
+- PDF and Excel documents will generate and download properly
+- The server has a safety net to catch image/document intents the client misses
+
