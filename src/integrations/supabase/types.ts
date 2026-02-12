@@ -161,6 +161,30 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_telegram_bots: {
+        Row: {
+          bot_token: string
+          created_at: string
+          employee_id: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          bot_token: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          bot_token?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
       ai_mode_configs: {
         Row: {
           created_at: string
