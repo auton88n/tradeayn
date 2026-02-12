@@ -1,68 +1,67 @@
 
-# Fix PDF/Excel Downloads, Image Generation, and Display -- Complete Fix
 
-## Root Causes (3 separate issues)
+# Fix Image Generation, PDF Layout Gap, and Excel Downloads
 
-### Issue 1: Edge function was never redeployed
-The server logs confirm all recent requests show `Detected intent: chat` or `Detected intent: files`. The code changes from the previous fix (server-side fallback, JSON extraction) were written to the files but the `ayn-unified` edge function needs to be redeployed for them to take effect.
+## 3 Issues Found
 
-### Issue 2: Generated images are never shown to the user
-When image generation succeeds, the server returns `{ imageUrl, content, ... }`. The client stores this as `labData` on the Message object. However:
-- The `CenterStageLayout` extracts `message.attachment` but **never extracts `message.labData`** when creating the response bubble
-- The `ResponseBubble` interface has no `labData` field
-- Even if `detectedImageUrl` detects the image, **there is no `<img>` tag** in `ResponseCard.tsx` -- it only uses the URL for a "Design" button
+### Issue 1: Image generation returns raw JSON text instead of an actual image
+**Root cause**: The server-side `intentDetector.ts` has image keywords but they are not matching the user's actual input. Server logs show `Detected intent: chat` for image requests. When the LLM receives a chat intent, it hallucinates a fake tool call JSON (e.g., `{ "action": "generate_image", ... }`) instead of the server calling the real `generateImage()` function.
 
-### Issue 3: Document attachment flows correctly but may be blocked by JSON parsing
-The document flow is correct in theory: server returns `documentUrl` in JSON, client maps it to `message.attachment`, which flows to `ResponseBubble.attachment`, which renders the `DocumentDownloadButton`. The blocker is that the LLM often fails to return valid JSON, so the document never gets generated.
+**Fix**: 
+- Add broader image keywords (e.g., "show me", "image", "sun", "picture") to both client-side (`useMessages.ts`) and server-side (`intentDetector.ts`)
+- Add a **safety net** in the chat response handler: if the LLM response contains `"action": "generate_image"` or similar tool-call JSON, intercept it and re-route to the actual `generateImage()` function instead of returning the raw JSON to the user
 
-## Fixes
+### Issue 2: PDF has large gap between section heading and table
+**Root cause**: In `generate-document/index.ts`, the page-break check at line 165 (`if (y > pageHeight - 50)`) only considers the heading position. If the heading fits at the bottom of page 1 but the table doesn't, the table moves to page 2 while the heading stays alone on page 1 with a huge gap.
 
-### Fix 1: Redeploy the `ayn-unified` edge function
-Force a redeployment so the server-side intent fallback and JSON extraction fixes take effect.
+**Fix**: Before placing a section heading, calculate the minimum height needed for heading + first part of its content/table. If the combined height doesn't fit on the current page, move the entire section (heading + table) to the next page together.
 
-### Fix 2: Add image rendering to ResponseCard (`src/components/eye/ResponseCard.tsx`)
-Add an `<img>` tag that renders when `detectedImageUrl` is detected. Place it between the message content and the document download button:
+### Issue 3: Excel download shows as plain text instead of a download button
+**Root cause**: Server logs confirm no Excel document was ever generated. The intent for the Excel request was detected as `chat` instead of `document`. The user's Excel request didn't match the client-side or server-side document keywords, so the LLM responded with prose text "[Click here to download your Excel sheet]" instead of triggering the document generation pipeline.
 
-```typescript
-{/* Generated image display */}
-{detectedImageUrl && (
-  <div className="px-3 pb-2">
-    <img
-      src={detectedImageUrl}
-      alt="Generated image"
-      className="w-full max-w-md rounded-lg border border-border"
-      loading="lazy"
-    />
-  </div>
-)}
-```
+**Fix**: 
+- Add more Excel-related keywords to both client and server intent detection (e.g., "excel about", "excel for", "table of", "data about", "create a table")
+- Same safety net as images: if the LLM response mentions "download your Excel" without an actual URL, detect the failure
 
-### Fix 3: Pass `labData` through the bubble pipeline
+## Technical Changes
 
-**Option A (simpler)**: Instead of threading `labData` through the bubble system, embed the image URL directly in the message content as a markdown image when the server returns an `imageUrl`. This way it flows through naturally.
+### File 1: `supabase/functions/ayn-unified/intentDetector.ts`
+- Add more image keywords: `"show me", "image", "sun", "picture", "painting"` and standalone word matching
+- Add more document/Excel keywords: `"excel about", "excel for", "table about", "create table", "data overview", "data about"`
 
-In `src/hooks/useMessages.ts`, when handling the non-streaming image response (around line 573-606), prepend the image to the response content:
+### File 2: `src/hooks/useMessages.ts` (client-side intent detection, ~line 317-323)
+- Add same expanded keywords to match the server-side improvements
 
-```typescript
-// If image was returned, embed it in the content for display
-if (webhookData?.imageUrl) {
-  const imageContent = `![Generated Image](${webhookData.imageUrl})`;
-  response = imageContent + '\n\n' + responseContent;
+### File 3: `supabase/functions/ayn-unified/index.ts` (chat response handler)
+- Add a safety net after the LLM chat response: if the response contains `"generate_image"` or `"action_input"` JSON patterns, intercept it and call `generateImage()` with the extracted prompt
+- This prevents hallucinated tool calls from reaching the user
+
+### File 4: `supabase/functions/generate-document/index.ts` (PDF layout)
+- Before each section, calculate `heading height + content/table height`
+- If the combined height exceeds remaining page space, trigger page break BEFORE the heading (not after)
+- Change the logic around lines 163-170:
+```text
+// Calculate needed space for heading + content/table
+const headingHeight = 10;
+let sectionContentHeight = 0;
+if (section.content) {
+  const lines = doc.splitTextToSize(section.content, contentWidth - 10);
+  sectionContentHeight = lines.length * 6 + 5;
+}
+if (section.table) {
+  const headerH = 14;
+  const rowsH = (section.table.rows?.length || 0) * 12;
+  sectionContentHeight = Math.max(sectionContentHeight, headerH + rowsH + 10);
+}
+// If heading + first content won't fit, move everything to next page
+const neededSpace = headingHeight + Math.min(sectionContentHeight, 60);
+if (y + neededSpace > pageHeight - 40) {
+  addFooter(...);
+  doc.addPage();
+  y = 30;
 }
 ```
 
-This works because `StreamingMarkdown` and `MessageFormatter` already render markdown images, and the image URL is a base64 data URL that doesn't need external loading.
+### File 5: Deploy edge functions
+- Redeploy both `ayn-unified` and `generate-document`
 
-### Fix 4: Ensure document system prompt strictly enforces JSON
-The system prompt already says "RESPOND ONLY WITH VALID JSON" -- this is correct. The retry mechanism in the edge function (stripping markdown fences, regex extraction) should catch most failures. The main fix is simply **deploying** the current code.
-
-## Files to Change
-
-1. **`supabase/functions/ayn-unified/index.ts`** -- Redeploy (no code changes needed, just deploy)
-2. **`src/hooks/useMessages.ts`** -- Embed image URL in content when `webhookData.imageUrl` exists (~line 576)
-3. **`src/components/eye/ResponseCard.tsx`** -- Add `<img>` rendering for `detectedImageUrl` (between content and document button, ~line 532)
-
-## Expected Outcome
-- Images will generate correctly and display inline in the chat
-- PDF and Excel documents will generate (JSON extraction works with retry)
-- Document download button will appear and trigger proper file downloads
