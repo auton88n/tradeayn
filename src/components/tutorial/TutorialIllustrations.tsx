@@ -722,8 +722,4 @@ export const DocumentsIllustration = () =>
       </motion.div>
     </div>
 
-    {/* Multilingual label */}
-    <div className="mt-2 text-[9px] text-muted-foreground text-center">
-      Multilingual · EN · AR · FR
-    </div>
   </div>;
