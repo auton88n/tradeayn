@@ -79,22 +79,38 @@ serve(async (req) => {
     const contextBlock = `Company: momentum=${companyState?.momentum}, stress=${companyState?.stress_level}
 Active objectives: ${objectives.slice(0, 3).map((o: any) => `${o.title} (P${o.priority})`).join(', ')}`;
 
-    // Generate all responses in parallel
-    const responsePromises = selectedAgents.map(async (agentId) => {
+    // Ensure AYN (system) goes first
+    const orderedAgents = ['system', ...selectedAgents.filter(a => a !== 'system')];
+
+    // Sequential generation: each agent sees what previous agents said
+    const conversationThread: { name: string; reply: string }[] = [];
+    const allInserted: any[] = [];
+
+    for (const agentId of orderedAgents) {
       const state = await loadEmployeeState(supabase, agentId);
       const personality = getEmployeePersonality(agentId);
-      const emoji = getAgentEmoji(agentId);
       const name = getAgentDisplayName(agentId);
 
+      // Build conversation history for this agent
+      let discussionSoFar = '';
+      if (conversationThread.length > 0) {
+        discussionSoFar = `\n[Discussion so far]\n${conversationThread.map(m => `${m.name}: "${m.reply}"`).join('\n')}\n`;
+      }
+
+      const isFirst = conversationThread.length === 0;
       const prompt = `You are ${name} in AYN's AI workforce war room discussion.
 ${personality}
 
 ${contextBlock}
 
 The founder wants the team to discuss: "${topic}"
+${discussionSoFar}
+${isFirst
+  ? `You speak FIRST. Set the direction on this topic as ${name}.`
+  : `Now it's YOUR turn. React to what others said above. Agree, disagree, challenge, or build on their points. Reference them by name. Don't repeat what's been said.`
+}
 
-Respond naturally as ${name}. Keep it SHORT (2-4 sentences). Be conversational and substantive. Stay in character.
-${agentId === 'system' ? 'As AYN, synthesize or set direction.' : `Focus on your expertise as ${name}.`}
+Keep it SHORT (2-4 sentences). Be conversational and substantive. Stay in character.
 ${state?.confidence ? `Your current confidence: ${state.confidence}` : ''}
 
 Reply with ONLY your message text. No prefixes, no emoji, no name tag.`;
@@ -109,49 +125,39 @@ Reply with ONLY your message text. No prefixes, no emoji, no name tag.`;
           }),
         });
 
-        if (!res.ok) return null;
+        if (!res.ok) continue;
         const data = await res.json();
         const reply = data.choices?.[0]?.message?.content?.trim();
-        if (!reply) return null;
+        if (!reply) continue;
 
-        return { agentId, reply, confidence: state?.confidence ?? 0.7 };
+        // Insert immediately so real-time subscription picks it up
+        const { data: inserted, error: insertError } = await supabase
+          .from('employee_discussions')
+          .insert({
+            discussion_id: discussionId,
+            employee_id: agentId,
+            topic,
+            position: reply,
+            reasoning: null,
+            confidence: state?.confidence ?? 0.7,
+            impact_level: 'medium',
+          })
+          .select()
+          .single();
+
+        if (!insertError && inserted) {
+          allInserted.push(inserted);
+          conversationThread.push({ name, reply });
+        }
       } catch {
-        return null;
+        // skip failed agent
       }
-    });
-
-    const responses = (await Promise.all(responsePromises)).filter(Boolean);
-
-    // Insert into employee_discussions
-    const insertRows = responses.map((r: any) => ({
-      discussion_id: discussionId,
-      employee_id: r.agentId,
-      topic,
-      position: r.reply,
-      reasoning: null,
-      confidence: r.confidence,
-      impact_level: 'medium',
-    }));
-
-    // System (AYN) first, then others
-    const systemRow = insertRows.find((r: any) => r.employee_id === 'system');
-    const otherRows = insertRows.filter((r: any) => r.employee_id !== 'system');
-    const orderedRows = systemRow ? [systemRow, ...otherRows] : otherRows;
-
-    const { data: insertedData, error: insertError } = await supabase
-      .from('employee_discussions')
-      .insert(orderedRows)
-      .select();
-
-    if (insertError) {
-      console.error('Insert error:', insertError);
-      return new Response(JSON.stringify({ error: 'Failed to save discussion' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({
       discussion_id: discussionId,
-      messages: insertedData || [],
-      agents: selectedAgents,
+      messages: allInserted,
+      agents: orderedAgents,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
