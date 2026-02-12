@@ -390,7 +390,7 @@ serve(async (req) => {
           employeeIds,
           { actionType: 'founder_consultation', impactLevel: 'high' as ImpactLevel },
           LOVABLE_API_KEY!,
-          { token: TELEGRAM_BOT_TOKEN, chatId: TELEGRAM_CHAT_ID },
+          { chatId: Deno.env.get('TELEGRAM_GROUP_CHAT_ID') || TELEGRAM_CHAT_ID, fallbackToken: TELEGRAM_BOT_TOKEN },
         );
         
         // The broadcast already sent messages — just save to memory
