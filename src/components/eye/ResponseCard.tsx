@@ -107,12 +107,23 @@ const ResponseCardComponent = ({
   const combinedContent = visibleResponses.map((r) => r.content.replace(/^[!?\s]+/, "").trim()).join("\n\n");
 
   const detectedImageUrl = useMemo(() => {
+    // Check labData first (from image generation)
+    const firstResponse = visibleResponses[0];
+    if (firstResponse && 'labData' in firstResponse) {
+      const labUrl = (firstResponse as any).labData?.json?.image_url;
+      if (labUrl) return labUrl;
+    }
+    // Existing: markdown image URLs
     const markdownMatch = combinedContent.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/);
     if (markdownMatch) return markdownMatch[1];
+    // Existing: plain HTTP image URLs
     const urlMatch = combinedContent.match(/(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg))/i);
     if (urlMatch) return urlMatch[1];
+    // New: base64 data URL images
+    const dataUrlMatch = combinedContent.match(/(data:image\/[^;]+;base64,[A-Za-z0-9+/=]+)/);
+    if (dataUrlMatch) return dataUrlMatch[1];
     return null;
-  }, [combinedContent]);
+  }, [combinedContent, visibleResponses]);
 
   const documentAttachment = useMemo(() => {
     const firstResponse = visibleResponses[0];

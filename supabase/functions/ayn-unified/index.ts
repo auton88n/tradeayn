@@ -45,7 +45,7 @@ const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
     { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' }
   ],
   image: [
-    { id: 'lovable-gemini-image', provider: 'lovable', model_id: 'google/gemini-2.5-flash-image-preview', display_name: 'Gemini Image' }
+    { id: 'lovable-gemini-image', provider: 'lovable', model_id: 'google/gemini-2.5-flash-image', display_name: 'Gemini Image' }
   ],
 };
 
@@ -63,7 +63,7 @@ async function generateImage(prompt: string): Promise<{ imageUrl: string; revise
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash-image-preview',
+      model: 'google/gemini-2.5-flash-image',
       messages: [{ role: 'user', content: prompt }],
       modalities: ['image', 'text']
     }),

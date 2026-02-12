@@ -21,10 +21,13 @@ export const openDocumentUrl = (url: string, filename?: string): void => {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename || 'document';
-  anchor.target = '_blank';
-  anchor.rel = 'noopener noreferrer';
   
-  // Trigger download
+  // Only use target="_blank" for HTTP URLs, not data URLs
+  if (!url.startsWith('data:')) {
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+  }
+  
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
