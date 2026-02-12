@@ -1005,6 +1005,30 @@ serve(async (req) => {
 
     // Non-streaming response
     const responseContent = (response as { content: string }).content;
+    
+    // === SAFETY NET: Intercept hallucinated tool calls ===
+    // If the LLM hallucinated a generate_image tool call, re-route to actual image generation
+    if (responseContent && /["']?action["']?\s*:\s*["']generate_image["']/.test(responseContent)) {
+      console.log('[ayn-unified] Safety net: intercepted hallucinated image tool call');
+      try {
+        const promptMatch = responseContent.match(/["'](?:prompt|action_input|text)["']\s*:\s*["']([^"']+)["']/);
+        const imagePrompt = promptMatch?.[1] || lastMessage;
+        const { imageUrl, revisedPrompt } = await generateImage(imagePrompt);
+        return new Response(JSON.stringify({
+          content: revisedPrompt,
+          imageUrl,
+          revisedPrompt,
+          model: modelUsed.display_name,
+          wasFallback,
+          intent: 'image'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      } catch (imgErr) {
+        console.error('[ayn-unified] Safety net image generation failed:', imgErr);
+      }
+    }
+    
     const detectedEmotion = detectResponseEmotion(responseContent);
     const userEmotion = detectUserEmotion(lastMessage);
     
