@@ -1,116 +1,74 @@
 
 
-# Multi-Bot Telegram Group Chat — "The Real War Room"
+# Plan: Replace Telegram Group Chat with Admin Panel War Room + Make AYN More Human
 
-## Overview
+## What's Changing
 
-Each of AYN's 13 agents becomes a real Telegram bot in a group chat. When a deliberation fires, each agent posts from their own bot account — so you see 13 different names and avatars chatting, not one bot narrating.
+### 1. Remove Telegram Group Chat Feature
+- Remove the group chat routing block from `ayn-telegram-webhook/index.ts` (lines 211-228) that intercepts `TELEGRAM_GROUP_CHAT_ID` messages
+- Delete `supabase/functions/_shared/groupChat.ts` entirely
+- The group Telegram bots stay registered in the database (they're still used for deliberation broadcasts), but they no longer respond to user messages in the group
 
-## What You Need to Do (Before I Build)
+### 2. Add "War Room" Panel to Admin Dashboard
+Create a new admin panel section where you can watch your AI agents discuss topics in real-time, right inside the admin UI.
 
-1. Go to **@BotFather** on Telegram and create bots. You don't need all 13 right away — start with the most active ones:
+- **New component**: `src/components/admin/workforce/WarRoomPanel.tsx`
+  - A chat-like UI showing agent discussions with their names, emojis, and timestamps
+  - You can type a topic/question and trigger a multi-agent discussion from the panel
+  - Each agent's message appears with their identity (Sales Hunter, Security Guard, etc.)
+  - Messages are stored in a new `agent_discussions` or reuse the existing `employee_discussions` table
+  - Real-time updates via Supabase subscription so messages appear live
 
-| Priority | Bot Name Suggestion | Username Suggestion |
-|----------|-------------------|-------------------|
-| 1 | AYN | @ayn_brain_bot |
-| 2 | Sales Hunter | @ayn_sales_bot |
-| 3 | Chief of Staff | @ayn_cos_bot |
-| 4 | Security Guard | @ayn_security_bot |
-| 5 | Strategic Advisor | @ayn_advisor_bot |
-| 6 | Innovation Lead | @ayn_innovation_bot |
-| 7 | Investigator | @ayn_investigator_bot |
-| 8 | Legal Counsel | @ayn_lawyer_bot |
-| 9 | Marketing Strategist | @ayn_marketing_bot |
-| 10 | QA Watchdog | @ayn_qa_bot |
-| 11 | Follow-Up Agent | @ayn_followup_bot |
-| 12 | Customer Success | @ayn_cs_bot |
-| 13 | HR Manager | @ayn_hr_bot |
+- **New edge function**: `supabase/functions/admin-war-room/index.ts`
+  - Authenticated endpoint (admin only)
+  - Takes a topic/message, selects relevant agents (same keyword logic from groupChat.ts), generates their responses via LLM, and inserts them into the database
+  - Returns the discussion thread
 
-2. Create a **Telegram Group** and add ALL the bots to it
-3. Send a message in the group, then use `https://api.telegram.org/bot<TOKEN>/getUpdates` for any one bot to get the **group chat ID**
-4. Give me all the bot tokens and the group chat ID
+- **Sidebar update**: Add "War Room" tab to `AdminSidebar.tsx` under the AI Tools section
 
-## What I'll Build
+### 3. Call Individual Agents from Admin AI Assistant
+Enhance `AdminAIAssistant.tsx` and the `admin-ai-assistant` edge function so you can summon specific agents:
+- Type things like "ask Sales about the pipeline" or "@security check threats"
+- The assistant routes to the specific agent's personality, gets their response, and shows it in the chat with their identity
+- This makes the AI Assistant the central control hub for your entire workforce
 
-### 1. New database table: `agent_telegram_bots`
+### 4. Make AYN's Telegram Responses More Human
+Update the system prompt in `ayn-telegram-webhook/index.ts` to make AYN feel like a real person:
 
-Stores the mapping between employee IDs and their Telegram bot tokens:
+**Current behavior**: Short, robotic responses to casual messages like "hi"
 
-```text
-agent_telegram_bots
-- id (uuid, PK)
-- employee_id (text, unique) -- e.g. "sales", "advisor"
-- bot_token (text) -- each agent's bot token
-- is_active (boolean, default true)
-- created_at (timestamptz)
-```
+**New behavior**: Add instructions to the `HOW YOU TALK` section:
+- For casual greetings ("hi", "hey", "good morning"), respond warmly with a real paragraph -- share what's happening with the company, mention recent activity, give a status update naturally
+- Vary response length based on context: casual chat gets longer, warmer responses; urgent requests stay concise
+- Add personality traits: occasional humor, references to shared history, proactive updates
+- Example: Instead of "Hey! What can I help with?" respond with something like "Hey! Good to see you. Been keeping busy -- we got 3 new applications this morning, Sales has been working on that tech lead from yesterday, and Security flagged a couple of suspicious login attempts but nothing serious. The team's in good shape. What's on your mind?"
 
-This is better than 13 separate secrets because you can add/remove bots without redeploying.
+### 5. Verify Existing Panels Work
+- **AYN Logs** (`AYNActivityLog.tsx`): Already has real-time subscription and filtering -- no changes needed, just verify it loads
+- **AYN Workforce** (`WorkforceDashboard.tsx`): Already shows employee cards, health, tasks, activity feed, and collaboration graph -- no changes needed
+- **AYN Mind** (`AYNMindDashboard.tsx`): Already shows observations, ideas, thoughts, trends, moods, sales leads -- no changes needed
 
-### 2. New secret: `TELEGRAM_GROUP_CHAT_ID`
+---
 
-The group chat ID where all bots post. Separate from the existing `TELEGRAM_CHAT_ID` (your 1-on-1 with AYN).
+## Technical Details
 
-### 3. Update `telegramHelper.ts` — Multi-bot broadcast
+### Files to Delete
+- `supabase/functions/_shared/groupChat.ts`
 
-Replace `broadcastDeliberation()` to send each agent's position using **that agent's own bot token**:
+### Files to Modify
+- `supabase/functions/ayn-telegram-webhook/index.ts` -- Remove group chat routing (lines 211-228), remove import of `handleGroupConversation`
+- `supabase/functions/ayn-telegram-webhook/index.ts` -- Update `HOW YOU TALK` section in system prompt for more human/conversational tone with longer greeting responses
+- `src/components/admin/AdminSidebar.tsx` -- Add "War Room" tab
+- `src/components/admin/AdminAIAssistant.tsx` -- Add agent-summoning capability (detect @agent or "ask [agent]" patterns)
 
-```text
-- Load bot tokens from agent_telegram_bots table
-- For the debate opener: send via AYN's bot (system)
-- For each agent position: send via that agent's bot
-- For the final decision: send via AYN's bot
-- Fallback: if an agent doesn't have a bot, skip or use AYN's bot
-```
+### Files to Create
+- `src/components/admin/workforce/WarRoomPanel.tsx` -- In-panel multi-agent discussion UI
+- `supabase/functions/admin-war-room/index.ts` -- Edge function to trigger and return agent discussions
 
-### 4. Update `deliberation.ts`
+### Database
+- Reuse existing `employee_discussions` table for storing war room conversations, or add a lightweight `war_room_messages` table if the schema doesn't fit
 
-Pass the Supabase client to the broadcast function so it can look up bot tokens from the database. The broadcast parameter changes from `{ token, chatId }` to `{ chatId, supabase }`.
-
-### 5. Your existing AYN 1-on-1 chat stays unchanged
-
-The main `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` still handles your direct conversations with AYN. The group chat is a separate channel for deliberations only.
-
-## How It Will Look
-
-In your Telegram group:
-
-```text
-AYN (bot):
-  "INTERNAL DEBATE: Should we pivot pricing for Engineering Tools?"
-  Impact: HIGH | Agents: 5
-
-Sales Hunter (bot):
-  "Support. Current pricing is leaving money on the table..."
-
-Security Guard (bot):
-  "Conditional. Price changes affect existing contracts..."
-
-Innovation Lead (bot):
-  "Support. But bundle it with AI features..."
-
-Legal Counsel (bot):
-  "Oppose. Existing contracts have fixed pricing clauses."
-
-AYN (bot):
-  "DECISION — Winner: Sales Hunter (weight: 0.82)..."
-```
-
-Each message comes from a **different bot** with its own name and profile picture.
-
-## Implementation Sequence
-
-1. Create `agent_telegram_bots` table with RLS (service role only)
-2. Add `TELEGRAM_GROUP_CHAT_ID` secret
-3. Update `telegramHelper.ts` with multi-bot sending
-4. Update `deliberation.ts` to pass supabase to broadcast
-5. Update webhook to use group chat for deliberations
-6. You create bots, add them to group, and I'll store the tokens
-
-## What Does NOT Change
-
-- Your 1-on-1 AYN chat (commands, conversations, confirmations)
-- The deliberation logic itself (60/40 weighting, doctrine, trust)
-- All cron agents and background jobs
-- Existing Telegram commands
+### Edge Function Deployment
+- Redeploy `ayn-telegram-webhook` (group chat removal + prompt update)
+- Deploy new `admin-war-room` function
 
