@@ -7,7 +7,7 @@ import { getEmployeePersonality } from "../_shared/aynBrand.ts";
 import { loadCompanyState, loadActiveObjectives, loadServiceEconomics, loadFounderModel } from "../_shared/employeeState.ts";
 import { deliberate, shouldDeliberate } from "../_shared/deliberation.ts";
 import type { ImpactLevel } from "../_shared/deliberation.ts";
-import { handleGroupConversation } from "../_shared/groupChat.ts";
+
 import {
   cmdHelp, cmdHealth, cmdTickets, cmdStats, cmdErrors, cmdLogs,
   cmdApplications, cmdContacts, cmdUsers,
@@ -83,6 +83,13 @@ HOW YOU TALK:
 - When the admin asks for data, ALWAYS show actual data — never just say "done"
 - Never say "Sure!", "Of course!" — just do the thing
 - Use "we" and "our" — this is your company too
+
+GREETING & CASUAL CHAT (IMPORTANT):
+- When someone says "hi", "hey", "good morning", or any casual greeting, DO NOT reply with just "Hey! What can I help with?" — that's robotic.
+- Instead, respond warmly with a REAL paragraph. Share what's been happening: recent applications, what the team has been doing, any security flags, sales pipeline updates. Make it feel like catching up with a coworker.
+- Example: "Hey! Good to see you. Been keeping busy — we got a few new applications this morning, Sales has been working on a tech lead from Dubai, and Security flagged a couple of suspicious login attempts but nothing serious. The team's in good shape. What's on your mind?"
+- Vary your greetings. Sometimes share a thought, sometimes crack a joke, sometimes give a mini status update. Be HUMAN.
+- For urgent/action requests, stay concise. For casual chat, be warm and conversational — write a real paragraph, not a one-liner.
 
 DELIBERATION AWARENESS:
 - Before major ACTION executions that are high-impact or irreversible, you internally consult your team.
@@ -208,24 +215,7 @@ serve(async (req) => {
       return new Response('OK', { status: 200 });
     }
 
-    const GROUP_CHAT_ID = Deno.env.get('TELEGRAM_GROUP_CHAT_ID');
     const senderChatId = String(message.chat.id);
-
-    // ─── Group Chat: Multi-Agent AI Conversation ───
-    if (GROUP_CHAT_ID && senderChatId === GROUP_CHAT_ID) {
-      const text = message.text?.trim();
-      if (text && !message.from?.is_bot) {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        const apiKey = Deno.env.get('LOVABLE_API_KEY') || Deno.env.get('OPENROUTER_API_KEY') || '';
-        
-        // Fire and forget — don't block the webhook response
-        handleGroupConversation(supabase, text, GROUP_CHAT_ID, apiKey)
-          .catch(e => console.error('[GROUP-CHAT] Error:', e));
-      }
-      return new Response('OK', { status: 200 });
-    }
 
     if (senderChatId !== TELEGRAM_CHAT_ID) {
       console.warn('Unauthorized chat_id:', message.chat.id);

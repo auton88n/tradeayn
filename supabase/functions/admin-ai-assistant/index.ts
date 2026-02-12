@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
+import { getEmployeePersonality, getAgentDisplayName, getAgentEmoji } from "../_shared/aynBrand.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -133,6 +134,41 @@ serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+    }
+
+    // ─── Agent Summoning Detection ───
+    const AGENT_ALIASES: Record<string, string> = {
+      sales: 'sales', 'sales hunter': 'sales',
+      security: 'security_guard', 'security guard': 'security_guard',
+      marketing: 'marketing', 'marketing strategist': 'marketing',
+      advisor: 'advisor', 'strategic advisor': 'advisor',
+      legal: 'lawyer', lawyer: 'lawyer',
+      'chief of staff': 'chief_of_staff', cos: 'chief_of_staff',
+      qa: 'qa_watchdog', watchdog: 'qa_watchdog',
+      innovation: 'innovation',
+      'customer success': 'customer_success', cs: 'customer_success',
+      investigator: 'investigator',
+      'follow up': 'follow_up', followup: 'follow_up',
+      hr: 'hr_manager',
+    };
+
+    let summonedAgent: string | null = null;
+    const msgLower = message.toLowerCase().trim();
+
+    // Check @agent pattern
+    const atMatch = msgLower.match(/^@(\w[\w\s]*?)[\s,:](.+)/s);
+    if (atMatch) {
+      const alias = atMatch[1].trim();
+      if (AGENT_ALIASES[alias]) summonedAgent = AGENT_ALIASES[alias];
+    }
+
+    // Check "ask [agent] about..." pattern
+    if (!summonedAgent) {
+      const askMatch = msgLower.match(/^ask\s+([\w\s]+?)\s+(about|to|for|if|whether)\s+/i);
+      if (askMatch) {
+        const alias = askMatch[1].trim();
+        if (AGENT_ALIASES[alias]) summonedAgent = AGENT_ALIASES[alias];
+      }
     }
 
     // Gather comprehensive operational context (NO sensitive data)
@@ -355,6 +391,64 @@ serve(async (req) => {
         })
         .then(() => {})
         .catch(() => {});
+    }
+
+    // ─── Agent-Specific Response ───
+    if (summonedAgent) {
+      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+      if (!LOVABLE_API_KEY) {
+        return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const agentPersonality = getEmployeePersonality(summonedAgent);
+      const agentName = getAgentDisplayName(summonedAgent);
+      const agentEmoji = getAgentEmoji(summonedAgent);
+
+      const agentMessages = [
+        { role: 'system', content: `${agentPersonality}\n\nYou are responding directly to the founder in the admin panel. Be helpful, conversational, and stay in character as ${agentName}. Use markdown for formatting.\n\nSystem context:\n${JSON.stringify(contextData, null, 2)}\n\nSystem Health: ${systemHealth}%` },
+        { role: 'user', content: sanitizedMessage },
+      ];
+
+      const agentResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'google/gemini-3-flash-preview', messages: agentMessages }),
+      });
+
+      if (!agentResponse.ok) {
+        return new Response(JSON.stringify({ error: 'Agent request failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const agentData = await agentResponse.json();
+      const agentContent = `${agentEmoji} **${agentName}**:\n\n${agentData.choices?.[0]?.message?.content || 'No response'}`;
+
+      // Log
+      try {
+        await supabase.from('admin_ai_conversations').insert([
+          { admin_id: user.id, role: 'user', message, context: { summoned_agent: summonedAgent } },
+          { admin_id: user.id, role: 'assistant', message: agentContent },
+        ]);
+      } catch (_) {}
+
+      const testStats = contextData.testStats as { passRate?: string } | undefined;
+      const llmUsage = contextData.llmUsage24h as { fallbackRate?: string } | undefined;
+      const rateLimitsData = contextData.rateLimits as { blockedUsers?: number } | undefined;
+      const ticketsData = contextData.tickets as { open?: number } | undefined;
+      const engineeringData = contextData.engineering as { total?: number } | undefined;
+
+      return new Response(JSON.stringify({
+        content: agentContent,
+        actions: [],
+        contextData,
+        quickStats: {
+          systemHealth,
+          testPassRate: parseFloat(testStats?.passRate || '0'),
+          blockedUsers: rateLimitsData?.blockedUsers || 0,
+          openTickets: ticketsData?.open || 0,
+          llmFallbackRate: parseFloat(llmUsage?.fallbackRate || '0'),
+          calcUsage24h: engineeringData?.total || 0,
+        },
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // Build messages for AI
