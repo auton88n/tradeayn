@@ -8,6 +8,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const FULL_ROSTER = ['system', 'chief_of_staff', 'advisor', 'sales', 'marketing', 'security_guard', 'lawyer', 'innovation', 'customer_success', 'qa_watchdog'];
+
 function selectRelevantAgents(topic: string): string[] {
   const msg = topic.toLowerCase();
   const selected = new Set<string>(['system']);
@@ -22,12 +24,14 @@ function selectRelevantAgents(topic: string): string[] {
   if (msg.includes('customer') || msg.includes('churn') || msg.includes('retention') || msg.includes('user') || msg.includes('onboard')) selected.add('customer_success');
   if (msg.includes('quality') || msg.includes('bug') || msg.includes('uptime') || msg.includes('monitor')) selected.add('qa_watchdog');
 
-  if (selected.size < 3) {
-    selected.add('chief_of_staff');
-    selected.add('advisor');
+  // Fill up to 6 agents from the roster randomly
+  const remaining = FULL_ROSTER.filter(a => !selected.has(a));
+  while (selected.size < 6 && remaining.length > 0) {
+    const idx = Math.floor(Math.random() * remaining.length);
+    selected.add(remaining.splice(idx, 1)[0]);
   }
 
-  return Array.from(selected).slice(0, 5);
+  return Array.from(selected);
 }
 
 serve(async (req) => {
@@ -106,11 +110,11 @@ ${contextBlock}
 The founder wants the team to discuss: "${topic}"
 ${discussionSoFar}
 ${isFirst
-  ? `You speak FIRST. Set the direction on this topic as ${name}.`
-  : `Now it's YOUR turn. React to what others said above. Agree, disagree, challenge, or build on their points. Reference them by name. Don't repeat what's been said.`
+  ? `You speak FIRST. Set the direction in 2 sentences max as ${name}.`
+  : `Now it's YOUR turn. React to what others said above. Agree, disagree, challenge, or build on their points. Reference them by name.`
 }
 
-Keep it SHORT (2-4 sentences). Be conversational and substantive. Stay in character.
+Reply in 1-2 sentences MAX. Maximum 30 words. Be punchy and direct. No fluff. Stay in character.
 ${state?.confidence ? `Your current confidence: ${state.confidence}` : ''}
 
 Reply with ONLY your message text. No prefixes, no emoji, no name tag.`;
@@ -122,6 +126,7 @@ Reply with ONLY your message text. No prefixes, no emoji, no name tag.`;
           body: JSON.stringify({
             model: 'google/gemini-3-flash-preview',
             messages: [{ role: 'user', content: prompt }],
+            max_tokens: 80,
           }),
         });
 
