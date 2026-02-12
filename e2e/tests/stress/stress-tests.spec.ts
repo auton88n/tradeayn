@@ -9,7 +9,7 @@ test.describe('Stress Tests', () => {
       await Promise.all(browsers.map(async (browser, i) => {
         const context = await browser.newContext();
         const page = await context.newPage();
-        await page.goto('https://ayn-insight-forge.lovable.app');
+        await page.goto('https://aynn.io');
         await page.waitForLoadState('networkidle');
         
         const chatInput = page.locator('textarea').first();
@@ -26,14 +26,14 @@ test.describe('Stress Tests', () => {
     const routes = ['/', '/engineering', '/support', '/settings'];
     for (let i = 0; i < 20; i++) {
       const route = routes[i % routes.length];
-      await page.goto(`https://ayn-insight-forge.lovable.app${route}`);
+      await page.goto(`https://aynn.io${route}`);
       await page.waitForTimeout(200);
     }
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('should handle 50 rapid API calls', async ({ page }) => {
-    await page.goto('https://ayn-insight-forge.lovable.app/engineering');
+    await page.goto('https://aynn.io/engineering');
     await page.waitForLoadState('networkidle');
     
     const calcBtn = page.locator('button:has-text("Calculate")').first();
@@ -47,7 +47,7 @@ test.describe('Stress Tests', () => {
   });
 
   test('should measure response times', async ({ page }) => {
-    await page.goto('https://ayn-insight-forge.lovable.app');
+    await page.goto('https://aynn.io');
     const start = Date.now();
     await page.waitForLoadState('networkidle');
     const loadTime = Date.now() - start;

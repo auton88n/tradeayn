@@ -62,7 +62,7 @@ serve(async (req) => {
       logStep("No existing customer, will create during checkout");
     }
 
-    const origin = req.headers.get("origin") || "https://ayn-insight-forge.lovable.app";
+    const origin = req.headers.get("origin") || "https://aynn.io";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
