@@ -3,25 +3,67 @@
 export function detectIntent(message: string): string {
   const lower = message.toLowerCase();
   
-  // Document generation keywords (all languages)
-  const documentKeywords = [
-    'create pdf', 'make pdf', 'generate pdf', 'pdf report', 'pdf document',
-    'create excel', 'make excel', 'excel sheet', 'spreadsheet', 'xlsx file',
-    'export as pdf', 'export as excel', 'make a report', 'generate report',
-    'document about', 'create a document', 'make me a', 'give me a pdf',
-    'excel about', 'excel for', 'excel of', 'table about', 'table of',
-    'data about', 'data overview', 'create table', 'create a table',
-    'pdf about', 'pdf for', 'pdf of',
-    'اعمل pdf', 'انشئ pdf', 'ملف pdf', 'تقرير pdf', 'وثيقة pdf',
-    'اعمل اكسل', 'جدول بيانات', 'ملف اكسل', 'تقرير عن', 'انشئ تقرير',
-    'اعمل لي', 'سوي لي', 'اعطني ملف', 'حمل لي',
-    'جدول عن', 'بيانات عن', 'اكسل عن', 'اكسل لـ',
-    'créer pdf', 'faire pdf', 'rapport pdf', 'document pdf', 'générer pdf',
-    'créer excel', 'feuille excel', 'tableur', 'rapport sur', 'faire un rapport',
-    'excel sur', 'excel de', 'tableau de', 'données sur'
+  // === IMAGE detection FIRST (prevents "make me a" hijacking) ===
+  const imagePatterns = [
+    /generate\s+(an?\s+)?image/,
+    /create\s+(an?\s+)?image/,
+    /make\s+(an?\s+)?image/,
+    /make\s+me\s+(an?\s+)?picture/,
+    /make\s+me\s+(an?\s+)?photo/,
+    /make\s+me\s+(an?\s+)?image/,
+    /generate\s+(an?\s+)?picture/,
+    /create\s+(an?\s+)?picture/,
+    /show\s+me\s+(an?\s+)?(image|picture|photo)/,
+    /give\s+me\s+(an?\s+)?(image|picture|photo)/,
+    /draw\s/,
+    /picture\s+of/,
+    /image\s+of/,
+    /photo\s+of/,
+    /illustration\s+of/,
+    /render\s+(an?\s+)?/,
+    /visualize/,
+    /صورة/, /ارسم/, /ارسم لي/, /اعطني صورة/,
+    /image\s+de/, /dessine/, /montre\s+moi/, /genere\s+une\s+image/,
   ];
   
+  if (imagePatterns.some(rx => rx.test(lower))) return 'image';
 
+  // === DOCUMENT detection (PDF / Excel) ===
+  const documentPatterns = [
+    /create\s+(an?\s+)?pdf/,
+    /make\s+(an?\s+)?pdf/,
+    /generate\s+(an?\s+)?pdf/,
+    /give\s+me\s+(an?\s+)?pdf/,
+    /export\s+as\s+pdf/,
+    /pdf\s+(report|document|about|for|of)/,
+    /create\s+(an?\s+)?excel/,
+    /make\s+(an?\s+)?excel/,
+    /give\s+me\s+(an?\s+)?excel/,
+    /excel\s+(sheet|about|for|of)/,
+    /spreadsheet/,
+    /xlsx\s+file/,
+    /create\s+(an?\s+)?report/,
+    /make\s+(an?\s+)?report/,
+    /generate\s+(an?\s+)?report/,
+    /create\s+(an?\s+)?table/,
+    /table\s+(about|of)/,
+    /data\s+(about|overview)/,
+    /document\s+about/,
+    /create\s+(an?\s+)?document/,
+    // Arabic
+    /اعمل\s*pdf/, /انشئ\s*pdf/, /ملف\s*pdf/, /تقرير\s*pdf/, /وثيقة\s*pdf/,
+    /اعمل\s*(اكسل|لي)/, /جدول\s*بيانات/, /ملف\s*اكسل/, /تقرير\s*عن/, /انشئ\s*تقرير/,
+    /سوي\s*لي/, /اعطني\s*ملف/, /حمل\s*لي/,
+    /جدول\s*عن/, /بيانات\s*عن/, /اكسل\s*عن/, /اكسل\s*لـ/,
+    // French
+    /créer\s+(un\s+)?pdf/, /faire\s+(un\s+)?pdf/, /rapport\s+pdf/, /document\s+pdf/, /générer\s+(un\s+)?pdf/,
+    /créer\s+(un\s+)?excel/, /feuille\s+excel/, /tableur/, /rapport\s+sur/, /faire\s+un\s+rapport/,
+    /excel\s+sur/, /excel\s+de/, /tableau\s+de/, /données\s+sur/,
+  ];
+  
+  if (documentPatterns.some(rx => rx.test(lower))) return 'document';
+
+  // === Other intents ===
   const engineeringKeywords = [
     'beam', 'column', 'foundation', 'slab', 'retaining wall', 'grading',
     'calculate', 'structural', 'load', 'stress', 'reinforcement', 'concrete',
@@ -30,18 +72,7 @@ export function detectIntent(message: string): string {
   
   const searchKeywords = ['search', 'find', 'look up', 'what is the latest', 'current', 'today', 'news', 'recent'];
   const fileKeywords = ['uploaded', 'file', 'analyze this', 'summarize this'];
-  const imageKeywords = [
-    'generate image', 'create image', 'draw', 'picture of',
-    'image of', 'make image', 'make a picture', 'make me a picture',
-    'show me an image', 'photo of', 'illustration of', 'visualize',
-    'render a', 'render an', 'show me a picture', 'show me a photo',
-    'generate a picture', 'create a picture', 'make me an image',
-    'صورة', 'ارسم', 'ارسم لي', 'اعطني صورة',
-    'image de', 'dessine', 'montre moi', 'genere une image'
-  ];
 
-  if (documentKeywords.some(kw => lower.includes(kw))) return 'document';
-  if (imageKeywords.some(kw => lower.includes(kw))) return 'image';
   if (fileKeywords.some(kw => lower.includes(kw))) return 'files';
   if (searchKeywords.some(kw => lower.includes(kw))) return 'search';
   if (engineeringKeywords.some(kw => lower.includes(kw))) return 'engineering';

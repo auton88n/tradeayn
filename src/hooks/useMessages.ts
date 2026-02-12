@@ -313,14 +313,15 @@ export const useMessages = (
         
         const lower = messageContent.toLowerCase();
         
-        // Document generation detection (English, Arabic, French)
-        if (/create pdf|make pdf|generate pdf|pdf report|pdf document|pdf about|pdf for|pdf of|give me a pdf/.test(lower)) return 'document';
-        if (/create excel|make excel|excel sheet|spreadsheet|xlsx|excel about|excel for|excel of|table about|table of|data about|data overview|create table|create a table/.test(lower)) return 'document';
-        if (/اعمل pdf|انشئ pdf|ملف pdf|تقرير pdf|اعمل لي|سوي لي|جدول عن|بيانات عن|اكسل عن/.test(lower)) return 'document';
-        if (/créer pdf|faire pdf|rapport pdf|document pdf|créer excel|excel sur|excel de|tableau de|données sur/.test(lower)) return 'document';
+        // Image generation detection FIRST (prevents "make me a" hijacking by document)
+        if (/generate\s+(an?\s+)?image|create\s+(an?\s+)?image|make\s+(an?\s+)?image|make\s+me\s+(an?\s+)?(picture|photo|image)|generate\s+(an?\s+)?picture|create\s+(an?\s+)?picture|show\s+me\s+(an?\s+)?(image|picture|photo)|give\s+me\s+(an?\s+)?(image|picture|photo)|draw\s|picture\s+of|image\s+of|photo\s+of|illustration\s+of|visualize|render\s+(an?\s+)?/.test(lower)) return 'image';
+        if (/صورة|ارسم|اعطني صورة|dessine|montre\s+moi|genere\s+une\s+image/.test(lower)) return 'image';
         
-        // Image generation detection (English, Arabic, French)
-        if (/generate image|create image|draw |picture of|image of|make image|make me a picture|show me a picture|show me a photo|photo of|illustration of|visualize|render a |render an |generate a picture|create a picture|صورة|ارسم|dessine|montre moi|genere une image/.test(lower)) return 'image';
+        // Document generation detection (English, Arabic, French) - with flexible articles
+        if (/create\s+(an?\s+)?pdf|make\s+(an?\s+)?pdf|generate\s+(an?\s+)?pdf|give\s+me\s+(an?\s+)?pdf|export\s+as\s+pdf|pdf\s+(report|document|about|for|of)/.test(lower)) return 'document';
+        if (/create\s+(an?\s+)?excel|make\s+(an?\s+)?excel|give\s+me\s+(an?\s+)?excel|excel\s+(sheet|about|for|of)|spreadsheet|xlsx|table\s+(about|of)|data\s+(about|overview)|create\s+(an?\s+)?table|create\s+(an?\s+)?report|make\s+(an?\s+)?report|generate\s+(an?\s+)?report/.test(lower)) return 'document';
+        if (/اعمل\s*pdf|انشئ\s*pdf|ملف\s*pdf|تقرير\s*pdf|اعمل\s*(اكسل|لي)|سوي\s*لي|جدول\s*عن|بيانات\s*عن|اكسل\s*عن/.test(lower)) return 'document';
+        if (/créer\s+(un\s+)?pdf|faire\s+(un\s+)?pdf|rapport\s+pdf|document\s+pdf|créer\s+(un\s+)?excel|excel\s+sur|excel\s+de|tableau\s+de|données\s+sur/.test(lower)) return 'document';
         
         // Floor plan detection (disabled - rebuilding)
         // if (/floor plan|house plan|home layout|design a house|design me a|مخطط|تصميم بيت|تصميم منزل|plan de maison/.test(lower)) return 'floor_plan';
@@ -351,9 +352,11 @@ export const useMessages = (
 
       // Build conversation history in ayn-unified format
       // Strip old [Attached file: ...] references so AYN focuses on the current file
+      const stripBase64 = (text: string) => text.replace(/!\[([^\]]*)\]\(data:image\/[^;]+;base64,[^)]+\)/g, '![$1](image-removed)');
+      
       const conversationMessages = messages.slice(-5).map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'assistant',
-        content: msg.content.replace(/\n\n\[Attached file: [^\]]+\]$/, '')
+        content: stripBase64(msg.content.replace(/\n\n\[Attached file: [^\]]+\]$/, ''))
       }));
 
       // Add current user message (only current attachment reference)
@@ -711,7 +714,7 @@ export const useMessages = (
           {
             user_id: userId,
             session_id: sessionId,
-            content: response,
+            content: response.replace(/!\[([^\]]*)\]\(data:image\/[^;]+;base64,[^)]+\)/g, '![$1](image-generated)'),
             sender: 'ayn',
             mode_used: selectedMode,
             // Save document URL as attachment for reliable download
