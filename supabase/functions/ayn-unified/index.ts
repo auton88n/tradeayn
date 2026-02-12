@@ -517,8 +517,8 @@ serve(async (req) => {
     }
 
     // Trim conversation history to avoid exceeding token limits (~1M tokens)
-    // Keep system messages + last 20 user/assistant messages max
-    const MAX_CONTEXT_MESSAGES = 20;
+    // 1. Keep only last 10 messages
+    const MAX_CONTEXT_MESSAGES = 10;
     let messages = rawMessages;
     if (rawMessages.length > MAX_CONTEXT_MESSAGES) {
       const systemMsgs = rawMessages.filter((m: any) => m.role === 'system');
@@ -526,6 +526,19 @@ serve(async (req) => {
       messages = [...systemMsgs, ...nonSystemMsgs.slice(-MAX_CONTEXT_MESSAGES)];
       console.log(`[ayn-unified] Trimmed messages from ${rawMessages.length} to ${messages.length}`);
     }
+    // 2. Truncate individual messages that are too long (e.g. base64 images, large files)
+    const MAX_CHARS_PER_MESSAGE = 50000; // ~12K tokens
+    messages = messages.map((m: any) => {
+      if (typeof m.content === 'string' && m.content.length > MAX_CHARS_PER_MESSAGE) {
+        console.log(`[ayn-unified] Truncating message (role=${m.role}) from ${m.content.length} to ${MAX_CHARS_PER_MESSAGE} chars`);
+        return { ...m, content: m.content.substring(0, MAX_CHARS_PER_MESSAGE) + '\n[...truncated for length]' };
+      }
+      // Handle array content (vision messages with images)
+      if (Array.isArray(m.content)) {
+        return { ...m, content: m.content.filter((part: any) => part.type === 'text').slice(0, 2) };
+      }
+      return m;
+    });
 
     // Detect intent from last message or use forced intent
     const lastMessage = messages[messages.length - 1]?.content || '';
