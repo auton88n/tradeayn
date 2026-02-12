@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { getEmployeeSystemPrompt, formatNatural } from "../_shared/aynBrand.ts";
 import { logReflection } from "../_shared/employeeState.ts";
+import { scrapeUrl, mapWebsite } from "../_shared/firecrawlHelper.ts";
 
 const EMPLOYEE_ID = 'investigator';
 
@@ -67,26 +68,23 @@ async function investigateLead(supabase: any, apiKey: string, leadId: string, ta
   const { data: lead } = await supabase.from('ayn_sales_pipeline').select('*').eq('id', leadId).single();
   if (!lead) return jsonRes({ error: 'Lead not found' }, 404);
 
-  // Fetch website content
+  // Fetch website content via Firecrawl
   let websiteContent = '';
+  let siteMap: string[] = [];
   if (lead.company_url) {
     try {
-      const res = await fetch(lead.company_url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AYNBot/1.0)' },
-        redirect: 'follow',
-      });
-      if (res.ok) {
-        const html = await res.text();
-        websiteContent = html
-          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-          .replace(/<[^>]+>/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .slice(0, 10000);
+      const [scrapeResult, mapResult] = await Promise.all([
+        scrapeUrl(lead.company_url, { onlyMainContent: true }),
+        mapWebsite(lead.company_url, { limit: 30 }),
+      ]);
+      if (scrapeResult.success) {
+        websiteContent = (scrapeResult.markdown || '').slice(0, 12000);
+      }
+      if (mapResult.success && mapResult.links) {
+        siteMap = mapResult.links.slice(0, 20);
       }
     } catch (e) {
-      console.error('Website fetch failed:', e);
+      console.error('Firecrawl fetch failed:', e);
     }
   }
 
@@ -127,7 +125,7 @@ Respond in JSON:
         content: systemPrompt,
       }, {
         role: 'user',
-        content: `Company: ${lead.company_name}\nURL: ${lead.company_url || 'N/A'}\nIndustry: ${lead.industry || 'Unknown'}\nExisting notes: ${lead.notes || 'None'}\nPain points so far: ${lead.pain_points?.join(', ') || 'None'}\n\nWebsite content:\n${websiteContent || 'Could not fetch'}`,
+        content: `Company: ${lead.company_name}\nURL: ${lead.company_url || 'N/A'}\nIndustry: ${lead.industry || 'Unknown'}\nExisting notes: ${lead.notes || 'None'}\nPain points so far: ${lead.pain_points?.join(', ') || 'None'}\n\nSite pages: ${siteMap.length ? siteMap.join('\n') : 'N/A'}\n\nWebsite content:\n${websiteContent || 'Could not fetch'}`,
       }],
     }),
   });
