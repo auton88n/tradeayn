@@ -2,12 +2,15 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
-import { getEmployeeSystemPrompt, formatEmployeeReport } from "../_shared/aynBrand.ts";
+import { getEmployeeSystemPrompt, formatNatural, detectToneContext } from "../_shared/aynBrand.ts";
+import { loadCompanyState, loadActiveObjectives, loadServiceEconomics, logReflection, buildEmployeeContext } from "../_shared/employeeState.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const EMPLOYEE_ID = 'advisor';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -30,12 +33,20 @@ serve(async (req) => {
       .limit(20);
 
     if (!reports?.length || reports.length < 3) {
-      return new Response(JSON.stringify({ success: true, message: 'Not enough reports to synthesize yet. I need at least 3 employee reports to give you a meaningful briefing.' }), {
+      return new Response(JSON.stringify({ success: true, message: 'Not enough reports to synthesize yet.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Gather additional context
+    // Load V2 context
+    const [companyState, objectives, economics, employeeContext] = await Promise.all([
+      loadCompanyState(supabase),
+      loadActiveObjectives(supabase),
+      loadServiceEconomics(supabase),
+      buildEmployeeContext(supabase, EMPLOYEE_ID),
+    ]);
+
+    // Gather additional signals
     const ago24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const [
       { count: activeUsers },
@@ -51,23 +62,20 @@ serve(async (req) => {
       supabase.from('system_health_checks').select('function_name, is_healthy, response_time_ms').order('checked_at', { ascending: false }).limit(10),
     ]);
 
-    // Pipeline summary
     const pipelineSummary: Record<string, number> = {};
     for (const p of pipelineStats || []) {
       pipelineSummary[p.status] = (pipelineSummary[p.status] || 0) + 1;
     }
 
-    // Synthesize with AI and personality
-    const systemPrompt = getEmployeeSystemPrompt('advisor', `Synthesize reports from all AYN AI employees into a strategic briefing for the founder.
+    // Synthesize with V2 personality — no rigid format
+    const systemPrompt = getEmployeeSystemPrompt(EMPLOYEE_ID, `Synthesize reports from all AYN AI employees into a strategic briefing for the founder.
 
-Write exactly 5 numbered insights covering:
-1. 🎯 Biggest opportunity right now
-2. ⚠️ Biggest risk or threat
-3. ✅ What's working well
-4. 🔧 What needs attention
-5. 💡 One bold recommendation
+${employeeContext}
 
-Be direct. Be specific. Reference actual data from the reports. No fluff — the founder's time is valuable.`);
+Be direct. Be specific. Reference actual data. No rigid numbered format — give honest strategic takes.
+If something's great, say so briefly. If something's concerning, explain why and what to do.
+Reference company objectives and service economics when relevant.
+Express uncertainty when data is thin.`);
 
     const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -86,7 +94,11 @@ Context:
 - Open tickets: ${openTickets || 0}
 - Security incidents (24h): ${recentIncidents?.length || 0}
 - Pipeline: ${JSON.stringify(pipelineSummary)}
-- System health: ${healthChecks?.map(h => `${h.function_name}: ${h.is_healthy ? 'OK' : 'DOWN'}`).join(', ') || 'No data'}`,
+- System health: ${healthChecks?.map(h => `${h.function_name}: ${h.is_healthy ? 'OK' : 'DOWN'}`).join(', ') || 'No data'}
+- Company momentum: ${companyState?.momentum || 'unknown'}
+- Stress level: ${companyState?.stress_level || 0}
+
+Give your honest strategic take. What matters right now?`,
         }],
       }),
     });
@@ -96,12 +108,13 @@ Context:
     const aiData = await aiRes.json();
     const insight = aiData.choices?.[0]?.message?.content?.trim() || 'Could not generate insights';
 
-    // Save strategic insight with personality
+    // Save with natural tone
+    const tone = detectToneContext(insight, companyState?.stress_level);
     await supabase.from('ayn_mind').insert({
       type: 'strategic_insight',
-      content: formatEmployeeReport('advisor', insight),
+      content: formatNatural(EMPLOYEE_ID, insight, tone),
       context: {
-        from_employee: 'advisor',
+        from_employee: EMPLOYEE_ID,
         reports_analyzed: reports.length,
         timestamp: new Date().toISOString(),
       },
@@ -114,14 +127,24 @@ Context:
       .eq('type', 'employee_report')
       .eq('shared_with_admin', false);
 
-    // Send directly to founder via Telegram
+    // Send to founder via Telegram — natural tone
     if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatEmployeeReport('advisor', `${reports.length} reports analyzed.\n\n${insight}`));
+      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatNatural(EMPLOYEE_ID, `${reports.length} reports analyzed.\n\n${insight}`, tone));
     }
 
-    await logAynActivity(supabase, 'advisor_briefing', `Strategic briefing: ${reports.length} reports → 5 insights`, {
+    // Log reflection
+    await logReflection(supabase, {
+      employee_id: EMPLOYEE_ID,
+      action_ref: 'strategic_briefing',
+      reasoning: `Synthesized ${reports.length} reports with company state and objectives context`,
+      expected_outcome: 'Founder gets actionable strategic insight aligned to objectives',
+      confidence: 0.7,
+      what_would_change_mind: 'If reports are too thin or contradictory to synthesize meaningfully',
+    });
+
+    await logAynActivity(supabase, 'advisor_briefing', `Strategic briefing: ${reports.length} reports analyzed`, {
       details: { reports_count: reports.length },
-      triggered_by: 'advisor',
+      triggered_by: EMPLOYEE_ID,
     });
 
     return new Response(JSON.stringify({ success: true, insight }), {

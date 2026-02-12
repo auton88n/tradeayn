@@ -2,7 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
-import { formatEmployeeReport } from "../_shared/aynBrand.ts";
+import { formatNatural } from "../_shared/aynBrand.ts";
+import { loadCompanyState, logReflection } from "../_shared/employeeState.ts";
+
+const EMPLOYEE_ID = 'security_guard';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,27 +90,38 @@ serve(async (req) => {
       }
     }
 
-    // Create employee report with personality
+    // Natural tone report
+    const companyState = await loadCompanyState(supabase);
     const hasThreats = results.some(r => !r.includes('secure'));
     const reportContent = hasThreats
-      ? `THREAT DETECTED.\n\n${results.map(r => `⚠️ ${r}`).join('\n')}\n\nResponse measures deployed. Monitoring continues.`
-      : `All quiet on the wire.\n\n${results.join('\n')}\n\nSystems nominal. Users safe. Standing watch.`;
+      ? `${results.length} issue(s) found. ${results.join('. ')}. response deployed, monitoring continues.`
+      : `all clear. ${results.join('. ')}. standing watch.`;
+
+    const tone = hasThreats ? 'incident' as const : 'casual' as const;
 
     await supabase.from('ayn_mind').insert({
       type: 'employee_report',
-      content: formatEmployeeReport('security_guard', reportContent),
-      context: { from_employee: 'security_guard', timestamp: new Date().toISOString() },
+      content: formatNatural(EMPLOYEE_ID, reportContent, tone),
+      context: { from_employee: EMPLOYEE_ID, timestamp: new Date().toISOString() },
       shared_with_admin: false,
     });
 
-    // Alert on critical issues
     if (hasThreats && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatEmployeeReport('security_guard', reportContent));
+      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatNatural(EMPLOYEE_ID, reportContent, 'incident'));
     }
 
-    await logAynActivity(supabase, 'security_scan', `Security sweep complete. ${results.length} finding(s).`, {
+    await logReflection(supabase, {
+      employee_id: EMPLOYEE_ID,
+      action_ref: 'security_sweep',
+      reasoning: `Scanned injection attempts, message abuse, rate limits. ${hasThreats ? 'Threats found.' : 'All clear.'}`,
+      expected_outcome: hasThreats ? 'Blocked users stop malicious activity' : 'Systems remain secure',
+      confidence: 0.8,
+      what_would_change_mind: 'If blocked user circumvents via new account',
+    });
+
+    await logAynActivity(supabase, 'security_scan', `Security sweep: ${results.length} finding(s)`, {
       details: { findings: results },
-      triggered_by: 'security_guard',
+      triggered_by: EMPLOYEE_ID,
     });
 
     return new Response(JSON.stringify({ success: true, findings: results }), {
@@ -188,6 +202,6 @@ async function handleStrike(
 
   // Telegram alert for blocks only
   if (status === 'blocked' && botToken && chatId) {
-    await sendTelegramMessage(botToken, chatId, formatEmployeeReport('security_guard', `🚨 BLOCK ENFORCED\n\n${summary}\n\nSubject neutralized. Monitoring continues.`));
+    await sendTelegramMessage(botToken, chatId, formatNatural(EMPLOYEE_ID, `block enforced. ${summary}`, 'incident'));
   }
 }

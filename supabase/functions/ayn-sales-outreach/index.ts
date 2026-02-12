@@ -2,7 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { logAynActivity } from "../_shared/aynLogger.ts";
-import { AYN_BRAND, getEmployeeSystemPrompt, formatEmployeeReport } from "../_shared/aynBrand.ts";
+import { AYN_BRAND, getEmployeeSystemPrompt, formatNatural } from "../_shared/aynBrand.ts";
+import { logReflection } from "../_shared/employeeState.ts";
+
+const EMPLOYEE_ID = 'sales';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -173,7 +176,7 @@ Respond in JSON format:
 
   await supabase.from('ayn_mind').insert({
     type: 'sales_lead',
-    content: formatEmployeeReport('sales', `New target acquired: ${analysis.company_name} (${analysis.industry})\n\nPain points: ${analysis.pain_points?.join(', ')}\nOur play: ${analysis.recommended_services?.join(', ')}\nWebsite quality: ${analysis.website_quality}/10\n\n${analysis.notes || 'Looks promising — needs investigation.'}`),
+    content: formatNatural(EMPLOYEE_ID, `new target: ${analysis.company_name} (${analysis.industry}). pain points: ${analysis.pain_points?.join(', ')}. our play: ${analysis.recommended_services?.join(', ')}. quality: ${analysis.website_quality}/10. ${analysis.notes || 'looks promising.'}`, 'casual'),
     context: { lead_id: newLead.id, company_url: formattedUrl, ...analysis },
     shared_with_admin: false,
   });

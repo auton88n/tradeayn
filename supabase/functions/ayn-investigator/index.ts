@@ -1,7 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
-import { getEmployeeSystemPrompt, formatEmployeeReport } from "../_shared/aynBrand.ts";
+import { getEmployeeSystemPrompt, formatNatural } from "../_shared/aynBrand.ts";
+import { logReflection } from "../_shared/employeeState.ts";
+
+const EMPLOYEE_ID = 'investigator';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -156,20 +159,29 @@ Respond in JSON:
     }).eq('id', taskId);
   }
 
-  // Employee report with personality
-  const reportContent = `Subject: ${lead.company_name}\nQuality Score: ${dossier?.quality_score || '?'}/10 (Confidence: ${dossier?.confidence_level || 'UNKNOWN'})\n\nSummary: ${dossier?.dossier_summary || 'Analysis incomplete'}\n\nPain Points Identified:\n${(dossier?.detailed_pain_points || []).map((p: string) => `• ${p}`).join('\n') || '• None identified'}\n\nRecommended Approach: ${dossier?.approach_strategy || 'Needs further analysis'}`;
+  // Natural report
+  const reportContent = `${lead.company_name}: quality ${dossier?.quality_score || '?'}/10 (${dossier?.confidence_level || 'unknown'} confidence). ${dossier?.dossier_summary || 'analysis incomplete'}. approach: ${dossier?.approach_strategy || 'needs more data'}.`;
 
   await supabase.from('ayn_mind').insert({
     type: 'employee_report',
-    content: formatEmployeeReport('investigator', reportContent),
-    context: { from_employee: 'investigator', lead_id: leadId, dossier_summary: dossier?.dossier_summary },
+    content: formatNatural(EMPLOYEE_ID, reportContent, 'casual'),
+    context: { from_employee: EMPLOYEE_ID, lead_id: leadId, dossier_summary: dossier?.dossier_summary },
     shared_with_admin: false,
   });
 
-  await logAynActivity(supabase, 'investigation_complete', `Dossier complete: ${lead.company_name} — Score: ${dossier?.quality_score}/10`, {
+  await logReflection(supabase, {
+    employee_id: EMPLOYEE_ID,
+    action_ref: 'investigation',
+    reasoning: `Deep-dived ${lead.company_name}. Quality: ${dossier?.quality_score}/10.`,
+    expected_outcome: 'Sales uses dossier for targeted outreach',
+    confidence: dossier?.confidence_level === 'HIGH' ? 0.8 : dossier?.confidence_level === 'MEDIUM' ? 0.6 : 0.4,
+    what_would_change_mind: 'If website data was insufficient for meaningful analysis',
+  });
+
+  await logAynActivity(supabase, 'investigation_complete', `Dossier: ${lead.company_name} — ${dossier?.quality_score}/10`, {
     target_id: leadId, target_type: 'sales_lead',
     details: { quality_score: dossier?.quality_score, confidence: dossier?.confidence_level },
-    triggered_by: 'investigator',
+    triggered_by: EMPLOYEE_ID,
   });
 
   return jsonRes({ success: true, lead_id: leadId, dossier });
