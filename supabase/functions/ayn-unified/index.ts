@@ -30,7 +30,7 @@ const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
   chat: [
     { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' },
     { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini 2.5 Flash' },
-    { id: 'openrouter-llama', provider: 'openrouter', model_id: 'meta-llama/llama-3.1-8b-instruct:free', display_name: 'Llama 3.1' }
+    { id: 'lovable-gemini-flash-lite', provider: 'lovable', model_id: 'google/gemini-2.5-flash-lite', display_name: 'Gemini 2.5 Flash Lite' }
   ],
   engineering: [
     { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' },
@@ -507,13 +507,24 @@ serve(async (req) => {
       console.log('[ayn-unified] User authenticated:', userId.substring(0, 8) + '...');
     }
 
-    const { messages, intent: forcedIntent, context = {}, stream = true, sessionId } = await req.json();
+    const { messages: rawMessages, intent: forcedIntent, context = {}, stream = true, sessionId } = await req.json();
 
-    if (!messages || !Array.isArray(messages)) {
+    if (!rawMessages || !Array.isArray(rawMessages)) {
       return new Response(JSON.stringify({ error: 'Messages array required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+    }
+
+    // Trim conversation history to avoid exceeding token limits (~1M tokens)
+    // Keep system messages + last 20 user/assistant messages max
+    const MAX_CONTEXT_MESSAGES = 20;
+    let messages = rawMessages;
+    if (rawMessages.length > MAX_CONTEXT_MESSAGES) {
+      const systemMsgs = rawMessages.filter((m: any) => m.role === 'system');
+      const nonSystemMsgs = rawMessages.filter((m: any) => m.role !== 'system');
+      messages = [...systemMsgs, ...nonSystemMsgs.slice(-MAX_CONTEXT_MESSAGES)];
+      console.log(`[ayn-unified] Trimmed messages from ${rawMessages.length} to ${messages.length}`);
     }
 
     // Detect intent from last message or use forced intent
