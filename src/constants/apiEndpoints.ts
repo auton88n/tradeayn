@@ -23,10 +23,6 @@ export const API_ENDPOINTS = {
   GENERATE_GRADING_DXF: 'generate-grading-dxf',
   PARSE_SURVEY_FILE: 'parse-survey-file',
   PARSE_PDF_DRAWING: 'parse-pdf-drawing',
-  GENERATE_FLOOR_PLAN_LAYOUT: 'generate-floor-plan-layout',
-  PARSE_DXF_DESIGN: 'parse-dxf-design',
-  ANALYZE_AUTOCAD_DESIGN: 'analyze-autocad-design',
-  APPLY_DESIGN_OPTIMIZATIONS: 'apply-design-optimizations',
   
   // Auth & User
   AUTH_SEND_EMAIL: 'auth-send-email',

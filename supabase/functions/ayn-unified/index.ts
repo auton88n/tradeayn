@@ -24,7 +24,7 @@ const DOCUMENT_CREDIT_COST = {
   pdf: 30,
   excel: 25
 };
-// const FLOOR_PLAN_CREDIT_COST = 35;
+
 
 const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
   chat: [
@@ -47,11 +47,6 @@ const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
   image: [
     { id: 'lovable-gemini-image', provider: 'lovable', model_id: 'google/gemini-2.5-flash-image-preview', display_name: 'Gemini Image' }
   ],
-  // floor_plan: [
-  //   { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' },
-  //   { id: 'lovable-gemini-3-pro', provider: 'lovable', model_id: 'google/gemini-3-pro-preview', display_name: 'Gemini 3 Pro' },
-  //   { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini 2.5 Flash' }
-  // ]
 };
 
 // Generate image using Lovable AI

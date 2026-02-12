@@ -12,10 +12,8 @@ import {
   X, 
   ExternalLink,
   ImageOff,
-  RefreshCw,
-  Palette
+  RefreshCw
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -35,7 +33,6 @@ export function SavedImagesGallery({ open, onOpenChange }: SavedImagesGalleryPro
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<StorageImage | null>(null);
   const [deletingImage, setDeletingImage] = useState<string | null>(null);
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const loadImages = useCallback(async () => {
@@ -142,9 +139,8 @@ export function SavedImagesGallery({ open, onOpenChange }: SavedImagesGalleryPro
     }
   };
 
-  const handleDesignWithImage = (image: StorageImage) => {
-    onOpenChange(false);
-    navigate(`/design-lab?image=${encodeURIComponent(image.url)}`);
+  const handleDownloadImage = (image: StorageImage) => {
+    handleDownload(image);
   };
 
   const formatDate = (dateStr: string) => {
@@ -255,18 +251,6 @@ export function SavedImagesGallery({ open, onOpenChange }: SavedImagesGalleryPro
                         className="h-8 w-8 rounded-full"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDesignWithImage(image);
-                        }}
-                        title="Open in Design LAB"
-                      >
-                        <Palette className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="h-8 w-8 rounded-full"
-                        onClick={(e) => {
-                          e.stopPropagation();
                           handleDownload(image);
                         }}
                         title="Download"
@@ -332,15 +316,8 @@ export function SavedImagesGallery({ open, onOpenChange }: SavedImagesGalleryPro
                   </div>
                 </div>
 
-                <div className="mt-auto pt-4 space-y-2">
-                  <Button
-                    className="w-full"
-                    onClick={() => handleDesignWithImage(selectedImage)}
-                  >
-                    <Palette className="w-4 h-4 mr-2" />
-                    Open in Design LAB
-                  </Button>
-                  <div className="flex gap-2">
+                  <div className="mt-auto pt-4 space-y-2">
+                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       className="flex-1"
