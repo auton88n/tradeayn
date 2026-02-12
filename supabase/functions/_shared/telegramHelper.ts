@@ -162,8 +162,8 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function sendTelegramMessage(token: string, chatId: string, text: string) {
-  const formatted = markdownToTelegramHtml(text);
+export async function sendTelegramMessage(token: string, chatId: string, text: string, rawHtml = false) {
+  const formatted = rawHtml ? text : markdownToTelegramHtml(text);
   const truncated = formatted.length > 4000 ? formatted.slice(0, 3990) + '\n...truncated' : formatted;
 
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
