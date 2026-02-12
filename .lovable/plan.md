@@ -1,106 +1,98 @@
-# Get Your AI Workforce Actually Running
 
-## The Core Problem
+# Fix PDF/Excel Downloads, Image Generation, and Image Display
 
-All 13 agents exist as code but none of them run. There's only 1 cron job (`ayn-proactive-loop` every 6 hours) and even that shows no logs -- meaning it either fails silently or has never been triggered by the cron scheduler. The individual agent functions (QA Watchdog, Security Guard, Chief of Staff, etc.) have zero cron jobs of their own.
+## Problems Found
 
-## The Fix: Wire Up the Autonomous Loops
+1. **PDF/Excel downloads redirect to landing page** -- The download function opens data URLs with `target="_blank"`, which navigates to the AYN website instead of downloading. For base64 data URLs, `target="_blank"` should not be used.
 
-### Step 1: Fix the existing cron job
+2. **Image generation uses a non-existent model** -- The code calls `google/gemini-2.5-flash-image-preview`, which does not exist. The correct model ID is `google/gemini-2.5-flash-image`.
 
-The `ayn-proactive-loop` cron (job #3) uses the **anon key** for authorization. Edge functions that use `SUPABASE_SERVICE_ROLE_KEY` internally won't accept anon-key requests unless they skip JWT verification. We need to verify the `config.toml` settings and ensure the cron calls use the correct authorization.
+3. **Image intent rarely triggers** -- Only 4 keywords are checked: "generate image", "create image", "draw", "picture of". Common phrases like "show me an image", "make me a picture", "image of", etc. all miss and fall through to regular chat. The LLM then hallucinates a fake `dalle.text2im` JSON tool call instead of actually generating an image.
 
-### Step 2: Add missing cron jobs for each agent
+4. **Generated images are never displayed** -- When image generation succeeds, the base64 image URL is stored in `labData` on the message object, but no component ever reads `labData`. The ResponseCard only looks for image URLs in the message *text* via regex matching `https://` URLs -- base64 data URLs never match.
 
-Create `pg_cron` schedules matching the V2 architecture:
+## Fixes
 
-```text
-Every 15 min  -- ayn-qa-watchdog (health checks)
-Every 30 min  -- ayn-security-guard (threat scans)
-Every 2 hours -- ayn-chief-of-staff (alignment + decay cycle)
-Every 6 hours -- ayn-proactive-loop (already exists, fix auth)
-Every 6 hours -- ayn-sales-outreach (pipeline sweep)
-Every 6 hours -- ayn-follow-up-agent (follow-up checks)
-Every 6 hours -- ayn-marketing-proactive-loop (content strategy)
-Every 8 hours -- ayn-advisor (strategic synthesis)
-Every 12 hours -- ayn-innovation (experiment proposals)
-Every 12 hours -- ayn-hr-manager (performance review)
-Every 24 hours -- ayn-lawyer (compliance scan)
-Every 6 hours -- ayn-outcome-evaluator (failure memory)
+### Fix 1: Document download function (`src/lib/documentUrlUtils.ts`)
+- Remove `target="_blank"` for data URLs (they should use `download` attribute only)
+- Keep `target="_blank"` only for regular HTTP URLs
+
+### Fix 2: Correct image model ID (`supabase/functions/ayn-unified/index.ts`)
+- Change `google/gemini-2.5-flash-image-preview` to `google/gemini-2.5-flash-image` in both the fallback chain and the `generateImage` function
+
+### Fix 3: Expand image intent keywords (`supabase/functions/ayn-unified/intentDetector.ts`)
+- Add missing keywords: "image of", "make image", "show me", "make a picture", "make me a picture", "photo of", "illustration of", "visualize", "render", "صورة", "ارسم", "image de", "dessine", "montre moi"
+
+### Fix 4: Render generated images in ResponseCard (`src/components/eye/ResponseCard.tsx`)
+- Extend `detectedImageUrl` to also check for base64 data URLs in message content
+- Also check the message's `labData.json.image_url` field as a fallback source for image URLs
+
+### Fix 5: Also fix the ai-edit-image function model (`supabase/functions/ai-edit-image/index.ts`)
+- Change `google/gemini-2.5-flash-image-preview` to `google/gemini-2.5-flash-image`
+
+## Technical Details
+
+### `src/lib/documentUrlUtils.ts` -- lines 18-31
+```typescript
+export const openDocumentUrl = (url: string, filename?: string): void => {
+  if (!url) return;
+  
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename || 'document';
+  
+  // Only use target="_blank" for HTTP URLs, not data URLs
+  if (!url.startsWith('data:')) {
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+  }
+  
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+};
 ```
 
-### Step 3: Fix the War Room to show all 13 agents with concise replies
+### `supabase/functions/ayn-unified/intentDetector.ts` -- line 28
+```typescript
+const imageKeywords = [
+  'generate image', 'create image', 'draw', 'picture of',
+  'image of', 'make image', 'make a picture', 'make me a picture',
+  'show me an image', 'photo of', 'illustration of', 'visualize',
+  'render a', 'render an',
+  'صورة', 'ارسم', 'ارسم لي', 'اعطني صورة',
+  'image de', 'dessine', 'montre moi', 'genere une image'
+];
+```
 
-While the cron jobs are the real fix for autonomous work, the War Room also needs the previously approved changes:
+### `supabase/functions/ayn-unified/index.ts` -- model fix
+Change both occurrences of `google/gemini-2.5-flash-image-preview` to `google/gemini-2.5-flash-image`.
 
-- Add all 13 agents (currently missing `investigator`, `follow_up`, `hr_manager`)
-- Use stripped-down one-line role descriptions instead of the 200-word personality dump
-- Use system/user message split for better instruction following
-- Set `max_tokens: 60` to physically prevent paragraphs
-- Executive + Strategic layers always participate; Operational agents selected by relevance + random fill
-
-### Step 4: Verify edge function deployment
-
-Check that all 13 agent edge functions are actually deployed and accessible. If any fail to deploy, they'll silently do nothing when cron triggers them.
-
-## Technical Changes
-
-### Database Migration (SQL)
-
-Add 11 new `pg_cron` jobs using `cron.schedule()` with `net.http_post()` calls to each agent's edge function endpoint, using the service role key for authorization.
-
-### File: `supabase/functions/admin-war-room/index.ts`
-
-- Replace `FULL_ROSTER` (10 agents) with 3-layer roster (all 13)
-- Add `WAR_ROOM_ROLES` map with one-line descriptions
-- Remove `getEmployeePersonality` import
-- Use system + user message split
-- Set `max_tokens: 60`
-- Executive + Strategic always join; fill Operational by relevance up to 8-10 total
-
-### File: `supabase/config.toml`
-
-- Verify all agent functions have `verify_jwt = false` so cron calls work
-
-### No new files needed
-
-All agent edge functions already exist. We're just wiring them up to run automatically.
+### `src/components/eye/ResponseCard.tsx` -- image detection
+Extend `detectedImageUrl` to also detect base64 image data URLs and check `labData`:
+```typescript
+const detectedImageUrl = useMemo(() => {
+  // Check labData first (from image generation)
+  const firstResponse = visibleResponses[0];
+  if (firstResponse && 'labData' in firstResponse) {
+    const labUrl = (firstResponse as any).labData?.json?.image_url;
+    if (labUrl) return labUrl;
+  }
+  // Existing: markdown image URLs
+  const markdownMatch = combinedContent.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/);
+  if (markdownMatch) return markdownMatch[1];
+  // Existing: plain HTTP image URLs
+  const urlMatch = combinedContent.match(/(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg))/i);
+  if (urlMatch) return urlMatch[1];
+  // New: base64 data URL images
+  const dataUrlMatch = combinedContent.match(/(data:image\/[^;]+;base64,[A-Za-z0-9+/=]+)/);
+  if (dataUrlMatch) return dataUrlMatch[1];
+  return null;
+}, [combinedContent, visibleResponses]);
+```
 
 ## Expected Outcome
-
-After this:
-
-- QA Watchdog pings health every 15 minutes -- you'll see `system_health_checks` filling up
-- Security Guard scans for threats every 30 minutes
-- Chief of Staff runs alignment every 2 hours, decaying stale trust scores
-- Sales hunts leads every 6 hours, drafts emails, queues follow-ups
-- The `employee_states` table will start showing real confidence changes, action counts, and peer trust shifts
-- `employee_reflections` will fill with post-action reasoning
-- The Activity Log in your admin panel will light up with real autonomous actions
-- The War Room will show all 13 agents debating concisely when you ask them to  
-  
-⚠️ Things to double-check / potential pitfalls
-  1. **Cron timing collisions**
-    - Several 6-hour jobs may run simultaneously (e.g., sales, follow-up, marketing, outcome evaluator).
-    - Supabase edge functions are generally stateless and parallelizable, but consider staggering by a few minutes to avoid burst load spikes.
-  2. **Service role key safety**
-    - Make sure the service role key is never exposed in client code.
-    - If any function is publicly callable with anon key, cron-triggered updates might fail.
-  3. **War Room max_tokens limit**
-    - 60 tokens per agent is very tight.
-    - It’s fine for concise debate, but make sure no critical reasoning is truncated.
-    - You might need 80–100 tokens for strategic layers if doctrine/alignment context is included.
-  4. **Logging / monitoring**
-    - Ensure each cron call logs success/failure.
-    - Without logs, a silent failure will look “active” in cron schedule but never populate reflections.
-  5. **Edge function deployment**
-    - Confirm all 13 agents are actually deployed; missing deployments = silent no-op.
-    - Use `supabase functions list` and manual test ping endpoints.
-  6. **Failure recovery**
-    - If QA Watchdog or Outcome Evaluator fails, other agents may operate on stale data.
-    - Consider adding a simple retry/backoff or alerting for critical cron failures.
-  ---
-  ## ⚡ Optional Enhancements
-  - **Randomize Operational agent selection** in War Room slightly each cycle to simulate emergent behavior.
-  - **Stagger cron jobs** for high-frequency agents (QA, Security) to reduce server pressure.
-  - **Quick debug endpoint**: temporarily expose `/status` on each agent to confirm cron-triggered execution.
+- PDF and Excel downloads will trigger a file download instead of navigating away
+- Image generation will use the correct model and actually produce images
+- More natural language phrases will trigger image generation instead of showing raw JSON
+- Generated images will be visible in the chat response card
