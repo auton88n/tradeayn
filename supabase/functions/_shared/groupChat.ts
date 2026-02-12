@@ -108,6 +108,13 @@ export async function handleGroupConversation(
 
   const selectedAgents = selectRelevantAgents(userMessage);
 
+  // Only include agents that have their own bot token (no fallback to AYN identity)
+  const agentsWithBots = selectedAgents.filter(id => botTokens[id]);
+  // Always ensure system (AYN) is included
+  if (!agentsWithBots.includes('system') && systemToken) {
+    agentsWithBots.unshift('system');
+  }
+
   // Load shared context
   const [companyState, objectives] = await Promise.all([
     loadCompanyState(supabase),
@@ -118,7 +125,7 @@ export async function handleGroupConversation(
 Active objectives: ${objectives.slice(0, 3).map(o => `${o.title} (P${o.priority})`).join(', ')}`;
 
   // Generate agent responses in parallel
-  const responsePromises = selectedAgents.map(async (agentId) => {
+  const responsePromises = agentsWithBots.map(async (agentId) => {
     const state = await loadEmployeeState(supabase, agentId);
     const personality = getEmployeePersonality(agentId);
     const emoji = getAgentEmoji(agentId);
@@ -152,7 +159,7 @@ Reply with ONLY your message text. No prefixes, no emoji, no name tag.`;
       const reply = data.choices?.[0]?.message?.content?.trim();
       if (!reply) return null;
 
-      return { agentId, reply, emoji, name, token: botTokens[agentId] || systemToken };
+      return { agentId, reply, emoji, name, token: botTokens[agentId] };
     } catch {
       return null;
     }
@@ -165,15 +172,15 @@ Reply with ONLY your message text. No prefixes, no emoji, no name tag.`;
   const otherResponses = responses.filter(r => r!.agentId !== 'system');
 
   if (systemResponse) {
-    const msg = `${systemResponse.emoji} <b>${systemResponse.name}</b>\n${systemResponse.reply}`;
-    await sendTelegramMessage(systemResponse.token, chatId, msg);
+    const msg = `${systemResponse.emoji} ${systemResponse.reply}`;
+    await sendTelegramMessage(systemResponse.token, chatId, msg, true);
     await delay(RESPONSE_DELAY_MS);
   }
 
   for (const r of otherResponses) {
     if (!r) continue;
-    const msg = `${r.emoji} <b>${r.name}</b>\n${r.reply}`;
-    await sendTelegramMessage(r.token, chatId, msg);
+    const msg = `${r.emoji} ${r.reply}`;
+    await sendTelegramMessage(r.token, chatId, msg, true);
     await delay(RESPONSE_DELAY_MS);
   }
 
