@@ -4,7 +4,7 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 import { formatNatural, detectToneContext } from "../_shared/aynBrand.ts";
 import { loadEmployeeState, loadCompanyState, loadActiveObjectives, updateEmployeeState, logReflection, buildEmployeeContext } from "../_shared/employeeState.ts";
-
+import { applySystemDecay, loadCurrentDoctrine, isDoctrinStale } from "../_shared/politicalIntelligence.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -42,10 +42,32 @@ serve(async (req) => {
       { data: recentDiscussions },
     ] = await Promise.all([
       supabase.from('ayn_activity_log').select('triggered_by, action_type, summary').gte('created_at', ago2h).order('created_at', { ascending: false }).limit(50),
-      supabase.from('employee_states').select('employee_id, beliefs, emotional_stance, confidence, core_motivation, active_objectives'),
+      supabase.from('employee_states').select('employee_id, beliefs, emotional_stance, confidence, core_motivation, active_objectives, reputation_score, initiative_score, cognitive_load, emotional_memory'),
       supabase.from('ayn_mind').select('content, context').eq('type', 'employee_report').gte('created_at', ago2h).limit(20),
       supabase.from('employee_discussions').select('topic, employee_id, position, confidence').gte('created_at', ago24h).limit(20),
     ]);
+
+    // Layer 3: Apply system decay for all 13 agents
+    const decayPromises = (allStates || []).map((s: any) => applySystemDecay(supabase, s.employee_id));
+    await Promise.all(decayPromises);
+
+    // Layer 3: Load doctrine and check staleness
+    const doctrine = await loadCurrentDoctrine(supabase);
+    const doctrineStaleness = isDoctrinStale(doctrine);
+
+    // Layer 3: Flag agents with low reputation
+    const lowRepAgents = (allStates || [])
+      .filter((s: any) => (s.reputation_score ?? 0.5) < 0.3)
+      .map((s: any) => s.employee_id);
+
+    // Layer 3: Rank agents by initiative * reputation for briefings
+    const agentRankings = (allStates || [])
+      .filter((s: any) => s.employee_id !== 'system')
+      .map((s: any) => ({
+        id: s.employee_id,
+        score: (s.initiative_score ?? 0.5) * (s.reputation_score ?? 0.5),
+      }))
+      .sort((a: any, b: any) => b.score - a.score);
 
     // 2. Detect idle employees (no activity in 24h)
     const { data: dayActivity } = await supabase
@@ -93,6 +115,9 @@ Idle employees (24h): ${idleEmployees.length > 0 ? idleEmployees.join(', ') : 'n
 Misalignments: ${misalignments.length > 0 ? misalignments.join('; ') : 'none detected'}
 Recent reports: ${recentReports?.length || 0}
 Recent debates: ${recentDiscussions?.length || 0}
+${lowRepAgents.length > 0 ? `\n⚠️ Low reputation agents (< 0.3): ${lowRepAgents.join(', ')} — consider flagging to HR` : ''}
+${doctrineStaleness ? `\n⚠️ Strategic doctrine may be stale (${doctrine ? `last updated: ${doctrine.period}` : 'no doctrine set'}). Consider updating company journal.` : ''}
+Agent rankings (initiative × reputation): ${agentRankings.slice(0, 5).map((a: any) => `${a.id}:${a.score.toFixed(2)}`).join(', ')}
 
 Objectives:
 ${objectives.map(o => `[P${o.priority}] ${o.title}: ${o.current_value}/${o.target_value}`).join('\n')}

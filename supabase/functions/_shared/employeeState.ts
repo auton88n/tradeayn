@@ -28,6 +28,12 @@ export interface EmployeeState {
   performance_metrics: Record<string, number>;
   founder_model: Record<string, any>;
   chime_in_threshold: number;
+  // Layer 3: Political Intelligence
+  peer_models: Record<string, number>;
+  initiative_score: number;
+  reputation_score: number;
+  cognitive_load: number;
+  emotional_memory: { event: string; intensity: number; timestamp: string; source?: string }[];
 }
 
 export interface CompanyState {
@@ -162,12 +168,16 @@ export async function logReflection(supabase: any, reflection: Reflection): Prom
  * Includes company state, objectives, economics summary, and founder preferences.
  */
 export async function buildEmployeeContext(supabase: any, employeeId: string): Promise<string> {
-  const [state, companyState, objectives, economics, founderModel] = await Promise.all([
+  // Lazy import to avoid circular dependency
+  const { loadCurrentDoctrine } = await import("./politicalIntelligence.ts");
+
+  const [state, companyState, objectives, economics, founderModel, doctrine] = await Promise.all([
     loadEmployeeState(supabase, employeeId),
     loadCompanyState(supabase),
     loadActiveObjectives(supabase),
     loadServiceEconomics(supabase),
     loadFounderModel(supabase),
+    loadCurrentDoctrine(supabase),
   ]);
 
   const parts: string[] = [];
@@ -177,7 +187,24 @@ export async function buildEmployeeContext(supabase: any, employeeId: string): P
 - Confidence: ${state.confidence}
 - Emotional stance: ${state.emotional_stance}
 - Core motivation: ${state.core_motivation}
-- Beliefs: growth=${state.beliefs.growth_priority}, risk_tolerance=${state.beliefs.risk_tolerance}, speed_vs_quality=${state.beliefs.speed_vs_quality}`);
+- Beliefs: growth=${state.beliefs.growth_priority}, risk_tolerance=${state.beliefs.risk_tolerance}, speed_vs_quality=${state.beliefs.speed_vs_quality}
+- Reputation: ${state.reputation_score?.toFixed(2) ?? '0.50'} | Initiative: ${state.initiative_score?.toFixed(2) ?? '0.50'} | Cognitive load: ${state.cognitive_load?.toFixed(2) ?? '0.20'}`);
+
+    // Peer trust summary (only notable deviations from 0.5)
+    if (state.peer_models && Object.keys(state.peer_models).length > 0) {
+      const notable = Object.entries(state.peer_models)
+        .filter(([_, trust]) => Math.abs((trust as number) - 0.5) > 0.1)
+        .map(([peer, trust]) => `${peer}=${(trust as number).toFixed(2)}`);
+      if (notable.length > 0) {
+        parts.push(`Peer trust (notable): ${notable.join(', ')}`);
+      }
+    }
+
+    // Emotional memory summary
+    if (state.emotional_memory && state.emotional_memory.length > 0) {
+      const recent = state.emotional_memory.slice(-3);
+      parts.push(`Recent emotional memory: ${recent.map(m => `${m.event} (intensity: ${m.intensity.toFixed(2)})`).join(', ')}`);
+    }
   }
 
   if (companyState) {
@@ -206,7 +233,13 @@ Services (cash flow): ${services.map(e => `${e.service_name} (margin: ${Math.rou
     parts.push(`Founder preferences:
 - Risk tolerance: ${founderModel.risk_tolerance || 'high'}
 - Communication: ${founderModel.communication_style || 'casual'}
-- Prefers brevity: ${founderModel.prefers_brevity ?? true}`);
+- Prefers brevity: ${founderModel.prefers_brevity ?? true}
+- Current mood: ${founderModel.current_mood || 'neutral'}
+- Delegation comfort: ${founderModel.delegation_comfort ?? 0.5}`);
+  }
+
+  if (doctrine) {
+    parts.push(`Current strategic doctrine (${doctrine.period}): ${doctrine.strategic_shift}`);
   }
 
   return parts.join('\n\n');

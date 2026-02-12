@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { formatNatural } from "../_shared/aynBrand.ts";
 import { loadEmployeeState, updateEmployeeState, logReflection, buildEmployeeContext } from "../_shared/employeeState.ts";
+import { recordEmotionalEvent } from "../_shared/politicalIntelligence.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,9 +57,9 @@ serve(async (req) => {
     // 3. Load all employee states
     const { data: allStates } = await supabase
       .from('employee_states')
-      .select('employee_id, performance_metrics, confidence, beliefs');
+      .select('employee_id, performance_metrics, confidence, beliefs, reputation_score, initiative_score, cognitive_load, emotional_memory');
 
-    // 4. Update performance metrics for each employee
+    // 4. Update performance metrics + Layer 3 health checks
     const performanceUpdates: string[] = [];
     for (const state of allStates || []) {
       const eid = state.employee_id;
@@ -79,6 +80,27 @@ serve(async (req) => {
       }
       if (successRate !== null && successRate < 50) {
         performanceUpdates.push(`${eid}: low success rate (${successRate}%) — may need prompt tuning`);
+      }
+
+      // Layer 3: Reputation trend (flag declining agents)
+      const repScore = state.reputation_score ?? 0.5;
+      if (repScore < 0.35) {
+        performanceUpdates.push(`${eid}: reputation declining (${repScore.toFixed(2)}) — needs attention`);
+      }
+
+      // Layer 3: Emotional health check (3+ negative memories with intensity > 0.3)
+      const emotionalMemory = state.emotional_memory || [];
+      const highIntensityNegative = emotionalMemory.filter(
+        (m: any) => m.intensity > 0.3 && (m.event?.includes('reject') || m.event?.includes('override') || m.event?.includes('conflict'))
+      );
+      if (highIntensityNegative.length >= 3) {
+        performanceUpdates.push(`${eid}: emotional stress detected (${highIntensityNegative.length} high-intensity events) — consider personality softening`);
+      }
+
+      // Layer 3: Cognitive overload check (load > 0.7)
+      const cogLoad = state.cognitive_load ?? 0.2;
+      if (cogLoad > 0.7) {
+        performanceUpdates.push(`${eid}: cognitive overload (${cogLoad.toFixed(2)}) — recommend task redistribution`);
       }
     }
 
