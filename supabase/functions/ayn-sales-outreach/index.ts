@@ -4,6 +4,7 @@ import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { AYN_BRAND, getEmployeeSystemPrompt, formatNatural } from "../_shared/aynBrand.ts";
 import { logReflection } from "../_shared/employeeState.ts";
+import { scrapeUrl } from "../_shared/firecrawlHelper.ts";
 
 const EMPLOYEE_ID = 'sales';
 
@@ -48,32 +49,16 @@ serve(async (req) => {
   }
 });
 
-// ─── Scrape website via direct fetch ───
+// ─── Scrape website via Firecrawl ───
 async function scrapeWebsite(url: string): Promise<{ content: string; metadata: any }> {
-  let websiteContent = 'Could not fetch website';
-  let metadata: any = {};
-  try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AYNBot/1.0)' },
-      redirect: 'follow',
-    });
-    if (res.ok) {
-      const html = await res.text();
-      const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
-      metadata = { title: titleMatch?.[1]?.trim() || 'Unknown' };
-      websiteContent = html
-        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    } else {
-      console.error('Website fetch returned:', res.status);
-    }
-  } catch (e) {
-    console.error('Website fetch failed:', e);
+  const result = await scrapeUrl(url, { onlyMainContent: true });
+  if (result.success) {
+    return {
+      content: result.markdown || 'Could not extract content',
+      metadata: result.metadata || {},
+    };
   }
-  return { content: websiteContent, metadata };
+  return { content: 'Could not fetch website', metadata: {} };
 }
 
 // ─── Prospect a company URL ───

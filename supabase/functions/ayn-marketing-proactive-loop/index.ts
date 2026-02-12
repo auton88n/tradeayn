@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { analyzeOurTweets, analyzeCompetitorData, generateTweetDrafts } from "../_shared/apifyHelper.ts";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
+import { scrapeUrl, searchWeb } from "../_shared/firecrawlHelper.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -217,20 +218,34 @@ serve(async (req) => {
       }
     }
 
-    // ─── 5. Website health check ───
+    // ─── 5. Website health check via Firecrawl ───
     try {
       const siteUrl = 'https://ayn-insight-forge.lovable.app';
       const start = Date.now();
-      const siteRes = await fetch(siteUrl, { method: 'HEAD' });
+      const siteResult = await scrapeUrl(siteUrl, { onlyMainContent: false, formats: ['markdown'] });
       const responseTime = Date.now() - start;
 
-      if (siteRes.ok) {
-        report.push(`\n🌐 site is up (${responseTime}ms)`);
+      if (siteResult.success) {
+        const contentLength = (siteResult.markdown || '').length;
+        report.push(`\n🌐 site is up (${responseTime}ms, ${contentLength} chars scraped)`);
       } else {
-        report.push(`\n🚨 site returned ${siteRes.status} (${responseTime}ms)`);
+        report.push(`\n🚨 site scrape failed: ${siteResult.error}`);
       }
     } catch (e) {
       report.push(`\n🚨 site is DOWN: ${e instanceof Error ? e.message : 'unreachable'}`);
+    }
+
+    // ─── 5b. Competitor web research via Firecrawl search ───
+    try {
+      const searchResult = await searchWeb('AI automation agency SaaS engineering tools 2026', { limit: 3, scrapeResults: false });
+      if (searchResult.success && searchResult.data?.length) {
+        report.push(`\n🔍 market pulse:`);
+        for (const r of searchResult.data.slice(0, 3)) {
+          report.push(`  • ${r.title?.slice(0, 60)} — ${r.url}`);
+        }
+      }
+    } catch (e) {
+      // Non-critical, skip silently
     }
 
     // ─── 6. Send report ───
