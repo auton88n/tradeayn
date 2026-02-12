@@ -636,6 +636,114 @@ export type Database = {
         }
         Relationships: []
       }
+      company_journal: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          key_losses: Json | null
+          key_wins: Json | null
+          period: string
+          strategic_shift: string | null
+          summary: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          key_losses?: Json | null
+          key_wins?: Json | null
+          period: string
+          strategic_shift?: string | null
+          summary?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          key_losses?: Json | null
+          key_wins?: Json | null
+          period?: string
+          strategic_shift?: string | null
+          summary?: string | null
+        }
+        Relationships: []
+      }
+      company_objectives: {
+        Row: {
+          created_at: string
+          current_value: number
+          deadline: string | null
+          id: string
+          metric: string | null
+          priority: number
+          status: string
+          target_value: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          deadline?: string | null
+          id?: string
+          metric?: string | null
+          priority?: number
+          status?: string
+          target_value?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          deadline?: string | null
+          id?: string
+          metric?: string | null
+          priority?: number
+          status?: string
+          target_value?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      company_state: {
+        Row: {
+          context: Json | null
+          growth_velocity: string
+          id: string
+          momentum: string
+          morale: string
+          risk_exposure: string
+          stress_level: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          context?: Json | null
+          growth_velocity?: string
+          id?: string
+          momentum?: string
+          morale?: string
+          risk_exposure?: string
+          stress_level?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          context?: Json | null
+          growth_velocity?: string
+          id?: string
+          momentum?: string
+          morale?: string
+          risk_exposure?: string
+          stress_level?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       competitor_tweets: {
         Row: {
           competitor_id: string
@@ -1276,6 +1384,135 @@ export type Database = {
           threat_assessment?: Json | null
           trigger_reason?: string
           triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employee_discussions: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          discussion_id: string
+          employee_id: string
+          id: string
+          impact_level: string
+          objections: string | null
+          objective_impact: Json | null
+          position: string | null
+          reasoning: string | null
+          topic: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          discussion_id?: string
+          employee_id: string
+          id?: string
+          impact_level?: string
+          objections?: string | null
+          objective_impact?: Json | null
+          position?: string | null
+          reasoning?: string | null
+          topic: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          discussion_id?: string
+          employee_id?: string
+          id?: string
+          impact_level?: string
+          objections?: string | null
+          objective_impact?: Json | null
+          position?: string | null
+          reasoning?: string | null
+          topic?: string
+        }
+        Relationships: []
+      }
+      employee_reflections: {
+        Row: {
+          action_ref: string | null
+          actual_outcome: string | null
+          confidence: number | null
+          created_at: string
+          employee_id: string
+          expected_outcome: string | null
+          id: string
+          outcome_evaluated: boolean
+          reasoning: string | null
+          what_would_change_mind: string | null
+        }
+        Insert: {
+          action_ref?: string | null
+          actual_outcome?: string | null
+          confidence?: number | null
+          created_at?: string
+          employee_id: string
+          expected_outcome?: string | null
+          id?: string
+          outcome_evaluated?: boolean
+          reasoning?: string | null
+          what_would_change_mind?: string | null
+        }
+        Update: {
+          action_ref?: string | null
+          actual_outcome?: string | null
+          confidence?: number | null
+          created_at?: string
+          employee_id?: string
+          expected_outcome?: string | null
+          id?: string
+          outcome_evaluated?: boolean
+          reasoning?: string | null
+          what_would_change_mind?: string | null
+        }
+        Relationships: []
+      }
+      employee_states: {
+        Row: {
+          active_objectives: string[] | null
+          beliefs: Json
+          chime_in_threshold: number
+          confidence: number
+          core_motivation: string | null
+          created_at: string
+          emotional_stance: string
+          employee_id: string
+          founder_model: Json | null
+          id: string
+          performance_metrics: Json | null
+          recent_decisions: Json | null
+          updated_at: string
+        }
+        Insert: {
+          active_objectives?: string[] | null
+          beliefs?: Json
+          chime_in_threshold?: number
+          confidence?: number
+          core_motivation?: string | null
+          created_at?: string
+          emotional_stance?: string
+          employee_id: string
+          founder_model?: Json | null
+          id?: string
+          performance_metrics?: Json | null
+          recent_decisions?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          active_objectives?: string[] | null
+          beliefs?: Json
+          chime_in_threshold?: number
+          confidence?: number
+          core_motivation?: string | null
+          created_at?: string
+          emotional_stance?: string
+          employee_id?: string
+          founder_model?: Json | null
+          id?: string
+          performance_metrics?: Json | null
+          recent_decisions?: Json | null
           updated_at?: string
         }
         Relationships: []
@@ -2343,6 +2580,51 @@ export type Database = {
           phone?: string | null
           service_type?: string
           status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_economics: {
+        Row: {
+          acquisition_difficulty: number
+          average_margin: number
+          category: string
+          id: string
+          notes: string | null
+          operational_complexity: number
+          retention_probability: number
+          scalability_score: number
+          service_id: string
+          service_name: string
+          time_to_deploy: string | null
+          updated_at: string
+        }
+        Insert: {
+          acquisition_difficulty?: number
+          average_margin?: number
+          category?: string
+          id?: string
+          notes?: string | null
+          operational_complexity?: number
+          retention_probability?: number
+          scalability_score?: number
+          service_id: string
+          service_name: string
+          time_to_deploy?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acquisition_difficulty?: number
+          average_margin?: number
+          category?: string
+          id?: string
+          notes?: string | null
+          operational_complexity?: number
+          retention_probability?: number
+          scalability_score?: number
+          service_id?: string
+          service_name?: string
+          time_to_deploy?: string | null
           updated_at?: string
         }
         Relationships: []
