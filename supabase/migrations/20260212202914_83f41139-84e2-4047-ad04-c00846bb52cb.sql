@@ -1,0 +1,1 @@
+INSERT INTO public.agent_telegram_bots (employee_id, bot_token) VALUES ('security_guard', '8576413104:AAGi8yUMa6ZyOYcgtNOUPaXrHvtdkBYTpQQ');
