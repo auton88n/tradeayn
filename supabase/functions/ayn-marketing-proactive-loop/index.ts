@@ -220,7 +220,7 @@ serve(async (req) => {
 
     // ─── 5. Website health check via Firecrawl ───
     try {
-      const siteUrl = 'https://ayn-insight-forge.lovable.app';
+      const siteUrl = 'https://aynn.io';
       const start = Date.now();
       const siteResult = await scrapeUrl(siteUrl, { onlyMainContent: false, formats: ['markdown'] });
       const responseTime = Date.now() - start;

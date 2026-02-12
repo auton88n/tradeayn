@@ -467,7 +467,7 @@ async function executeMarketingAction(
       }
       case 'website_status': {
         const start = Date.now();
-        const res = await fetch('https://ayn-insight-forge.lovable.app', { method: 'HEAD' });
+        const res = await fetch('https://aynn.io', { method: 'HEAD' });
         const time = Date.now() - start;
         return res.ok ? `🌐 site is up (${time}ms)` : `🚨 site returned ${res.status} (${time}ms)`;
       }

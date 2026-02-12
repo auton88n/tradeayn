@@ -404,7 +404,7 @@ serve(async (req) => {
   try {
     const { pages: customPages, siteUrl: customSiteUrl, quickTest } = await req.json().catch(() => ({}));
     
-    const siteUrl = customSiteUrl || 'https://ayn-insight-forge.lovable.app';
+    const siteUrl = customSiteUrl || 'https://aynn.io';
     const pagesToTest = customPages || (quickTest ? CRITICAL_PAGES : PAGES_TO_TEST);
     
     console.log(`Starting GPT-4 Vision visual tests for ${pagesToTest.length} pages on ${siteUrl}`);

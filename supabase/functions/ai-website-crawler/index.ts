@@ -55,7 +55,7 @@ const API_ENDPOINTS = [
 ];
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SITE_URL = Deno.env.get('SITE_URL') || 'https://ayn-insight-forge.lovable.app';
+const SITE_URL = Deno.env.get('SITE_URL') || 'https://aynn.io';
 
 async function crawlRoute(route: { path: string; name: string; requiresAuth?: boolean; expectedElements?: string[] }): Promise<CrawlResult> {
   const startTime = Date.now();

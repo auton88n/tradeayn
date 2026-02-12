@@ -20,7 +20,7 @@ export default defineConfig({
     ['list'],
   ],
   use: {
-    baseURL: 'https://ayn-insight-forge.lovable.app',
+    baseURL: 'https://aynn.io',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
