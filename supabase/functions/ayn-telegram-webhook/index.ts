@@ -7,6 +7,7 @@ import { getEmployeePersonality } from "../_shared/aynBrand.ts";
 import { loadCompanyState, loadActiveObjectives, loadServiceEconomics, loadFounderModel } from "../_shared/employeeState.ts";
 import { deliberate, shouldDeliberate } from "../_shared/deliberation.ts";
 import type { ImpactLevel } from "../_shared/deliberation.ts";
+import { handleGroupConversation } from "../_shared/groupChat.ts";
 import {
   cmdHelp, cmdHealth, cmdTickets, cmdStats, cmdErrors, cmdLogs,
   cmdApplications, cmdContacts, cmdUsers,
@@ -207,7 +208,26 @@ serve(async (req) => {
       return new Response('OK', { status: 200 });
     }
 
-    if (String(message.chat.id) !== TELEGRAM_CHAT_ID) {
+    const GROUP_CHAT_ID = Deno.env.get('TELEGRAM_GROUP_CHAT_ID');
+    const senderChatId = String(message.chat.id);
+
+    // ─── Group Chat: Multi-Agent AI Conversation ───
+    if (GROUP_CHAT_ID && senderChatId === GROUP_CHAT_ID) {
+      const text = message.text?.trim();
+      if (text && !message.from?.is_bot) {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const apiKey = Deno.env.get('LOVABLE_API_KEY') || Deno.env.get('OPENROUTER_API_KEY') || '';
+        
+        // Fire and forget — don't block the webhook response
+        handleGroupConversation(supabase, text, GROUP_CHAT_ID, apiKey)
+          .catch(e => console.error('[GROUP-CHAT] Error:', e));
+      }
+      return new Response('OK', { status: 200 });
+    }
+
+    if (senderChatId !== TELEGRAM_CHAT_ID) {
       console.warn('Unauthorized chat_id:', message.chat.id);
       return new Response('OK', { status: 200 });
     }
