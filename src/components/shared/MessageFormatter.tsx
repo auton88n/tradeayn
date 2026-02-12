@@ -11,7 +11,7 @@ import {
   DialogContent,
 } from '@/components/ui/dialog';
 import { persistDalleImage } from '@/hooks/useImagePersistence';
-import { isDocumentStorageUrl, openDocumentUrl, toProxyUrl } from '@/lib/documentUrlUtils';
+import { isDocumentStorageUrl, openDocumentUrl } from '@/lib/documentUrlUtils';
 
 interface MessageFormatterProps {
   content: string;
@@ -409,12 +409,15 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             ),
             // Links - route document storage URLs through proxy for reliable downloads
             a: ({ children, href }) => {
+              const isDataURL = href?.startsWith('data:');
               const isDocUrl = isDocumentStorageUrl(href || '');
-              // For document URLs, use proxy; otherwise keep original href
-              const displayHref = isDocUrl ? toProxyUrl(href || '') : href;
               
               const handleClick = (e: React.MouseEvent) => {
-                if (isDocUrl && href) {
+                if (isDataURL && href) {
+                  // All data: URLs must be downloaded, never navigated
+                  e.preventDefault();
+                  openDocumentUrl(href);
+                } else if (isDocUrl && href) {
                   e.preventDefault();
                   openDocumentUrl(href);
                 }
@@ -422,9 +425,9 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
               
               return (
                 <a 
-                  href={displayHref} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
+                  href={isDataURL ? '#' : href} 
+                  target={isDataURL ? undefined : '_blank'} 
+                  rel={isDataURL ? undefined : 'noopener noreferrer'}
                   onClick={handleClick}
                   className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
                 >
