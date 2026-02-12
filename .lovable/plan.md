@@ -1,92 +1,153 @@
 
 
-# Layer 3: Political Intelligence + Strategic Doctrine — Combined Implementation
+# Live Deliberation Feed in Telegram — "The War Room in Your Pocket"
 
-## Overview
+## What Changes
 
-This combines both approved plans into a single implementation pass: the **Realism & Political Intelligence Layer** (peer trust, reputation, cognitive load, emotional memory, founder psychology) and the **Strategic Doctrine Memory** (coherence bonus in deliberations).
+Instead of deliberations happening silently in the database, you'll **watch each agent speak in your Telegram chat in real-time** as they debate. Each agent posts their position as a separate message, then AYN posts the final decision.
 
-## Phase 1: Database Migration
+## What You'll See
 
-Add 5 columns to `employee_states`:
+When a deliberation triggers (e.g., a high-impact sales decision), your Telegram gets a stream like this:
 
-| Column | Type | Default | Purpose |
-|--------|------|---------|---------|
-| peer_models | jsonb | `{}` | Trust map per peer, auto-decays toward 0.5 |
-| initiative_score | float | 0.5 | Proactive behavior, decays when idle |
-| reputation_score | float | 0.5 | Influence weight, regresses toward 0.5, floored at 0.25 |
-| cognitive_load | float | 0.2 | Bandwidth realism, decays 10% per cycle |
-| emotional_memory | jsonb | `[]` | Emotional events with decaying intensity |
+```text
+--- Message 1 ---
+🏢 INTERNAL DEBATE
+"Should we pivot pricing for Engineering Tools?"
+Impact: HIGH | Agents: 5
 
-Seed initial values for all 13 agents (neutral peer trust at 0.5, initiative/reputation at 0.5, cognitive_load at 0.2, empty emotional_memory). Update `founder_model` jsonb for the system agent to include `current_mood`, `trust_trajectory`, `recent_overrides`, `delegation_comfort`, `attention_patterns`, `frustration_signals`.
+--- Message 2 ---
+🎯 Sales Hunter (rep: 0.72, confidence: 0.85)
+"Support. Current pricing is leaving money on the table. SaaS margins on Engineering Tools are 78% — we should push annual plans harder."
+[doctrine-aligned]
 
-## Phase 2: Shared Modules
+--- Message 3 ---
+🔒 Security Guard (rep: 0.55, confidence: 0.70)
+"Conditional. Price changes affect existing contracts. Need legal review first."
 
-### `employeeState.ts`
+--- Message 4 ---
+💡 Innovation Lead (rep: 0.61, confidence: 0.78)
+"Support. But bundle it with AI features to justify the increase. Pure price hike without added value risks churn."
 
-- Extend `EmployeeState` interface with 5 new fields
-- Add `updatePeerTrust(supabase, employeeId, peerId, delta)` -- clamped 0.1-0.9
-- Add `adjustCognitiveLoad(supabase, employeeId, taskWeight)` -- increases on action
-- Add `recordEmotionalEvent(supabase, employeeId, event)` -- caps at 10, evicts oldest
-- Add `decayInitiative(supabase, employeeId)` -- drops 0.05 when idle
-- Add `applySystemDecay(supabase, employeeId)` -- per Chief of Staff cycle:
-  - Cognitive load: -10%
-  - Trust regression: toward 0.5 by 0.06% per cycle
-  - Reputation regression: toward 0.5 by 0.12% per cycle
-  - Emotional intensity: -0.5%, evict below 0.05
-- Add `loadCurrentDoctrine(supabase)` -- fetches latest `company_journal` entry for strategic_shift
-- Update `buildEmployeeContext()` to include peer trust summary, reputation, cognitive load, and current doctrine
+--- Message 5 ---
+⚖️ Lawyer (rep: 0.50, confidence: 0.65)
+"Oppose. Existing contracts have fixed pricing clauses. We can only change for new customers."
+Objection: "Sales is ignoring contractual obligations."
 
-### `deliberation.ts`
+--- Message 6 ---
+🧠 AYN — DECISION
+Winner: Sales Hunter (weight: 0.82)
+Decision: "Push annual SaaS pricing for new customers only"
+Doctrine: "SaaS-first strategy" — aligned
+Dissent: Lawyer raised contract concerns (trust: 0.45)
+Confidence: 7/10
 
-- **60/40 + Doctrine scoring**: `final_weight = (0.6 * objective_economic_score) + (0.4 * reputation_adjusted_confidence) + doctrine_bonus`
-- Reputation-adjusted confidence uses `max(reputation_score, 0.25)` as floor
-- Doctrine bonus: +0.1 if position aligns with current `strategic_shift` from company_journal, 0.0 otherwise
-- Trust-filtered objections: only raise objections against peers with trust < 0.5
-- Cognitive load gating: exclude agents with `cognitive_load > 0.8` from non-critical deliberations
-- Post-debate trust update: aligned agents +0.05 peer trust, opposing agents -0.03
+⚠️ High-impact — waiting for your go-ahead.
+```
 
-## Phase 3: Edge Functions
+You reply "yes" or "no" in chat like you already do.
 
-### Outcome Evaluator (every 6h)
-- Reputation: +0.05 if prediction accurate, -0.08 if wrong
-- Peer trust: agents who backed a wrong prediction lose -0.02 trust from dissenters
-- Initiative: +0.1 for proactively flagging issues before escalation
+## How It Works
 
-### Chief of Staff (every 2h)
-- Call `applySystemDecay()` for all 13 agents each cycle
-- Founder psychology: analyze recent Telegram messages to update `founder_model` dynamic fields (current_mood, frustration_signals, delegation_comfort)
-- Flag agents with reputation below 0.3 to HR Manager
-- Rank agents by `initiative_score * reputation_score` in briefings
-- Doctrine staleness check: flag if company_journal older than 100 days
+### 1. Update `deliberation.ts` — Add Telegram broadcast
 
-### HR Manager (daily)
-- Reputation trend: compare 7-day trajectory, flag declining agents
-- Emotional health: 3+ negative memories with intensity > 0.3 triggers personality softening suggestion
-- Cognitive overload: average `cognitive_load > 0.7` over 24h triggers task redistribution recommendation
+After each agent generates their position (the parallel LLM calls), **send each position as a separate Telegram message** before moving to synthesis. This means:
 
-### Telegram Webhook
-- Read `founder_model.current_mood` for response tone
-- `frustration_signals > 0.6`: more concise, suppress unsolicited chime-ins
-- `delegation_comfort > 0.8`: auto-execute medium-impact actions
-- Chime-in priority: `initiative_score * reputation_score` instead of confidence alone
+- Send a "debate opening" message with the topic and impact level
+- As each agent's position resolves, send it immediately (with a small delay between messages so they read naturally — 800ms gaps)
+- After synthesis, send the final decision message
+- All messages go to the existing `TELEGRAM_CHAT_ID`
 
-## Implementation Order
+The function signature gets two new optional parameters: `telegramToken` and `telegramChatId`. When provided, the debate is broadcast live. When omitted (e.g., during background cron jobs where you don't want noise), it stays silent.
 
-1. Database migration (add columns + seed values)
-2. Update `employeeState.ts` (interface, new functions, decay, doctrine loader)
-3. Update `deliberation.ts` (60/40 + doctrine scoring, trust filtering, cognitive gating)
-4. Update Outcome Evaluator
-5. Update Chief of Staff
-6. Update HR Manager
-7. Update Telegram Webhook
-8. Deploy all functions
+### 2. Update callers to pass Telegram credentials
 
-## Stability Safeguards (Built In)
+Any function that calls `deliberate()` and wants live broadcast passes the token and chat ID. The main caller is the **Telegram webhook** itself (when AYN internally consults the team before answering you). Other callers (cron jobs like Outcome Evaluator, Chief of Staff) will NOT broadcast by default — they run silently unless they detect something critical.
 
-- **No caste systems**: Reputation regresses toward 0.5 baseline, minimum influence floor at 0.25
-- **No permanent factions**: Trust auto-decays toward 0.5 neutral
-- **No permanent defensiveness**: Emotional intensity decays, memories below 0.05 evicted
-- **No strategic whiplash**: Doctrine bonus (+0.1) preserves directional coherence without overriding economics
-- **Rational ceiling**: 60% of every decision grounded in objectives + economics, regardless of politics
+### 3. Agent emoji mapping
 
+Each agent gets a consistent emoji in the broadcast messages (reusing the personality system):
+
+| Agent | Emoji |
+|-------|-------|
+| system (AYN) | 🧠 |
+| sales | 🎯 |
+| security_guard | 🔒 |
+| advisor | 📊 |
+| innovation_lead | 💡 |
+| hr_manager | 👥 |
+| chief_of_staff | 🏢 |
+| investigator | 🔍 |
+| follow_up | 📬 |
+| marketing | 📈 |
+| customer_success | 🤝 |
+| qa_watchdog | 🐛 |
+| lawyer | ⚖️ |
+
+### 4. Message formatting
+
+Each agent message includes:
+- Emoji + Agent name + (reputation score, confidence)
+- Their position in quotes
+- [doctrine-aligned] tag if applicable
+- Objections shown as a separate line if they exist
+- Cognitive load badge only if above 0.6 (shows the agent is stretched)
+
+The final AYN decision message includes:
+- Winner and their weight score
+- Decision summary
+- Current doctrine reference
+- Dissent summary (who pushed back and why)
+- Overall confidence
+- Whether approval is required
+
+### 5. Throttling and noise control
+
+- Only broadcast deliberations for **medium, high, and irreversible** impact levels (low impact stays silent)
+- Maximum **1 live broadcast per hour** — if multiple deliberations fire within an hour, only the highest-impact one gets broadcast. Others get a single summary message: "3 internal debates resolved silently. Ask me for details."
+- Each agent message has an 800ms delay between sends to create a natural "typing" feel
+- If the founder's `frustration_signals > 0.6`, suppress live broadcasts entirely and send only the final decision
+
+## Technical Details
+
+### `deliberation.ts` changes
+
+```text
+export async function deliberate(
+  supabase, topic, involvedEmployeeIds, context, apiKey,
+  broadcast?: { token: string; chatId: string }  // NEW optional param
+)
+```
+
+Inside the position generation loop, after each position resolves:
+- If `broadcast` is provided, call `sendTelegramMessage()` with the formatted agent position
+- Add 800ms delay between messages
+- After synthesis, send the decision message
+
+### `telegramHelper.ts` — New helper
+
+Add `sendDeliberationMessage(token, chatId, agentId, position, meta)` that formats the agent-specific message with emoji, scores, and tags.
+
+### Telegram webhook changes
+
+When the webhook triggers a deliberation (via chime-in logic or explicit "what does the team think" requests), pass `{ token: TELEGRAM_BOT_TOKEN, chatId: TELEGRAM_CHAT_ID }` as the broadcast parameter.
+
+### Rate limiting
+
+Add a simple check in deliberation: query `ayn_activity_log` for `deliberation_broadcast` actions in the last hour. If one exists, skip broadcasting for the current deliberation and log it silently.
+
+## What Does NOT Change
+
+- The deliberation logic itself (60/40, doctrine, trust filtering) stays exactly the same
+- Database storage of discussions stays the same
+- Background cron agents stay silent unless they opt into broadcasting
+- All existing Telegram features (commands, confirmations, photos, documents) are untouched
+
+## Implementation Sequence
+
+1. Add emoji mapping constant to `aynBrand.ts`
+2. Add `sendDeliberationMessage()` to `telegramHelper.ts`
+3. Update `deliberate()` in `deliberation.ts` with optional broadcast parameter
+4. Update `ayn-telegram-webhook` to pass broadcast credentials when triggering deliberations
+5. Add broadcast rate limiting (1 per hour max)
+6. Deploy all updated functions
