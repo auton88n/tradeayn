@@ -4,7 +4,7 @@ import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 import { getEmployeePersonality } from "../_shared/aynBrand.ts";
-import { loadCompanyState, loadActiveObjectives, loadServiceEconomics } from "../_shared/employeeState.ts";
+import { loadCompanyState, loadActiveObjectives, loadServiceEconomics, loadFounderModel } from "../_shared/employeeState.ts";
 import {
   cmdHelp, cmdHealth, cmdTickets, cmdStats, cmdErrors, cmdLogs,
   cmdApplications, cmdContacts, cmdUsers,
@@ -32,8 +32,26 @@ const corsHeaders = {
 };
 
 // V2: Build the system prompt dynamically with employee personality + V2 intelligence
-function buildAynSystemPrompt(companyContext: string): string {
+function buildAynSystemPrompt(companyContext: string, founderModel?: Record<string, any>): string {
   const personality = getEmployeePersonality('system');
+  
+  // Layer 3: Founder psychology modifiers
+  let founderMods = '';
+  if (founderModel) {
+    const frustration = founderModel.frustration_signals ?? 0;
+    const delegationComfort = founderModel.delegation_comfort ?? 0.5;
+    const mood = founderModel.current_mood ?? 'neutral';
+    
+    if (frustration > 0.6) {
+      founderMods += '\nFOUNDER STATE: Frustration detected. Be more concise. Suppress unsolicited chime-ins. Get to the point.';
+    }
+    if (delegationComfort > 0.8) {
+      founderMods += '\nDELEGATION: High comfort. Auto-execute medium-impact actions without asking for approval.';
+    }
+    if (mood === 'stressed' || mood === 'frustrated') {
+      founderMods += '\nMOOD: Founder is stressed. Keep responses short and actionable. No fluff.';
+    }
+  }
   
   return `${personality}
 
@@ -156,7 +174,8 @@ SELF-VERIFICATION:
 - If logs show failure, be honest. Logs are truth.
 
 BLOCKED ACTIONS: No subscription mods, no user deletion, no auth changes, no deleting messages/logs.
-DATA INTEGRITY: Only cite users from "recently_active_users" in context.`;
+DATA INTEGRITY: Only cite users from "recently_active_users" in context.
+${founderMods}`;
 }
 
 serve(async (req) => {
@@ -302,9 +321,12 @@ serve(async (req) => {
       return new Response('OK', { status: 200 });
     }
 
-    // Build V2 system prompt with company context
-    const companyContext = await buildCompanyContextBlock(supabase);
-    const systemPrompt = buildAynSystemPrompt(companyContext);
+    // Build V2 system prompt with company context + Layer 3 founder psychology
+    const [companyContext, founderModel] = await Promise.all([
+      buildCompanyContextBlock(supabase),
+      loadFounderModel(supabase),
+    ]);
+    const systemPrompt = buildAynSystemPrompt(companyContext, founderModel);
 
     const messages: Array<{ role: string; content: string }> = [
       {

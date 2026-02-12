@@ -1,10 +1,11 @@
 /**
- * Deliberation Engine — Internal Agent Debate System
- * Triggers multi-agent discussion before high-impact decisions.
- * Produces natural language summaries, not formatted logs.
+ * Deliberation Engine — Internal Agent Debate System (Layer 3)
+ * 60/40 weighted synthesis + doctrine alignment bonus.
+ * Trust-filtered objections, cognitive load gating, post-debate trust updates.
  */
 
 import { loadEmployeeState, loadActiveObjectives, loadServiceEconomics, loadCompanyState } from "./employeeState.ts";
+import { loadCurrentDoctrine, updatePeerTrust } from "./politicalIntelligence.ts";
 
 export type ImpactLevel = 'low' | 'medium' | 'high' | 'irreversible';
 
@@ -16,6 +17,11 @@ export interface DeliberationPosition {
   confidence: number;
   objections: string;
   objective_impact: { objective_id: string; expected_delta: number; confidence: number }[];
+  // Layer 3 additions
+  reputation_score: number;
+  cognitive_load: number;
+  peer_trust_toward: Record<string, number>;
+  doctrine_aligned: boolean;
 }
 
 export interface DeliberationResult {
@@ -26,7 +32,7 @@ export interface DeliberationResult {
   impact_level: ImpactLevel;
   objective_impact: { objective_id: string; expected_delta: number; confidence: number }[];
   requires_approval: boolean;
-  summary: string; // Natural language summary for Telegram
+  summary: string;
 }
 
 // ─── Anti-Over-Deliberation ───
@@ -56,11 +62,12 @@ export async function deliberate(
 ): Promise<DeliberationResult> {
   const discussionId = crypto.randomUUID();
 
-  // Load shared context
-  const [objectives, economics, companyState] = await Promise.all([
+  // Load shared context + doctrine
+  const [objectives, economics, companyState, doctrine] = await Promise.all([
     loadActiveObjectives(supabase),
     loadServiceEconomics(supabase),
     loadCompanyState(supabase),
+    loadCurrentDoctrine(supabase),
   ]);
 
   // Load each employee's state in parallel
@@ -68,10 +75,20 @@ export async function deliberate(
     involvedEmployeeIds.map(id => loadEmployeeState(supabase, id))
   );
 
+  // Cognitive load gating: exclude agents with load > 0.8 from non-critical deliberations
+  const filteredStates = employeeStates.filter(s => {
+    if (!s) return false;
+    if (context.impactLevel === 'high' || context.impactLevel === 'irreversible') return true;
+    return (s.cognitive_load ?? 0.2) <= 0.8;
+  });
+
+  const doctrineStr = doctrine ? `\nCurrent strategic doctrine (${doctrine.period}): ${doctrine.strategic_shift}` : '';
+
   const contextBlock = `
 Topic: ${topic}
 Impact level: ${context.impactLevel}
 ${context.additionalContext ? `Additional context: ${context.additionalContext}` : ''}
+${doctrineStr}
 
 Company state: momentum=${companyState?.momentum}, stress=${companyState?.stress_level}, growth=${companyState?.growth_velocity}, risk=${companyState?.risk_exposure}
 
@@ -83,8 +100,8 @@ ${economics.map(e => `- ${e.service_name}: ${e.category}, margin=${Math.round(e.
 
   // Generate positions in parallel (one LLM call per employee)
   const positions: DeliberationPosition[] = [];
-  
-  const positionPromises = employeeStates
+
+  const positionPromises = filteredStates
     .filter(s => s !== null)
     .map(async (state) => {
       const prompt = `You are ${state!.employee_id} in AYN's AI workforce.
@@ -92,6 +109,8 @@ Your core motivation: ${state!.core_motivation}
 Your beliefs: growth_priority=${state!.beliefs.growth_priority}, risk_tolerance=${state!.beliefs.risk_tolerance}
 Your confidence: ${state!.confidence}
 Your emotional stance: ${state!.emotional_stance}
+Your reputation: ${state!.reputation_score?.toFixed(2) ?? '0.50'}
+Your cognitive load: ${state!.cognitive_load?.toFixed(2) ?? '0.20'}
 
 ${contextBlock}
 
@@ -100,8 +119,9 @@ Give your position on this topic in 2-3 sentences. Be direct. Include:
 2. Why (based on your motivation and the data)
 3. Any objection to other likely positions
 4. Impact on objectives (which objective, expected change, your confidence)
+${doctrine ? `5. Whether your position aligns with the current strategic doctrine: "${doctrine.strategic_shift}"` : ''}
 
-Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confidence":0.X,"objective_impact":[{"objective_id":"...","expected_delta":0,"confidence":0.X}]}`;
+Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confidence":0.X,"objective_impact":[{"objective_id":"...","expected_delta":0,"confidence":0.X}]${doctrine ? ',"doctrine_aligned":true/false' : ''}}`;
 
       try {
         const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -117,7 +137,7 @@ Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confide
         if (!res.ok) return null;
         const data = await res.json();
         const parsed = JSON.parse(data.choices?.[0]?.message?.content || '{}');
-        
+
         return {
           employee_id: state!.employee_id,
           employee_name: state!.employee_id.replace(/_/g, ' '),
@@ -126,6 +146,10 @@ Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confide
           confidence: parsed.confidence || state!.confidence,
           objections: parsed.objections || '',
           objective_impact: parsed.objective_impact || [],
+          reputation_score: state!.reputation_score ?? 0.5,
+          cognitive_load: state!.cognitive_load ?? 0.2,
+          peer_trust_toward: state!.peer_models ?? {},
+          doctrine_aligned: parsed.doctrine_aligned ?? false,
         } as DeliberationPosition;
       } catch {
         return null;
@@ -152,20 +176,59 @@ Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confide
     });
   }
 
-  // Synthesize: find consensus and dissent
-  const avgConfidence = positions.length > 0
-    ? positions.reduce((sum, p) => sum + p.confidence, 0) / positions.length
-    : 0.5;
+  // ─── 60/40 + Doctrine Weighted Synthesis ───
 
-  // Cap dissent: max 2, only if confidence > 0.8
-  const dissent = positions
-    .filter(p => p.objections && p.objections.length > 5 && p.confidence > 0.8)
+  // Score each position
+  const scoredPositions = positions.map(p => {
+    // Objective alignment: average of expected deltas weighted by objective priority
+    const objectiveScore = p.objective_impact.length > 0
+      ? p.objective_impact.reduce((sum, oi) => {
+          const obj = objectives.find(o => o.id === oi.objective_id || o.metric === oi.objective_id);
+          const priorityWeight = obj ? (1 / obj.priority) : 0.5; // P1 = 1.0, P2 = 0.5, etc.
+          return sum + (oi.expected_delta * oi.confidence * priorityWeight);
+        }, 0) / p.objective_impact.length
+      : 0;
+
+    // Normalize objective score to 0-1 range (sigmoid-like clamping)
+    const normalizedObjective = Math.max(0, Math.min(1, 0.5 + objectiveScore));
+
+    // Reputation-adjusted confidence (floor at 0.25)
+    const repAdjustedConfidence = p.confidence * Math.max(p.reputation_score, 0.25);
+
+    // Doctrine bonus
+    const doctrineBonus = (doctrine && p.doctrine_aligned) ? 0.1 : 0.0;
+
+    // Final weight: 60/40 + doctrine
+    const finalWeight = (0.6 * normalizedObjective) + (0.4 * repAdjustedConfidence) + doctrineBonus;
+
+    return { ...p, finalWeight, normalizedObjective, repAdjustedConfidence, doctrineBonus };
+  });
+
+  // Sort by final weight descending
+  scoredPositions.sort((a, b) => b.finalWeight - a.finalWeight);
+
+  // Trust-filtered dissent: only surface objections from agents who distrust the top position holder
+  const topPosition = scoredPositions[0];
+  const dissent = scoredPositions
+    .filter(p => {
+      if (!p.objections || p.objections.length < 5) return false;
+      if (p.employee_id === topPosition?.employee_id) return false;
+      // Only raise objections if trust toward the top agent is < 0.5
+      const trustTowardTop = p.peer_trust_toward[topPosition?.employee_id] ?? 0.5;
+      return trustTowardTop < 0.5 && p.confidence > 0.6;
+    })
     .slice(0, 2)
     .map(p => `${p.employee_name}: ${p.objections}`);
 
+  // Average confidence (weighted by reputation)
+  const totalRepWeight = scoredPositions.reduce((sum, p) => sum + Math.max(p.reputation_score, 0.25), 0);
+  const avgConfidence = totalRepWeight > 0
+    ? scoredPositions.reduce((sum, p) => sum + p.confidence * Math.max(p.reputation_score, 0.25), 0) / totalRepWeight
+    : 0.5;
+
   // Aggregate objective impacts
   const objectiveImpacts: Record<string, { total_delta: number; confidence: number; count: number }> = {};
-  for (const pos of positions) {
+  for (const pos of scoredPositions) {
     for (const oi of pos.objective_impact) {
       if (!objectiveImpacts[oi.objective_id]) {
         objectiveImpacts[oi.objective_id] = { total_delta: 0, confidence: 0, count: 0 };
@@ -190,12 +253,29 @@ Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confide
       return obj && obj.priority === 1;
     }));
 
+  // ─── Post-Debate Trust Updates ───
+  // Aligned agents get +0.05 peer trust; opposing agents get -0.03
+  if (topPosition && scoredPositions.length > 1) {
+    const trustUpdates: Promise<void>[] = [];
+    for (const p of scoredPositions) {
+      if (p.employee_id === topPosition.employee_id) continue;
+      // Simple alignment check: same doctrine alignment as winner
+      const aligned = p.doctrine_aligned === topPosition.doctrine_aligned &&
+        Math.sign(p.finalWeight - 0.5) === Math.sign(topPosition.finalWeight - 0.5);
+      const delta = aligned ? 0.05 : -0.03;
+      trustUpdates.push(updatePeerTrust(supabase, topPosition.employee_id, p.employee_id, delta));
+      trustUpdates.push(updatePeerTrust(supabase, p.employee_id, topPosition.employee_id, delta));
+    }
+    // Fire and forget — don't block the response
+    Promise.all(trustUpdates).catch(() => {});
+  }
+
   // Build natural language summary
-  const summary = summarizeDebate(positions, dissent, avgConfidence, requiresApproval);
+  const summary = summarizeDebate(scoredPositions, dissent, avgConfidence, requiresApproval, doctrine?.strategic_shift);
 
   return {
-    decision: positions[0]?.position || 'no consensus',
-    reasoning: positions.map(p => `${p.employee_name}: ${p.reasoning}`).join(' | '),
+    decision: topPosition?.position || 'no consensus',
+    reasoning: scoredPositions.map(p => `${p.employee_name} (w:${p.finalWeight.toFixed(2)}): ${p.reasoning}`).join(' | '),
     dissent,
     confidence: avgConfidence,
     impact_level: context.impactLevel,
@@ -208,24 +288,30 @@ Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confide
 // ─── Natural Language Summarization ───
 
 function summarizeDebate(
-  positions: DeliberationPosition[],
+  positions: (DeliberationPosition & { finalWeight: number; doctrineBonus: number })[],
   dissent: string[],
   avgConfidence: number,
-  requiresApproval: boolean
+  requiresApproval: boolean,
+  currentDoctrine?: string
 ): string {
   if (positions.length === 0) return "couldn't get enough input to make a call on this.";
 
   const parts: string[] = [];
   parts.push("we discussed this internally.");
 
-  // Main positions (first 3)
+  // Main positions (top 3 by weight)
   for (const p of positions.slice(0, 3)) {
     const name = p.employee_name.charAt(0).toUpperCase() + p.employee_name.slice(1);
-    parts.push(`${name}: "${p.position}"`);
+    const docTag = p.doctrineBonus > 0 ? ' [doctrine-aligned]' : '';
+    parts.push(`${name} (weight: ${p.finalWeight.toFixed(2)}${docTag}): "${p.position}"`);
   }
 
   if (dissent.length > 0) {
     parts.push(`\npushback: ${dissent.join(' ')}`);
+  }
+
+  if (currentDoctrine) {
+    parts.push(`\ncurrent doctrine: "${currentDoctrine}"`);
   }
 
   const confStr = avgConfidence >= 0.8 ? 'high confidence' : avgConfidence >= 0.6 ? 'moderate confidence' : 'low confidence — I\'d want more data';

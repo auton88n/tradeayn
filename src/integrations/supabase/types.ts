@@ -1474,45 +1474,60 @@ export type Database = {
           active_objectives: string[] | null
           beliefs: Json
           chime_in_threshold: number
+          cognitive_load: number
           confidence: number
           core_motivation: string | null
           created_at: string
+          emotional_memory: Json
           emotional_stance: string
           employee_id: string
           founder_model: Json | null
           id: string
+          initiative_score: number
+          peer_models: Json
           performance_metrics: Json | null
           recent_decisions: Json | null
+          reputation_score: number
           updated_at: string
         }
         Insert: {
           active_objectives?: string[] | null
           beliefs?: Json
           chime_in_threshold?: number
+          cognitive_load?: number
           confidence?: number
           core_motivation?: string | null
           created_at?: string
+          emotional_memory?: Json
           emotional_stance?: string
           employee_id: string
           founder_model?: Json | null
           id?: string
+          initiative_score?: number
+          peer_models?: Json
           performance_metrics?: Json | null
           recent_decisions?: Json | null
+          reputation_score?: number
           updated_at?: string
         }
         Update: {
           active_objectives?: string[] | null
           beliefs?: Json
           chime_in_threshold?: number
+          cognitive_load?: number
           confidence?: number
           core_motivation?: string | null
           created_at?: string
+          emotional_memory?: Json
           emotional_stance?: string
           employee_id?: string
           founder_model?: Json | null
           id?: string
+          initiative_score?: number
+          peer_models?: Json
           performance_metrics?: Json | null
           recent_decisions?: Json | null
+          reputation_score?: number
           updated_at?: string
         }
         Relationships: []
