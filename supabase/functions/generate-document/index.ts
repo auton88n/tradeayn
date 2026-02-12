@@ -384,8 +384,13 @@ async function generateExcel(data: DocumentRequest): Promise<Uint8Array> {
 
 // Convert Uint8Array to base64 data URL (bypasses ad-blockers)
 function toDataUrl(data: Uint8Array, mimeType: string): string {
-  // Convert Uint8Array to base64 string
-  const binary = Array.from(data).map(byte => String.fromCharCode(byte)).join('');
+  // Chunked base64 conversion to prevent "Maximum call stack size exceeded" on large files
+  const CHUNK_SIZE = 8192;
+  let binary = '';
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.subarray(i, Math.min(i + CHUNK_SIZE, data.length));
+    binary += String.fromCharCode(...chunk);
+  }
   const base64 = btoa(binary);
   return `data:${mimeType};base64,${base64}`;
 }

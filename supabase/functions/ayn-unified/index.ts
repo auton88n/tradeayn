@@ -710,34 +710,40 @@ serve(async (req) => {
         const docType = documentData.type || 'pdf';
         const creditCost = docType === 'excel' ? DOCUMENT_CREDIT_COST.excel : DOCUMENT_CREDIT_COST.pdf;
         
-        // === CHECK CREDITS: Ensure user has enough ===
-        const { data: userLimits } = await supabase
-          .from('user_ai_limits')
-          .select('monthly_messages, current_usage')
-          .eq('user_id', userId)
-          .maybeSingle();
+        // === CHECK CREDITS: Ensure user has enough (admins bypass) ===
+        let creditsRemaining = 999;
+        let currentUsage = 0;
+        let monthlyLimit = 50;
         
-        const currentUsage = userLimits?.current_usage || 0;
-        const monthlyLimit = userLimits?.monthly_messages || 50;
-        const creditsRemaining = monthlyLimit - currentUsage;
-        
-        if (creditsRemaining < creditCost && !isInternalCall) {
-          console.log(`[ayn-unified] Insufficient credits: ${creditsRemaining} < ${creditCost}`);
-          const insufficientMessages: Record<string, string> = {
-            ar: `❌ رصيدك غير كافٍ. مستندات ${docType === 'excel' ? 'Excel' : 'PDF'} تكلف ${creditCost} رصيد، لديك ${creditsRemaining} متبقي.`,
-            fr: `❌ Crédits insuffisants. Les ${docType === 'excel' ? 'Excel' : 'PDF'} coûtent ${creditCost} crédits, il vous reste ${creditsRemaining}.`,
-            en: `❌ Not enough credits. ${docType === 'excel' ? 'Excel' : 'PDF'} documents cost ${creditCost} credits, you have ${creditsRemaining} remaining.`
-          };
-          return new Response(JSON.stringify({
-            content: insufficientMessages[language] || insufficientMessages.en,
-            intent: 'document',
-            notEnoughCredits: true,
-            creditsRequired: creditCost,
-            creditsRemaining
-          }), {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
+        if (!isAdmin && !isInternalCall) {
+          const { data: userLimits } = await supabase
+            .from('user_ai_limits')
+            .select('monthly_messages, current_monthly_messages')
+            .eq('user_id', userId)
+            .maybeSingle();
+          
+          currentUsage = userLimits?.current_monthly_messages || 0;
+          monthlyLimit = userLimits?.monthly_messages || 50;
+          creditsRemaining = monthlyLimit - currentUsage;
+          
+          if (creditsRemaining < creditCost) {
+            console.log(`[ayn-unified] Insufficient credits: ${creditsRemaining} < ${creditCost}`);
+            const insufficientMessages: Record<string, string> = {
+              ar: `❌ رصيدك غير كافٍ. مستندات ${docType === 'excel' ? 'Excel' : 'PDF'} تكلف ${creditCost} رصيد، لديك ${creditsRemaining} متبقي.`,
+              fr: `❌ Crédits insuffisants. Les ${docType === 'excel' ? 'Excel' : 'PDF'} coûtent ${creditCost} crédits, il vous reste ${creditsRemaining}.`,
+              en: `❌ Not enough credits. ${docType === 'excel' ? 'Excel' : 'PDF'} documents cost ${creditCost} credits, you have ${creditsRemaining} remaining.`
+            };
+            return new Response(JSON.stringify({
+              content: insufficientMessages[language] || insufficientMessages.en,
+              intent: 'document',
+              notEnoughCredits: true,
+              creditsRequired: creditCost,
+              creditsRemaining
+            }), {
+              status: 429,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
         }
         
         // Call generate-document function
@@ -761,11 +767,13 @@ serve(async (req) => {
         
         const { downloadUrl, filename } = await docResponse.json();
         
-        // === DEDUCT CREDITS after successful generation ===
-        await supabase
-          .from('user_ai_limits')
-          .update({ current_usage: currentUsage + creditCost })
-          .eq('user_id', userId);
+        // === DEDUCT CREDITS after successful generation (skip for admins) ===
+        if (!isAdmin && !isInternalCall) {
+          await supabase
+            .from('user_ai_limits')
+            .update({ current_monthly_messages: currentUsage + creditCost })
+            .eq('user_id', userId);
+        }
         
         console.log(`[ayn-unified] Deducted ${creditCost} credits for ${docType} document`);
         
