@@ -161,8 +161,20 @@ async function generatePDF(data: DocumentRequest): Promise<Uint8Array> {
   doc.setTextColor(33, 33, 33);
   
   for (const section of data.sections) {
-    // Check if we need a new page
-    if (y > pageHeight - 50) {
+    // Calculate needed space for heading + content/table to keep them together
+    const headingHeight = 18; // heading + spacing
+    let sectionContentHeight = 0;
+    if (section.content) {
+      const preLines = doc.splitTextToSize(section.content, contentWidth - 10);
+      sectionContentHeight = preLines.length * 6 + 5;
+    }
+    if (section.table && section.table.headers && section.table.rows) {
+      const tableH = 14 + (Math.min(section.table.rows.length, 5) * 12) + 10;
+      sectionContentHeight = Math.max(sectionContentHeight, tableH);
+    }
+    // If heading + first part of content won't fit, move everything to next page
+    const neededSpace = headingHeight + Math.min(sectionContentHeight, 60);
+    if (y + neededSpace > pageHeight - 40) {
       addFooter(doc, pageWidth, pageHeight, margin, data.language, isRTL);
       doc.addPage();
       y = 30;

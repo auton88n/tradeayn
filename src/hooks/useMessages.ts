@@ -314,13 +314,13 @@ export const useMessages = (
         const lower = messageContent.toLowerCase();
         
         // Document generation detection (English, Arabic, French)
-        if (/create pdf|make pdf|generate pdf|pdf report|pdf document|pdf about|give me a pdf/.test(lower)) return 'document';
-        if (/create excel|make excel|excel sheet|spreadsheet|xlsx/.test(lower)) return 'document';
-        if (/اعمل pdf|انشئ pdf|ملف pdf|تقرير pdf|اعمل لي|سوي لي/.test(lower)) return 'document';
-        if (/créer pdf|faire pdf|rapport pdf|document pdf|créer excel/.test(lower)) return 'document';
+        if (/create pdf|make pdf|generate pdf|pdf report|pdf document|pdf about|pdf for|pdf of|give me a pdf/.test(lower)) return 'document';
+        if (/create excel|make excel|excel sheet|spreadsheet|xlsx|excel about|excel for|excel of|table about|table of|data about|data overview|create table|create a table/.test(lower)) return 'document';
+        if (/اعمل pdf|انشئ pdf|ملف pdf|تقرير pdf|اعمل لي|سوي لي|جدول عن|بيانات عن|اكسل عن/.test(lower)) return 'document';
+        if (/créer pdf|faire pdf|rapport pdf|document pdf|créer excel|excel sur|excel de|tableau de|données sur/.test(lower)) return 'document';
         
         // Image generation detection (English, Arabic, French)
-        if (/generate image|create image|draw |picture of|image of|make image|make me a picture|photo of|illustration of|visualize|render a |render an |صورة|ارسم|dessine|montre moi|genere une image/.test(lower)) return 'image';
+        if (/generate image|create image|draw |picture of|image of|make image|make me a picture|show me a picture|show me a photo|photo of|illustration of|visualize|render a |render an |generate a picture|create a picture|صورة|ارسم|dessine|montre moi|genere une image/.test(lower)) return 'image';
         
         // Floor plan detection (disabled - rebuilding)
         // if (/floor plan|house plan|home layout|design a house|design me a|مخطط|تصميم بيت|تصميم منزل|plan de maison/.test(lower)) return 'floor_plan';
