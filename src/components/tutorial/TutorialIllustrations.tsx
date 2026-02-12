@@ -1,13 +1,13 @@
 import { motion } from 'framer-motion';
 import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp, Heart, Eye, Building2, Ruler, Calculator, Layers, ClipboardCheck, CheckCircle2, XCircle, AlertTriangle, FileSpreadsheet, Download } from 'lucide-react';
 
-export const MeetAynIllustration = () => (
-  <div className="relative w-full h-full flex items-center justify-center">
+export const MeetAynIllustration = () =>
+<div className="relative w-full h-full flex items-center justify-center">
     <motion.div
-      className="relative"
-      animate={{ scale: [1, 1.02, 1] }}
-      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-    >
+    className="relative"
+    animate={{ scale: [1, 1.02, 1] }}
+    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
+
       {/* Outer glow */}
       <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 to-purple-500/20 blur-3xl scale-150" />
       
@@ -22,92 +22,92 @@ export const MeetAynIllustration = () => (
         </div>
       </div>
     </motion.div>
-  </div>
-);
+  </div>;
+
 
 export const EmotionsIllustration = () => {
   // Core emotions (Row 1)
   const coreEmotions = [
-    { color: 'hsl(200, 60%, 55%)', label: 'Calm', emoji: '😌', meaning: 'Peaceful' },
-    { color: 'hsl(45, 95%, 60%)', label: 'Happy', emoji: '😊', meaning: 'Joyful' },
-    { color: 'hsl(330, 85%, 60%)', label: 'Excited', emoji: '🤩', meaning: 'Energetic' },
-    { color: 'hsl(250, 70%, 65%)', label: 'Thinking', emoji: '🤔', meaning: 'Processing' },
-    { color: 'hsl(170, 60%, 50%)', label: 'Curious', emoji: '🧐', meaning: 'Exploring' },
-  ];
-  
+  { color: 'hsl(200, 60%, 55%)', label: 'Calm', emoji: '😌', meaning: 'Peaceful' },
+  { color: 'hsl(45, 95%, 60%)', label: 'Happy', emoji: '😊', meaning: 'Joyful' },
+  { color: 'hsl(330, 85%, 60%)', label: 'Excited', emoji: '🤩', meaning: 'Energetic' },
+  { color: 'hsl(250, 70%, 65%)', label: 'Thinking', emoji: '🤔', meaning: 'Processing' },
+  { color: 'hsl(170, 60%, 50%)', label: 'Curious', emoji: '🧐', meaning: 'Exploring' }];
+
+
   // Empathy emotions (Row 2)
   const empathyEmotions = [
-    { color: 'hsl(25, 70%, 75%)', label: 'Comfort', emoji: '🤗', meaning: 'Nurturing' },
-    { color: 'hsl(280, 45%, 75%)', label: 'Supportive', emoji: '💪', meaning: 'Encouraging' },
-  ];
-  
+  { color: 'hsl(25, 70%, 75%)', label: 'Comfort', emoji: '🤗', meaning: 'Nurturing' },
+  { color: 'hsl(280, 45%, 75%)', label: 'Supportive', emoji: '💪', meaning: 'Encouraging' }];
+
+
   // Negative/low energy emotions (Row 3)
   const negativeEmotions = [
-    { color: 'hsl(20, 70%, 50%)', label: 'Frustrated', emoji: '😤', meaning: 'Tense' },
-    { color: 'hsl(354, 80%, 42%)', label: 'Mad', emoji: '😠', meaning: 'Intense' },
-    { color: 'hsl(220, 40%, 50%)', label: 'Sad', emoji: '😢', meaning: 'Melancholy' },
-    { color: 'hsl(200, 12%, 58%)', label: 'Bored', emoji: '😑', meaning: 'Low Energy' },
-  ];
+  { color: 'hsl(20, 70%, 50%)', label: 'Frustrated', emoji: '😤', meaning: 'Tense' },
+  { color: 'hsl(354, 80%, 42%)', label: 'Mad', emoji: '😠', meaning: 'Intense' },
+  { color: 'hsl(220, 40%, 50%)', label: 'Sad', emoji: '😢', meaning: 'Melancholy' },
+  { color: 'hsl(200, 12%, 58%)', label: 'Bored', emoji: '😑', meaning: 'Low Energy' }];
 
-  const EmotionCircle = ({ emotion, index, baseDelay = 0, small = false }: { emotion: typeof coreEmotions[0], index: number, baseDelay?: number, small?: boolean }) => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: baseDelay + index * 0.06, type: 'spring', stiffness: 200 }}
-      className="flex flex-col items-center gap-0.5"
-    >
-      <motion.div 
-        className={`${small ? 'w-8 h-8' : 'w-9 h-9'} rounded-full flex items-center justify-center shadow-md`}
-        style={{ 
-          backgroundColor: emotion.color,
-          boxShadow: `0 2px 12px ${emotion.color.replace(')', ', 0.35)')}` 
-        }}
-        animate={{ scale: [1, 1.04, 1] }}
-        transition={{ duration: 2.5, repeat: Infinity, delay: index * 0.2 }}
-      >
+
+  const EmotionCircle = ({ emotion, index, baseDelay = 0, small = false }: {emotion: typeof coreEmotions[0];index: number;baseDelay?: number;small?: boolean;}) =>
+  <motion.div
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay: baseDelay + index * 0.06, type: 'spring', stiffness: 200 }}
+    className="flex flex-col items-center gap-0.5">
+
+      <motion.div
+      className={`${small ? 'w-8 h-8' : 'w-9 h-9'} rounded-full flex items-center justify-center shadow-md`}
+      style={{
+        backgroundColor: emotion.color,
+        boxShadow: `0 2px 12px ${emotion.color.replace(')', ', 0.35)')}`
+      }}
+      animate={{ scale: [1, 1.04, 1] }}
+      transition={{ duration: 2.5, repeat: Infinity, delay: index * 0.2 }}>
+
         <span className={small ? 'text-sm' : 'text-base'}>{emotion.emoji}</span>
       </motion.div>
       <span className="text-[9px] font-medium text-foreground leading-tight">{emotion.label}</span>
       <span className="text-[7px] text-muted-foreground leading-tight">{emotion.meaning}</span>
-    </motion.div>
-  );
+    </motion.div>;
+
 
   return (
     <div className="w-full h-full flex items-center justify-center">
       <div className="flex flex-col items-center gap-2">
         {/* Row 1: Core emotions */}
         <div className="flex items-center gap-2">
-          {coreEmotions.map((emotion, i) => (
-            <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0} />
-          ))}
+          {coreEmotions.map((emotion, i) =>
+          <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0} />
+          )}
         </div>
         
         {/* Row 2: Empathy emotions with warm background */}
-        <motion.div 
+        <motion.div
           className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-300/10 to-purple-400/10 border border-orange-300/20"
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
+          transition={{ delay: 0.4 }}>
+
           <span className="text-[8px] text-orange-500 dark:text-orange-300 font-medium uppercase tracking-wider">Empathy</span>
-          {empathyEmotions.map((emotion, i) => (
-            <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.5} />
-          ))}
+          {empathyEmotions.map((emotion, i) =>
+          <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.5} />
+          )}
         </motion.div>
         
         {/* Row 3: Negative emotions */}
         <div className="flex items-center gap-2 opacity-75">
-          {negativeEmotions.map((emotion, i) => (
-            <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.7} small />
-          ))}
+          {negativeEmotions.map((emotion, i) =>
+          <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.7} small />
+          )}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
-export const ChatIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center px-4">
+export const ChatIllustration = () =>
+<div className="w-full h-full flex items-center justify-center px-4">
     <div className="w-full max-w-md space-y-2">
       {/* Chat input mockup */}
       <div className="bg-muted/30 rounded-2xl border border-border/30 shadow-xl overflow-hidden">
@@ -138,49 +138,49 @@ export const ChatIllustration = () => (
           
           {/* Right side */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground">12</span>
-            <motion.div 
-              className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center"
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
+            
+            <motion.div
+            className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}>
+
               <Brain className="w-3.5 h-3.5 text-background" />
             </motion.div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  </div>;
 
-export const FilesIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
+
+export const FilesIllustration = () =>
+<div className="w-full h-full flex items-center justify-center">
     <div className="flex items-center gap-4">
       {[
-        { icon: FileText, label: 'PDF', color: 'text-red-500' },
-        { icon: Image, label: 'Image', color: 'text-blue-500' },
-        { icon: FileText, label: 'Doc', color: 'text-green-500' },
-      ].map((file, i) => (
-        <motion.div
-          key={file.label}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: i * 0.15 }}
-          className="flex flex-col items-center gap-2"
-        >
+    { icon: FileText, label: 'PDF', color: 'text-red-500' },
+    { icon: Image, label: 'Image', color: 'text-blue-500' },
+    { icon: FileText, label: 'Doc', color: 'text-green-500' }].
+    map((file, i) =>
+    <motion.div
+      key={file.label}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: i * 0.15 }}
+      className="flex flex-col items-center gap-2">
+
           <div className="w-16 h-20 rounded-lg bg-muted/50 border border-border/50 flex items-center justify-center shadow-md">
             <file.icon className={`w-8 h-8 ${file.color}`} />
           </div>
           <span className="text-xs text-muted-foreground">{file.label}</span>
         </motion.div>
-      ))}
+    )}
     </div>
-  </div>
-);
+  </div>;
 
 
-export const NavigationIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
+
+export const NavigationIllustration = () =>
+<div className="w-full h-full flex items-center justify-center">
     <div className="w-56 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 p-2.5 border-b border-border/30">
@@ -217,11 +217,11 @@ export const NavigationIllustration = () => (
         </div>
       </div>
     </div>
-  </div>
-);
+  </div>;
 
-export const HistoryIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
+
+export const HistoryIllustration = () =>
+<div className="w-full h-full flex items-center justify-center">
     <div className="w-56 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-2 border-b border-border/30">
@@ -244,11 +244,11 @@ export const HistoryIllustration = () => (
       <div className="p-2 space-y-2">
         {/* User message */}
         <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex flex-col items-end"
-        >
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex flex-col items-end">
+
           <div className="flex items-center gap-1 mb-0.5">
             <span className="text-[10px] font-medium">You</span>
             <div className="w-5 h-5 rounded-full border border-border flex items-center justify-center">
@@ -262,11 +262,11 @@ export const HistoryIllustration = () => (
         
         {/* AYN message */}
         <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex flex-col items-start"
-        >
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="flex flex-col items-start">
+
           <div className="flex items-center gap-1 mb-0.5">
             <div className="w-5 h-5 rounded-full bg-foreground flex items-center justify-center">
               <Brain className="w-2.5 h-2.5 text-background" />
@@ -292,28 +292,28 @@ export const HistoryIllustration = () => (
         </button>
       </div>
     </div>
-  </div>
-);
+  </div>;
 
-export const EmpathyIllustration = () => (
-  <div className="relative w-full h-full flex items-center justify-center">
+
+export const EmpathyIllustration = () =>
+<div className="relative w-full h-full flex items-center justify-center">
     {/* Warm ambient glow */}
     <motion.div
-      className="absolute inset-0 flex items-center justify-center"
-      animate={{ opacity: [0.3, 0.5, 0.3] }}
-      transition={{ duration: 3, repeat: Infinity }}
-    >
+    className="absolute inset-0 flex items-center justify-center"
+    animate={{ opacity: [0.3, 0.5, 0.3] }}
+    transition={{ duration: 3, repeat: Infinity }}>
+
       <div className="w-48 h-48 rounded-full bg-gradient-to-r from-orange-300/20 to-purple-400/20 blur-3xl" />
     </motion.div>
     
     {/* Eye with warm glow */}
     <div className="relative">
       <motion.div
-        className="relative w-28 h-28 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center shadow-2xl"
-        style={{
-          boxShadow: '0 0 60px hsl(25, 70%, 75%, 0.4), 0 0 100px hsl(280, 45%, 75%, 0.2)'
-        }}
-      >
+      className="relative w-28 h-28 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center shadow-2xl"
+      style={{
+        boxShadow: '0 0 60px hsl(25, 70%, 75%, 0.4), 0 0 100px hsl(280, 45%, 75%, 0.2)'
+      }}>
+
         {/* Iris with warm color */}
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-300/40 to-purple-400/30 flex items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-foreground/90 flex items-center justify-center">
@@ -323,33 +323,33 @@ export const EmpathyIllustration = () => (
       </motion.div>
       
       {/* Floating ember particles */}
-      {[0, 1, 2, 3].map((i) => (
-        <motion.div
-          key={i}
-          className="absolute w-2 h-2 rounded-full"
-          style={{
-            background: i % 2 === 0 
-              ? 'radial-gradient(circle, hsl(25, 70%, 75%) 0%, transparent 100%)'
-              : 'radial-gradient(circle, hsl(280, 45%, 75%) 0%, transparent 100%)',
-            boxShadow: i % 2 === 0 
-              ? '0 0 8px hsl(25, 70%, 65%)'
-              : '0 0 8px hsl(280, 45%, 65%)',
-            left: '50%',
-            top: '50%',
-          }}
-          animate={{
-            x: [0, Math.cos((i / 4) * Math.PI * 2) * 50],
-            y: [0, Math.sin((i / 4) * Math.PI * 2) * 50 - 30],
-            opacity: [0, 0.8, 0],
-            scale: [0.5, 1, 0.3],
-          }}
-          transition={{
-            duration: 3,
-            delay: i * 0.5,
-            repeat: Infinity,
-          }}
-        />
-      ))}
+      {[0, 1, 2, 3].map((i) =>
+    <motion.div
+      key={i}
+      className="absolute w-2 h-2 rounded-full"
+      style={{
+        background: i % 2 === 0 ?
+        'radial-gradient(circle, hsl(25, 70%, 75%) 0%, transparent 100%)' :
+        'radial-gradient(circle, hsl(280, 45%, 75%) 0%, transparent 100%)',
+        boxShadow: i % 2 === 0 ?
+        '0 0 8px hsl(25, 70%, 65%)' :
+        '0 0 8px hsl(280, 45%, 65%)',
+        left: '50%',
+        top: '50%'
+      }}
+      animate={{
+        x: [0, Math.cos(i / 4 * Math.PI * 2) * 50],
+        y: [0, Math.sin(i / 4 * Math.PI * 2) * 50 - 30],
+        opacity: [0, 0.8, 0],
+        scale: [0.5, 1, 0.3]
+      }}
+      transition={{
+        duration: 3,
+        delay: i * 0.5,
+        repeat: Infinity
+      }} />
+
+    )}
     </div>
     
     {/* Labels */}
@@ -363,11 +363,11 @@ export const EmpathyIllustration = () => (
         <span className="text-xs text-purple-500 dark:text-purple-300">Support</span>
       </div>
     </div>
-  </div>
-);
+  </div>;
 
-export const MicroBehaviorsIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
+
+export const MicroBehaviorsIllustration = () =>
+<div className="w-full h-full flex items-center justify-center">
     <div className="flex flex-col items-center gap-6">
       {/* Pupil dilation demo */}
       <div className="flex items-center gap-8">
@@ -383,26 +383,26 @@ export const MicroBehaviorsIllustration = () => (
         
         {/* Arrow */}
         <motion.div
-          animate={{ x: [0, 5, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          className="text-muted-foreground"
-        >
+        animate={{ x: [0, 5, 0] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+        className="text-muted-foreground">
+
           →
         </motion.div>
         
         {/* Dilated pupil */}
         <div className="flex flex-col items-center gap-2">
-          <motion.div 
-            className="w-16 h-16 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center border border-border/50"
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
+          <motion.div
+          className="w-16 h-16 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center border border-border/50"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}>
+
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <motion.div 
-                className="rounded-full bg-foreground"
-                animate={{ width: [16, 24, 16], height: [16, 24, 16] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
+              <motion.div
+              className="rounded-full bg-foreground"
+              animate={{ width: [16, 24, 16], height: [16, 24, 16] }}
+              transition={{ duration: 2, repeat: Infinity }} />
+
             </div>
           </motion.div>
           <span className="text-[10px] text-muted-foreground">Engaged</span>
@@ -412,29 +412,29 @@ export const MicroBehaviorsIllustration = () => (
       {/* Blink patterns */}
       <div className="flex items-center gap-4">
         {[
-          { label: 'Slow Blink', desc: 'Comfort', delay: 0 },
-          { label: 'Quick Blink', desc: 'Attention', delay: 0.3 },
-          { label: 'Double Blink', desc: 'Understanding', delay: 0.6 },
-        ].map((blink, i) => (
-          <motion.div
-            key={blink.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: blink.delay }}
-            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg bg-muted/30 border border-border/30"
-          >
+      { label: 'Slow Blink', desc: 'Comfort', delay: 0 },
+      { label: 'Quick Blink', desc: 'Attention', delay: 0.3 },
+      { label: 'Double Blink', desc: 'Understanding', delay: 0.6 }].
+      map((blink, i) =>
+      <motion.div
+        key={blink.label}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: blink.delay }}
+        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg bg-muted/30 border border-border/30">
+
             <Eye className="w-4 h-4 text-muted-foreground" />
             <span className="text-[10px] font-medium">{blink.label}</span>
             <span className="text-[8px] text-muted-foreground">{blink.desc}</span>
           </motion.div>
-        ))}
+      )}
       </div>
     </div>
-  </div>
-);
+  </div>;
 
-export const CreditsIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
+
+export const CreditsIllustration = () =>
+<div className="w-full h-full flex items-center justify-center">
     <div className="w-56 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden p-4">
       {/* Header with circular progress */}
       <div className="flex items-center justify-between mb-4">
@@ -452,15 +452,15 @@ export const CreditsIllustration = () => (
         <div className="relative w-12 h-12">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
             <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted/30" />
-            <motion.circle 
-              cx="18" cy="18" r="14" fill="none" strokeWidth="3" 
-              className="text-primary"
-              strokeDasharray="88"
-              initial={{ strokeDashoffset: 88 }}
-              animate={{ strokeDashoffset: 22 }}
-              transition={{ duration: 1, delay: 0.3 }}
-              strokeLinecap="round"
-            />
+            <motion.circle
+            cx="18" cy="18" r="14" fill="none" strokeWidth="3"
+            className="text-primary"
+            strokeDasharray="88"
+            initial={{ strokeDashoffset: 88 }}
+            animate={{ strokeDashoffset: 22 }}
+            transition={{ duration: 1, delay: 0.3 }}
+            strokeLinecap="round" />
+
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-[10px] font-bold">3/5</span>
@@ -477,11 +477,11 @@ export const CreditsIllustration = () => (
         
         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: '60%' }}
-            transition={{ duration: 1, delay: 0.3 }}
-          />
+          className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
+          initial={{ width: 0 }}
+          animate={{ width: '60%' }}
+          transition={{ duration: 1, delay: 0.3 }} />
+
         </div>
         
         <div className="text-[10px] text-muted-foreground text-center pt-1">
@@ -489,11 +489,11 @@ export const CreditsIllustration = () => (
         </div>
       </div>
     </div>
-  </div>
-);
+  </div>;
 
-export const ProfileIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
+
+export const ProfileIllustration = () =>
+<div className="w-full h-full flex items-center justify-center">
     <div className="w-52 bg-muted/30 rounded-xl border border-border/50 p-3 shadow-lg">
       {/* User Info */}
       <div className="flex items-center gap-3 mb-3 pb-3 border-b border-border/30">
@@ -510,38 +510,38 @@ export const ProfileIllustration = () => (
       <div className="space-y-1">
         {/* Upgrade Button */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex items-center gap-2 px-2 py-2 rounded-lg bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/30 text-xs font-medium"
-        >
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center gap-2 px-2 py-2 rounded-lg bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/30 text-xs font-medium">
+
           <Zap className="w-3 h-3 text-violet-500" />
           <span className="text-violet-600 dark:text-violet-400">Upgrade Plan</span>
         </motion.div>
         
         {[
-          { icon: Settings, label: 'Settings' },
-          { icon: HelpCircle, label: 'Tutorial' },
-          { icon: MessageSquare, label: 'Support' },
-          { icon: LogOut, label: 'Sign Out', danger: true },
-        ].map((item, i) => (
-          <motion.div
-            key={item.label}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: i * 0.1 }}
-            className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs ${item.danger ? 'text-red-500 hover:bg-red-500/10' : 'text-muted-foreground hover:bg-muted/50'}`}
-          >
+      { icon: Settings, label: 'Settings' },
+      { icon: HelpCircle, label: 'Tutorial' },
+      { icon: MessageSquare, label: 'Support' },
+      { icon: LogOut, label: 'Sign Out', danger: true }].
+      map((item, i) =>
+      <motion.div
+        key={item.label}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: i * 0.1 }}
+        className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs ${item.danger ? 'text-red-500 hover:bg-red-500/10' : 'text-muted-foreground hover:bg-muted/50'}`}>
+
             <item.icon className="w-3 h-3" />
             {item.label}
           </motion.div>
-        ))}
+      )}
       </div>
     </div>
-  </div>
-);
+  </div>;
 
-export const EngineeringIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
+
+export const EngineeringIllustration = () =>
+<div className="w-full h-full flex items-center justify-center">
     <div className="relative">
       {/* Glow effect */}
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 blur-2xl scale-150" />
@@ -562,33 +562,33 @@ export const EngineeringIllustration = () => (
         {/* Calculator options - All 7 tools */}
         <div className="p-2 grid grid-cols-2 gap-1.5">
           {[
-            { icon: Layers, label: 'Beam', color: 'text-cyan-500' },
-            { icon: Building2, label: 'Column', color: 'text-blue-500' },
-            { icon: Calculator, label: 'Slab', color: 'text-indigo-500' },
-            { icon: Layers, label: 'Foundation', color: 'text-violet-500' },
-            { icon: Building2, label: 'Retaining', color: 'text-purple-500' },
-            { icon: Ruler, label: 'Grading', color: 'text-emerald-500' },
-          ].map((item, i) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.08 }}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-            >
+        { icon: Layers, label: 'Beam', color: 'text-cyan-500' },
+        { icon: Building2, label: 'Column', color: 'text-blue-500' },
+        { icon: Calculator, label: 'Slab', color: 'text-indigo-500' },
+        { icon: Layers, label: 'Foundation', color: 'text-violet-500' },
+        { icon: Building2, label: 'Retaining', color: 'text-purple-500' },
+        { icon: Ruler, label: 'Grading', color: 'text-emerald-500' }].
+        map((item, i) =>
+        <motion.div
+          key={item.label}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: i * 0.08 }}
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+
               <item.icon className={`w-3 h-3 ${item.color}`} />
               <span className="text-[10px] font-medium">{item.label}</span>
             </motion.div>
-          ))}
+        )}
         </div>
         
         {/* Results preview */}
-        <motion.div 
-          className="p-2 border-t border-border/30"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
+        <motion.div
+        className="p-2 border-t border-border/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}>
+
           <div className="bg-muted/20 rounded-lg p-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded bg-cyan-500/20 flex items-center justify-center">
@@ -601,11 +601,11 @@ export const EngineeringIllustration = () => (
         </motion.div>
       </div>
     </div>
-  </div>
-);
+  </div>;
 
-export const ComplianceIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
+
+export const ComplianceIllustration = () =>
+<div className="w-full h-full flex items-center justify-center">
     <div className="relative">
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-teal-500/20 to-cyan-500/20 blur-2xl scale-150" />
       
@@ -622,34 +622,34 @@ export const ComplianceIllustration = () => (
         
         <div className="p-2 space-y-1.5">
           {[
-            { label: 'Room Dimensions', status: 'pass' },
-            { label: 'Ceiling Height', status: 'pass' },
-            { label: 'Egress Windows', status: 'fail' },
-            { label: 'Stair Geometry', status: 'pass' },
-            { label: 'Fire Safety', status: 'warn' },
-            { label: 'Door Clearance', status: 'pass' },
-          ].map((item, i) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-muted/30"
-            >
+        { label: 'Room Dimensions', status: 'pass' },
+        { label: 'Ceiling Height', status: 'pass' },
+        { label: 'Egress Windows', status: 'fail' },
+        { label: 'Stair Geometry', status: 'pass' },
+        { label: 'Fire Safety', status: 'warn' },
+        { label: 'Door Clearance', status: 'pass' }].
+        map((item, i) =>
+        <motion.div
+          key={item.label}
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: i * 0.08 }}
+          className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-muted/30">
+
               <span className="text-[10px] font-medium">{item.label}</span>
               {item.status === 'pass' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
               {item.status === 'fail' && <XCircle className="w-3.5 h-3.5 text-red-500" />}
               {item.status === 'warn' && <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
             </motion.div>
-          ))}
+        )}
         </div>
         
-        <motion.div 
-          className="p-2 border-t border-border/30"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
+        <motion.div
+        className="p-2 border-t border-border/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}>
+
           <div className="flex items-center justify-between text-[10px] px-2">
             <span className="text-emerald-500 font-medium">4 Passed</span>
             <span className="text-red-500 font-medium">1 Failed</span>
@@ -658,19 +658,19 @@ export const ComplianceIllustration = () => (
         </motion.div>
       </div>
     </div>
-  </div>
-);
+  </div>;
 
-export const DocumentsIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
+
+export const DocumentsIllustration = () =>
+<div className="w-full h-full flex items-center justify-center">
     <div className="flex items-center gap-6">
       {/* PDF Document */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="flex flex-col items-center gap-2"
-      >
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+      className="flex flex-col items-center gap-2">
+
         <div className="relative w-20 h-24 rounded-lg bg-background border border-border/50 shadow-lg overflow-hidden">
           <div className="h-6 bg-red-500/20 flex items-center justify-center border-b border-red-500/30">
             <span className="text-[8px] font-bold text-red-500">PDF</span>
@@ -690,28 +690,28 @@ export const DocumentsIllustration = () => (
 
       {/* Download arrow */}
       <motion.div
-        animate={{ y: [0, 4, 0] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
-      >
+      animate={{ y: [0, 4, 0] }}
+      transition={{ duration: 1.5, repeat: Infinity }}>
+
         <Download className="w-5 h-5 text-muted-foreground" />
       </motion.div>
 
       {/* Excel Document */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="flex flex-col items-center gap-2"
-      >
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+      className="flex flex-col items-center gap-2">
+
         <div className="relative w-20 h-24 rounded-lg bg-background border border-border/50 shadow-lg overflow-hidden">
           <div className="h-6 bg-emerald-500/20 flex items-center justify-center border-b border-emerald-500/30">
             <span className="text-[8px] font-bold text-emerald-500">XLSX</span>
           </div>
           <div className="p-1.5">
             <div className="grid grid-cols-3 gap-0.5">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className="h-2 bg-muted/60 rounded-sm" />
-              ))}
+              {Array.from({ length: 9 }).map((_, i) =>
+            <div key={i} className="h-2 bg-muted/60 rounded-sm" />
+            )}
             </div>
           </div>
           <div className="absolute bottom-1.5 right-1.5">
@@ -722,5 +722,8 @@ export const DocumentsIllustration = () => (
       </motion.div>
     </div>
 
-  </div>
-);
+    {/* Multilingual label */}
+    <div className="mt-2 text-[9px] text-muted-foreground text-center">
+      Multilingual · EN · AR · FR
+    </div>
+  </div>;
