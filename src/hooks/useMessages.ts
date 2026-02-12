@@ -605,6 +605,12 @@ export const useMessages = (
           hasStructuredData: true
         } : undefined;
 
+        // If image was returned, embed it in the content as markdown for display
+        if (webhookData?.imageUrl) {
+          const imageContent = `![Generated Image](${webhookData.imageUrl})`;
+          response = imageContent + '\n\n' + response;
+        }
+
         // Create AI response message with document attachment if present
         const documentAttachment = webhookData?.documentUrl ? {
           url: webhookData.documentUrl,

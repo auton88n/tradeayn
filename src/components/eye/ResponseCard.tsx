@@ -530,6 +530,18 @@ const ResponseCardComponent = ({
                   </motion.div>
                 </AnimatePresence>
 
+                {/* Generated image display */}
+                {detectedImageUrl && !combinedContent.includes(detectedImageUrl) && (
+                  <div className="px-3 pb-2">
+                    <img
+                      src={detectedImageUrl}
+                      alt="Generated image"
+                      className="w-full max-w-md rounded-lg border border-border"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+
                 {documentAttachment && (
                   <div className="px-3 pb-2">
                     <DocumentDownloadButton
