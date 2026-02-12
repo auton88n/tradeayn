@@ -2,7 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
-import { formatEmployeeReport } from "../_shared/aynBrand.ts";
+import { formatNatural } from "../_shared/aynBrand.ts";
+import { logReflection } from "../_shared/employeeState.ts";
+
+const EMPLOYEE_ID = 'follow_up';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,17 +37,17 @@ serve(async (req) => {
         if (lead) {
           await supabase.from('ayn_sales_pipeline').update({ status: 'replied' }).eq('id', leadId);
 
-          const reportMsg = `🎉 They wrote back!\n\n${lead.company_name} replied to our outreach.\n\nFrom: ${reply.from_email}\nSubject: ${reply.subject || '(no subject)'}\n\nPreview: "${(reply.body_text || '').slice(0, 300)}"\n\nThis is a warm lead now — time to have a real conversation.`;
+          const reportMsg = `${lead.company_name} replied! from: ${reply.from_email}. subject: "${reply.subject || '(no subject)'}". preview: "${(reply.body_text || '').slice(0, 200)}". warm lead now — time to talk.`;
 
           await supabase.from('ayn_mind').insert({
             type: 'employee_report',
-            content: formatEmployeeReport('follow_up', reportMsg),
-            context: { from_employee: 'follow_up_agent', lead_id: leadId, reply_id: reply.id },
+            content: formatNatural(EMPLOYEE_ID, reportMsg, 'casual'),
+            context: { from_employee: EMPLOYEE_ID, lead_id: leadId, reply_id: reply.id },
             shared_with_admin: false,
           });
 
           if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-            await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatEmployeeReport('follow_up', reportMsg));
+            await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatNatural(EMPLOYEE_ID, reportMsg, 'casual'));
           }
 
           results.push(`${lead.company_name} replied — marked as warm lead ✅`);
@@ -73,7 +76,7 @@ serve(async (req) => {
 
           if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
             await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-              formatEmployeeReport('follow_up', `Found a match! ${matchedLead.company_name} (${reply.from_email}) replied to our outreach.\n\nPreview: "${(reply.body_text || '').slice(0, 300)}"`)
+              formatNatural(EMPLOYEE_ID, `matched reply from ${reply.from_email} → ${matchedLead.company_name}. they responded!`, 'casual')
             );
           }
         }
@@ -103,7 +106,7 @@ serve(async (req) => {
 
           if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
             await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-              formatEmployeeReport('follow_up', `Good news during my rounds — ${lead.company_name} actually replied! Just updated their status.`)
+              formatNatural(EMPLOYEE_ID, `found during rounds — ${lead.company_name} actually replied. updated status.`, 'casual')
             );
           }
           continue;
@@ -172,8 +175,8 @@ serve(async (req) => {
       if (results.length > 0) {
         await supabase.from('ayn_mind').insert({
           type: 'employee_report',
-          content: formatEmployeeReport('follow_up', `Here's my pipeline update:\n\n${results.map(r => `• ${r}`).join('\n')}\n\nI'll keep watching. Every lead gets exactly the attention they deserve — no more, no less.`),
-          context: { from_employee: 'follow_up_agent', leads_processed: dueLeads?.length || 0 },
+          content: formatNatural(EMPLOYEE_ID, `pipeline update: ${results.join('. ')}`, 'casual'),
+          context: { from_employee: EMPLOYEE_ID, leads_processed: dueLeads?.length || 0 },
           shared_with_admin: false,
         });
       }
@@ -181,7 +184,7 @@ serve(async (req) => {
 
     await logAynActivity(supabase, 'follow_up_check', `Follow-up rounds: ${results.length} action(s)`, {
       details: { results },
-      triggered_by: 'follow_up_agent',
+      triggered_by: EMPLOYEE_ID,
     });
 
     return new Response(JSON.stringify({ success: true, results }), {

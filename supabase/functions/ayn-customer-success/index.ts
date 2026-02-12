@@ -2,7 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
-import { formatEmployeeReport } from "../_shared/aynBrand.ts";
+import { formatNatural } from "../_shared/aynBrand.ts";
+import { logReflection } from "../_shared/employeeState.ts";
+
+const EMPLOYEE_ID = 'customer_success';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,8 +31,8 @@ serve(async (req) => {
 
       await supabase.from('ayn_mind').insert({
         type: 'employee_report',
-        content: formatEmployeeReport('customer_success', `We've got a new applicant! 🎉\n\n${app.full_name} (${app.email}) is interested in ${app.service_type}.\nTheir application is pending review — let's not keep them waiting!`),
-        context: { from_employee: 'customer_success', application_id: app.id },
+        content: formatNatural(EMPLOYEE_ID, `new applicant! ${app.full_name} (${app.email}) wants ${app.service_type}. pending review — let's not keep them waiting.`, 'casual'),
+        context: { from_employee: EMPLOYEE_ID, application_id: app.id },
         shared_with_admin: false,
       });
     } else if (mode === 'negative_feedback' && body.record) {
@@ -43,11 +46,11 @@ serve(async (req) => {
         .gte('created_at', ago24h);
 
       if (count && count >= 3) {
-        insights.push(`🚨 Heads up — user ${rating.user_id?.slice(0, 8)} has given ${count} negative ratings in 24h. They might need some love.`);
+        insights.push(`user ${rating.user_id?.slice(0, 8)} gave ${count} negative ratings in 24h — churn signal.`);
         await supabase.from('ayn_mind').insert({
           type: 'employee_report',
-          content: formatEmployeeReport('customer_success', `I'm worried about user ${rating.user_id?.slice(0, 8)}.\n\nThey've given ${count} negative ratings in the last 24 hours. That's a churn signal.\n\nMaybe we should reach out? A quick "hey, is everything okay?" goes a long way. 💛`),
-          context: { from_employee: 'customer_success', user_id: rating.user_id, negative_count: count },
+          content: formatNatural(EMPLOYEE_ID, `worried about user ${rating.user_id?.slice(0, 8)}. ${count} negative ratings in 24h. churn signal — should we reach out?`, 'incident'),
+          context: { from_employee: EMPLOYEE_ID, user_id: rating.user_id, negative_count: count },
           shared_with_admin: false,
         });
       }
@@ -109,20 +112,29 @@ serve(async (req) => {
       if (insights.length > 0) {
         await supabase.from('ayn_mind').insert({
           type: 'employee_report',
-          content: formatEmployeeReport('customer_success', insights.map(i => `• ${i}`).join('\n')),
+          content: formatNatural(EMPLOYEE_ID, insights.join('. '), 'casual'),
           context: {
-            from_employee: 'customer_success',
+            from_employee: EMPLOYEE_ID,
             inactive_users: inactiveUsers?.length || 0,
             stale_apps: staleApps?.length || 0,
           },
           shared_with_admin: false,
+        });
+
+        await logReflection(supabase, {
+          employee_id: EMPLOYEE_ID,
+          action_ref: 'retention_check',
+          reasoning: `Checked ${inactiveUsers?.length || 0} inactive users, ${staleApps?.length || 0} stale apps.`,
+          expected_outcome: 'Early churn detection leads to proactive outreach',
+          confidence: 0.7,
+          what_would_change_mind: 'If inactive users return on their own without intervention',
         });
       }
     }
 
     await logAynActivity(supabase, 'customer_success_check', `Customer pulse: ${insights.length} insight(s)`, {
       details: { insights },
-      triggered_by: 'customer_success',
+      triggered_by: EMPLOYEE_ID,
     });
 
     return new Response(JSON.stringify({ success: true, insights }), {

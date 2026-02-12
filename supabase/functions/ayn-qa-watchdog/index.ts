@@ -2,13 +2,15 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
-import { formatEmployeeReport } from "../_shared/aynBrand.ts";
+import { formatNatural, detectToneContext } from "../_shared/aynBrand.ts";
+import { loadCompanyState, logReflection } from "../_shared/employeeState.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const EMPLOYEE_ID = 'qa_watchdog';
 const CRITICAL_FUNCTIONS = ['health', 'ayn-unified', 'support-bot'];
 
 serve(async (req) => {
@@ -21,6 +23,7 @@ serve(async (req) => {
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
     const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
 
+    const companyState = await loadCompanyState(supabase);
     const healthResults: any[] = [];
     let criticalIssues = 0;
 
@@ -50,32 +53,27 @@ serve(async (req) => {
         criticalIssues++;
       }
 
-      const responseTime = Date.now() - start;
-
       healthResults.push({
         function_name: fn,
-        response_time_ms: responseTime,
+        response_time_ms: Date.now() - start,
         status_code: statusCode,
         is_healthy: isHealthy,
         error_message: errorMessage,
       });
     }
 
-    // Save health checks
     if (healthResults.length > 0) {
       await supabase.from('system_health_checks').insert(healthResults);
     }
 
-    // 2. Check error_logs for spikes (5+ errors in 10 min)
+    // 2. Check error spikes
     const ago10m = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     const { count: recentErrors } = await supabase
       .from('error_logs')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', ago10m);
 
-    if (recentErrors && recentErrors >= 5) {
-      criticalIssues++;
-    }
+    if (recentErrors && recentErrors >= 5) criticalIssues++;
 
     // 3. Check LLM failures
     const { count: recentLlmFails } = await supabase
@@ -83,15 +81,9 @@ serve(async (req) => {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', ago10m);
 
-    if (recentLlmFails && recentLlmFails >= 3) {
-      criticalIssues++;
-    }
+    if (recentLlmFails && recentLlmFails >= 3) criticalIssues++;
 
-    // Build personality-infused report
-    const statusLines = healthResults.map(h =>
-      `${h.is_healthy ? '🟢' : '🔴'} ${h.function_name} — ${h.response_time_ms}ms${h.error_message ? ` ⚠️ ${h.error_message}` : ''}`
-    );
-
+    // Build natural report — no borders, no boxes
     const avgResponseTime = healthResults.length > 0
       ? Math.round(healthResults.reduce((sum: number, h: any) => sum + h.response_time_ms, 0) / healthResults.length)
       : 0;
@@ -100,16 +92,26 @@ serve(async (req) => {
       ? Math.round((healthResults.filter((h: any) => h.is_healthy).length / healthResults.length) * 100)
       : 100;
 
-    const reportContent = criticalIssues > 0
-      ? `ALERT: ${criticalIssues} issue(s) need attention.\n\n${statusLines.join('\n')}\n\nAvg Response: ${avgResponseTime}ms | Uptime: ${uptimePct}%\nErrors (10min): ${recentErrors || 0} | LLM Failures: ${recentLlmFails || 0}\n\n🔴 I'm keeping a close eye on this. Will bark louder if it gets worse.`
-      : `Everything's running smooth.\n\n${statusLines.join('\n')}\n\nAvg Response: ${avgResponseTime}ms | Uptime: ${uptimePct}%\nErrors (10min): ${recentErrors || 0} | LLM Failures: ${recentLlmFails || 0}\n\n🟢 All systems nominal. Good boy mode: ON.`;
+    let reportContent: string;
+    if (criticalIssues > 0) {
+      const issues = healthResults.filter(h => !h.is_healthy).map(h => `${h.function_name}: ${h.error_message}`);
+      reportContent = `${criticalIssues} issue${criticalIssues > 1 ? 's' : ''} need attention. ${issues.join('. ')}. avg response: ${avgResponseTime}ms, uptime: ${uptimePct}%. errors (10min): ${recentErrors || 0}, LLM fails: ${recentLlmFails || 0}. keeping a close eye on this.`;
+    } else {
+      reportContent = `all clear. ${uptimePct}% uptime, avg ${avgResponseTime}ms. ${recentErrors || 0} errors, ${recentLlmFails || 0} LLM fails in last 10min. systems nominal.`;
+    }
+
+    // Determine tone based on severity and company stress
+    const tone = detectToneContext(
+      criticalIssues > 0 ? 'critical alert down' : reportContent,
+      companyState?.stress_level
+    );
 
     // Save employee report
     await supabase.from('ayn_mind').insert({
       type: 'employee_report',
-      content: formatEmployeeReport('qa_watchdog', reportContent),
+      content: formatNatural(EMPLOYEE_ID, reportContent, tone),
       context: {
-        from_employee: 'qa_watchdog',
+        from_employee: EMPLOYEE_ID,
         critical_issues: criticalIssues,
         health_results: healthResults,
         avg_response_ms: avgResponseTime,
@@ -120,20 +122,30 @@ serve(async (req) => {
 
     // Alert on critical issues
     if (criticalIssues > 0 && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatEmployeeReport('qa_watchdog', reportContent));
+      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatNatural(EMPLOYEE_ID, reportContent, 'incident'));
     }
+
+    // Reflection
+    await logReflection(supabase, {
+      employee_id: EMPLOYEE_ID,
+      action_ref: 'health_check',
+      reasoning: `Checked ${CRITICAL_FUNCTIONS.length} functions. ${criticalIssues} critical issues found.`,
+      expected_outcome: criticalIssues > 0 ? 'Issues get resolved within next check cycle' : 'Systems remain stable',
+      confidence: 0.8,
+      what_would_change_mind: 'Repeated failures across multiple check cycles',
+    });
 
     // Cleanup old health checks
     await supabase.from('system_health_checks')
       .delete()
       .lt('checked_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
-    await logAynActivity(supabase, 'qa_watchdog_check', `Health check: ${uptimePct}% uptime, ${criticalIssues} critical`, {
-      details: { critical_issues: criticalIssues, functions_checked: CRITICAL_FUNCTIONS.length, uptime_pct: uptimePct },
-      triggered_by: 'qa_watchdog',
+    await logAynActivity(supabase, 'qa_watchdog_check', `health: ${uptimePct}% uptime, ${criticalIssues} critical`, {
+      details: { critical_issues: criticalIssues, uptime_pct: uptimePct },
+      triggered_by: EMPLOYEE_ID,
     });
 
-    return new Response(JSON.stringify({ success: true, critical_issues: criticalIssues, health: healthResults, uptime_pct: uptimePct }), {
+    return new Response(JSON.stringify({ success: true, critical_issues: criticalIssues, uptime_pct: uptimePct }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

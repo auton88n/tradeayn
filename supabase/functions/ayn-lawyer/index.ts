@@ -2,7 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
-import { getEmployeeSystemPrompt, formatEmployeeReport } from "../_shared/aynBrand.ts";
+import { getEmployeeSystemPrompt, formatNatural } from "../_shared/aynBrand.ts";
+import { logReflection } from "../_shared/employeeState.ts";
+
+const EMPLOYEE_ID = 'lawyer';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,13 +33,13 @@ serve(async (req) => {
 
       await supabase.from('ayn_mind').insert({
         type: 'legal_analysis',
-        content: formatEmployeeReport('lawyer', `Topic: ${topic}\n\n${analysis}`),
-        context: { from_employee: 'lawyer', topic },
+        content: formatNatural(EMPLOYEE_ID, `re: ${topic}\n\n${analysis}`, 'strategic'),
+        context: { from_employee: EMPLOYEE_ID, topic },
         shared_with_admin: true,
       });
 
       if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-        await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatEmployeeReport('lawyer', `Legal Review: ${topic}\n\n${analysis}`));
+        await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatNatural(EMPLOYEE_ID, `legal review: ${topic}\n\n${analysis}`, 'strategic'));
       }
 
       return jsonRes({ success: true, topic, analysis });
@@ -50,8 +53,8 @@ serve(async (req) => {
 
       await supabase.from('ayn_mind').insert({
         type: 'legal_analysis',
-        content: formatEmployeeReport('lawyer', `Contract Review\n\n${analysis}`),
-        context: { from_employee: 'lawyer', type: 'contract_review' },
+        content: formatNatural(EMPLOYEE_ID, `contract review:\n\n${analysis}`, 'strategic'),
+        context: { from_employee: EMPLOYEE_ID, type: 'contract_review' },
         shared_with_admin: true,
       });
 
@@ -113,20 +116,29 @@ serve(async (req) => {
 
     await supabase.from('ayn_mind').insert({
       type: 'legal_analysis',
-      content: formatEmployeeReport('lawyer', reportContent),
-      context: { from_employee: 'lawyer', scan_type: 'daily_compliance', findings_count: findings.length },
+      content: formatNatural(EMPLOYEE_ID, `compliance scan: ${findings.length} finding(s).\n\n${findings.join('\n')}\n\n${complianceSummary}`, findings.some(f => f.includes('[HIGH]')) ? 'incident' : 'casual'),
+      context: { from_employee: EMPLOYEE_ID, scan_type: 'daily_compliance', findings_count: findings.length },
       shared_with_admin: true,
     });
 
     if (findings.some(f => f.includes('[HIGH]')) && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
       await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-        formatEmployeeReport('lawyer', `⚠️ Compliance Alert — HIGH severity findings detected\n\n${findings.filter(f => f.includes('[HIGH]')).join('\n')}\n\nRecommendation: Review within 24 hours.`)
+        formatNatural(EMPLOYEE_ID, `compliance alert — HIGH findings: ${findings.filter(f => f.includes('[HIGH]')).join('; ')}. review within 24h.`, 'incident')
       );
     }
 
+    await logReflection(supabase, {
+      employee_id: EMPLOYEE_ID,
+      action_ref: 'daily_compliance_scan',
+      reasoning: `Scanned security events, encryption, data retention, user exposure. ${findings.length} findings.`,
+      expected_outcome: 'Maintain regulatory compliance across GDPR and PDPL',
+      confidence: 0.8,
+      what_would_change_mind: 'If new regulations are introduced that we haven\'t accounted for',
+    });
+
     await logAynActivity(supabase, 'compliance_scan', `Compliance scan: ${findings.length} finding(s)`, {
       details: { findings },
-      triggered_by: 'lawyer',
+      triggered_by: EMPLOYEE_ID,
     });
 
     return jsonRes({ success: true, findings, summary: complianceSummary });
