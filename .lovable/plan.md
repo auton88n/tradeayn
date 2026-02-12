@@ -1,95 +1,143 @@
 
 
-# Give All AI Employees Personality, Brand Knowledge, and Run a Live Test
+# Full App Audit: Active vs. Deleted Features + Cleanup Plan
 
-## The Problem
+## Current State of the App
 
-Right now, all 7 AI employee edge functions are just mechanical — they process data but have no personality, no understanding of AYN's brand, and no consistency in how they communicate. The Investigator's system prompt says "You are an AI investigator", the Lawyer says "You are AYN's Legal AI" (vague), and the others have no AI personality at all (Security Guard, QA Watchdog, Customer Success, Follow-Up Agent are pure code with no LLM calls for personality).
+### ACTIVE Services (Landing Page + Routes)
 
-## What We'll Do
+| # | Service | Route | Landing Section | Status |
+|---|---------|-------|----------------|--------|
+| 1 | Premium Content Creator Sites | `/services/content-creator-sites` + `/apply` | Section 01 | Active |
+| 2 | Custom AI Agents | `/services/ai-agents` + `/apply` | Section 02 | Active |
+| 3 | Process Automation | `/services/automation` + `/apply` | Section 03 | Active |
+| 4 | AI Employees | `/services/ai-employee` + `/apply` | Section 04 | Active |
+| 5 | Civil Engineering Calculators | `/engineering` + `/services/civil-engineering` | Section 05 | Active |
+| 6 | Smart Ticketing System | `/services/ticketing` + `/apply` | Section 06 | Active |
 
-### 1. Create a Shared Brand Knowledge Module
+### ACTIVE Engineering Tools (Inside `/engineering` workspace)
 
-A new file `supabase/functions/_shared/aynBrand.ts` that ALL employees import. It contains:
+| Tool | Sidebar Entry | Status |
+|------|--------------|--------|
+| AI Grading Designer | Yes | Active |
+| Beam Design | Yes | Active |
+| Foundation Design | Yes | Active |
+| Column Design | Yes | Active |
+| Slab Design | Yes | Active |
+| Retaining Wall | Yes | Active |
 
-- **AYN Identity**: name meaning, founding story, team references
-- **Services catalog**: AI Employees, Smart Ticketing, Business Automation, Websites, AI Support, Engineering Tools
-- **Subscription tiers**: Free, Starter, Pro, Business, Enterprise with exact limits
-- **Brand voice guidelines**: casual but professional, no corporate speak, warm and direct
-- **Key selling points**: 24/7 AI workforce, Arabic + English, engineering focus, privacy-first
-- **Identity protection**: never mention Google, Gemini, OpenAI, etc.
+### ACTIVE Standalone Sections
 
-### 2. Add Personality Prompts to Each AI Employee
+| Section | Route | Status |
+|---------|-------|--------|
+| Building Code Compliance | `/compliance` | Active (also accessible from Design Studio) |
+| AI Grading Designer | `/engineering/grading` | Active (standalone page) |
+| Support/Tickets | `/support` | Active |
+| Pricing | `/pricing` | Active |
+| Settings | `/settings` | Active |
+| Admin Panel | Dashboard tab | Active |
 
-Each employee gets a unique personality that fits their role but stays on-brand:
+### AYN AI Assistant
 
-| Employee | Personality Trait | Communication Style |
-|----------|-------------------|---------------------|
-| Security Guard | Vigilant, protective, no-nonsense | Short, alert-style messages. Military precision. |
-| Investigator | Curious, thorough, detail-obsessed | Structured dossiers, confidence ratings, methodical |
-| Customer Success | Warm, empathetic, people-first | Friendly, encouraging, proactive check-ins |
-| QA Watchdog | Reliable, watchful, status-focused | Clean status reports, uptime metrics, concise |
-| Advisor | Strategic, big-picture, analytical | Executive briefing style, bullet points, bold recommendations |
-| Lawyer | Cautious, precise, risk-aware | Formal-leaning, cites regulations, flags risks clearly |
-| Follow-Up Agent | Persistent, tactful, timing-conscious | Sales-aware, respects boundaries, tracks patterns |
+The main AYN chat is active and handles: regular chat, engineering analysis, document generation, image generation/editing, file analysis, and web search. Floor plan generation intent is commented out and falls back to regular chat.
 
-Each employee's Telegram reports and `ayn_mind` entries will reflect their personality — not just raw data dumps.
+---
 
-### 3. Update All 7 Edge Functions
+## DELETED/HIDDEN Features (Still Have Dead Code)
 
-For each function, the changes are:
+### 1. Design Studio (`/design` route) -- COMMENTED OUT
+- **Route:** Commented out in `App.tsx` (line 43, 95)
+- **Constant:** Commented out in `routes.ts` (line 12)
+- **Files still exist:** `src/pages/DesignWorkspacePage.tsx`, `src/components/design/DesignWorkspace.tsx`, `src/components/design/DesignSidebar.tsx`
+- **Status:** Disabled. Only shows Code Compliance (which is already at `/compliance`). The Design Studio is a dead wrapper.
 
-- Import the shared brand module
-- Add a personality-infused system prompt (for functions that use LLM: Investigator, Advisor, Lawyer)
-- Format reports with personality (for non-LLM functions: Security Guard, QA Watchdog, Customer Success, Follow-Up Agent) — their `ayn_mind` entries and Telegram messages will use branded, personality-driven language instead of raw data
-- All functions reference AYN services correctly when relevant
+### 2. Parking Designer -- COMMENTED OUT
+- **Sidebar:** Removed from `CalculatorSidebar.tsx`
+- **Workspace:** Commented out in `EngineeringWorkspace.tsx` (lines 27, 38, 380-385, 471-472)
+- **Files still exist:** Full parking directory with 15+ files:
+  - `src/components/engineering/ParkingDesigner.tsx`
+  - `src/components/engineering/ParkingLayout2D.tsx`
+  - `src/components/engineering/ParkingVisualization3D.tsx`
+  - `src/components/engineering/parking/` (boundary/, components/, context/, types/, utils/)
+- **AI Chat:** Has commented-out parking suggestions in `EngineeringAIChat.tsx`
 
-### 4. Live Test: Prospect crosmint7@gmail.com
+### 3. Floor Plan Generator -- DISABLED
+- **Intent detection:** Commented out in `ayn-unified/intentDetector.ts`
+- **Handler:** Disabled in `ayn-unified/index.ts` (falls back to chat)
+- **Edge functions still deployed:**
+  - `generate-floor-plan-layout/` -- Full floor plan AI generator
+  - `generate-design/` -- Design generation function
+  - `render-floor-plan-svg/` -- SVG renderer for floor plans
+  - `analyze-floor-plan/` -- Floor plan analyzer for compliance
+- **API endpoints defined:** `GENERATE_FLOOR_PLAN_LAYOUT`, `PARSE_DXF_DESIGN`, `ANALYZE_AUTOCAD_DESIGN`, `APPLY_DESIGN_OPTIMIZATIONS` in `apiEndpoints.ts`
 
-After deploying the personality updates, we'll run a full pipeline test:
+### 4. Architectural Drawings Generator -- HIDDEN
+- **Sidebar:** Not in `CalculatorSidebar.tsx`
+- **Workspace:** Still renders `DrawingGenerator` for `case 'drawings'` (line 398-403)
+- **DesignSidebar:** Commented out "Architectural Drawings" option
+- **Files still exist:** `src/components/engineering/drawings/` directory (DrawingGenerator.tsx, DrawingRefinement.tsx, DrawingRequestForm.tsx, DrawingViewer.tsx, engine/, hooks/, configure/)
 
-1. **Sales AI** prospects the email/company via `ayn-sales-outreach` (mode: `prospect`)
-2. **Investigator** auto-investigates the lead (creates a dossier)
-3. **Sales AI** drafts an outreach email (mode: `draft_email`)
-4. **Customer Success** checks the pipeline state
-5. **QA Watchdog** runs a health check
-6. **Advisor** synthesizes all the reports
-7. **Security Guard** runs a threat scan
+### 5. Design Lab Link -- BROKEN
+- `SavedImagesGallery.tsx` has "Open in Design LAB" button that navigates to `/design-lab` -- a route that doesn't exist
 
-We'll call each function directly via the edge function curl tool and check that:
-- Reports in `ayn_mind` show personality
-- Activity logs appear in the Workforce Dashboard
-- Employee tasks flow between agents (Sales creates task for Investigator)
+### 6. AutoCAD/DXF Design Analysis -- STALE
+- API endpoints `PARSE_DXF_DESIGN`, `ANALYZE_AUTOCAD_DESIGN`, `APPLY_DESIGN_OPTIMIZATIONS` still defined
+- Edge functions `parse-dxf-design/`, `analyze-autocad-design/`, `apply-design-optimizations/` still deployed
+- Not referenced by any active UI
 
-## Technical Details
+---
 
-### New shared file: `supabase/functions/_shared/aynBrand.ts`
+## What Needs Cleanup
 
-```text
-Exports:
-- AYN_BRAND: object with identity, services, tiers, voice guidelines
-- getEmployeePersonality(employeeId): returns personality prompt for each employee
-- formatEmployeeReport(employeeId, content): wraps content in branded format
-```
+### Files to DELETE (dead code from deleted features):
 
-### Edge function changes (7 files):
+**Design Studio (wrapper page):**
+- `src/pages/DesignWorkspacePage.tsx`
+- `src/components/design/DesignWorkspace.tsx`
+- `src/components/design/DesignSidebar.tsx`
 
-Each file gets:
-1. `import { getEmployeePersonality, AYN_BRAND } from "../_shared/aynBrand.ts";`
-2. Updated system prompts that include brand knowledge + personality
-3. Branded report formatting for `ayn_mind` inserts and Telegram messages
+**Parking Designer (all files):**
+- `src/components/engineering/ParkingDesigner.tsx`
+- `src/components/engineering/ParkingLayout2D.tsx`
+- `src/components/engineering/ParkingVisualization3D.tsx`
+- `src/components/engineering/parking/` (entire directory)
+- `src/components/engineering/SaveDesignDialog.tsx` (parking-specific)
 
-### Test sequence (using curl tool):
+**Architectural Drawings (all files):**
+- `src/components/engineering/drawings/` (entire directory)
 
-```text
-Step 1: POST /ayn-sales-outreach  { mode: "prospect", url: "crosmint7@gmail.com" }
-Step 2: POST /ayn-investigator    { lead_id: "<from step 1>" }
-Step 3: POST /ayn-sales-outreach  { mode: "draft_email", lead_id: "<from step 1>" }
-Step 4: POST /ayn-customer-success { mode: "check_retention" }
-Step 5: POST /ayn-qa-watchdog     {}
-Step 6: POST /ayn-security-guard  {}
-Step 7: POST /ayn-advisor         {}
-```
+### Files to EDIT (remove dead references):
 
-Results will show up in the AYN Logs panel and AI Workforce Dashboard in real-time.
+1. **`src/App.tsx`** -- Remove commented-out Design import and route
+2. **`src/constants/routes.ts`** -- Remove commented-out DESIGN route
+3. **`src/constants/apiEndpoints.ts`** -- Remove `GENERATE_FLOOR_PLAN_LAYOUT`, `PARSE_DXF_DESIGN`, `ANALYZE_AUTOCAD_DESIGN`, `APPLY_DESIGN_OPTIMIZATIONS`
+4. **`src/components/engineering/workspace/EngineeringWorkspace.tsx`** -- Remove all commented-out parking/drawing imports and cases; remove `DrawingGenerator` lazy import and case
+5. **`src/components/engineering/workspace/CalculatorSidebar.tsx`** -- Remove `'drawings'` from `CalculatorType` union; remove unused `Car`, `Ruler`, `ClipboardCheck` icon imports
+6. **`src/components/engineering/EngineeringAIChat.tsx`** -- Remove commented-out parking suggestions
+7. **`src/components/dashboard/SavedImagesGallery.tsx`** -- Remove broken "Open in Design LAB" button/handler
+8. **`supabase/functions/ayn-unified/index.ts`** -- Remove all commented-out floor plan code
+9. **`supabase/functions/ayn-unified/intentDetector.ts`** -- Remove commented-out floor plan keywords
+10. **`supabase/functions/ayn-unified/systemPrompts.ts`** -- Remove commented-out floor plan prompt section
+11. **`supabase/functions/_shared/aynBrand.ts`** -- Verify services list mentions "Engineering Consultation Tools" (not floor plans/parking/drawings)
+
+### Edge Functions to DELETE (no longer used):
+
+- `generate-floor-plan-layout/`
+- `generate-design/`
+- `render-floor-plan-svg/`
+- `analyze-autocad-design/`
+- `apply-design-optimizations/`
+- `parse-dxf-design/`
+
+**NOTE:** Keep `analyze-floor-plan/` -- it is actively used by the Compliance Checker to extract room data from uploaded plans.
+
+### Edge Functions to KEEP (actively used):
+
+All AYN workforce functions, engineering AI functions, auth, payments, support, email, analytics, marketing, and `analyze-floor-plan` (compliance).
+
+---
+
+## Summary
+
+The app currently has **6 active services** on the landing page, **6 structural calculators** + **grading** + **compliance** in the engineering workspace, and a full **10-employee AI workforce**. The dead code from 4 deleted features (Design Studio, Parking Designer, Floor Plan Generator, Architectural Drawings) spans roughly 30+ files and 6 edge functions that should be removed to keep the codebase clean.
 
