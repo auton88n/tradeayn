@@ -62,7 +62,7 @@ export async function deliberate(
   involvedEmployeeIds: string[],
   context: { actionType: string; impactLevel: ImpactLevel; additionalContext?: string },
   apiKey: string,
-  broadcast?: { token: string; chatId: string },
+  broadcast?: { chatId: string; fallbackToken?: string },
 ): Promise<DeliberationResult> {
   const discussionId = crypto.randomUUID();
 
@@ -300,8 +300,8 @@ Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confide
         .limit(1);
 
       if (!recentBroadcasts || recentBroadcasts.length === 0) {
-        await broadcastDeliberation(
-          broadcast.token,
+      await broadcastDeliberation(
+          supabase,
           broadcast.chatId,
           topic,
           context.impactLevel,
@@ -309,6 +309,7 @@ Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confide
           result,
           topPosition ? { employee_id: topPosition.employee_id, finalWeight: topPosition.finalWeight } : null,
           doctrine?.strategic_shift,
+          broadcast.fallbackToken,
         );
         await logAynActivity(supabase, 'deliberation_broadcast', `Live debate: ${topic}`, {
           details: { impact: context.impactLevel, agents: positions.length, topic },

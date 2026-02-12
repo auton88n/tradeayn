@@ -101,8 +101,30 @@ export function formatDecisionMessage(
 
 const BROADCAST_DELAY_MS = 800;
 
+// ─── Multi-Bot Group Chat Broadcast ───
+
+interface AgentBotToken {
+  employee_id: string;
+  bot_token: string;
+}
+
+async function loadAgentBotTokens(supabase: any): Promise<Record<string, string>> {
+  const { data } = await supabase
+    .from('agent_telegram_bots')
+    .select('employee_id, bot_token')
+    .eq('is_active', true);
+  
+  const map: Record<string, string> = {};
+  if (data) {
+    for (const row of data as AgentBotToken[]) {
+      map[row.employee_id] = row.bot_token;
+    }
+  }
+  return map;
+}
+
 export async function broadcastDeliberation(
-  token: string,
+  supabase: any,
   chatId: string,
   topic: string,
   impactLevel: ImpactLevel,
@@ -110,19 +132,30 @@ export async function broadcastDeliberation(
   result: DeliberationResult,
   topAgent: { employee_id: string; finalWeight: number } | null,
   currentDoctrine?: string,
+  fallbackToken?: string,
 ): Promise<void> {
-  // Opening message
-  await sendTelegramMessage(token, chatId, formatDebateOpener(topic, impactLevel, positions.length));
+  // Load per-agent bot tokens from DB
+  const botTokens = await loadAgentBotTokens(supabase);
+  const systemToken = botTokens['system'] || fallbackToken || '';
+
+  if (!systemToken) {
+    console.error('[BROADCAST] No system/fallback bot token available');
+    return;
+  }
+
+  // Opening message — sent by AYN (system bot)
+  await sendTelegramMessage(systemToken, chatId, formatDebateOpener(topic, impactLevel, positions.length));
   await delay(BROADCAST_DELAY_MS);
 
-  // Each agent's position
+  // Each agent's position — sent by that agent's bot (or fallback to system)
   for (const pos of positions) {
-    await sendTelegramMessage(token, chatId, formatAgentPosition(pos));
+    const agentToken = botTokens[pos.employee_id] || systemToken;
+    await sendTelegramMessage(agentToken, chatId, formatAgentPosition(pos));
     await delay(BROADCAST_DELAY_MS);
   }
 
-  // Final decision
-  await sendTelegramMessage(token, chatId, formatDecisionMessage(result, topAgent, currentDoctrine));
+  // Final decision — sent by AYN (system bot)
+  await sendTelegramMessage(systemToken, chatId, formatDecisionMessage(result, topAgent, currentDoctrine));
 }
 
 function delay(ms: number): Promise<void> {
