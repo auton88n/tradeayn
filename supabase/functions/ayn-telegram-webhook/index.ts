@@ -5,6 +5,8 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 import { getEmployeePersonality } from "../_shared/aynBrand.ts";
 import { loadCompanyState, loadActiveObjectives, loadServiceEconomics, loadFounderModel } from "../_shared/employeeState.ts";
+import { deliberate, shouldDeliberate } from "../_shared/deliberation.ts";
+import type { ImpactLevel } from "../_shared/deliberation.ts";
 import {
   cmdHelp, cmdHealth, cmdTickets, cmdStats, cmdErrors, cmdLogs,
   cmdApplications, cmdContacts, cmdUsers,
@@ -360,6 +362,43 @@ serve(async (req) => {
 
     const aiData = await aiResponse.json();
     let reply = aiData.choices?.[0]?.message?.content || "I'm drawing a blank. Try again?";
+
+    // ─── LIVE DELIBERATION TRIGGER ───
+    const deliberationTriggers = /\b(what does the team think|ask the team|deliberate|team debate|internal debate|consult the team|what do.*employees think|run it by the team)\b/i;
+    if (deliberationTriggers.test(userText)) {
+      // Extract topic from user message (remove the trigger phrase)
+      const debateTopic = userText.replace(deliberationTriggers, '').trim() || 'General strategic question from founder';
+      
+      // Get all active employee IDs
+      const { data: employees } = await supabase
+        .from('employee_states')
+        .select('employee_id')
+        .limit(13);
+      
+      const employeeIds = employees?.map((e: any) => e.employee_id) || ['sales', 'advisor', 'security_guard', 'lawyer', 'innovation'];
+      
+      try {
+        const deliberationResult = await deliberate(
+          supabase,
+          debateTopic,
+          employeeIds,
+          { actionType: 'founder_consultation', impactLevel: 'high' as ImpactLevel },
+          LOVABLE_API_KEY!,
+          { token: TELEGRAM_BOT_TOKEN, chatId: TELEGRAM_CHAT_ID },
+        );
+        
+        // The broadcast already sent messages — just save to memory
+        await supabase.from('ayn_mind').insert([
+          { type: 'telegram_admin', content: userText.slice(0, 4000), context: { source: 'telegram' }, shared_with_admin: true },
+          { type: 'telegram_ayn', content: deliberationResult.summary.slice(0, 4000), context: { source: 'telegram', type: 'deliberation' }, shared_with_admin: true },
+        ]).catch(() => {});
+        
+        return new Response('OK', { status: 200 });
+      } catch (e) {
+        console.error('[DELIBERATION] Failed:', e);
+        // Fall through to normal AI response
+      }
+    }
 
     // ─── ACTION ENFORCEMENT LAYER ───
     // If AI said it would send/email but forgot the ACTION tag, force a 1-shot retry

@@ -281,6 +281,33 @@ export function detectToneContext(content: string, companyStressLevel?: number):
   return 'casual';
 }
 
+// ─── Agent Emoji Mapping for Telegram Broadcasts ───
+
+export const AGENT_EMOJI: Record<string, string> = {
+  system: '🧠',
+  sales: '🎯',
+  security_guard: '🔒',
+  advisor: '📊',
+  innovation: '💡',
+  hr_manager: '👥',
+  chief_of_staff: '🏢',
+  investigator: '🔍',
+  follow_up: '📬',
+  marketing: '📈',
+  customer_success: '🤝',
+  qa_watchdog: '🐛',
+  lawyer: '⚖️',
+};
+
+export function getAgentDisplayName(employeeId: string): string {
+  const p = PERSONALITIES[employeeId];
+  return p?.name ?? employeeId.replace(/_/g, ' ');
+}
+
+export function getAgentEmoji(employeeId: string): string {
+  return AGENT_EMOJI[employeeId] ?? '🤖';
+}
+
 // Keep backward compatibility — deprecated, will be removed
 export function formatEmployeeReport(employeeId: string, content: string): string {
   return formatNatural(employeeId, content, 'casual');
