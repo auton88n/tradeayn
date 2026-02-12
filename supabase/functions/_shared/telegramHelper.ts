@@ -44,6 +44,91 @@ function markdownToTelegramHtml(text: string): string {
   return html.trim();
 }
 
+// ─── Deliberation Broadcast Helpers ───
+
+import { getAgentEmoji, getAgentDisplayName } from "./aynBrand.ts";
+import type { DeliberationPosition, DeliberationResult, ImpactLevel } from "./deliberation.ts";
+
+export function formatDebateOpener(topic: string, impactLevel: ImpactLevel, agentCount: number): string {
+  const impactEmoji = impactLevel === 'irreversible' ? '🔴' : impactLevel === 'high' ? '🟠' : '🟡';
+  return `🏢 <b>INTERNAL DEBATE</b>\n"${topic}"\n${impactEmoji} Impact: ${impactLevel.toUpperCase()} | Agents: ${agentCount}`;
+}
+
+export function formatAgentPosition(pos: DeliberationPosition): string {
+  const emoji = getAgentEmoji(pos.employee_id);
+  const name = getAgentDisplayName(pos.employee_id);
+  const lines: string[] = [];
+
+  lines.push(`${emoji} <b>${name}</b> (rep: ${pos.reputation_score.toFixed(2)}, confidence: ${pos.confidence.toFixed(2)})`);
+  lines.push(`"${pos.position}"`);
+
+  if (pos.doctrine_aligned) lines.push('[doctrine-aligned]');
+  if (pos.objections && pos.objections.length > 5) lines.push(`Objection: "${pos.objections}"`);
+  if (pos.cognitive_load > 0.6) lines.push(`⚡ cognitive load: ${pos.cognitive_load.toFixed(2)}`);
+
+  return lines.join('\n');
+}
+
+export function formatDecisionMessage(
+  result: DeliberationResult,
+  topAgent: { employee_id: string; finalWeight: number } | null,
+  currentDoctrine?: string,
+): string {
+  const lines: string[] = [];
+  lines.push('🧠 <b>AYN — DECISION</b>');
+
+  if (topAgent) {
+    lines.push(`Winner: ${getAgentDisplayName(topAgent.employee_id)} (weight: ${topAgent.finalWeight.toFixed(2)})`);
+  }
+  lines.push(`Decision: "${result.decision}"`);
+
+  if (currentDoctrine) {
+    lines.push(`Doctrine: "${currentDoctrine}" — ${result.decision.toLowerCase().includes(currentDoctrine.toLowerCase().slice(0, 10)) ? 'aligned' : 'referenced'}`);
+  }
+
+  if (result.dissent.length > 0) {
+    lines.push(`Dissent: ${result.dissent.join('; ')}`);
+  }
+
+  lines.push(`Confidence: ${Math.round(result.confidence * 10)}/10`);
+
+  if (result.requires_approval) {
+    lines.push('\n⚠️ High-impact — waiting for your go-ahead.');
+  }
+
+  return lines.join('\n');
+}
+
+const BROADCAST_DELAY_MS = 800;
+
+export async function broadcastDeliberation(
+  token: string,
+  chatId: string,
+  topic: string,
+  impactLevel: ImpactLevel,
+  positions: DeliberationPosition[],
+  result: DeliberationResult,
+  topAgent: { employee_id: string; finalWeight: number } | null,
+  currentDoctrine?: string,
+): Promise<void> {
+  // Opening message
+  await sendTelegramMessage(token, chatId, formatDebateOpener(topic, impactLevel, positions.length));
+  await delay(BROADCAST_DELAY_MS);
+
+  // Each agent's position
+  for (const pos of positions) {
+    await sendTelegramMessage(token, chatId, formatAgentPosition(pos));
+    await delay(BROADCAST_DELAY_MS);
+  }
+
+  // Final decision
+  await sendTelegramMessage(token, chatId, formatDecisionMessage(result, topAgent, currentDoctrine));
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export async function sendTelegramMessage(token: string, chatId: string, text: string) {
   const formatted = markdownToTelegramHtml(text);
   const truncated = formatted.length > 4000 ? formatted.slice(0, 3990) + '\n...truncated' : formatted;

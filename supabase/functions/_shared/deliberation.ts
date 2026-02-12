@@ -2,10 +2,13 @@
  * Deliberation Engine — Internal Agent Debate System (Layer 3)
  * 60/40 weighted synthesis + doctrine alignment bonus.
  * Trust-filtered objections, cognitive load gating, post-debate trust updates.
+ * Optional Telegram broadcast: agents post positions live to your chat.
  */
 
 import { loadEmployeeState, loadActiveObjectives, loadServiceEconomics, loadCompanyState } from "./employeeState.ts";
 import { loadCurrentDoctrine, updatePeerTrust } from "./politicalIntelligence.ts";
+import { broadcastDeliberation } from "./telegramHelper.ts";
+import { logAynActivity } from "./aynLogger.ts";
 
 export type ImpactLevel = 'low' | 'medium' | 'high' | 'irreversible';
 
@@ -58,7 +61,8 @@ export async function deliberate(
   topic: string,
   involvedEmployeeIds: string[],
   context: { actionType: string; impactLevel: ImpactLevel; additionalContext?: string },
-  apiKey: string
+  apiKey: string,
+  broadcast?: { token: string; chatId: string },
 ): Promise<DeliberationResult> {
   const discussionId = crypto.randomUUID();
 
@@ -273,7 +277,7 @@ Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confide
   // Build natural language summary
   const summary = summarizeDebate(scoredPositions, dissent, avgConfidence, requiresApproval, doctrine?.strategic_shift);
 
-  return {
+  const result: DeliberationResult = {
     decision: topPosition?.position || 'no consensus',
     reasoning: scoredPositions.map(p => `${p.employee_name} (w:${p.finalWeight.toFixed(2)}): ${p.reasoning}`).join(' | '),
     dissent,
@@ -283,6 +287,54 @@ Respond as JSON: {"position":"...","reasoning":"...","objections":"...","confide
     requires_approval: requiresApproval,
     summary,
   };
+
+  // ─── Telegram Live Broadcast ───
+  if (broadcast && context.impactLevel !== 'low') {
+    try {
+      // Rate limit: max 1 broadcast per hour
+      const { data: recentBroadcasts } = await supabase
+        .from('ayn_activity_log')
+        .select('id')
+        .eq('action_type', 'deliberation_broadcast')
+        .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString())
+        .limit(1);
+
+      if (!recentBroadcasts || recentBroadcasts.length === 0) {
+        await broadcastDeliberation(
+          broadcast.token,
+          broadcast.chatId,
+          topic,
+          context.impactLevel,
+          positions,
+          result,
+          topPosition ? { employee_id: topPosition.employee_id, finalWeight: topPosition.finalWeight } : null,
+          doctrine?.strategic_shift,
+        );
+        await logAynActivity(supabase, 'deliberation_broadcast', `Live debate: ${topic}`, {
+          details: { impact: context.impactLevel, agents: positions.length, topic },
+        });
+      } else {
+        console.log('[DELIBERATION] Skipped broadcast — rate limited (1/hour)');
+      }
+    } catch (e) {
+      console.error('[DELIBERATION] Broadcast failed:', e);
+    }
+  }
+
+  // Store synthesis as system message
+  await supabase.from('employee_discussions').insert({
+    discussion_id: discussionId,
+    topic,
+    employee_id: 'system',
+    position: result.decision,
+    reasoning: result.summary,
+    confidence: result.confidence,
+    objections: result.dissent.join(' | '),
+    impact_level: context.impactLevel,
+    objective_impact: result.objective_impact,
+  }).catch(() => {});
+
+  return result;
 }
 
 // ─── Natural Language Summarization ───
