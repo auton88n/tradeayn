@@ -319,6 +319,9 @@ export const useMessages = (
         if (/اعمل pdf|انشئ pdf|ملف pdf|تقرير pdf|اعمل لي|سوي لي/.test(lower)) return 'document';
         if (/créer pdf|faire pdf|rapport pdf|document pdf|créer excel/.test(lower)) return 'document';
         
+        // Image generation detection (English, Arabic, French)
+        if (/generate image|create image|draw |picture of|image of|make image|make me a picture|photo of|illustration of|visualize|render a |render an |صورة|ارسم|dessine|montre moi|genere une image/.test(lower)) return 'image';
+        
         // Floor plan detection (disabled - rebuilding)
         // if (/floor plan|house plan|home layout|design a house|design me a|مخطط|تصميم بيت|تصميم منزل|plan de maison/.test(lower)) return 'floor_plan';
         

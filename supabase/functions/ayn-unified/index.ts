@@ -518,7 +518,7 @@ serve(async (req) => {
 
     // Detect intent from last message or use forced intent
     const lastMessage = messages[messages.length - 1]?.content || '';
-    const intent = forcedIntent || detectIntent(lastMessage);
+    const intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : detectIntent(lastMessage);
     console.log(`Detected intent: ${intent}`);
 
     // === PROMPT INJECTION DEFENSE ===
@@ -687,23 +687,70 @@ serve(async (req) => {
         // Parse JSON from response
         let documentData;
         try {
-          const jsonMatch = llmContent.match(/\{[\s\S]*\}/);
-          if (!jsonMatch) throw new Error('No JSON found in response');
-          documentData = JSON.parse(jsonMatch[0]);
+          // Try to extract JSON from response - handle markdown code blocks too
+          let jsonStr = llmContent;
+          
+          // Strip markdown code fences if present
+          const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (codeBlockMatch) {
+            jsonStr = codeBlockMatch[1].trim();
+          }
+          
+          // Try direct parse first
+          try {
+            documentData = JSON.parse(jsonStr);
+          } catch {
+            // Fallback: extract first JSON object from the text
+            const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error('No JSON found in response');
+            documentData = JSON.parse(jsonMatch[0]);
+          }
+          
+          // Validate required fields
+          if (!documentData.sections || !Array.isArray(documentData.sections)) {
+            throw new Error('Missing or invalid sections array');
+          }
         } catch (parseError) {
-          console.error('[ayn-unified] Failed to parse document JSON:', parseError);
-          // Return helpful message asking for clarification
-          const clarifyMessages: Record<string, string> = {
-            ar: 'أحتاج مزيد من التفاصيل لإنشاء المستند. ماذا تريد أن يتضمن بالضبط؟',
-            fr: "J'ai besoin de plus de détails pour créer le document. Que souhaitez-vous y inclure exactement?",
-            en: "I need more details to create the document. What exactly would you like it to include?"
-          };
-          return new Response(JSON.stringify({
-            content: clarifyMessages[language] || clarifyMessages.en,
-            intent: 'document'
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
+          console.error('[ayn-unified] Failed to parse document JSON:', parseError, 'Raw:', llmContent.substring(0, 500));
+          
+          // Retry once with a more explicit prompt
+          try {
+            const retryMessages = [
+              { role: 'system', content: `You MUST respond with ONLY valid JSON. No markdown, no explanation, no code fences. Just raw JSON in this format: {"type":"pdf","language":"${language}","title":"...","sections":[{"heading":"...","content":"..."}]}` },
+              ...messages,
+              { role: 'assistant', content: llmContent },
+              { role: 'user', content: 'Please convert your response above into the required JSON format. Respond with ONLY the JSON object, nothing else.' }
+            ];
+            const retryResult = await callWithFallback('chat', retryMessages, false, supabase, userId);
+            const retryContent = (retryResult.response as { content: string }).content;
+            
+            let retryJson = retryContent;
+            const retryCodeBlock = retryJson.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (retryCodeBlock) retryJson = retryCodeBlock[1].trim();
+            
+            try {
+              documentData = JSON.parse(retryJson);
+            } catch {
+              const retryMatch = retryJson.match(/\{[\s\S]*\}/);
+              if (!retryMatch) throw new Error('Retry also failed');
+              documentData = JSON.parse(retryMatch[0]);
+            }
+            
+            console.log('[ayn-unified] Document JSON retry succeeded');
+          } catch (retryError) {
+            console.error('[ayn-unified] Document JSON retry also failed:', retryError);
+            const clarifyMessages: Record<string, string> = {
+              ar: 'أحتاج مزيد من التفاصيل لإنشاء المستند. ماذا تريد أن يتضمن بالضبط؟',
+              fr: "J'ai besoin de plus de détails pour créer le document. Que souhaitez-vous y inclure exactement?",
+              en: "I need more details to create the document. What exactly would you like it to include?"
+            };
+            return new Response(JSON.stringify({
+              content: clarifyMessages[language] || clarifyMessages.en,
+              intent: 'document'
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
         }
         
         // Determine document type and credit cost
