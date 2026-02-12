@@ -1,65 +1,68 @@
 
+# Fix PDF/Excel Downloads, Image Generation, and Display -- Complete Fix
 
-# Fix PDF/Excel Downloads, Image Generation, and Display
+## Root Causes (3 separate issues)
 
-## Root Causes Found
+### Issue 1: Edge function was never redeployed
+The server logs confirm all recent requests show `Detected intent: chat` or `Detected intent: files`. The code changes from the previous fix (server-side fallback, JSON extraction) were written to the files but the `ayn-unified` edge function needs to be redeployed for them to take effect.
 
-### Problem 1: Image intent never reaches the server
-The **client-side** `detectIntent()` function in `src/hooks/useMessages.ts` (lines 308-328) has **zero image keywords**. It only returns `'image'` when `selectedMode === 'LAB'`. Since most users type naturally (e.g., "show me an image of Halifax"), the client sends `intent: 'chat'` to the server. The server then uses this forced intent (`forcedIntent || detectIntent(...)`) and never runs its own image detection. The LLM then hallucinates a fake `dalle.text2im` JSON tool call.
+### Issue 2: Generated images are never shown to the user
+When image generation succeeds, the server returns `{ imageUrl, content, ... }`. The client stores this as `labData` on the Message object. However:
+- The `CenterStageLayout` extracts `message.attachment` but **never extracts `message.labData`** when creating the response bubble
+- The `ResponseBubble` interface has no `labData` field
+- Even if `detectedImageUrl` detects the image, **there is no `<img>` tag** in `ResponseCard.tsx` -- it only uses the URL for a "Design" button
 
-### Problem 2: Documents -- server expects structured JSON from LLM but LLM returns prose
-When the document intent IS detected, `ayn-unified` asks the LLM to return structured JSON with `type`, `title`, and `sections`. But the LLM often returns natural language instead, causing `JSON.parse` to fail at line 690-692, which triggers the "I need more details" clarification response instead of generating the document.
-
-### Problem 3: The `documentUrlUtils.ts` fix was already applied but may not be deployed
-The `openDocumentUrl` function already has the correct fix (no `target="_blank"` for data URLs). The issue may be that documents are simply never being generated successfully due to Problem 2.
+### Issue 3: Document attachment flows correctly but may be blocked by JSON parsing
+The document flow is correct in theory: server returns `documentUrl` in JSON, client maps it to `message.attachment`, which flows to `ResponseBubble.attachment`, which renders the `DocumentDownloadButton`. The blocker is that the LLM often fails to return valid JSON, so the document never gets generated.
 
 ## Fixes
 
-### Fix 1: Add image keywords to client-side intent detection (`src/hooks/useMessages.ts`)
-Add image keyword detection in the client-side `detectIntent()` function so that image requests are sent with `intent: 'image'` and `stream: false`:
+### Fix 1: Redeploy the `ayn-unified` edge function
+Force a redeployment so the server-side intent fallback and JSON extraction fixes take effect.
 
-```
-// After document detection (around line 321), add:
-if (/generate image|create image|draw|picture of|image of|make image|photo of|illustration of|visualize|صورة|ارسم|dessine/.test(lower)) return 'image';
-```
+### Fix 2: Add image rendering to ResponseCard (`src/components/eye/ResponseCard.tsx`)
+Add an `<img>` tag that renders when `detectedImageUrl` is detected. Place it between the message content and the document download button:
 
-### Fix 2: Make server-side intent detection work as fallback (`supabase/functions/ayn-unified/index.ts`)
-Change line 521 from:
-```
-const intent = forcedIntent || detectIntent(lastMessage);
-```
-to:
-```
-const intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : detectIntent(lastMessage);
-```
-This way, if the client sends `'chat'` as a fallback, the server still runs its own keyword detection which has a broader keyword list.
-
-### Fix 3: Improve document JSON extraction robustness (`supabase/functions/ayn-unified/index.ts`)
-The document generation system prompt needs to be more explicit about returning JSON. Additionally, add a retry mechanism or use tool calling to force structured output from the LLM.
-
-### Fix 4: Add image generation visual state (`src/hooks/useMessages.ts`)
-After detecting `image` intent, set a loading state so the user sees feedback while the image generates.
-
-## Technical Details
-
-### `src/hooks/useMessages.ts` -- client-side intent detection (around line 321)
-Add image intent detection:
 ```typescript
-// Image generation detection
-if (/generate image|create image|draw |picture of|image of|make image|make me a picture|photo of|illustration of|visualize|render a |render an |صورة|ارسم|dessine|montre moi/.test(lower)) return 'image';
+{/* Generated image display */}
+{detectedImageUrl && (
+  <div className="px-3 pb-2">
+    <img
+      src={detectedImageUrl}
+      alt="Generated image"
+      className="w-full max-w-md rounded-lg border border-border"
+      loading="lazy"
+    />
+  </div>
+)}
 ```
 
-### `supabase/functions/ayn-unified/index.ts` -- line 521
-Allow server-side re-detection when client sends generic 'chat':
+### Fix 3: Pass `labData` through the bubble pipeline
+
+**Option A (simpler)**: Instead of threading `labData` through the bubble system, embed the image URL directly in the message content as a markdown image when the server returns an `imageUrl`. This way it flows through naturally.
+
+In `src/hooks/useMessages.ts`, when handling the non-streaming image response (around line 573-606), prepend the image to the response content:
+
 ```typescript
-const intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : detectIntent(lastMessage);
+// If image was returned, embed it in the content for display
+if (webhookData?.imageUrl) {
+  const imageContent = `![Generated Image](${webhookData.imageUrl})`;
+  response = imageContent + '\n\n' + responseContent;
+}
 ```
 
-### `supabase/functions/ayn-unified/index.ts` -- document JSON prompt
-The system prompt for document generation needs to explicitly instruct the LLM to return ONLY valid JSON. Add tool calling for structured output extraction to ensure consistent JSON responses.
+This works because `StreamingMarkdown` and `MessageFormatter` already render markdown images, and the image URL is a base64 data URL that doesn't need external loading.
+
+### Fix 4: Ensure document system prompt strictly enforces JSON
+The system prompt already says "RESPOND ONLY WITH VALID JSON" -- this is correct. The retry mechanism in the edge function (stripping markdown fences, regex extraction) should catch most failures. The main fix is simply **deploying** the current code.
+
+## Files to Change
+
+1. **`supabase/functions/ayn-unified/index.ts`** -- Redeploy (no code changes needed, just deploy)
+2. **`src/hooks/useMessages.ts`** -- Embed image URL in content when `webhookData.imageUrl` exists (~line 576)
+3. **`src/components/eye/ResponseCard.tsx`** -- Add `<img>` rendering for `detectedImageUrl` (between content and document button, ~line 532)
 
 ## Expected Outcome
-- Image generation will trigger correctly from natural language prompts
-- PDF and Excel documents will generate and download properly
-- The server has a safety net to catch image/document intents the client misses
-
+- Images will generate correctly and display inline in the chat
+- PDF and Excel documents will generate (JSON extraction works with retry)
+- Document download button will appear and trigger proper file downloads
