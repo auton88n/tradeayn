@@ -25,7 +25,14 @@ export function detectIntent(message: string): string {
   
   const searchKeywords = ['search', 'find', 'look up', 'what is the latest', 'current', 'today', 'news', 'recent'];
   const fileKeywords = ['uploaded', 'file', 'analyze this', 'summarize this'];
-  const imageKeywords = ['generate image', 'create image', 'draw', 'picture of'];
+  const imageKeywords = [
+    'generate image', 'create image', 'draw', 'picture of',
+    'image of', 'make image', 'make a picture', 'make me a picture',
+    'show me an image', 'photo of', 'illustration of', 'visualize',
+    'render a', 'render an',
+    'صورة', 'ارسم', 'ارسم لي', 'اعطني صورة',
+    'image de', 'dessine', 'montre moi', 'genere une image'
+  ];
 
   if (documentKeywords.some(kw => lower.includes(kw))) return 'document';
   if (imageKeywords.some(kw => lower.includes(kw))) return 'image';
