@@ -24,10 +24,8 @@ const FoundationCalculator = lazy(() => import('@/components/engineering/Foundat
 const ColumnCalculator = lazy(() => import('@/components/engineering/ColumnCalculator'));
 const SlabCalculator = lazy(() => import('@/components/engineering/SlabCalculator'));
 const RetainingWallCalculator = lazy(() => import('@/components/engineering/RetainingWallCalculator'));
-// const ParkingDesigner = lazy(() => import('@/components/engineering/ParkingDesigner').then(m => ({ default: m.ParkingDesigner })));
 const GradingDesigner = lazy(() => import('@/components/engineering/GradingDesignerPanel'));
 const ComplianceWizard = lazy(() => import('@/components/engineering/compliance/ComplianceWizard'));
-const DrawingGenerator = lazy(() => import('@/components/engineering/drawings/DrawingGenerator'));
 
 // Lazy load 3D visualizations
 const BeamVisualization3D = lazy(() => import('@/components/engineering/BeamVisualization3D').then(m => ({ default: m.BeamVisualization3D })));
@@ -35,7 +33,6 @@ const FoundationVisualization3D = lazy(() => import('@/components/engineering/Fo
 const ColumnVisualization3D = lazy(() => import('@/components/engineering/ColumnVisualization3D'));
 const SlabVisualization3D = lazy(() => import('@/components/engineering/SlabVisualization3D'));
 const RetainingWallVisualization3D = lazy(() => import('@/components/engineering/RetainingWallVisualization3D'));
-// const ParkingVisualization3D = lazy(() => import('@/components/engineering/ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
 const TerrainVisualization3D = lazy(() => import('@/components/engineering/TerrainVisualization3D').then(m => ({ default: m.TerrainVisualization3D })));
 
 // Lazy load results panel
@@ -377,12 +374,6 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
             <RetainingWallCalculator {...commonProps} />
           </Suspense>
         );
-      // case 'parking':
-      //   return (
-      //     <Suspense fallback={<LoadingFallback />}>
-      //       <ParkingDesigner {...commonProps} />
-      //     </Suspense>
-      //   );
       case 'grading':
         return (
           <Suspense fallback={<LoadingFallback />}>
@@ -393,12 +384,6 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
         return (
           <Suspense fallback={<LoadingFallback />}>
             <ComplianceWizard userId={userId} />
-          </Suspense>
-        );
-      case 'drawings':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <DrawingGenerator />
           </Suspense>
         );
       default:
@@ -468,8 +453,6 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
             />
           </Suspense>
         );
-      // case 'parking': (hidden for now)
-      //   return null;
       case 'grading':
         // Use fglPoints if available (after design generation), otherwise use survey points
         const gradingPoints = previewInputs.fglPoints || previewInputs.points || [];

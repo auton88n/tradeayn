@@ -12,10 +12,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
-  BarChart3,
-  Car,
-  Grid3X3,
-  Box as Cube3D
+  BarChart3
 } from 'lucide-react';
 import { ForceDiagrams } from './ForceDiagrams';
 import { Button } from '@/components/ui/button';
@@ -25,12 +22,12 @@ const FoundationVisualization3D = lazy(() => import('./FoundationVisualization3D
 const ColumnVisualization3D = lazy(() => import('./ColumnVisualization3D'));
 const SlabVisualization3D = lazy(() => import('./SlabVisualization3D'));
 const RetainingWallVisualization3D = lazy(() => import('./RetainingWallVisualization3D'));
-const ParkingVisualization3D = lazy(() => import('./ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
+
 
 const Visualization3DFallback = () => (
   <div className="h-[300px] bg-muted rounded-lg animate-pulse" />
 );
-import { ParkingLayout2D } from './ParkingLayout2D';
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -217,7 +214,7 @@ const MaterialQuantitiesDisplay: React.FC<{
 
 interface CalculationResultsProps {
   result: {
-    type: 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | null;
+    type: 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | null;
     inputs: Record<string, number | string>;
     outputs: Record<string, number | string | object>;
     timestamp: Date;
@@ -229,14 +226,14 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
   const [isExportingDXF, setIsExportingDXF] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [parkingViewMode, setParkingViewMode] = useState<'2d' | '3d'>('3d');
+  
   const [aiAnalysis, setAiAnalysis] = useState<{
     compliance: string[];
     optimizations: string[];
   } | null>(null);
 
   const outputs = result.outputs as Record<string, unknown>;
-  const parkingLayout = outputs.layout as { spaces: unknown[]; aisles: unknown[] } | undefined;
+  
 
   const handleExportDXF = async () => {
     setIsExportingDXF(true);
@@ -429,62 +426,6 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                   toeWidth={(outputs.toeWidth || outputs.toeLength || 600) as number}
                 />
               </Suspense>
-            ) : result.type === 'parking' && parkingLayout?.spaces ? (
-              <div className="w-full flex-1 flex flex-col min-h-0">
-                {/* 2D/3D Toggle */}
-                <div className="flex items-center gap-2 p-2 border-b border-border/50">
-                  <Button
-                    variant={parkingViewMode === '2d' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setParkingViewMode('2d')}
-                    className="gap-1.5 h-7 text-xs"
-                  >
-                    <Grid3X3 className="w-3.5 h-3.5" />
-                    2D Plan
-                  </Button>
-                  <Button
-                    variant={parkingViewMode === '3d' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setParkingViewMode('3d')}
-                    className="gap-1.5 h-7 text-xs"
-                  >
-                    <Cube3D className="w-3.5 h-3.5" />
-                    3D View
-                  </Button>
-                  <div className="flex-1" />
-                  <span className="text-xs text-muted-foreground">
-                    {Number(outputs.totalSpaces) || 0} spaces
-                  </span>
-                </div>
-                {/* Visualization */}
-                <div className="flex-1 min-h-0 relative">
-                {parkingViewMode === '3d' ? (
-                    <Suspense fallback={<Visualization3DFallback />}>
-                      <ParkingVisualization3D
-                        layout={parkingLayout as any}
-                        siteLength={Number(result.inputs.siteLength) || 50}
-                        siteWidth={Number(result.inputs.siteWidth) || 30}
-                        parkingType={String(result.inputs.parkingType || 'surface')}
-                        floors={Number(result.inputs.floors) || 1}
-                      />
-                    </Suspense>
-                  ) : (
-                    <ParkingLayout2D
-                      layout={parkingLayout as any}
-                      siteLength={Number(result.inputs.siteLength) || 50}
-                      siteWidth={Number(result.inputs.siteWidth) || 30}
-                      showDimensions={true}
-                      showLabels={false}
-                    />
-                  )}
-                </div>
-              </div>
-            ) : result.type === 'parking' ? (
-              <div className="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-gradient-to-br from-primary/5 to-accent/5">
-                <Car className="w-16 h-16 text-primary/50 mb-4" />
-                <p className="text-muted-foreground">No layout data available</p>
-                <p className="text-xs text-muted-foreground mt-1">Run the Parking Designer to generate a layout</p>
-              </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                 3D visualization not available
@@ -552,27 +493,10 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                   <text x="90" y="145" fill="#e2e8f0" fontSize="8" textAnchor="middle">{String(outputs.slabType || 'Two-Way')} Slab - t={String(outputs.thickness || 150)}mm</text>
                 </svg>
               )}
-              {result.type === 'parking' && (
-                <svg viewBox="0 0 180 160" className="w-full h-full">
-                  <rect x="15" y="20" width="150" height="120" fill="#374151" stroke="#4b5563" strokeWidth="1.5" rx="4" />
-                  {/* Parking spaces representation */}
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <rect key={`space-${i}`} x={25 + i * 28} y="35" width="20" height="40" fill="none" stroke="#22c55e" strokeWidth="1" />
-                  ))}
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <rect key={`space2-${i}`} x={25 + i * 28} y="95" width="20" height="40" fill="none" stroke="#22c55e" strokeWidth="1" />
-                  ))}
-                  {/* Drive aisle */}
-                  <line x1="20" y1="85" x2="160" y2="85" stroke="#fbbf24" strokeWidth="2" strokeDasharray="8,4" />
-                  <text x="90" y="155" fill="#e2e8f0" fontSize="8" textAnchor="middle">
-                    Parking Layout - {Number(outputs.totalSpaces) || 0} spaces @ {result.inputs.parkingAngle || 90}°
-                  </text>
-                </svg>
-              )}
             </div>
             
-            {/* Material Quantities - Only for structural types */}
-            {result.type !== 'parking' && (
+            {/* Material Quantities */}
+            {(
               <MaterialQuantitiesDisplay
                 concreteVolume={(outputs.concreteVolume || 0) as number}
                 steelWeight={(outputs.steelWeight || 0) as number}
@@ -604,14 +528,6 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                   <ResultItem label="Area" value={`${formatNumber(outputs.area)} m²`} />
                 </>
               )}
-              {result.type === 'parking' && (
-                <>
-                  <ResultItem label="Site Length" value={`${result.inputs.siteLength || 0} m`} />
-                  <ResultItem label="Site Width" value={`${result.inputs.siteWidth || 0} m`} />
-                  <ResultItem label="Site Area" value={`${formatNumber((Number(result.inputs.siteLength) || 0) * (Number(result.inputs.siteWidth) || 0))} m²`} />
-                  <ResultItem label="Parking Angle" value={`${result.inputs.parkingAngle || 90}°`} />
-                </>
-              )}
             </div>
           </div>
 
@@ -629,8 +545,8 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
             </div>
           )}
 
-          {/* Reinforcement Card - Only for structural types */}
-          {result.type !== 'parking' && (
+          {/* Reinforcement Card */}
+          {(
             <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
               <div className="flex items-center gap-2 mb-4">
                 <Weight className="w-5 h-5 text-amber-500" />
@@ -669,36 +585,9 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
             </div>
           )}
 
-          {/* Parking Statistics Card */}
-          {result.type === 'parking' && (
-            <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
-              <div className="flex items-center gap-2 mb-4">
-                <Car className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Parking Statistics</h3>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                  <span className="text-sm text-green-700 dark:text-green-300">Total Parking Spaces</span>
-                  <span className="font-mono font-semibold text-green-900 dark:text-green-100">{Number(outputs.totalSpaces) || 0}</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-                  <span className="text-sm text-blue-700 dark:text-blue-300">Accessible (ADA)</span>
-                  <span className="font-mono font-semibold text-blue-900 dark:text-blue-100">{Number(outputs.accessibleSpaces) || 0}</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <span className="text-sm text-amber-700 dark:text-amber-300">EV Charging Spaces</span>
-                  <span className="font-mono font-semibold text-amber-900 dark:text-amber-100">{Number(outputs.evSpaces) || 0}</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
-                  <span className="text-sm text-purple-700 dark:text-purple-300">Space Efficiency</span>
-                  <span className="font-mono font-semibold text-purple-900 dark:text-purple-100">{formatNumber(outputs.efficiency)}%</span>
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* Material Quantities Card - Only for structural types */}
-          {result.type !== 'parking' && (
+          {/* Material Quantities Card */}
+          {(
             <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
               <div className="flex items-center gap-2 mb-4">
                 <Package className="w-5 h-5 text-blue-500" />

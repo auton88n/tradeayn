@@ -108,7 +108,7 @@ const QUICK_ACTIONS: Record<CalculatorType, { label: string; icon: typeof HelpCi
     { label: 'Compaction requirements', icon: BookOpen, question: 'What are the compaction specifications for different fill zones? How does soil type affect these requirements?' },
     { label: 'Cost optimization', icon: Lightbulb, question: 'How can I minimize earthwork costs? Consider haul distances, borrow vs waste, and staging.' },
   ],
-  // parking: (hidden for now)
+  
 };
 
 export const EngineeringAIChat = ({

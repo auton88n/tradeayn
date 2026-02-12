@@ -6,13 +6,10 @@ import {
   Box, 
   Calculator, 
   Mountain, 
-  Car,
   ChevronLeft,
   ChevronRight,
   HardHat,
-  Sparkles,
-  ClipboardCheck,
-  Ruler
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -20,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { BuildingCodeSelector } from '@/components/engineering/BuildingCodeSelector';
 import { type BuildingCodeId, type NBCCVersion } from '@/lib/buildingCodes';
 
-export type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'grading' | 'compliance' | 'drawings' | null;
+export type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'grading' | 'compliance' | null;
 
 interface CalculatorOption {
   id: CalculatorType;

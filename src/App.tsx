@@ -40,7 +40,7 @@ const Ticketing = lazy(() => import("./pages/services/Ticketing"));
 const TicketingApply = lazy(() => import("./pages/services/TicketingApply"));
 const Support = lazy(() => import("./pages/Support"));
 const Engineering = lazy(() => import("./pages/EngineeringWorkspacePage"));
-// const Design = lazy(() => import("./pages/DesignWorkspacePage"));
+
 const Compliance = lazy(() => import("./pages/CompliancePage"));
 const AIGradingDesigner = lazy(() => import("./pages/AIGradingDesigner"));
 const CivilEngineering = lazy(() => import("./pages/services/CivilEngineering"));
@@ -92,7 +92,7 @@ const AnimatedRoutes = () => {
       <Route path="/services/ticketing/apply" element={<Suspense fallback={<PageLoader />}><PageTransition><TicketingApply /></PageTransition></Suspense>} />
       <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
       <Route path="/engineering" element={<Suspense fallback={<PageLoader />}><PageTransition><Engineering /></PageTransition></Suspense>} />
-      {/* <Route path="/design" element={<Suspense fallback={<PageLoader />}><PageTransition><Design /></PageTransition></Suspense>} /> */}
+      
       <Route path="/compliance" element={<Suspense fallback={<PageLoader />}><PageTransition><Compliance /></PageTransition></Suspense>} />
       <Route path="/engineering/grading" element={<Suspense fallback={<PageLoader />}><PageTransition><AIGradingDesigner /></PageTransition></Suspense>} />
       <Route path="/services/civil-engineering" element={<Suspense fallback={<PageLoader />}><PageTransition><CivilEngineering /></PageTransition></Suspense>} />

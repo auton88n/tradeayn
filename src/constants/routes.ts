@@ -9,7 +9,7 @@ export const ROUTES = {
   SUPPORT: '/support',
   PRICING: '/pricing',
   ENGINEERING: '/engineering',
-  // DESIGN: '/design',
+  
   COMPLIANCE: '/compliance',
   ENGINEERING_GRADING: '/engineering/grading',
   ADMIN: '/admin',
