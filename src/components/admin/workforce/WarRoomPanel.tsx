@@ -112,6 +112,8 @@ export function WarRoomPanel() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error('Not authenticated'); return; }
 
+      setMessages([]);
+
       const response = await fetch(
         `${SUPABASE_URL}/functions/v1/admin-war-room`,
         {
