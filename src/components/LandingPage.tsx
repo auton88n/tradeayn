@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, ChevronDown, Calculator, Car, Mountain, Ticket } from 'lucide-react';
+import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, ChevronDown, Calculator, ShieldCheck, Mountain, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -481,13 +481,13 @@ const LandingPage = memo(() => {
             <ScrollReveal delay={0.5}>
               <div className="text-center space-y-3 md:space-y-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Car className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+                  <ShieldCheck className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'تصميم المواقف' : language === 'fr' ? 'Conception de Parking' : 'Parking Design'}
+                  {language === 'ar' ? 'فحص الامتثال' : language === 'fr' ? 'Conformité au Code' : 'Code Compliance'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'تصميم مواقف السيارات مع تصدير DXF وPDF.' : language === 'fr' ? 'Aménagez les parkings avec exports DXF et PDF.' : 'Layout parking lots with custom boundaries and DXF/PDF exports.'}
+                  {language === 'ar' ? 'تحقق من مطابقة التصميم لكود البناء تلقائيًا.' : language === 'fr' ? 'Vérifiez automatiquement la conformité au code du bâtiment.' : 'Automated building code compliance checks and reports.'}
                 </p>
               </div>
             </ScrollReveal>
