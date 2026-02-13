@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { getAgentEmoji, getAgentDisplayName } from "../_shared/aynBrand.ts";
-import { loadCompanyState, loadActiveObjectives, loadEmployeeState, buildEmployeeContext } from "../_shared/employeeState.ts";
+import { loadEmployeeState } from "../_shared/employeeState.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,7 +62,17 @@ function selectRelevantAgents(topic: string): string[] {
   return Array.from(selected);
 }
 
-// ─── Load founder directives ───
+// ─── Lightweight loaders (avoid heavy shared imports) ───
+async function loadCompanyState(supabase: any) {
+  const { data } = await supabase.from('company_state').select('*').limit(1).single();
+  return data;
+}
+
+async function loadActiveObjectives(supabase: any) {
+  const { data } = await supabase.from('company_objectives').select('*').eq('status', 'active').order('priority', { ascending: true });
+  return data || [];
+}
+
 async function loadDirectives(supabase: any) {
   const { data } = await supabase
     .from('founder_directives')
