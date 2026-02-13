@@ -1,122 +1,127 @@
 
 
-# Fix AI Workforce: Make Employees Actually Produce Results
+# Command Center: Memory, Directives, and Direct Command Execution
 
-## The Real Problem
+## The Core Problems
 
-The employees are running on schedule (crons are firing), but they either crash silently or return "nothing to do" because of 3 code bugs and missing data connections.
+1. **No memory** -- The War Room starts fresh every time. Employees never remember past discussions or your instructions.
+2. **No founder directives** -- When you say "stay in Canada," it's not stored anywhere. The `founder_model.rejected_patterns` and `approved_patterns` arrays are empty. Employees repeat Dubai/Singapore because nothing tells them not to.
+3. **One-way only** -- You can start discussions, but can't issue direct commands like "Sales, prospect these 5 companies" or "Investigator, research this lead."
+4. **No event-triggered execution** -- Employees only run on cron schedules, not when you command them.
 
-## Fixes (4 files)
+## Solution Overview
 
-### Fix 1: Sales Cron Handler (Critical)
-
-**File:** `supabase/functions/ayn-sales-outreach/index.ts`
-
-The cron sends `{"source": "cron"}` but the switch statement only handles `mode` values like `prospect`, `pipeline_status`, etc. When `mode` is undefined, it returns error 400.
-
-**Change:** Add a cron/default handler that runs `pipeline_status` automatically and attempts autonomous prospecting if the pipeline is empty.
-
-```text
-switch (mode) {
-  case 'prospect': ...
-  case 'draft_email': ...
-  ...
-  default:
-    // Cron mode: run pipeline check, log status
-    if (source === 'cron' || !mode) {
-      return await handleCronCycle(supabase);
-    }
-    return jsonResponse({ error: `Unknown mode: ${mode}` }, 400);
-}
-```
-
-The `handleCronCycle` function will:
-- Check the current pipeline via `handlePipelineStatus`
-- Log the result to `ayn_activity_log`
-- If pipeline is empty, log a reflection saying "no leads to work"
-
-### Fix 2: Investigator Stuck Tasks
-
-**File:** `supabase/functions/ayn-investigator/index.ts`
-
-3 tasks from Feb 11-12 are stuck as `pending`. The investigator tries to process them every 6 hours but likely fails because `lead_id` values (`all`, `lead_rsp_dubai`, `9c1315ff`) don't match any real data, causing silent failures.
-
-**Change:** Add error handling that marks failed tasks as `failed` instead of leaving them as `pending` forever, which creates an infinite retry loop.
+Transform the War Room into a **Command Center** that:
+- Stores and enforces **Founder Directives** (like "Canada only, no Dubai")
+- Lets you **command employees directly** (not just discuss)
+- Gives employees **memory of past discussions** so they don't repeat themselves
+- Injects directives into every employee's system prompt automatically
 
 ```text
-for (const task of pendingTasks || []) {
-  try {
-    const res = await investigateLead(...);
-    const data = await res.json();
-    results.push({ task_id: task.id, success: data.success });
-  } catch (e) {
-    // Mark as failed so it doesn't retry forever
-    await supabase.from('employee_tasks').update({
-      status: 'failed',
-      output_data: { error: e.message }
-    }).eq('id', task.id);
-    results.push({ task_id: task.id, error: e.message });
-  }
-}
+BEFORE:                          AFTER:
+War Room                         Command Center
+  |                                |
+  +-- Discussion only              +-- Discussions (with memory)
+  +-- No memory                    +-- Direct Commands (@sales prospect X)
+  +-- No directives                +-- Founder Directives (Canada only!)
+  +-- Agents forget everything     +-- Past context injected into prompts
 ```
 
-### Fix 3: Advisor Activation Gap
+## Technical Plan
 
-**File:** `supabase/functions/ayn-advisor/index.ts`
+### 1. New Database Table: `founder_directives`
 
-The Advisor requires 3+ entries with `type = 'employee_report'` in `ayn_mind`. But no other employee writes entries with that type -- they use types like `marketing_ayn`, `telegram_ayn`, etc. So the Advisor's filter never finds data and early-returns with "Not enough reports."
-
-**Change:** Broaden the query to look at recent activity from all employees instead of only `employee_report` type:
-
-```text
-// Instead of looking for type='employee_report' only:
-const { data: reports } = await supabase
-  .from('ayn_activity_log')
-  .select('action_type, summary, triggered_by, created_at')
-  .gte('created_at', ago24h)
-  .not('triggered_by', 'eq', 'advisor')
-  .order('created_at', { ascending: false })
-  .limit(30);
-
-if (!reports?.length || reports.length < 5) {
-  return ... 'Not enough activity to synthesize yet.';
-}
-```
-
-### Fix 4: Mark Stuck Tasks as Failed (Data cleanup)
-
-Run SQL to unstick the 3 permanently-pending tasks:
+Stores your standing orders that ALL employees must follow.
 
 ```sql
-UPDATE employee_tasks
-SET status = 'failed',
-    output_data = '{"error": "lead_id not found in system"}'::jsonb
-WHERE status = 'pending'
-  AND created_at < now() - interval '24 hours';
+CREATE TABLE public.founder_directives (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  directive text NOT NULL,          -- "Focus only on Canada"
+  category text DEFAULT 'general',  -- 'geo', 'strategy', 'budget', 'general'
+  priority integer DEFAULT 1,       -- 1=highest
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  expires_at timestamptz            -- optional expiry
+);
+```
+
+When you say "stay in Canada," the system saves it as a directive. Every employee prompt will include active directives.
+
+### 2. Upgrade Edge Function: `admin-war-room` becomes `admin-command-center`
+
+New capabilities:
+
+- **`mode: 'discuss'`** (existing behavior, enhanced) -- Agents discuss a topic, but now with memory of past discussions and directives injected.
+- **`mode: 'command'`** (new) -- Direct command to a specific employee. E.g., `@sales prospect these 10 Canadian companies`. Calls that employee's edge function directly and returns the result.
+- **`mode: 'directive'`** (new) -- Save a founder directive. E.g., "Only target Canadian companies. No Dubai, no Singapore." Gets stored in `founder_directives` and immediately injected into all future prompts.
+- **`mode: 'follow_up'`** (new) -- Continue a previous discussion by loading its context.
+
+**Memory injection for discussions:**
+- Load last 3 discussions from `employee_discussions` as context
+- Load all active founder directives
+- Include both in each agent's system prompt
+
+**Command routing:**
+- Parse `@agent_name command` syntax
+- Call the appropriate edge function (e.g., `ayn-sales-outreach` with `mode: 'prospect'`)
+- Return the result in the command center UI
+
+### 3. Inject Directives Into ALL Employee Prompts
+
+Update `_shared/employeeState.ts` `buildEmployeeContext()` to load and include founder directives:
+
+```text
+// Added to every employee's context:
+"FOUNDER DIRECTIVES (MUST FOLLOW):
+- [P1] Focus only on Canada. No Dubai, no Singapore.
+- [P1] Target mid-size and small companies.
+- [P2] Offer free trials first, then convert."
+```
+
+This means when Sales runs on cron, when Investigator processes tasks, when Advisor synthesizes -- they ALL see these directives. No more Dubai suggestions.
+
+### 4. Upgrade Frontend: `WarRoomPanel.tsx` becomes `CommandCenterPanel.tsx`
+
+Changes:
+- Rename "War Room" to "Command Center" in sidebar
+- Add a **Directives panel** (top section) showing active standing orders with add/remove
+- Add **mode tabs**: Discussion | Command | Directives
+- Support `@agent command` syntax in the input box
+- Show discussion history sidebar (past topics)
+- Allow continuing/following up on past discussions
+- Parse command responses differently from discussions
+
+### 5. Seed Initial Directives From Your Existing Instructions
+
+Based on what you've already said in Telegram (found in `ayn_mind`), auto-create these directives:
+
+```sql
+INSERT INTO founder_directives (directive, category, priority) VALUES
+  ('Focus ONLY on Canadian companies. Do NOT suggest Dubai, Singapore, or any non-Canadian targets.', 'geo', 1),
+  ('Target mid-size and small companies in Canada, especially Nova Scotia.', 'strategy', 1),
+  ('Offer free trials of AYN engineering tools first. Get feedback before pushing paid services.', 'strategy', 1),
+  ('Maximum 2 emails per lead to avoid spam.', 'outreach', 2);
 ```
 
 ## Files Changed
 
-| File | What Changes |
-|------|-------------|
-| `supabase/functions/ayn-sales-outreach/index.ts` | Add cron/default handler that runs pipeline check autonomously |
-| `supabase/functions/ayn-investigator/index.ts` | Mark failed tasks as `failed` instead of leaving them `pending` |
-| `supabase/functions/ayn-advisor/index.ts` | Broaden data source from `employee_report` type to `ayn_activity_log` |
-| Database (SQL) | Clean up 3 stuck `pending` tasks |
+| File | Change |
+|------|--------|
+| `supabase/functions/admin-command-center/index.ts` | New edge function (replaces `admin-war-room`) |
+| `supabase/functions/_shared/employeeState.ts` | Add `loadFounderDirectives()` and inject into `buildEmployeeContext()` |
+| `src/components/admin/workforce/CommandCenterPanel.tsx` | New UI replacing `WarRoomPanel.tsx` |
+| `src/components/AdminPanel.tsx` | Update import from WarRoomPanel to CommandCenterPanel |
+| `src/components/admin/AdminSidebar.tsx` | Rename "War Room" to "Command Center" |
+| Database migration | Create `founder_directives` table + seed data |
+| `supabase/config.toml` | Add `admin-command-center` with `verify_jwt = false` |
 
-## What Does NOT Change
-- No new edge functions
-- No schema changes
-- No new dependencies
-- Telegram and Admin Panel workflows stay the same
+## What This Fixes
 
-## Expected Result After Fix
-- **Sales** will log pipeline status every 6 hours autonomously
-- **Investigator** won't get stuck on bad tasks anymore
-- **Advisor** will synthesize actual employee activity into strategic memos
-- All results visible in both Admin Panel (AYN Activity Log) and Telegram (if configured)
+| Problem | Fix |
+|---------|-----|
+| Employees keep suggesting Dubai/Singapore | Founder directives injected into every prompt |
+| War Room has no memory | Past discussions loaded as context |
+| Can't command employees directly | `@sales prospect X` syntax triggers real actions |
+| Employees only run on cron | Direct command execution from Command Center |
+| Instructions get forgotten | Persistent `founder_directives` table |
 
-## Answer: Telegram vs Admin Panel
-- **Telegram** = best for giving commands and chatting with AYN (it already works well)
-- **Admin Panel** = best for monitoring the workforce dashboard, activity logs, and war room
-- Use both -- they serve different purposes
