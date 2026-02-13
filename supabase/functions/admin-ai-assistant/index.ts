@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// No external serve import needed - uses Deno.serve
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 import { getEmployeePersonality, getAgentDisplayName, getAgentEmoji } from "../_shared/aynBrand.ts";
@@ -83,7 +83,7 @@ function calculateHealthScore(data: Record<string, unknown>): number {
   return Math.max(0, Math.min(100, Math.round(score * 10) / 10));
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
