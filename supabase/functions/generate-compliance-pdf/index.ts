@@ -142,8 +142,8 @@ Deno.serve(async (req) => {
     /* Header */
     .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2563eb; padding-bottom: 14px; margin-bottom: 20px; }
     .logo-section { display: flex; align-items: center; gap: 12px; }
-    .logo { width: 48px; height: 48px; background: #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-    .logo svg { width: 26px; height: 26px; }
+    .logo { width: 48px; height: 48px; background: #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .logo img { width: 28px; height: 28px; }
     .company-name { font-size: 20px; font-weight: 700; color: #1a1a1a; }
     .company-tagline { font-size: 9px; color: #666; letter-spacing: 0.5px; }
     .report-meta { text-align: right; font-size: 9px; color: #666; line-height: 1.6; }
@@ -152,8 +152,8 @@ Deno.serve(async (req) => {
     /* Title */
     .title-section { margin-bottom: 20px; }
     .title { font-size: 18px; font-weight: 700; color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 14px; }
-    .project-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-    .info-box { background: #f8fafc; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #2563eb; }
+    .project-info { display: flex; gap: 10px; margin-bottom: 20px; }
+    .info-box { flex: 1; background: #f8fafc; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #2563eb; }
     .info-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
     .info-value { font-weight: 600; color: #1a1a1a; font-size: 11px; }
 
@@ -165,13 +165,13 @@ Deno.serve(async (req) => {
       background: ${failed > 0 ? '#fef2f2' : '#f0fdf4'};
     }
     .score-circle {
-      width: 70px; height: 70px; border-radius: 50%;
+      width: 72px; height: 72px; min-width: 72px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 22px; font-weight: 800;
+      font-size: 20px; font-weight: 800; line-height: 1;
       background: ${failed > 0 ? '#fee2e2' : '#dcfce7'};
       color: ${failed > 0 ? '#dc2626' : '#16a34a'};
       border: 3px solid ${failed > 0 ? '#fca5a5' : '#86efac'};
-      flex-shrink: 0;
+      text-align: center;
     }
     .summary-title { font-size: 16px; font-weight: 700; color: #1a1a1a; }
     .summary-stats { display: flex; gap: 16px; margin-top: 4px; font-size: 11px; font-weight: 600; }
@@ -219,10 +219,13 @@ Deno.serve(async (req) => {
     <div class="header">
       <div class="logo-section">
         <div class="logo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-            <path d="M12 6v6l4 2"/>
-            <circle cx="12" cy="12" r="3" fill="white" stroke="none"/>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/>
+            <line x1="9" y1="21" x2="15" y2="21"/>
+            <line x1="10" y1="24" x2="14" y2="24"/>
+            <path d="M12 2v5"/>
+            <path d="M8 9c0-1 .5-2 2-2"/>
+            <path d="M16 9c0-1-.5-2-2-2"/>
           </svg>
         </div>
         <div>
