@@ -30,9 +30,9 @@ export const AynEyeIcon = ({ className, size = 24, accentColor = 'hsl(199, 89%, 
       fill="none"
     />
     {/* Iris ring */}
-    <circle cx="32" cy="32" r="10" className="stroke-foreground/50 fill-muted" strokeWidth="2.5" />
+    <circle cx="32" cy="32" r="10" stroke="currentColor" strokeWidth="2.5" fill="none" />
     {/* Pupil */}
-    <circle cx="32" cy="32" r="5.5" className="fill-foreground" />
+    <circle cx="32" cy="32" r="5.5" fill="currentColor" />
     {/* Blue accent dot */}
     <circle cx="34.5" cy="29" r="2" fill={accentColor} />
   </svg>

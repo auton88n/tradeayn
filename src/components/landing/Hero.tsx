@@ -100,7 +100,7 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
                 cx="50"
                 cy="50"
                 r={isHovered ? 32 : 28}
-                className="fill-foreground"
+                fill="#000000"
                 style={{ transition: 'r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
               />
               <foreignObject x="0" y="0" width="100" height="100">
