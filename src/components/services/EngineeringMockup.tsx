@@ -109,7 +109,7 @@ const EngineeringMockup = memo(() => {
       
       {/* Floating calculation result - static */}
       <div
-        className="absolute top-4 right-4 z-30 px-4 py-3 rounded-xl bg-white dark:bg-neutral-900/95 border border-cyan-600/50 dark:border-cyan-400/50"
+        className="absolute top-4 right-4 z-30 px-4 py-3 rounded-xl bg-card border border-cyan-600/50 dark:border-cyan-400/50"
         style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.15), 0 0 24px rgba(34,211,238,0.1)' }}
       >
         <div className="text-[13px] font-mono text-cyan-700 dark:text-cyan-200 font-semibold">
