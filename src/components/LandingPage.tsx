@@ -868,12 +868,6 @@ const LandingPage = memo(() => {
                   <MapPin className="w-4 h-4" />
                   <span>Nova Scotia, Canada</span>
                 </li>
-                <li>
-                  <a href="https://maps.google.com/?q=Nova+Scotia+Canada" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-foreground transition-colors">
-                    <Navigation2 className="w-4 h-4" />
-                    {language === 'ar' ? 'احصل على الاتجاهات' : language === 'fr' ? 'Obtenir l\'itinéraire' : 'Get Directions'}
-                  </a>
-                </li>
               </ul>
             </div>
           </div>
