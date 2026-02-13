@@ -880,7 +880,7 @@ const LandingPage = memo(() => {
           {/* Bottom bar */}
           <Separator className="mb-6" />
           <p className="text-center text-xs text-muted-foreground">
-            © 2026 AYN Inc. {language === 'ar' ? 'جميع الحقوق محفوظة.' : language === 'fr' ? 'Tous droits réservés.' : 'All rights reserved.'}
+            © 2026 AYN AI. {language === 'ar' ? 'جميع الحقوق محفوظة.' : language === 'fr' ? 'Tous droits réservés.' : 'All rights reserved.'}
           </p>
         </div>
       </footer>
