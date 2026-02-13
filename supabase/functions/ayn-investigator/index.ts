@@ -49,11 +49,19 @@ serve(async (req) => {
     const results = [];
     for (const task of pendingTasks || []) {
       try {
-        const res = await investigateLead(supabase, LOVABLE_API_KEY, task.input_data.lead_id, task.id);
+        const leadId = task.input_data?.lead_id;
+        if (!leadId) throw new Error('No lead_id in task input_data');
+        const res = await investigateLead(supabase, LOVABLE_API_KEY, leadId, task.id);
         const data = await res.json();
         results.push({ task_id: task.id, success: data.success });
       } catch (e) {
-        results.push({ task_id: task.id, error: e instanceof Error ? e.message : 'failed' });
+        const errMsg = e instanceof Error ? e.message : 'failed';
+        // Mark as failed so it doesn't retry forever
+        await supabase.from('employee_tasks').update({
+          status: 'failed',
+          output_data: { error: errMsg },
+        }).eq('id', task.id);
+        results.push({ task_id: task.id, error: errMsg });
       }
     }
 

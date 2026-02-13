@@ -23,17 +23,21 @@ serve(async (req) => {
 
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
-    // Check for unread employee reports
+    // Check recent activity from all employees (not just 'employee_report' type)
+    const ago24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: reports } = await supabase
-      .from('ayn_mind')
-      .select('content, context, created_at')
-      .eq('type', 'employee_report')
-      .eq('shared_with_admin', false)
+      .from('ayn_activity_log')
+      .select('action_type, summary, triggered_by, created_at')
+      .gte('created_at', ago24h)
+      .not('triggered_by', 'eq', 'advisor')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(30);
 
-    if (!reports?.length || reports.length < 3) {
-      return new Response(JSON.stringify({ success: true, message: 'Not enough reports to synthesize yet.' }), {
+    if (!reports?.length || reports.length < 5) {
+      await logAynActivity(supabase, 'advisor_skip', `Not enough activity to synthesize yet (${reports?.length || 0} entries in 24h)`, {
+        triggered_by: EMPLOYEE_ID,
+      });
+      return new Response(JSON.stringify({ success: true, message: 'Not enough activity to synthesize yet.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -47,7 +51,6 @@ serve(async (req) => {
     ]);
 
     // Gather additional signals
-    const ago24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const [
       { count: activeUsers },
       { count: openTickets },
@@ -87,14 +90,14 @@ Express uncertainty when data is thin.`);
           content: systemPrompt,
         }, {
           role: 'user',
-          content: `Employee Reports:\n${reports.map(r => `• [${r.context?.from_employee || 'unknown'}] ${r.content}`).join('\n\n')}
+          content: `Recent Employee Activity (last 24h):\n${reports.map((r: any) => `• [${r.triggered_by}] (${r.action_type}) ${r.summary}`).join('\n\n')}
 
 Context:
 - Active users: ${activeUsers || 0}
 - Open tickets: ${openTickets || 0}
 - Security incidents (24h): ${recentIncidents?.length || 0}
 - Pipeline: ${JSON.stringify(pipelineSummary)}
-- System health: ${healthChecks?.map(h => `${h.function_name}: ${h.is_healthy ? 'OK' : 'DOWN'}`).join(', ') || 'No data'}
+- System health: ${healthChecks?.map((h: any) => `${h.function_name}: ${h.is_healthy ? 'OK' : 'DOWN'}`).join(', ') || 'No data'}
 - Company momentum: ${companyState?.momentum || 'unknown'}
 - Stress level: ${companyState?.stress_level || 0}
 
@@ -121,28 +124,21 @@ Give your honest strategic take. What matters right now?`,
       shared_with_admin: true,
     });
 
-    // Mark reports as shared
-    await supabase.from('ayn_mind')
-      .update({ shared_with_admin: true })
-      .eq('type', 'employee_report')
-      .eq('shared_with_admin', false);
-
-    // Send to founder via Telegram — natural tone
+    // Send to founder via Telegram
     if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatNatural(EMPLOYEE_ID, `${reports.length} reports analyzed.\n\n${insight}`, tone));
+      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatNatural(EMPLOYEE_ID, `${reports.length} activities analyzed.\n\n${insight}`, tone));
     }
 
-    // Log reflection
     await logReflection(supabase, {
       employee_id: EMPLOYEE_ID,
       action_ref: 'strategic_briefing',
-      reasoning: `Synthesized ${reports.length} reports with company state and objectives context`,
+      reasoning: `Synthesized ${reports.length} employee activities with company state and objectives context`,
       expected_outcome: 'Founder gets actionable strategic insight aligned to objectives',
       confidence: 0.7,
-      what_would_change_mind: 'If reports are too thin or contradictory to synthesize meaningfully',
+      what_would_change_mind: 'If activity data is too thin or contradictory to synthesize meaningfully',
     });
 
-    await logAynActivity(supabase, 'advisor_briefing', `Strategic briefing: ${reports.length} reports analyzed`, {
+    await logAynActivity(supabase, 'advisor_briefing', `Strategic briefing: ${reports.length} activities analyzed`, {
       details: { reports_count: reports.length },
       triggered_by: EMPLOYEE_ID,
     });

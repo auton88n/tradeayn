@@ -25,7 +25,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { mode, url, lead_id, email_draft, search_query } = await req.json();
+    let body: any = {};
+    try { body = await req.json(); } catch {}
+    const { mode, url, lead_id, email_draft, search_query, source } = body;
 
     switch (mode) {
       case 'prospect':
@@ -41,6 +43,10 @@ serve(async (req) => {
       case 'search_leads':
         return await handleSearchLeads(supabase, search_query);
       default:
+        // Cron mode: run pipeline check autonomously
+        if (source === 'cron' || !mode) {
+          return await handleCronCycle(supabase);
+        }
         return jsonResponse({ error: `Unknown mode: ${mode}` }, 400);
     }
   } catch (error) {
@@ -520,4 +526,47 @@ function jsonResponse(data: any, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+// ─── Cron cycle: autonomous pipeline check ───
+async function handleCronCycle(supabase: any) {
+  console.log('Sales cron cycle starting...');
+
+  try {
+    // Check pipeline status
+    const statusRes = await handlePipelineStatus(supabase);
+    const statusData = await statusRes.json();
+
+    const total = statusData.total || 0;
+    const dueFollowUps = statusData.due_follow_ups || 0;
+    const stats = statusData.stats || {};
+
+    const summary = `Pipeline: ${total} leads (${Object.entries(stats).map(([k, v]) => `${k}: ${v}`).join(', ')}). ${dueFollowUps} follow-ups due.`;
+
+    await logAynActivity(supabase, 'sales_cron_cycle', summary, {
+      details: { total, stats, due_follow_ups: dueFollowUps },
+      triggered_by: EMPLOYEE_ID,
+    });
+
+    // If pipeline is empty, log reflection
+    if (total === 0) {
+      await logReflection(supabase, {
+        employee_id: EMPLOYEE_ID,
+        action_ref: 'cron_empty_pipeline',
+        reasoning: 'No leads in pipeline. Need founder to provide target URLs or search queries via Telegram.',
+        expected_outcome: 'Founder feeds leads or enables autonomous search',
+        confidence: 0.5,
+        what_would_change_mind: 'If leads arrive from other sources',
+      });
+    }
+
+    return jsonResponse({ success: true, cron: true, summary, stats, due_follow_ups: dueFollowUps });
+  } catch (e) {
+    const errMsg = e instanceof Error ? e.message : 'Unknown cron error';
+    console.error('Sales cron cycle error:', errMsg);
+    await logAynActivity(supabase, 'sales_cron_error', `Cron cycle failed: ${errMsg}`, {
+      triggered_by: EMPLOYEE_ID,
+    });
+    return jsonResponse({ success: false, error: errMsg }, 500);
+  }
 }
