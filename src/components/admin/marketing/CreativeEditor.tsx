@@ -224,7 +224,7 @@ export const CreativeEditor = ({
             <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="p-4 space-y-3">
                 {messages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div key={`msg-${i}-${msg.role}`} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed break-words ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted/40 text-foreground rounded-bl-md border border-border/20'}`}>
                       <span className="whitespace-pre-wrap">{msg.content}</span>
                       {msg.image_url && <div className="mt-2 text-[11px] opacity-70 flex items-center gap-1"><Sparkles className="w-3 h-3" /> image generated ✓</div>}

@@ -60,7 +60,7 @@ const MobileMockup = memo(() => {
 
               {/* Stats Row */}
               <div className="flex gap-1.5 mb-3 w-full px-1">
-                {stats.map((stat, i) => <div key={i} className="flex-1 bg-neutral-800/70 rounded-lg py-2 px-1.5 text-center border border-neutral-700/40">
+                {stats.map((stat) => <div key={stat.label} className="flex-1 bg-neutral-800/70 rounded-lg py-2 px-1.5 text-center border border-neutral-700/40">
                     <p className="text-white font-serif text-[11px] font-medium">{stat.value}</p>
                     <p className="text-neutral-500 text-[5px] uppercase tracking-wide">{stat.label}</p>
                   </div>)}

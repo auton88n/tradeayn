@@ -66,7 +66,7 @@ export const ResultsStep: React.FC<Props> = ({ results, passed, failed, warnings
           <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
             {CATEGORY_LABELS[category] || category}
           </h4>
-          {items.map((r, i) => <ComplianceResultCard key={i} result={r} />)}
+          {items.map((r, i) => <ComplianceResultCard key={`${category}-${r.requirement_name || i}`} result={r} />)}
         </div>
       ))}
 
