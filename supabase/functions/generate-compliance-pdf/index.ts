@@ -129,8 +129,8 @@ Deno.serve(async (req) => {
     
     .page {
       width: 210mm;
-      min-height: 297mm;
       padding: 18mm 20mm;
+      margin: 0;
       margin: 0;
       background: #fff;
       box-sizing: border-box;
@@ -164,14 +164,9 @@ Deno.serve(async (req) => {
       border: 2px solid ${failed > 0 ? '#fca5a5' : '#86efac'};
       background: ${failed > 0 ? '#fef2f2' : '#f0fdf4'};
     }
-    .score-circle {
-      width: 72px; height: 72px; min-width: 72px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; font-weight: 800; line-height: 1;
-      background: ${failed > 0 ? '#fee2e2' : '#dcfce7'};
+    .score-text {
+      font-size: 28px; font-weight: 800; line-height: 1;
       color: ${failed > 0 ? '#dc2626' : '#16a34a'};
-      border: 3px solid ${failed > 0 ? '#fca5a5' : '#86efac'};
-      text-align: center;
     }
     .summary-title { font-size: 16px; font-weight: 700; color: #1a1a1a; }
     .summary-stats { display: flex; gap: 16px; margin-top: 4px; font-size: 11px; font-weight: 600; }
@@ -180,7 +175,7 @@ Deno.serve(async (req) => {
     .stat-warn { color: #d97706; }
 
     /* Category sections */
-    .category-section { margin-bottom: 20px; page-break-inside: avoid; }
+    .category-section { margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
     .category-header { 
       font-size: 11px; font-weight: 700; color: #374151; 
       text-transform: uppercase; letter-spacing: 0.8px;
@@ -264,7 +259,7 @@ Deno.serve(async (req) => {
 
     <!-- Summary -->
     <div class="summary-box">
-      <div class="score-circle">${passRate}%</div>
+      <span class="score-text">${passRate}%</span>
       <div>
         <div class="summary-title">${failed === 0 ? 'All Checks Passed' : `${failed} Issue${failed !== 1 ? 's' : ''} Found`}</div>
         <div class="summary-stats">
