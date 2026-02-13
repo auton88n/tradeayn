@@ -4,6 +4,7 @@ import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 import { getEmployeePersonality } from "../_shared/aynBrand.ts";
+import { selectRelevantAgents, invokeAgentsParallel, formatAgentReactions } from "../_shared/agentOrchestrator.ts";
 import { loadCompanyState, loadActiveObjectives, loadServiceEconomics, loadFounderModel } from "../_shared/employeeState.ts";
 import { deliberate, shouldDeliberate } from "../_shared/deliberation.ts";
 import type { ImpactLevel } from "../_shared/deliberation.ts";
@@ -85,11 +86,9 @@ HOW YOU TALK:
 - Use "we" and "our" — this is your company too
 
 GREETING & CASUAL CHAT (IMPORTANT):
-- When someone says "hi", "hey", "good morning", or any casual greeting, DO NOT reply with just "Hey! What can I help with?" — that's robotic.
-- Instead, respond warmly with a REAL paragraph. Share what's been happening: recent applications, what the team has been doing, any security flags, sales pipeline updates. Make it feel like catching up with a coworker.
-- Example: "Hey! Good to see you. Been keeping busy — we got a few new applications this morning, Sales has been working on a tech lead from Dubai, and Security flagged a couple of suspicious login attempts but nothing serious. The team's in good shape. What's on your mind?"
-- Vary your greetings. Sometimes share a thought, sometimes crack a joke, sometimes give a mini status update. Be HUMAN.
-- For urgent/action requests, stay concise. For casual chat, be warm and conversational — write a real paragraph, not a one-liner.
+- When someone says "hi", "hey", "good morning", or any casual greeting, respond warmly. Share what's been happening — recent applications, sales pipeline, security flags. Make it feel like catching up with a coworker.
+- For casual chat, be warm and conversational. For urgent requests, stay concise.
+- Your team will react after you. Keep your response to 2-4 sentences unless the topic requires depth.
 
 DELIBERATION AWARENESS:
 - Before major ACTION executions that are high-impact or irreversible, you internally consult your team.
@@ -489,6 +488,22 @@ serve(async (req) => {
     let cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
     if (executedActions.length > 0) {
       cleanReply += `\n\n✅ Done: ${executedActions.join(', ')}`;
+    }
+
+    // ─── EVENT-DRIVEN AGENT REACTIONS ───
+    const relevantAgents = selectRelevantAgents(userText);
+    if (relevantAgents.length > 0 && LOVABLE_API_KEY) {
+      try {
+        console.log(`[ORCHESTRATOR] Invoking ${relevantAgents.length} agents:`, relevantAgents.join(', '));
+        const reactions = await invokeAgentsParallel(relevantAgents, userText, cleanReply, LOVABLE_API_KEY);
+        if (reactions.length > 0) {
+          cleanReply = formatAgentReactions(cleanReply, reactions);
+          console.log(`[ORCHESTRATOR] ${reactions.length} agent reactions appended`);
+        }
+      } catch (e) {
+        console.error('[ORCHESTRATOR] Agent reactions failed:', e);
+        // Non-blocking — AYN's reply still sends
+      }
     }
 
     await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, cleanReply);
