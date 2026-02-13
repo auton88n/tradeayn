@@ -187,7 +187,7 @@ export const NotificationLogViewer = () => {
                             <div className="grid gap-1.5 max-h-[200px] overflow-y-auto">
                               {log.metadata?.recipients?.map((recipient, idx) => (
                                 <div 
-                                  key={idx}
+                                  key={`${recipient.masked}-${idx}`}
                                   className="flex items-center justify-between text-sm py-1.5 px-2 rounded bg-background/50"
                                 >
                                   <code className="text-xs font-mono">

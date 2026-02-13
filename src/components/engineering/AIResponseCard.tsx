@@ -86,7 +86,7 @@ export const AIResponseCard = ({ response, onQuickReply }: AIResponseCardProps) 
                   </div>
                   <ol className="list-decimal list-inside space-y-1 text-xs text-foreground/80">
                     {response.calculation.steps.map((step, i) => (
-                      <li key={i} className="leading-relaxed">{step}</li>
+                      <li key={`step-${i}-${step.slice(0, 20)}`} className="leading-relaxed">{step}</li>
                     ))}
                   </ol>
                   <div className="flex items-center justify-between pt-2 border-t border-border/50">
@@ -121,8 +121,8 @@ export const AIResponseCard = ({ response, onQuickReply }: AIResponseCardProps) 
                     <Lightbulb className="h-3 w-3" />
                     <span className="font-medium">Alternatives</span>
                   </div>
-                  {response.alternatives.map((alt, i) => (
-                    <div key={i} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                  {response.alternatives.map((alt) => (
+                    <div key={alt.description} className="bg-muted/30 rounded-lg p-3 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-foreground">{alt.description}</span>
                         <Badge variant="outline" className="text-xs">
@@ -133,13 +133,13 @@ export const AIResponseCard = ({ response, onQuickReply }: AIResponseCardProps) 
                         <div>
                           <span className="text-green-400 font-medium">Pros:</span>
                           <ul className="list-disc list-inside text-muted-foreground">
-                            {alt.pros.map((pro, j) => <li key={j}>{pro}</li>)}
+                            {alt.pros.map((pro) => <li key={pro}>{pro}</li>)}
                           </ul>
                         </div>
                         <div>
                           <span className="text-red-400 font-medium">Cons:</span>
                           <ul className="list-disc list-inside text-muted-foreground">
-                            {alt.cons.map((con, j) => <li key={j}>{con}</li>)}
+                            {alt.cons.map((con) => <li key={con}>{con}</li>)}
                           </ul>
                         </div>
                       </div>
@@ -155,9 +155,9 @@ export const AIResponseCard = ({ response, onQuickReply }: AIResponseCardProps) 
       {/* Quick Replies */}
       {response.quickReplies && response.quickReplies.length > 0 && onQuickReply && (
         <div className="flex flex-wrap gap-1.5 pt-2">
-          {response.quickReplies.slice(0, 3).map((reply, i) => (
+          {response.quickReplies.slice(0, 3).map((reply) => (
             <Button
-              key={i}
+              key={reply}
               variant="outline"
               size="sm"
               onClick={() => onQuickReply(reply)}

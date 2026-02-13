@@ -213,7 +213,7 @@ export const AnalyticsDashboard = () => {
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {pieData.map((_, i) => <Cell key={i} fill={THEME_COLORS[i % THEME_COLORS.length]} />)}
+                  {pieData.map((entry, i) => <Cell key={entry.name} fill={THEME_COLORS[i % THEME_COLORS.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} />
               </PieChart>

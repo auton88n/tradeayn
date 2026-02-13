@@ -245,7 +245,7 @@ const CivilEngineering = () => {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {calculators.map((calc, index) => (
-                <CalculatorCard key={index} calc={calc} index={index} />
+                <CalculatorCard key={calc.title} calc={calc} index={index} />
               ))}
             </div>
           </div>
@@ -266,8 +266,8 @@ const CivilEngineering = () => {
                   {t.visualizationDesc}
                 </p>
                 <ul className="space-y-4">
-                  {visualizationItems.map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-neutral-300">
+                  {visualizationItems.map((item) => (
+                    <li key={item} className="flex items-center gap-3 text-neutral-300">
                       <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
                         <CheckCircle2 className="w-4 h-4 text-cyan-400" />
                       </div>
@@ -311,8 +311,8 @@ const CivilEngineering = () => {
                   {t.exportDesc}
                 </p>
                 <ul className="space-y-4">
-                  {exportItems.map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-neutral-300">
+                  {exportItems.map((item) => (
+                    <li key={item} className="flex items-center gap-3 text-neutral-300">
                       <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
                         <CheckCircle2 className="w-4 h-4 text-cyan-400" />
                       </div>
@@ -339,7 +339,7 @@ const CivilEngineering = () => {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {features.map((feature, index) => (
-                <FeatureCard key={index} feature={feature} index={index} />
+                <FeatureCard key={feature.title} feature={feature} index={index} />
               ))}
             </div>
           </div>

@@ -76,8 +76,8 @@ const SubscriptionSuccess = () => {
                 <div className="bg-muted/50 rounded-lg p-4 mb-6">
                   <h3 className="font-medium mb-2">Your new benefits:</h3>
                   <ul className="text-sm text-muted-foreground space-y-1">
-                    {tierConfig.features.map((feature, i) => (
-                      <li key={i}>✓ {feature}</li>
+                    {tierConfig.features.map((feature) => (
+                      <li key={feature}>✓ {feature}</li>
                     ))}
                   </ul>
                 </div>
