@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ProfileAvatarUpload } from '@/components/dashboard/ProfileAvatarUpload';
 import { UsageCard } from '@/components/dashboard/UsageCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Key } from 'lucide-react';
 import { useSettingsContext } from '@/contexts/SettingsContext';
 
 interface AccountPreferencesProps {
@@ -34,6 +34,7 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [profile, setProfile] = useState({
     contact_person: '',
     company_name: '',
@@ -330,6 +331,60 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
         userId={userId}
         accessToken={accessToken}
       />
+
+      <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
+        <h2 className="text-xl font-semibold mb-6">{t('settings.security')}</h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <p className="font-medium">{t('settings.changePassword')}</p>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.changePasswordDesc')}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={async () => {
+                try {
+                  setChangingPassword(true);
+                  if (!userEmail) throw new Error('No email found');
+                  const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+                    redirectTo: `${window.location.origin}/reset-password`,
+                  });
+                  if (error) throw error;
+                  toast({
+                    title: t('common.success'),
+                    description: t('settings.passwordResetSent'),
+                  });
+                } catch (error) {
+                  console.error('Error sending password reset:', error);
+                  toast({
+                    title: t('common.error'),
+                    description: 'Failed to send password reset email',
+                    variant: 'destructive',
+                  });
+                } finally {
+                  setChangingPassword(false);
+                }
+              }}
+              disabled={changingPassword}
+            >
+              {changingPassword ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('common.sending')}
+                </>
+              ) : (
+                <>
+                  <Key className="h-4 w-4" />
+                  {t('settings.changePassword')}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 };
