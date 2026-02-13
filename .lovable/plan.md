@@ -1,25 +1,14 @@
 
-# Link Footer Services to Their Pages
 
-## Problem
-The six services listed in the footer's "Services" column are plain text with no navigation links.
+# Remove "Export Your Data" Section
 
-## Fix
+## What changes
+Remove the "Export Your Data" row (label, description, and Export button) from the Privacy Settings page so users cannot download their data.
 
-**File:** `src/components/LandingPage.tsx` (lines 844-855)
+## Technical Details
 
-Convert each service from a plain string to an object with label + route, then render as `<Link>` elements using react-router-dom.
+**File:** `src/components/settings/PrivacySettings.tsx`
 
-The mapping will be:
-- Premium Content Creator Sites -> `/services/content-creator-sites`
-- Custom AI Agents -> `/services/ai-agents`
-- Process Automation -> `/services/automation`
-- AI Employees -> `/services/ai-employee`
-- Civil Engineering -> `/services/civil-engineering`
-- Smart Ticketing System -> `/services/ticketing`
+- Delete the entire `<div>` block (approximately lines 131-143) that contains the "Export Your Data" label, description, and the Export button.
+- Also remove the now-unused `handleExportData` function and the `Download` icon import if no longer referenced elsewhere.
 
-Each `<li>` will use a `<Link to={route}>` instead of plain text, with `hover:text-foreground transition-colors` styling to match the other footer links.
-
-### Technical Details
-
-Replace the current string array (lines 845-854) with an array of `{ label, route }` objects and map them to `<Link>` components. The routes are already defined in `src/constants/routes.ts` under `ROUTES.SERVICES`.
