@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AIEngineeringResponse, CalculatorType } from '@/lib/engineeringKnowledge';
 import { getHandlingMessage } from '@/lib/errorMessages';
+import { toast } from 'sonner';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -76,12 +77,10 @@ export const useEngineeringAI = ({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get AI response';
       setError(errorMessage);
+      console.error('AI error:', err);
+      toast.error('AI assistant encountered an issue. Please try again.');
 
-      if (import.meta.env.DEV) {
-        console.error('AI error:', err);
-      }
-
-      // Add friendly handling message to chat (no toast)
+      // Add friendly handling message to chat
       const errorAssistantMessage: Message = {
         role: 'assistant',
         content: getHandlingMessage(),

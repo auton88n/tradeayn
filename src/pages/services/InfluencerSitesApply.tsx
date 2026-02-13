@@ -71,7 +71,7 @@ const InfluencerSitesApply = () => {
 
       if (dbError) throw dbError;
 
-      await supabase.functions.invoke('send-application-email', {
+      const { error: emailError } = await supabase.functions.invoke('send-application-email', {
         body: {
           serviceType: 'Premium Content Creator Sites',
           applicantName: formData.fullName,
@@ -79,6 +79,10 @@ const InfluencerSitesApply = () => {
           formData: formData
         }
       });
+      if (emailError) {
+        console.error('Email notification failed:', emailError);
+        // Don't throw — application was saved, just email failed
+      }
 
       setIsSubmitted(true);
       toast.success(t('common.success'), { description: 'Your application has been submitted.' });

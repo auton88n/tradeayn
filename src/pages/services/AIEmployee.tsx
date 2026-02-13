@@ -103,7 +103,7 @@ const AIEmployee = () => {
       });
       
       if (dbError) throw dbError;
-      await supabase.functions.invoke('send-application-email', {
+      const { error: emailError } = await supabase.functions.invoke('send-application-email', {
         body: {
           applicantName: formData.fullName,
           applicantEmail: formData.email,
@@ -112,6 +112,10 @@ const AIEmployee = () => {
           serviceType: 'AI Employee'
         }
       });
+      if (emailError) {
+        console.error('Email notification failed:', emailError);
+        // Don't throw — application was saved, just email failed
+      }
       setIsSuccess(true);
       setFormData({ fullName: '', email: '', phone: '', message: '' });
     } catch (error) {
