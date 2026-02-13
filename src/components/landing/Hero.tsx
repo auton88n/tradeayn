@@ -54,7 +54,7 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
             ? 'رفيقك الذكي الذي يساعدك على التنظيم والتخطيط والعيش بشكل أفضل.'
             : language === 'fr'
             ? 'Le compagnon intelligent qui vous aide à organiser, planifier et mieux vivre.'
-            : 'The intelligent companion that helps you organize, plan, and live better.'}
+            : 'The intelligent companion that helps you organize, plan, and live better'}
         </motion.p>
       </div>
 
