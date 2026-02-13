@@ -451,7 +451,7 @@ const EmotionalEyeComponent = ({
           } as React.CSSProperties}
         >
           {/* Inner shadow ring - matching landing page dark mode */}
-          <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_hsl(var(--foreground)/0.06)] dark:shadow-[inset_0_4px_16px_hsl(var(--foreground)/0.15)]" />
+          <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.3)]" />
 
           {/* Emotional color ring - always visible with emotion color for engagement */}
           <motion.div 

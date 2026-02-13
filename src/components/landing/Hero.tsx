@@ -77,7 +77,7 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
           <div className="absolute -inset-8 rounded-full blur-2xl pointer-events-none bg-[radial-gradient(circle,_rgba(229,229,229,0.3)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(38,38,38,0.15)_0%,_transparent_70%)]" />
 
           <div className="relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[200px] md:h-[200px] lg:w-[240px] lg:h-[240px] rounded-full bg-card flex items-center justify-center overflow-hidden shadow-xl">
-            <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_hsl(var(--foreground)/0.06)] dark:shadow-[inset_0_4px_16px_hsl(var(--foreground)/0.15)]" />
+            <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.25)]" />
             <div className="absolute inset-[15%] rounded-full bg-muted" />
 
             <motion.svg
