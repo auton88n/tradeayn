@@ -1,21 +1,25 @@
 
-
-# Align Dashboard Dark Mode with Landing Page Theme
+# Fix Three Shades of Dark in Landing Page Footer Area
 
 ## Problem
-The Dashboard's maintenance screen uses hardcoded Tailwind gray colors (`gray-900`, `gray-800`) which have a bluish tint, while the Landing Page uses pure near-black theme CSS variables (`bg-background`, `bg-card`). This creates two visually different dark modes.
+In dark mode, the bottom of the landing page shows three subtly different shades of black in the area around the contact form and footer. This happens because:
+
+1. The **services section** above uses card backgrounds (`dark:bg-card` = 6% brightness) for its bento grid cards, which are slightly lighter than the page background
+2. The **contact section** has no explicit background, inheriting from the parent
+3. The **footer** has `bg-background` explicitly set
+
+When these areas meet, the visual transition between the card-tinted services area and the plain background creates visible bands.
 
 ## Fix
-Replace hardcoded grays in `Dashboard.tsx` with theme-aware tokens.
 
-## Technical Details
+Make two changes in `src/components/LandingPage.tsx`:
 
-**File:** `src/components/Dashboard.tsx`
+1. **Add explicit `bg-background` to the contact section** (line 719) so it clearly defines its own background and doesn't inherit any stacking artifacts:
+   - Change: `className="py-16 md:py-32 px-4 md:px-6"`
+   - To: `className="py-16 md:py-32 px-4 md:px-6 bg-background"`
 
-| Line | Current | New |
-|------|---------|-----|
-| 153 | `dark:from-gray-900 dark:to-gray-800` | `dark:from-background dark:to-background` |
-| 155 | `dark:bg-gray-800` | `dark:bg-card` |
-| 156 | `dark:bg-orange-900/30` | `dark:bg-orange-900/20` |
+2. **Remove the redundant `bg-background` from the footer** (line 803) since it's now unnecessary -- the parent already provides it and having it creates a potential compositing layer:
+   - Change: `className="border-t border-border bg-background pt-12 pb-6"`
+   - To: `className="border-t border-border pt-12 pb-6"`
 
-No other files need changes. The theme variables are already defined in `index.css` (dark `--background: 0 0% 4%`, `--card: 0 0% 6%`).
+This ensures a single, uniform dark background across the entire bottom portion of the page, with only the footer's top border providing visual separation.
