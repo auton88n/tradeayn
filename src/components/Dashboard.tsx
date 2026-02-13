@@ -150,10 +150,10 @@ export default function Dashboard({ user, session }: DashboardProps) {
   // Full-screen maintenance block for regular users
   if (isBlockedByMaintenance) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-background dark:to-background flex items-center justify-center p-6">
         <div className="max-w-md w-full text-center">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-orange-200 dark:border-orange-800">
-            <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-xl p-8 border border-orange-200 dark:border-orange-800">
+            <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertTriangle className="w-8 h-8 text-orange-600" />
             </div>
             
