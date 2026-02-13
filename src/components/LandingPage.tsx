@@ -823,7 +823,6 @@ const LandingPage = memo(() => {
               </h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 {[
-                  { label: language === 'ar' ? 'الرئيسية' : language === 'fr' ? 'Accueil' : 'Home', id: 'hero' },
                   { label: language === 'ar' ? 'حول' : language === 'fr' ? 'À propos' : 'About', id: 'about' },
                   { label: language === 'ar' ? 'الخدمات' : language === 'fr' ? 'Services' : 'Services', id: 'services' },
                   { label: language === 'ar' ? 'تواصل' : language === 'fr' ? 'Contact' : 'Contact', id: 'contact' },
