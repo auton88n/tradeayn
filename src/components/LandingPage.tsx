@@ -843,11 +843,12 @@ const LandingPage = memo(() => {
               </h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 {[
-                  language === 'ar' ? 'التحليل الهيكلي' : language === 'fr' ? 'Analyse structurelle' : 'Structural Analysis',
-                  language === 'ar' ? 'التقدير' : language === 'fr' ? 'Estimation' : 'Estimation',
-                  language === 'ar' ? 'الامتثال للكود' : language === 'fr' ? 'Conformité au code' : 'Code Compliance',
-                  language === 'ar' ? 'تحليل التضاريس' : language === 'fr' ? 'Analyse de terrain' : 'Terrain Analysis',
-                  language === 'ar' ? 'تخطيط الفعاليات' : language === 'fr' ? 'Planification d\'événements' : 'Event Planning',
+                  language === 'ar' ? 'مواقع صناع المحتوى المميزة' : language === 'fr' ? 'Sites Créateurs Premium' : 'Premium Content Creator Sites',
+                  language === 'ar' ? 'وكلاء ذكاء اصطناعي مخصصون' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents',
+                  language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation',
+                  language === 'ar' ? 'موظفون بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees',
+                  language === 'ar' ? 'الهندسة المدنية' : language === 'fr' ? 'Génie Civil' : 'Civil Engineering',
+                  language === 'ar' ? 'نظام التذاكر الذكي' : language === 'fr' ? 'Billetterie Intelligente' : 'Smart Ticketing System',
                 ].map(service => (
                   <li key={service}>{service}</li>
                 ))}
