@@ -114,7 +114,13 @@ const loadSoundSettings = async (userId: string, token: string) => {
   useSoundStore.setState({ isLoading: false });
 })();
 
-supabase.auth.onAuthStateChange(async (event, session) => {
+// Store subscription for HMR cleanup
+const _authHolder: { sub: { unsubscribe: () => void } | null } = { sub: null };
+
+// Clean up previous subscription on HMR re-import
+_authHolder.sub?.unsubscribe();
+
+const { data: { subscription: _newAuthSub } } = supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session?.user) {
     _userId = session.user.id;
     _accessToken = session.access_token;
@@ -126,3 +132,4 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     soundGenerator.setEnabled(true);
   }
 });
+_authHolder.sub = _newAuthSub;

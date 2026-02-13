@@ -183,6 +183,9 @@ let _blinkTimer: ReturnType<typeof setTimeout> | null = null;
 let _surpriseTimer: ReturnType<typeof setTimeout> | null = null;
 let _pulseTimer: ReturnType<typeof setTimeout> | null = null;
 let _winkTimer: ReturnType<typeof setTimeout> | null = null;
+let _absorptionTimer: ReturnType<typeof setTimeout> | null = null;
+let _blinkResetTimer: ReturnType<typeof setTimeout> | null = null;
+let _empathyBlinkTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ── Store ────────────────────────────────────────────────────────────────────
 
@@ -210,14 +213,22 @@ export const useEmotionStore = create<EmotionStore>((set, get) => ({
   },
 
   triggerAbsorption: () => {
+    if (_absorptionTimer) clearTimeout(_absorptionTimer);
     set({ isAbsorbing: true });
     hapticFeedback('light');
-    setTimeout(() => set({ isAbsorbing: false }), 300);
+    _absorptionTimer = setTimeout(() => {
+      set({ isAbsorbing: false });
+      _absorptionTimer = null;
+    }, 300);
   },
 
   triggerBlink: () => {
+    if (_blinkResetTimer) clearTimeout(_blinkResetTimer);
     set({ isBlinking: true });
-    setTimeout(() => set({ isBlinking: false }), 180);
+    _blinkResetTimer = setTimeout(() => {
+      set({ isBlinking: false });
+      _blinkResetTimer = null;
+    }, 180);
   },
 
   setIsResponding: (responding) => set({ isResponding: responding }),
@@ -226,12 +237,17 @@ export const useEmotionStore = create<EmotionStore>((set, get) => ({
 
   triggerAttentionBlink: () => {
     if (_blinkTimer) clearTimeout(_blinkTimer);
+    if (_blinkResetTimer) clearTimeout(_blinkResetTimer);
     set({ isBlinking: true });
-    setTimeout(() => {
+    _blinkResetTimer = setTimeout(() => {
       set({ isBlinking: false });
+      _blinkResetTimer = null;
       _blinkTimer = setTimeout(() => {
         set({ isBlinking: true });
-        setTimeout(() => set({ isBlinking: false }), 100);
+        _blinkResetTimer = setTimeout(() => {
+          set({ isBlinking: false });
+          _blinkResetTimer = null;
+        }, 100);
       }, 150);
     }, 100);
   },
@@ -270,8 +286,12 @@ export const useEmotionStore = create<EmotionStore>((set, get) => ({
   },
 
   triggerEmpathyBlink: () => {
+    if (_empathyBlinkTimer) clearTimeout(_empathyBlinkTimer);
     get().triggerBlink();
-    setTimeout(() => get().triggerBlink(), 400);
+    _empathyBlinkTimer = setTimeout(() => {
+      get().triggerBlink();
+      _empathyBlinkTimer = null;
+    }, 400);
   },
 
   triggerEmpathyPulse: () => {
