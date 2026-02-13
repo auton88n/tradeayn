@@ -68,40 +68,38 @@ export const ResultsStep: React.FC<Props> = ({ results, passed, failed, warnings
 
       if (error) throw error;
 
-      // Create temp container for PDF rendering
-      const tempDiv = document.createElement('div');
-      tempDiv.id = 'compliance-pdf-temp';
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '0';
-      tempDiv.style.width = '210mm';
-      tempDiv.style.background = 'white';
+      // Create an isolated iframe to avoid affecting the main page
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.left = '-9999px';
+      iframe.style.top = '0';
+      iframe.style.width = '210mm';
+      iframe.style.height = '297mm';
+      iframe.style.border = 'none';
+      iframe.style.opacity = '0';
+      iframe.style.pointerEvents = 'none';
+      document.body.appendChild(iframe);
 
-      // Parse and inject HTML with styles
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(data.html, 'text/html');
-      const styleContent = doc.querySelector('style');
-      const pageElements = doc.querySelectorAll('.page');
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) throw new Error('Failed to create render context');
 
-      let htmlContent = '';
-      if (styleContent) htmlContent += styleContent.outerHTML;
-      if (pageElements.length > 0) {
-        pageElements.forEach(page => { htmlContent += page.outerHTML; });
-      } else {
-        htmlContent += doc.body.innerHTML;
-      }
+      iframeDoc.open();
+      iframeDoc.write(data.html);
+      iframeDoc.close();
 
-      tempDiv.innerHTML = htmlContent;
-      document.body.appendChild(tempDiv);
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const contentEl = iframeDoc.body;
 
       const { default: generatePDF, Margin } = await import('react-to-pdf');
-      await generatePDF(() => tempDiv, {
+      await generatePDF(() => contentEl, {
         filename: data.filename || `compliance-report-${Date.now().toString(36).toUpperCase()}.pdf`,
         page: { margin: Margin.MEDIUM, format: 'A4', orientation: 'portrait' },
         canvas: { mimeType: 'image/jpeg', qualityRatio: 0.98 },
       });
 
-      document.body.removeChild(tempDiv);
+      document.body.removeChild(iframe);
       toast.success('PDF report downloaded', { id: 'compliance-pdf' });
     } catch (err) {
       console.error('Compliance PDF export error:', err);
