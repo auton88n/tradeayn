@@ -1,23 +1,24 @@
 
 
-# Update Footer Services to Match Actual Offerings
+# Fix Three Shades of Black in Footer Area
 
 ## Problem
-The footer's "Services" column lists engineering sub-categories (Structural Analysis, Estimation, Code Compliance, Terrain Analysis, Event Planning) instead of the platform's actual 6 services.
+The footer uses `bg-card/50` (card color at 50% opacity), which creates a visible third shade of black between the page background and other sections. This breaks the seamless dark aesthetic.
 
 ## Fix
-Replace the services list in the footer with the real service names:
-
-1. Premium Content Creator Sites
-2. Custom AI Agents
-3. Process Automation
-4. AI Employees
-5. Civil Engineering
-6. Smart Ticketing System
+Change the footer background from `bg-card/50` to `bg-background` so it matches the page background exactly. The `border-t border-border` already provides a clean visual separator -- no extra background shade needed.
 
 ## Technical Details
 
-**File:** `src/components/LandingPage.tsx` (lines 845-853)
+**File:** `src/components/LandingPage.tsx` (line 803)
 
-Replace the current service name array with the correct 6 services, each with EN/AR/FR translations matching the service cards already defined earlier in the file.
+Change:
+```
+bg-card/50
+```
+To:
+```
+bg-background
+```
 
+This ensures the footer blends seamlessly with the rest of the page, maintaining only two visual layers: the background and the top border line.
