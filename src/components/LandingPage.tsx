@@ -800,9 +800,9 @@ const LandingPage = memo(() => {
       </section>
 
       {/* Professional Footer */}
-      <footer className="pt-12 pb-6">
+      <footer className="pt-8 pb-4">
         <div className="container max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-6">
             {/* Column 1: Brand */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
