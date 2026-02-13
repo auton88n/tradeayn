@@ -1,31 +1,42 @@
 
-# Fix AYN Branding in Compliance PDF
 
-## Problem
-The compliance PDF report uses a generic lightbulb SVG icon instead of the official AYN brain icon. The screenshot shows the wrong icon in the header. The engineering PDF already has the correct brain icon.
+# Fix Compliance PDF: Headlines Cut-off and Remove Circle
+
+## Problems
+1. **Headlines cut off on page 2**: The "DOORS & HALLWAYS" heading is clipped at the top of the second page because content flows as a single page div without proper page-break handling.
+2. **Red circle around percentage**: User wants the circle removed, just showing the percentage number with pass/fail styling.
 
 ## Solution
-Update `supabase/functions/generate-compliance-pdf/index.ts` to use the same brain SVG icon that the engineering PDF (`generate-engineering-pdf`) uses. This ensures consistent AYN branding across all exported reports.
 
-## Technical Details
+### File: `supabase/functions/generate-compliance-pdf/index.ts`
 
-**File:** `supabase/functions/generate-compliance-pdf/index.ts`
+**1. Remove the score circle element and its CSS**
+- Remove the `.score-circle` CSS class entirely
+- Replace the circle `<div>` with a simple styled percentage `<span>` (large, bold, colored red/green based on pass/fail)
+- Update `.summary-box` layout to remove the circle and just show the percentage inline
 
-1. **Replace the SVG icon** (lines 222-229): Swap the current lightbulb SVG with the official AYN brain SVG from the engineering PDF:
-   ```html
-   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-     <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
-     <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
-     <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
-     <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
-     <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
-     <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
-     <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
-     <path d="M6 18a4 4 0 0 1-1.967-.516"/>
-     <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
-   </svg>
-   ```
+**2. Fix page-break handling for category sections**
+- Add `page-break-inside: avoid` to `.category-section` (already present but not effective due to single `.page` wrapper)
+- Remove the single `.page` wrapper approach -- instead, let the content flow naturally with proper CSS print/page-break rules
+- Add `page-break-before: auto` and `page-break-after: auto` on category sections
+- Add `page-break-inside: avoid` on table rows and header groups to prevent mid-table splits
 
-2. **Redeploy** the `generate-compliance-pdf` edge function.
+### Technical Details
 
-This is a one-file change that aligns the compliance PDF branding with the rest of AYN's professional reports.
+**Summary section change:**
+```html
+<!-- Before: circle div -->
+<div class="score-circle">50%</div>
+
+<!-- After: simple text -->
+<span class="score-text">50%</span>
+```
+
+**CSS changes:**
+- Remove `.score-circle` class
+- Add `.score-text` with large font, bold, colored based on status
+- Remove single `.page` wrapper min-height constraint
+- Add `page-break-inside: avoid` to `.category-header` combined with its table
+
+**Redeploy** the `generate-compliance-pdf` edge function after changes.
+
