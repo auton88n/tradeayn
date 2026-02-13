@@ -1,151 +1,144 @@
 
 
-# Part A + B: Event-Driven Agent Reactions + Lean Prompt Redesign
+# Memory Leak Fix: Timer and Listener Cleanup
 
-## Overview
+## Problem
 
-Two parallel fixes that solve two different problems:
-- **Part A**: Agents react immediately when you message (event-driven triggering)
-- **Part B**: Agents sound human (lean prompts, 1-3 sentences, no bloat)
+Several Zustand stores and components have timers and event listeners that are never cleaned up, causing memory leaks in a production app with active users.
 
 ---
 
-## Part A: Event-Driven Agent Triggering
+## Fixes by File
 
-### What changes
+### 1. `src/stores/emotionStore.ts` (5 untracked timers)
 
-After AYN generates its reply (line 380 in the webhook), we add an **agent reaction layer** that:
+**Currently leaking:**
+- `triggerAbsorption`: `setTimeout` on line 215 -- not tracked
+- `triggerBlink`: `setTimeout` on line 220 -- not tracked
+- `triggerAttentionBlink`: outer `setTimeout` on line 230 and inner `setTimeout` on line 234 -- not tracked
+- `triggerEmpathyBlink`: `setTimeout` on line 274 -- not tracked
 
-1. Selects 2-4 relevant agents based on message keywords
-2. Fires them in parallel with **extremely lean** LLM calls
-3. Appends their 1-sentence reactions to the Telegram response
+**Fix:** Add 3 new module-level timer variables (`_absorptionTimer`, `_blinkResetTimer`, `_empathyBlinkTimer`) and clear-before-set in each function. The existing `_blinkTimer`, `_surpriseTimer`, `_pulseTimer`, `_winkTimer` are already properly managed.
 
-### New file: `supabase/functions/_shared/agentOrchestrator.ts`
+### 2. `src/stores/soundStore.ts` (1 leaked auth listener)
 
-This module contains three functions:
+**Currently leaking:**
+- Line 117: `supabase.auth.onAuthStateChange(...)` -- subscription is never stored or unsubscribed
 
-**`selectRelevantAgents(message)`** -- keyword mapping, returns max 4 agent IDs:
-- leads/sales/pipeline/outreach -- sales, investigator, follow_up
-- security/threats/attacks/blocked -- security_guard
-- strategy/growth/direction -- advisor, innovation
-- team/performance/employees -- hr_manager, chief_of_staff
-- legal/compliance/GDPR -- lawyer
-- health/uptime/errors/bugs -- qa_watchdog
-- marketing/content/brand -- marketing
-- customers/churn/retention -- customer_success
-- casual greetings (hi/hey/morning) -- no agents (AYN solo)
+**Fix:** Store the subscription return value in a module-level variable. Since this store lives for the app lifetime, this is a minor leak, but for correctness we should store it and expose a cleanup path. The practical fix: assign the return to a module variable so it can be cleaned up if needed, and to prevent duplicate subscriptions on HMR.
 
-**`invokeAgentsParallel(agents, founderMessage, aynTake, apiKey)`** -- for each agent, makes ONE lean LLM call with this exact system prompt structure:
+### 3. `src/stores/debugStore.ts` (2 leaked listeners)
 
-```text
-You are {AgentName}.
+**Currently leaking:**
+- Line 129: `window.addEventListener('keydown', ...)` -- never removed
+- Line 148-155 (connection change listener) -- never removed
 
-React in 1-3 sentences max.
-No formatting. No headers. No bullet points.
-Speak conversationally.
-You may disagree.
-You may ask one short question.
-Never mention being an AI.
-```
+**Fix:** Store handler references so they could be removed. Since these are module-level singletons that live for the app lifetime, wrap them in a guard to prevent duplicate registration on HMR (add a `_listenersAttached` flag).
 
-User message:
-```text
-Founder said: "{message}"
-AYN said: "{aynTake}"
+### 4. `src/pages/ResetPassword.tsx` (1 minor leak)
 
-Your reaction?
-```
+**Currently leaking:**
+- Line 232-234: `setTimeout(() => navigate('/'), 2000)` after password reset -- not cleaned up on unmount
 
-That's the entire payload per agent. No services list, no economic framework, no multi-section personality.
-
-**`formatAgentReactions(reactions)`** -- formats into clean Telegram output:
-```
-{AYN's response}
-
-Sales: "one-liner"
-Security: "one-liner"
-```
-
-### Changes to `supabase/functions/ayn-telegram-webhook/index.ts`
-
-After line 494 (where `sendTelegramMessage` is called with `cleanReply`), replace with:
-
-1. Import `agentOrchestrator`
-2. Call `selectRelevantAgents(userText)`
-3. If agents selected, call `invokeAgentsParallel(...)` with the lean prompts
-4. Append reactions to `cleanReply`
-5. Send combined message
-
-Cron jobs keep running for background maintenance but stop sending Telegram notifications for routine status updates.
+**Fix:** Track this timer in a ref and clear it in the useEffect cleanup. Minor issue since it only fires after successful password change, but good practice.
 
 ---
 
-## Part B: Lean Prompt Redesign
+## Technical Details
 
-### Changes to `supabase/functions/_shared/aynBrand.ts`
+### emotionStore.ts changes
 
-**Rewrite all 13 agent personalities** from verbose multi-paragraph descriptions to tight 2-3 sentence directives.
-
-Example rewrites:
-
-| Agent | Before (verbose) | After (lean) |
-|-------|------------------|--------------|
-| Sales | "You are AYN's Sales Hunter -- sharp, opportunistic..." (5 lines + 6 subsections) | "You're Sales. You find deals and close them. Short, direct, opinionated. If a lead looks weak, say so. Never more than 3 sentences." |
-| Security | "You are AYN's Security Guard -- vigilant and direct..." (5 lines + 6 subsections) | "You're Security. If everything's fine, say 'all clear.' If something's wrong, be blunt and specific. Push back on ideas that open attack surfaces. 1-3 sentences." |
-| Advisor | "You are AYN's Strategic Advisor -- analytical, bold..." (5 lines + 6 subsections) | "You're the Advisor. Big-picture thinking, honest takes. Say 'I think we should...' not 'analysis suggests.' Disagree when you disagree. 1-3 sentences." |
-
-All 13 agents get the same treatment -- personality distilled to essence.
-
-**Simplify `getEmployeePersonality()` function** from:
+Add at line 180 (alongside existing timer vars):
 ```
-personality + Core motivation: + Uncertainty handling: + Disagreement protocol: + Economic awareness: + Company state reactivity: + identity protection + full services list + brand voice rules
-```
-To:
-```
-personality (already contains everything needed) + one-line identity protection
+let _absorptionTimer: ReturnType<typeof setTimeout> | null = null;
+let _blinkResetTimer: ReturnType<typeof setTimeout> | null = null;
+let _empathyBlinkTimer: ReturnType<typeof setTimeout> | null = null;
 ```
 
-Remove: services list dump, brand voice rules list, labeled subsections. These add ~500 tokens of noise per agent call.
+Update `triggerAbsorption`:
+```
+triggerAbsorption: () => {
+  if (_absorptionTimer) clearTimeout(_absorptionTimer);
+  set({ isAbsorbing: true });
+  hapticFeedback('light');
+  _absorptionTimer = setTimeout(() => {
+    set({ isAbsorbing: false });
+    _absorptionTimer = null;
+  }, 300);
+},
+```
 
-**Add new export: `getAgentReactionPrompt(agentId)`** -- returns the ultra-lean prompt for the orchestrator (the 6-line version shown above). This is separate from the full personality used in cron/deliberation contexts.
+Update `triggerBlink`:
+```
+triggerBlink: () => {
+  if (_blinkResetTimer) clearTimeout(_blinkResetTimer);
+  set({ isBlinking: true });
+  _blinkResetTimer = setTimeout(() => {
+    set({ isBlinking: false });
+    _blinkResetTimer = null;
+  }, 180);
+},
+```
 
-### Changes to `buildAynSystemPrompt()` in webhook
+Update `triggerAttentionBlink` to track all 3 timeouts using `_blinkTimer` and `_blinkResetTimer`.
 
-Trim the system prompt. Specifically:
-- Keep: execution rules, identity, actions list, greeting behavior, conversation continuity
-- Add: "Your team will react after you. Keep your response to 2-4 sentences unless the topic requires depth."
-- Remove: redundant rules that repeat personality content
+Update `triggerEmpathyBlink` to track its delayed call using `_empathyBlinkTimer`.
+
+### soundStore.ts changes
+
+Store the auth subscription:
+```
+let _authSubscription: { unsubscribe: () => void } | null = null;
+
+// Before registering new listener, clean up old one (HMR safety)
+_authSubscription?.unsubscribe();
+
+const { data: { subscription } } = supabase.auth.onAuthStateChange(...);
+_authSubscription = subscription;
+```
+
+### debugStore.ts changes
+
+Add HMR guard for event listeners:
+```
+let _listenersAttached = false;
+
+if (!import.meta.env.PROD && !_listenersAttached) {
+  _listenersAttached = true;
+  // ... existing keydown listener
+}
+```
+
+Same pattern for the connection change listener.
+
+### ResetPassword.tsx changes
+
+Add a ref for the navigate timer and clear it on unmount:
+```
+const navigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+// In handleResetPassword:
+navigateTimerRef.current = setTimeout(() => navigate('/'), 2000);
+
+// In cleanup:
+return () => {
+  if (navigateTimerRef.current) clearTimeout(navigateTimerRef.current);
+};
+```
 
 ---
 
 ## Files Changed
 
-| File | Type | What |
-|------|------|------|
-| `supabase/functions/_shared/agentOrchestrator.ts` | NEW | Agent selection, parallel lean LLM calls, formatting |
-| `supabase/functions/_shared/aynBrand.ts` | EDIT | Rewrite 13 personalities to lean versions, simplify `getEmployeePersonality()`, add `getAgentReactionPrompt()` |
-| `supabase/functions/ayn-telegram-webhook/index.ts` | EDIT | Add orchestrator call after AYN reply, trim system prompt |
+| File | Changes |
+|------|---------|
+| `src/stores/emotionStore.ts` | Track 5 untracked timers with clear-before-set pattern |
+| `src/stores/soundStore.ts` | Store auth subscription, add HMR cleanup |
+| `src/stores/debugStore.ts` | Add HMR guard flag for event listeners |
+| `src/pages/ResetPassword.tsx` | Track navigate timeout in ref, clear on unmount |
 
 ## What Does NOT Change
-
-- No new tables
-- No new cron jobs
-- No new scoring systems
-- Deliberation engine untouched (still works for explicit "ask the team")
-- Decay/political intelligence untouched
-- Admin dashboard unchanged
-- Existing cron jobs keep running for background state updates
-
-## Deployment
-
-Redeploy `ayn-telegram-webhook` after changes.
-
-## End Result
-
-When you message on Telegram:
-1. AYN responds in 2-4 sentences
-2. 2-4 relevant agents chime in with 1 sentence each
-3. Total response feels like a team thread, not a system log
-4. Arrives in seconds (parallel calls), not hours (cron)
-5. Agents can disagree, ask questions, show personality
+- No new dependencies
+- No behavioral changes -- all timers fire the same way, they're just properly tracked now
+- No API changes to any store
 
