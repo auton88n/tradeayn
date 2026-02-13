@@ -6,11 +6,11 @@ export const AYNLoader = () => (
     <div className="flex flex-col items-center gap-6">
       <div className="relative w-24 h-24 animate-eye-breathe">
         <div className="absolute inset-0 rounded-full bg-primary/10 blur-xl animate-pulse" />
-        <div className="relative w-full h-full rounded-full bg-neutral-100 dark:bg-neutral-900 shadow-xl">
-          <div className="absolute inset-3 rounded-full bg-neutral-200/80 dark:bg-neutral-900/80 shadow-inner" />
-          <div className="absolute inset-[15%] rounded-full bg-neutral-300/50 dark:bg-neutral-700/50 blur-sm animate-pulse" />
-          <div className="absolute inset-[30%] rounded-full bg-neutral-900 dark:bg-black flex items-center justify-center">
-            <Brain className="w-1/2 h-1/2 text-neutral-100 dark:text-neutral-400" />
+        <div className="relative w-full h-full rounded-full bg-card shadow-xl">
+          <div className="absolute inset-3 rounded-full bg-muted/80 shadow-inner" />
+          <div className="absolute inset-[15%] rounded-full bg-muted blur-sm animate-pulse" />
+          <div className="absolute inset-[30%] rounded-full bg-foreground flex items-center justify-center">
+            <Brain className="w-1/2 h-1/2 text-background" />
           </div>
         </div>
       </div>
@@ -24,11 +24,11 @@ export const PageLoader = () => (
     <div className="flex flex-col items-center gap-4">
       <div className="relative w-16 h-16 animate-eye-breathe">
         <div className="absolute inset-0 rounded-full bg-primary/10 blur-lg animate-pulse" />
-        <div className="relative w-full h-full rounded-full bg-neutral-100 dark:bg-neutral-900 shadow-lg">
-          <div className="absolute inset-2 rounded-full bg-neutral-200/80 dark:bg-neutral-900/80 shadow-inner" />
-          <div className="absolute inset-[18%] rounded-full bg-neutral-300/50 dark:bg-neutral-700/50 blur-sm animate-pulse" />
-          <div className="absolute inset-[32%] rounded-full bg-neutral-900 dark:bg-black flex items-center justify-center">
-            <Brain className="w-1/2 h-1/2 text-neutral-100 dark:text-neutral-400" />
+        <div className="relative w-full h-full rounded-full bg-card shadow-lg">
+          <div className="absolute inset-2 rounded-full bg-muted/80 shadow-inner" />
+          <div className="absolute inset-[18%] rounded-full bg-muted blur-sm animate-pulse" />
+          <div className="absolute inset-[32%] rounded-full bg-foreground flex items-center justify-center">
+            <Brain className="w-1/2 h-1/2 text-background" />
           </div>
         </div>
       </div>
@@ -42,11 +42,11 @@ export const DashboardLoader = () => (
     <div className="flex flex-col items-center gap-6">
       <div className="relative w-20 h-20 animate-eye-breathe">
         <div className="absolute inset-0 rounded-full bg-primary/15 blur-xl animate-pulse" />
-        <div className="relative w-full h-full rounded-full bg-neutral-100 dark:bg-neutral-900 shadow-xl">
-          <div className="absolute inset-3 rounded-full bg-neutral-200/80 dark:bg-neutral-900/80 shadow-inner" />
-          <div className="absolute inset-[18%] rounded-full bg-neutral-300/50 dark:bg-neutral-700/50 blur-sm animate-pulse" />
-          <div className="absolute inset-[32%] rounded-full bg-neutral-900 dark:bg-black flex items-center justify-center">
-            <Brain className="w-1/2 h-1/2 text-neutral-100 dark:text-neutral-400" />
+        <div className="relative w-full h-full rounded-full bg-card shadow-xl">
+          <div className="absolute inset-3 rounded-full bg-muted/80 shadow-inner" />
+          <div className="absolute inset-[18%] rounded-full bg-muted blur-sm animate-pulse" />
+          <div className="absolute inset-[32%] rounded-full bg-foreground flex items-center justify-center">
+            <Brain className="w-1/2 h-1/2 text-background" />
           </div>
         </div>
       </div>
@@ -60,11 +60,11 @@ export const AdminLoader = () => (
     <div className="flex flex-col items-center gap-6">
       <div className="relative w-20 h-20 animate-eye-breathe">
         <div className="absolute inset-0 rounded-full bg-purple-500/20 blur-xl animate-pulse" />
-        <div className="relative w-full h-full rounded-full bg-neutral-100 dark:bg-neutral-900 shadow-xl">
-          <div className="absolute inset-3 rounded-full bg-neutral-200/80 dark:bg-neutral-900/80 shadow-inner" />
-          <div className="absolute inset-[18%] rounded-full bg-neutral-300/50 dark:bg-neutral-700/50 blur-sm animate-pulse" />
-          <div className="absolute inset-[32%] rounded-full bg-neutral-900 dark:bg-black flex items-center justify-center">
-            <Shield className="w-1/2 h-1/2 text-neutral-100 dark:text-neutral-400" />
+        <div className="relative w-full h-full rounded-full bg-card shadow-xl">
+          <div className="absolute inset-3 rounded-full bg-muted/80 shadow-inner" />
+          <div className="absolute inset-[18%] rounded-full bg-muted blur-sm animate-pulse" />
+          <div className="absolute inset-[32%] rounded-full bg-foreground flex items-center justify-center">
+            <Shield className="w-1/2 h-1/2 text-background" />
           </div>
         </div>
       </div>
