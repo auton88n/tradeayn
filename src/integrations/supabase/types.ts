@@ -1810,6 +1810,36 @@ export type Database = {
         }
         Relationships: []
       }
+      founder_directives: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          directive: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          directive: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          directive?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+        }
+        Relationships: []
+      }
       grading_projects: {
         Row: {
           created_at: string

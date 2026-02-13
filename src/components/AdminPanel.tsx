@@ -30,7 +30,7 @@ import { AYNActivityLog } from '@/components/admin/AYNActivityLog';
 import { TermsConsentViewer } from '@/components/admin/TermsConsentViewer';
 import { AYNMindDashboard } from '@/components/admin/AYNMindDashboard';
 import { WorkforceDashboard } from '@/components/admin/workforce/WorkforceDashboard';
-import { WarRoomPanel } from '@/components/admin/workforce/WarRoomPanel';
+import { CommandCenterPanel } from '@/components/admin/workforce/CommandCenterPanel';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
 
@@ -454,7 +454,7 @@ export const AdminPanel = ({
                     {activeTab === 'ayn-logs' && <AYNActivityLog />}
                     {activeTab === 'ayn-mind' && <AYNMindDashboard />}
                     {activeTab === 'ai-workforce' && <WorkforceDashboard />}
-                    {activeTab === 'war-room' && <WarRoomPanel />}
+                    {activeTab === 'war-room' && <CommandCenterPanel />}
                   </ErrorBoundary>
                 </motion.div>
               </AnimatePresence>
