@@ -497,7 +497,7 @@ const EmotionalEyeComponent = ({
             <motion.circle 
               cx="50" 
               cy="50" 
-              fill="#000000"
+              className="fill-foreground"
               animate={{
                 r: performanceConfig.shouldReduceAnimations 
                   ? irisRadius 
