@@ -46,8 +46,8 @@ export const SuggestionBubble = ({
             // Elegant borders
             "border border-border/60",
             // Premium layered shadows
-            "shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.02)]",
-            "hover:shadow-[0_8px_30px_rgba(0,0,0,0.08),0_4px_8px_rgba(0,0,0,0.04)]",
+            "shadow-sm",
+            "hover:shadow-lg",
             // Rounded and padded
             "px-4 py-3 rounded-2xl",
             // Smooth transitions

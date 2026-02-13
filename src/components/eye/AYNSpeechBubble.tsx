@@ -91,8 +91,8 @@ export const AYNSpeechBubble = ({
             "bg-white/98 dark:bg-gray-900/95",
             "backdrop-blur-xl",
             // Elegant soft shadows with hover effect
-            "shadow-[0_4px_24px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)]",
-            "hover:shadow-[0_6px_28px_rgba(0,0,0,0.08),0_3px_10px_rgba(0,0,0,0.04)]",
+            "shadow-md",
+            "hover:shadow-lg",
             "transition-shadow",
             // Subtle border
             "border border-gray-200/60 dark:border-gray-800/50",
