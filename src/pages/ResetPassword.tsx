@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ const ResetPassword = () => {
   const [isValidating, setIsValidating] = useState(true);
   const [linkExpired, setLinkExpired] = useState(false);
   const [slowValidation, setSlowValidation] = useState(false);
+  const navigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -186,6 +187,7 @@ const ResetPassword = () => {
     return () => {
       isMounted = false;
       if (slowTimer) clearTimeout(slowTimer);
+      if (navigateTimerRef.current) clearTimeout(navigateTimerRef.current);
       // Clear recovery flag on unmount if validation failed
       if (linkExpired) {
         localStorage.removeItem('password_recovery_in_progress');
@@ -229,8 +231,9 @@ const ResetPassword = () => {
 
       // Clear recovery flag and redirect to home after 2 seconds
       localStorage.removeItem('password_recovery_in_progress');
-      setTimeout(() => {
+      navigateTimerRef.current = setTimeout(() => {
         navigate('/');
+        navigateTimerRef.current = null;
       }, 2000);
       
     } catch (error) {

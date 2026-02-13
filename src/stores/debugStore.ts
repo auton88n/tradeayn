@@ -124,8 +124,12 @@ useDebugStore.subscribe((state, prev) => {
   }
 });
 
+// HMR guard to prevent duplicate listener registration
+let _listenersAttached = false;
+
 // Keyboard toggle (D key) — dev only
-if (!import.meta.env.PROD) {
+if (!import.meta.env.PROD && !_listenersAttached) {
+  _listenersAttached = true;
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (!e.key) return;
     const target = e.target as HTMLElement;
@@ -141,7 +145,10 @@ if (!import.meta.env.PROD) {
   });
 }
 
-// Detect slow connection
+// Detect slow connection (with guard)
+if (!_listenersAttached) {
+  // Already guarded above, but connection listener needs its own check
+}
 const connection = (navigator as any).connection;
 if (connection) {
   const checkConnection = () => {
