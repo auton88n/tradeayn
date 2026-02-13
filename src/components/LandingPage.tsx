@@ -843,14 +843,18 @@ const LandingPage = memo(() => {
               </h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 {[
-                  language === 'ar' ? 'مواقع صناع المحتوى المميزة' : language === 'fr' ? 'Sites Créateurs Premium' : 'Premium Content Creator Sites',
-                  language === 'ar' ? 'وكلاء ذكاء اصطناعي مخصصون' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents',
-                  language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation',
-                  language === 'ar' ? 'موظفون بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees',
-                  language === 'ar' ? 'الهندسة المدنية' : language === 'fr' ? 'Génie Civil' : 'Civil Engineering',
-                  language === 'ar' ? 'نظام التذاكر الذكي' : language === 'fr' ? 'Billetterie Intelligente' : 'Smart Ticketing System',
+                  { label: language === 'ar' ? 'مواقع صناع المحتوى المميزة' : language === 'fr' ? 'Sites Créateurs Premium' : 'Premium Content Creator Sites', route: '/services/content-creator-sites' },
+                  { label: language === 'ar' ? 'وكلاء ذكاء اصطناعي مخصصون' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents', route: '/services/ai-agents' },
+                  { label: language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation', route: '/services/automation' },
+                  { label: language === 'ar' ? 'موظفون بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees', route: '/services/ai-employee' },
+                  { label: language === 'ar' ? 'الهندسة المدنية' : language === 'fr' ? 'Génie Civil' : 'Civil Engineering', route: '/services/civil-engineering' },
+                  { label: language === 'ar' ? 'نظام التذاكر الذكي' : language === 'fr' ? 'Billetterie Intelligente' : 'Smart Ticketing System', route: '/services/ticketing' },
                 ].map(service => (
-                  <li key={service}>{service}</li>
+                  <li key={service.route}>
+                    <Link to={service.route} className="hover:text-foreground transition-colors">
+                      {service.label}
+                    </Link>
+                  </li>
                 ))}
               </ul>
             </div>
