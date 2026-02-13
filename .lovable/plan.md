@@ -1,20 +1,25 @@
 
-
-# Compact the Footer
+# Link Footer Services to Their Pages
 
 ## Problem
-The footer takes up too much vertical space due to large padding and gaps between elements.
+The six services listed in the footer's "Services" column are plain text with no navigation links.
 
 ## Fix
 
-**File:** `src/components/LandingPage.tsx`
+**File:** `src/components/LandingPage.tsx` (lines 844-855)
 
-Reduce spacing throughout the footer:
+Convert each service from a plain string to an object with label + route, then render as `<Link>` elements using react-router-dom.
 
-| Line | Current | New |
-|------|---------|-----|
-| 803 | `pt-12 pb-6` | `pt-8 pb-4` |
-| 805 | `gap-10 mb-10` | `gap-8 mb-6` |
+The mapping will be:
+- Premium Content Creator Sites -> `/services/content-creator-sites`
+- Custom AI Agents -> `/services/ai-agents`
+- Process Automation -> `/services/automation`
+- AI Employees -> `/services/ai-employee`
+- Civil Engineering -> `/services/civil-engineering`
+- Smart Ticketing System -> `/services/ticketing`
 
-This tightens the footer vertically so it feels compact and proportional to its content.
+Each `<li>` will use a `<Link to={route}>` instead of plain text, with `hover:text-foreground transition-colors` styling to match the other footer links.
 
+### Technical Details
+
+Replace the current string array (lines 845-854) with an array of `{ label, route }` objects and map them to `<Link>` components. The routes are already defined in `src/constants/routes.ts` under `ROUTES.SERVICES`.
