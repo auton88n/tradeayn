@@ -161,26 +161,54 @@ export async function logReflection(supabase: any, reflection: Reflection): Prom
   });
 }
 
+// ─── Founder Directives ───
+
+export interface FounderDirective {
+  id: string;
+  directive: string;
+  category: string;
+  priority: number;
+  is_active: boolean;
+  created_at: string;
+  expires_at: string | null;
+}
+
+export async function loadFounderDirectives(supabase: any): Promise<FounderDirective[]> {
+  const { data } = await supabase
+    .from('founder_directives')
+    .select('*')
+    .eq('is_active', true)
+    .order('priority', { ascending: true });
+  return data || [];
+}
+
 // ─── Context Builders ───
 
 /**
  * Build a compact context string for injecting into employee system prompts.
- * Includes company state, objectives, economics summary, and founder preferences.
+ * Now includes founder directives and recent discussion memory.
  */
 export async function buildEmployeeContext(supabase: any, employeeId: string): Promise<string> {
   // Lazy import to avoid circular dependency
   const { loadCurrentDoctrine } = await import("./politicalIntelligence.ts");
 
-  const [state, companyState, objectives, economics, founderModel, doctrine] = await Promise.all([
+  const [state, companyState, objectives, economics, founderModel, doctrine, directives] = await Promise.all([
     loadEmployeeState(supabase, employeeId),
     loadCompanyState(supabase),
     loadActiveObjectives(supabase),
     loadServiceEconomics(supabase),
     loadFounderModel(supabase),
     loadCurrentDoctrine(supabase),
+    loadFounderDirectives(supabase),
   ]);
 
   const parts: string[] = [];
+
+  // ── FOUNDER DIRECTIVES (highest priority — shown first) ──
+  if (directives.length > 0) {
+    parts.push(`FOUNDER DIRECTIVES (YOU MUST FOLLOW — THESE OVERRIDE ALL OTHER CONSIDERATIONS):
+${directives.map(d => `- [P${d.priority}/${d.category}] ${d.directive}`).join('\n')}`);
+  }
 
   if (state) {
     parts.push(`Your current state:
