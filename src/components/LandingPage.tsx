@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useMemo, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, ChevronDown, Calculator, ShieldCheck, Mountain, Ticket } from 'lucide-react';
+import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, ChevronDown, Calculator, ShieldCheck, Mountain, Ticket, Mail, MapPin, Navigation2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -798,15 +799,91 @@ const LandingPage = memo(() => {
         </div>
       </section>
 
-      {/* Minimal Footer */}
-      <footer className="py-6">
+      {/* Professional Footer */}
+      <footer className="border-t border-border bg-card/50 pt-12 pb-6">
         <div className="container max-w-6xl mx-auto px-6">
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
-              <Brain className="w-5 h-5 text-background" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
+            {/* Column 1: Brand */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-background" />
+                </div>
+                <span className="text-2xl font-bold">AYN</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {language === 'ar' ? 'هندسة مدعومة بالذكاء الاصطناعي' : language === 'fr' ? 'Ingénierie propulsée par l\'IA' : 'AI-Powered Engineering'}
+              </p>
             </div>
-            <span className="text-2xl font-bold">AYN</span>
+
+            {/* Column 2: Explore */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm uppercase tracking-wider text-foreground">
+                {language === 'ar' ? 'استكشف' : language === 'fr' ? 'Explorer' : 'Explore'}
+              </h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {[
+                  { label: language === 'ar' ? 'الرئيسية' : language === 'fr' ? 'Accueil' : 'Home', id: 'hero' },
+                  { label: language === 'ar' ? 'حول' : language === 'fr' ? 'À propos' : 'About', id: 'about' },
+                  { label: language === 'ar' ? 'الخدمات' : language === 'fr' ? 'Services' : 'Services', id: 'services' },
+                  { label: language === 'ar' ? 'تواصل' : language === 'fr' ? 'Contact' : 'Contact', id: 'contact' },
+                ].map(link => (
+                  <li key={link.id}>
+                    <button onClick={() => document.getElementById(link.id)?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-foreground transition-colors">
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 3: Services */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm uppercase tracking-wider text-foreground">
+                {language === 'ar' ? 'الخدمات' : language === 'fr' ? 'Services' : 'Services'}
+              </h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {[
+                  language === 'ar' ? 'التحليل الهيكلي' : language === 'fr' ? 'Analyse structurelle' : 'Structural Analysis',
+                  language === 'ar' ? 'التقدير' : language === 'fr' ? 'Estimation' : 'Estimation',
+                  language === 'ar' ? 'الامتثال للكود' : language === 'fr' ? 'Conformité au code' : 'Code Compliance',
+                  language === 'ar' ? 'تحليل التضاريس' : language === 'fr' ? 'Analyse de terrain' : 'Terrain Analysis',
+                  language === 'ar' ? 'تخطيط الفعاليات' : language === 'fr' ? 'Planification d\'événements' : 'Event Planning',
+                ].map(service => (
+                  <li key={service}>{service}</li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 4: Contact */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm uppercase tracking-wider text-foreground">
+                {language === 'ar' ? 'تواصل' : language === 'fr' ? 'Contact' : 'Contact'}
+              </h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  <a href="mailto:info@ayn.ca" className="hover:text-foreground transition-colors">info@ayn.ca</a>
+                </li>
+                <li className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  <span>Nova Scotia, Canada</span>
+                </li>
+                <li>
+                  <a href="https://maps.google.com/?q=Nova+Scotia+Canada" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-foreground transition-colors">
+                    <Navigation2 className="w-4 h-4" />
+                    {language === 'ar' ? 'احصل على الاتجاهات' : language === 'fr' ? 'Obtenir l\'itinéraire' : 'Get Directions'}
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
+
+          {/* Bottom bar */}
+          <Separator className="mb-6" />
+          <p className="text-center text-xs text-muted-foreground">
+            © 2026 AYN Inc. {language === 'ar' ? 'جميع الحقوق محفوظة.' : language === 'fr' ? 'Tous droits réservés.' : 'All rights reserved.'}
+          </p>
         </div>
       </footer>
 
