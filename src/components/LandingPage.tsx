@@ -716,7 +716,7 @@ const LandingPage = memo(() => {
       </section>
 
       {/* Premium Contact Section */}
-      <section id="contact" className="py-16 md:py-32 px-4 md:px-6">
+      <section id="contact" className="py-16 md:py-32 px-4 md:px-6 bg-background">
         <div className="container mx-auto max-w-3xl">
           <ScrollReveal>
             <div className="text-center mb-10 md:mb-16">
@@ -800,7 +800,7 @@ const LandingPage = memo(() => {
       </section>
 
       {/* Professional Footer */}
-      <footer className="border-t border-border bg-background pt-12 pb-6">
+      <footer className="border-t border-border pt-12 pb-6">
         <div className="container max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
             {/* Column 1: Brand */}
