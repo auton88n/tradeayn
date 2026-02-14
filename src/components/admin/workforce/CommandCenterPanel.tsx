@@ -20,6 +20,7 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SUPABASE_URL } from '@/config';
@@ -33,6 +34,7 @@ interface ChatMessage {
   agent_emoji?: string;
   tool_results?: ToolResult[];
   timestamp: Date;
+  fromHistory?: boolean;
 }
 
 interface ToolResult {
@@ -43,10 +45,10 @@ interface ToolResult {
   command?: string;
   result?: any;
   success?: boolean;
+  message?: string;
   directive?: any;
   responses?: { name: string; reply: string; emoji: string; employeeId: string }[];
   discussion_id?: string;
-  message?: string;
   error?: string;
 }
 
@@ -88,6 +90,51 @@ const CATEGORY_COLORS: Record<string, string> = {
   general: 'bg-muted text-muted-foreground border-border',
 };
 
+const AGENT_EMPLOYEE_MAP: Record<string, string> = {
+  sales: 'sales',
+  investigator: 'investigator',
+  marketing: 'marketing',
+  security: 'security_guard',
+  lawyer: 'lawyer',
+  advisor: 'advisor',
+  qa: 'qa_watchdog',
+  followup: 'follow_up',
+  customer: 'customer_success',
+};
+
+// ─── Helper: Build enriched content string for history ───
+function buildEnrichedContent(msg: ChatMessage): string {
+  let content = msg.content || '';
+  if (msg.tool_results && msg.tool_results.length > 0) {
+    for (const tr of msg.tool_results) {
+      if (tr.type === 'agent_result' && tr.message) {
+        content += ` [${tr.agent_name || tr.agent || 'Agent'}: ${tr.message}]`;
+      } else if (tr.type === 'discussion' && tr.responses) {
+        const summary = tr.responses.map(r => `${r.name}: ${r.reply}`).join('; ');
+        content += ` [Team discussion: ${summary}]`;
+      } else if (tr.type === 'directive_saved' && tr.directive) {
+        content += ` [Directive saved: ${tr.directive.directive}]`;
+      }
+    }
+  }
+  return content;
+}
+
+// ─── Helper: Save message to DB ───
+async function persistMessage(adminId: string, msg: ChatMessage) {
+  try {
+    await supabase.from('admin_ai_conversations').insert({
+      admin_id: adminId,
+      role: msg.role,
+      message: msg.content || '',
+      context: msg.tool_results ? { tool_results: msg.tool_results } as any : null,
+      actions_taken: msg.agent ? { agent: msg.agent } as any : null,
+    });
+  } catch {
+    // Silent fail — don't block UI
+  }
+}
+
 export function CommandCenterPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -95,7 +142,39 @@ export function CommandCenterPanel() {
   const [directives, setDirectives] = useState<Directive[]>([]);
   const [showDirectives, setShowDirectives] = useState(false);
   const [newDirective, setNewDirective] = useState('');
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // ─── Load conversation history from DB ───
+  const loadHistory = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    try {
+      const { data } = await supabase
+        .from('admin_ai_conversations')
+        .select('*')
+        .eq('admin_id', session.user.id)
+        .order('created_at', { ascending: true })
+        .limit(50);
+
+      if (data && data.length > 0) {
+        const loaded: ChatMessage[] = data.map((row: any) => ({
+          id: row.id,
+          role: row.role as 'user' | 'assistant',
+          content: row.message || '',
+          tool_results: (row.context as any)?.tool_results || undefined,
+          agent: (row.actions_taken as any)?.agent || undefined,
+          timestamp: new Date(row.created_at),
+          fromHistory: true,
+        }));
+        setMessages(loaded);
+      }
+    } catch {
+      // Silent
+    }
+    setHistoryLoaded(true);
+  }, []);
 
   // ─── Load directives ───
   const loadDirectives = useCallback(async () => {
@@ -112,7 +191,10 @@ export function CommandCenterPanel() {
     } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => { loadDirectives(); }, [loadDirectives]);
+  useEffect(() => {
+    loadHistory();
+    loadDirectives();
+  }, [loadHistory, loadDirectives]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -139,10 +221,14 @@ export function CommandCenterPanel() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error('Not authenticated'); return; }
 
-      // Build history for context (last 10 messages)
-      const history = messages.slice(-10).map(m => ({
+      // Persist user message
+      persistMessage(session.user.id, userMsg);
+
+      // Build enriched history for context (last 20 messages)
+      const allMessages = [...messages, userMsg];
+      const history = allMessages.slice(-20).map(m => ({
         role: m.role,
-        content: m.content,
+        content: buildEnrichedContent(m),
       }));
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-command-center`, {
@@ -166,6 +252,9 @@ export function CommandCenterPanel() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, assistantMsg]);
+
+      // Persist assistant message
+      persistMessage(session.user.id, assistantMsg);
 
       // Refresh directives if one was saved
       if (data.tool_results?.some((r: any) => r.type === 'directive_saved')) {
@@ -209,9 +298,24 @@ export function CommandCenterPanel() {
     } catch { toast.error('Failed'); }
   };
 
+  const handleClearChat = async () => {
+    setMessages([]);
+    // Optionally clear DB too
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase.from('admin_ai_conversations').delete().eq('admin_id', session.user.id);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
+
+  // Find where history ends and new messages begin
+  let historyEndIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].fromHistory) { historyEndIndex = i; break; }
+  }
 
   return (
     <div className="space-y-4">
@@ -237,7 +341,7 @@ export function CommandCenterPanel() {
             Directives ({directives.filter(d => d.is_active).length})
             {showDirectives ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setMessages([])} className="text-muted-foreground">
+          <Button variant="ghost" size="sm" onClick={handleClearChat} className="text-muted-foreground">
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
@@ -286,7 +390,7 @@ export function CommandCenterPanel() {
         <CardContent className="p-0">
           <ScrollArea className="h-[500px]" ref={scrollRef}>
             <div className="p-4 space-y-4">
-              {messages.length === 0 && !isLoading && (
+              {messages.length === 0 && !isLoading && historyLoaded && (
                 <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center mb-4">
                     <span className="text-3xl">🧠</span>
@@ -314,8 +418,20 @@ export function CommandCenterPanel() {
                 </div>
               )}
 
-              {messages.map((msg) => (
+              {messages.map((msg, idx) => (
                 <div key={msg.id}>
+                  {/* History divider */}
+                  {historyEndIndex >= 0 && idx === historyEndIndex + 1 && (
+                    <div className="flex items-center gap-2 py-2 text-muted-foreground/50">
+                      <div className="flex-1 h-px bg-border" />
+                      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider">
+                        <History className="w-3 h-3" />
+                        New messages
+                      </div>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                  )}
+
                   {msg.role === 'user' ? (
                     <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
                       <div className="max-w-[80%] bg-foreground text-background rounded-2xl rounded-br-md px-4 py-2.5">
@@ -484,16 +600,3 @@ function ToolResultCard({ result }: { result: ToolResult }) {
 
   return null;
 }
-
-// Map route keys to employee IDs for display
-const AGENT_EMPLOYEE_MAP: Record<string, string> = {
-  sales: 'sales',
-  investigator: 'investigator',
-  marketing: 'marketing',
-  security: 'security_guard',
-  lawyer: 'lawyer',
-  advisor: 'advisor',
-  qa: 'qa_watchdog',
-  followup: 'follow_up',
-  customer: 'customer_success',
-};
