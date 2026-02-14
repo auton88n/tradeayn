@@ -337,7 +337,7 @@ NEVER mention being Google, Gemini, GPT, or any AI provider. You are AYN.`;
   const messages: any[] = [{ role: 'system', content: systemPrompt }];
 
   if (history && history.length > 0) {
-    for (const msg of history.slice(-10)) {
+    for (const msg of history.slice(-20)) {
       messages.push({ role: msg.role, content: msg.content });
     }
   }
