@@ -42,7 +42,7 @@ serve(async (req) => {
           signal: AbortSignal.timeout(10000),
         });
         statusCode = res.status;
-        if (statusCode >= 500) {
+        if (statusCode >= 400) {
           isHealthy = false;
           errorMessage = `HTTP ${statusCode}`;
           criticalIssues++;
