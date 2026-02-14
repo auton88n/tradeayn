@@ -15,22 +15,35 @@ export const isDataUrl = (url: string): boolean => {
  * @param url - The document URL (data URL or http URL)
  * @param filename - Optional filename for the download
  */
-export const openDocumentUrl = (url: string, filename?: string): void => {
+export const openDocumentUrl = async (url: string, filename?: string): Promise<void> => {
   if (!url) return;
   
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename || 'document';
-  
-  // Only use target="_blank" for HTTP URLs, not data URLs
-  if (!url.startsWith('data:')) {
-    anchor.target = '_blank';
-    anchor.rel = 'noopener noreferrer';
+  const name = filename || 'document';
+
+  // Data URLs: direct anchor download (already works)
+  if (url.startsWith('data:')) {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = name;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    return;
   }
+
+  // HTTPS URLs: fetch as blob to avoid browser navigation / ad-blocker issues
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Download failed (${response.status})`);
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
   
+  const anchor = document.createElement('a');
+  anchor.href = blobUrl;
+  anchor.download = name;
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
+  URL.revokeObjectURL(blobUrl);
 };
 
 /**
