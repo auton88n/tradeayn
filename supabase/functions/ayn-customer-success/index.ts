@@ -4,6 +4,7 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 import { formatNatural } from "../_shared/aynBrand.ts";
 import { logReflection } from "../_shared/employeeState.ts";
+import { notifyFounder } from "../_shared/proactiveAlert.ts";
 
 const EMPLOYEE_ID = 'customer_success';
 
@@ -35,6 +36,14 @@ serve(async (req) => {
         context: { from_employee: EMPLOYEE_ID, application_id: app.id },
         shared_with_admin: false,
       });
+
+      await notifyFounder(supabase, {
+        employee_id: EMPLOYEE_ID,
+        message: `new application from ${app.full_name || 'someone'} for ${app.service_type || 'our services'}. want me to draft a reply or should you handle this one?`,
+        priority: 'info',
+        needs_approval: true,
+        details: { application_id: app.id, name: app.full_name, service: app.service_type },
+      });
     } else if (mode === 'negative_feedback' && body.record) {
       const rating = body.record;
       const ago24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -52,6 +61,14 @@ serve(async (req) => {
           content: formatNatural(EMPLOYEE_ID, `worried about user ${rating.user_id?.slice(0, 8)}. ${count} negative ratings in 24h. churn signal — should we reach out?`, 'incident'),
           context: { from_employee: EMPLOYEE_ID, user_id: rating.user_id, negative_count: count },
           shared_with_admin: false,
+        });
+
+        await notifyFounder(supabase, {
+          employee_id: EMPLOYEE_ID,
+          message: `heads up — user ${rating.user_id?.slice(0, 8)} gave ${count} negative ratings in the last 24h. looks like a churn signal. want me to reach out to them?`,
+          priority: 'warning',
+          needs_approval: true,
+          details: { user_id: rating.user_id, negative_count: count },
         });
       }
     } else {

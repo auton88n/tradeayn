@@ -4,6 +4,7 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 import { formatNatural } from "../_shared/aynBrand.ts";
 import { logReflection } from "../_shared/employeeState.ts";
+import { notifyFounder } from "../_shared/proactiveAlert.ts";
 
 const EMPLOYEE_ID = 'follow_up';
 
@@ -178,6 +179,18 @@ serve(async (req) => {
           content: formatNatural(EMPLOYEE_ID, `pipeline update: ${results.join('. ')}`, 'casual'),
           context: { from_employee: EMPLOYEE_ID, leads_processed: dueLeads?.length || 0 },
           shared_with_admin: false,
+        });
+
+        const needsApproval = results.some(r => r.includes('needs your approval'));
+        const dueCount = dueLeads?.length || 0;
+        await notifyFounder(supabase, {
+          employee_id: EMPLOYEE_ID,
+          message: dueCount > 0
+            ? `${dueCount} lead${dueCount > 1 ? 's' : ''} need follow-ups. ${needsApproval ? 'some need your approval first.' : 'approved ones are being handled.'} ${results.slice(0, 3).join('. ')}`
+            : `checked the pipeline — nothing due right now. all caught up.`,
+          priority: needsApproval ? 'warning' : 'info',
+          needs_approval: needsApproval,
+          details: { due_count: dueCount, results: results.slice(0, 5) },
         });
       }
     }

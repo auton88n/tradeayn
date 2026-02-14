@@ -5,7 +5,7 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { AYN_BRAND, getEmployeeSystemPrompt, formatNatural } from "../_shared/aynBrand.ts";
 import { logReflection } from "../_shared/employeeState.ts";
 import { scrapeUrl } from "../_shared/firecrawlHelper.ts";
-import { pushProactiveAlert } from "../_shared/proactiveAlert.ts";
+import { notifyFounder } from "../_shared/proactiveAlert.ts";
 
 const EMPLOYEE_ID = 'sales';
 
@@ -177,6 +177,14 @@ Respond in JSON format:
     target_id: newLead.id, target_type: 'sales_lead',
     details: analysis,
     triggered_by: 'sales_outreach',
+  });
+
+  await notifyFounder(supabase, {
+    employee_id: EMPLOYEE_ID,
+    message: `new lead: ${analysis.company_name} (${analysis.industry || 'unknown industry'}). website quality ${analysis.website_quality}/10. pain points: ${(analysis.pain_points || []).slice(0, 2).join(', ')}. want me to draft an outreach?`,
+    priority: analysis.website_quality >= 7 ? 'info' : 'info',
+    needs_approval: true,
+    details: { lead_id: newLead.id, quality: analysis.website_quality },
   });
 
   return jsonResponse({ success: true, lead_id: newLead.id, analysis });
@@ -551,15 +559,23 @@ async function handleCronCycle(supabase: any) {
 
     // Push proactive alert if there are follow-ups due or new leads
     if (dueFollowUps > 0) {
-      await pushProactiveAlert(supabase, {
+      await notifyFounder(supabase, {
         employee_id: EMPLOYEE_ID,
-        message: `${dueFollowUps} follow-up${dueFollowUps > 1 ? 's' : ''} due in the pipeline. ${total} total leads. Want me to handle them?`,
+        message: `${dueFollowUps} follow-up${dueFollowUps > 1 ? 's' : ''} due in the pipeline. ${total} total leads. want me to handle them?`,
         priority: dueFollowUps >= 5 ? 'warning' : 'info',
+        needs_approval: true,
         details: { total, stats, due_follow_ups: dueFollowUps },
       });
     }
 
-    // If pipeline is empty, log reflection
+    if (total === 0) {
+      await notifyFounder(supabase, {
+        employee_id: EMPLOYEE_ID,
+        message: "pipeline's empty. give me some target industries or company URLs and I'll start hunting.",
+        priority: 'info',
+      });
+    }
+
     if (total === 0) {
       await logReflection(supabase, {
         employee_id: EMPLOYEE_ID,
