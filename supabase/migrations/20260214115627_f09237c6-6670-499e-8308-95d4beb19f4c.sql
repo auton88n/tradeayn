@@ -1,0 +1,9 @@
+-- Drop redundant "Service role full access" policies (service_role bypasses RLS anyway)
+DROP POLICY IF EXISTS "Service role full access on ayn_mind" ON public.ayn_mind;
+DROP POLICY IF EXISTS "Service role full access on ayn_sales_pipeline" ON public.ayn_sales_pipeline;
+DROP POLICY IF EXISTS "Service role full access on competitor_tweets" ON public.competitor_tweets;
+DROP POLICY IF EXISTS "Service role can manage email logs" ON public.email_logs;
+DROP POLICY IF EXISTS "Service role full access on employee_tasks" ON public.employee_tasks;
+DROP POLICY IF EXISTS "Service role full access on marketing_competitors" ON public.marketing_competitors;
+DROP POLICY IF EXISTS "Service role full access on security_incidents" ON public.security_incidents;
+DROP POLICY IF EXISTS "Service role full access on system_health_checks" ON public.system_health_checks;
