@@ -445,37 +445,39 @@ function ToolResultCard({ result }: { result: ToolResult }) {
 
   if (result.type === 'agent_result') {
     const meta = result.agent ? getAgentMeta(AGENT_EMPLOYEE_MAP[result.agent] || result.agent) : { name: 'Agent', emoji: '🤖', gradient: 'from-gray-500 to-gray-600' };
-    const hasResult = result.result && !result.result.error;
+    const agentMessage = result.message;
+    const hasError = result.result?.error;
 
     return (
-      <div className="ml-10 p-3 rounded-lg border border-border bg-card">
-        <div className="flex items-center gap-2 mb-1">
-          <div className={cn("w-6 h-6 rounded-md shrink-0 flex items-center justify-center text-xs bg-gradient-to-br text-white", meta.gradient)}>
-            {result.agent_emoji || meta.emoji}
-          </div>
-          <span className="text-sm font-medium">{result.agent_name || meta.name}</span>
-          {hasResult ? (
-            <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-500/30">✓ Done</Badge>
+      <div className="flex gap-3 ml-4">
+        <div className={cn("w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-sm bg-gradient-to-br text-white", meta.gradient)}>
+          {result.agent_emoji || meta.emoji}
+        </div>
+        <div className="flex-1 min-w-0">
+          <span className="text-xs font-medium text-muted-foreground">{result.agent_name || meta.name}</span>
+          {agentMessage ? (
+            <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{agentMessage}</ReactMarkdown>
+            </div>
+          ) : hasError ? (
+            <p className="text-sm text-destructive">{result.result.error}</p>
           ) : (
-            <Badge variant="outline" className="text-[10px] text-destructive border-destructive/30">Error</Badge>
+            <p className="text-sm text-muted-foreground">Task completed.</p>
+          )}
+          {result.result && !hasError && (
+            <>
+              <button onClick={() => setExpanded(!expanded)} className="text-[11px] text-muted-foreground/60 hover:text-muted-foreground mt-1.5 flex items-center gap-1">
+                {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                {expanded ? 'Hide technical details' : 'Technical details'}
+              </button>
+              {expanded && (
+                <pre className="text-[11px] bg-muted/30 rounded-lg p-2 mt-1.5 overflow-auto max-h-[150px] whitespace-pre-wrap text-muted-foreground">
+                  {JSON.stringify(result.result, null, 2)}
+                </pre>
+              )}
+            </>
           )}
         </div>
-        {result.result?.error && (
-          <p className="text-xs text-destructive mt-1">{result.result.error}</p>
-        )}
-        {hasResult && (
-          <>
-            <button onClick={() => setExpanded(!expanded)} className="text-xs text-muted-foreground hover:text-foreground mt-1 flex items-center gap-1">
-              {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              {expanded ? 'Hide details' : 'Show details'}
-            </button>
-            {expanded && (
-              <pre className="text-xs bg-muted/50 rounded-lg p-2 mt-2 overflow-auto max-h-[200px] whitespace-pre-wrap">
-                {JSON.stringify(result.result, null, 2)}
-              </pre>
-            )}
-          </>
-        )}
       </div>
     );
   }

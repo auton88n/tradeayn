@@ -20,7 +20,6 @@ const AGENT_ROUTES: Record<string, { employeeId: string; functionName: string; d
   customer: { employeeId: 'customer_success', functionName: 'ayn-customer-success', defaultMode: 'check' },
 };
 
-// Also allow matching by full employee IDs and friendly names
 const AGENT_ALIASES: Record<string, string> = {
   'sales_hunter': 'sales',
   'security_guard': 'security',
@@ -35,7 +34,6 @@ function resolveAgent(name: string): string | null {
   const lower = name.toLowerCase().replace(/[^a-z_]/g, '');
   if (AGENT_ROUTES[lower]) return lower;
   if (AGENT_ALIASES[lower]) return AGENT_ALIASES[lower];
-  // Fuzzy: check if any key starts with input
   for (const key of Object.keys(AGENT_ROUTES)) {
     if (key.startsWith(lower)) return key;
   }
@@ -58,18 +56,39 @@ async function loadDirectives(supabase: any) {
   return data || [];
 }
 
-// ─── Tool definitions for AYN orchestrator ───
+// ─── Agent-specific parameter hints for AYN ───
+const AGENT_PARAM_HINTS: Record<string, string> = {
+  sales: `Sales Hunter modes: "prospect" (needs url), "search_leads" (needs search_query), "pipeline_status", "draft_email" (needs lead_id). For natural commands like "find firms", use search_leads with a search_query.`,
+  investigator: `Investigator modes: "investigate" (needs topic or url). Pass the topic or URL directly.`,
+  marketing: `Marketing modes: "scan" (scan competitors), "draft" (draft content), "analyze" (analyze trends).`,
+  security: `Security Guard modes: "scan" (run security scan), "check" (check specific threat).`,
+  lawyer: `Lawyer modes: "review" (review document/situation), "compliance" (check compliance).`,
+  advisor: `Advisor modes: "analyze" (strategic analysis), "recommend" (recommendations).`,
+  qa: `QA Watchdog modes: "check" (run checks), "report" (status report).`,
+  followup: `Follow-Up modes: "check" (check pending follow-ups), "send" (send follow-up).`,
+  customer: `Customer Success modes: "check" (check churn risks), "report" (satisfaction report).`,
+};
+
+// ─── Tool definitions ───
 const TOOLS = [
   {
     type: "function",
     function: {
       name: "route_to_agent",
-      description: "Route a task/command to a specific agent for execution. Use when the founder wants an agent to DO something (prospect, scan, investigate, etc.)",
+      description: "Route a task to a specific agent. Use when the founder wants an agent to DO something.",
       parameters: {
         type: "object",
         properties: {
           agent: { type: "string", description: "Agent key: sales, investigator, marketing, security, lawyer, advisor, qa, followup, customer" },
-          command: { type: "string", description: "The specific task to execute" },
+          command: { type: "string", description: "Natural language description of the task" },
+          agent_params: {
+            type: "object",
+            description: "Structured parameters to pass directly to the agent function. Include 'mode' and any other required params. If unsure, omit and let the system figure it out.",
+            properties: {
+              mode: { type: "string", description: "The agent's operation mode" },
+            },
+            additionalProperties: true,
+          },
         },
         required: ["agent", "command"],
       },
@@ -79,13 +98,13 @@ const TOOLS = [
     type: "function",
     function: {
       name: "save_directive",
-      description: "Save a standing order/directive that all agents must follow. Use when the founder says 'from now on...', 'always...', 'never...', 'focus on...', 'only target...'",
+      description: "Save a standing order. Use when the founder says 'from now on...', 'always...', 'never...', 'focus on...', 'only target...'",
       parameters: {
         type: "object",
         properties: {
           directive: { type: "string", description: "The standing order text" },
-          category: { type: "string", enum: ["general", "geo", "strategy", "outreach", "budget"], description: "Category of the directive" },
-          priority: { type: "number", description: "Priority 1-5, where 1 is highest" },
+          category: { type: "string", enum: ["general", "geo", "strategy", "outreach", "budget"] },
+          priority: { type: "number", description: "Priority 1-5, 1 is highest" },
         },
         required: ["directive", "category"],
       },
@@ -95,22 +114,61 @@ const TOOLS = [
     type: "function",
     function: {
       name: "start_discussion",
-      description: "Start a multi-agent discussion. ONLY use when the founder explicitly asks for opinions from multiple agents or 'everyone', e.g. 'what does the team think?', 'get everyone's opinion'",
+      description: "Start a multi-agent discussion. ONLY use when the founder explicitly asks for opinions from multiple agents or 'everyone'.",
       parameters: {
         type: "object",
-        properties: {
-          topic: { type: "string", description: "The discussion topic" },
-        },
+        properties: { topic: { type: "string" } },
         required: ["topic"],
       },
     },
   },
 ];
 
-// ─── Execute agent command ───
-async function executeAgentCommand(supabase: any, agentKey: string, command: string) {
+// ─── Generate natural language summary from agent result ───
+async function generateAgentMessage(agentKey: string, command: string, rawResult: any, apiKey: string): Promise<string> {
+  const route = AGENT_ROUTES[agentKey];
+  if (!route || !apiKey) return '';
+
+  const personality = getEmployeePersonality(route.employeeId);
+  const resultStr = JSON.stringify(rawResult).substring(0, 2000);
+  const hasError = rawResult?.error || rawResult?.success === false;
+
+  const systemMsg = `${personality || `You are ${getAgentDisplayName(route.employeeId)}.`}
+
+Summarize this result for the founder in 1-3 sentences. Be direct, stay in character.
+${hasError ? 'There was an error. Explain what you need from the founder to proceed. Be helpful, not robotic.' : 'Report what you found/did. If relevant, suggest next steps.'}
+Never show raw JSON. Never mention "parameters" or "API". Talk like a real team member.`;
+
+  try {
+    const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [
+          { role: 'system', content: systemMsg },
+          { role: 'user', content: `Command was: "${command}"\n\nResult:\n${resultStr}` },
+        ],
+        max_tokens: 150,
+      }),
+    });
+    if (!res.ok) return '';
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content?.trim() || '';
+  } catch {
+    return '';
+  }
+}
+
+// ─── Execute agent command (with smart params + natural response) ───
+async function executeAgentCommand(supabase: any, agentKey: string, command: string, agentParams?: any, apiKey?: string) {
   const route = AGENT_ROUTES[agentKey];
   if (!route) return { error: `Unknown agent: ${agentKey}` };
+
+  // Build the request body — use agent_params if provided, otherwise fall back to defaults
+  const requestBody: any = agentParams && agentParams.mode
+    ? { ...agentParams, command, source: 'command_center' }
+    : { mode: route.defaultMode, command, source: 'command_center' };
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   try {
@@ -120,20 +178,34 @@ async function executeAgentCommand(supabase: any, agentKey: string, command: str
         'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ mode: route.defaultMode, command, source: 'command_center' }),
+      body: JSON.stringify(requestBody),
     });
     const data = await res.json();
+
+    // Generate natural language message from the agent
+    const agentMessage = apiKey ? await generateAgentMessage(agentKey, command, data, apiKey) : '';
 
     await supabase.from('ayn_activity_log').insert({
       triggered_by: route.employeeId,
       action_type: 'command_center_execution',
       summary: `Command: "${command.substring(0, 100)}"`,
-      details: { command, result: data, source: 'command_center' },
+      details: { command, agent_params: agentParams, result: data, source: 'command_center' },
     });
 
-    return { agent: route.employeeId, agent_name: getAgentDisplayName(route.employeeId), agent_emoji: getAgentEmoji(route.employeeId), result: data, success: res.ok };
+    return {
+      agent: agentKey,
+      agent_name: getAgentDisplayName(route.employeeId),
+      agent_emoji: getAgentEmoji(route.employeeId),
+      result: data,
+      message: agentMessage,
+      success: res.ok,
+    };
   } catch (err) {
-    return { error: `Failed: ${err instanceof Error ? err.message : 'Unknown'}` };
+    const errorMsg = err instanceof Error ? err.message : 'Unknown';
+    const agentMessage = apiKey
+      ? await generateAgentMessage(agentKey, command, { error: errorMsg }, apiKey)
+      : '';
+    return { error: `Failed: ${errorMsg}`, message: agentMessage };
   }
 }
 
@@ -150,15 +222,14 @@ async function saveDirective(supabase: any, directive: string, category = 'gener
   return { success: true, directive: data };
 }
 
-// ─── Mini discussion (3-4 agents, not all) ───
+// ─── Mini discussion ───
 async function runMiniDiscussion(supabase: any, topic: string, apiKey: string) {
   const EXECUTIVE = ['system', 'chief_of_staff'];
   const OPERATIONAL = ['sales', 'investigator', 'follow_up', 'marketing', 'customer_success', 'qa_watchdog', 'security_guard', 'lawyer'];
-  
-  // Select relevant agents based on topic keywords
+
   const msg = topic.toLowerCase();
   const selected = new Set<string>([...EXECUTIVE]);
-  
+
   if (msg.includes('sale') || msg.includes('lead') || msg.includes('revenue')) selected.add('sales');
   if (msg.includes('market') || msg.includes('brand') || msg.includes('content')) selected.add('marketing');
   if (msg.includes('security') || msg.includes('attack')) selected.add('security_guard');
@@ -166,8 +237,7 @@ async function runMiniDiscussion(supabase: any, topic: string, apiKey: string) {
   if (msg.includes('customer') || msg.includes('churn')) selected.add('customer_success');
   if (msg.includes('quality') || msg.includes('bug')) selected.add('qa_watchdog');
   if (msg.includes('data') || msg.includes('research')) selected.add('investigator');
-  
-  // Fill to max 6 agents
+
   const remaining = OPERATIONAL.filter(a => !selected.has(a));
   while (selected.size < 6 && remaining.length > 0) {
     selected.add(remaining.splice(Math.floor(Math.random() * remaining.length), 1)[0]);
@@ -223,7 +293,7 @@ async function runMiniDiscussion(supabase: any, topic: string, apiKey: string) {
   return { discussion_id: discussionId, responses: thread };
 }
 
-// ─── CHAT MODE: AYN orchestrator with tool calling ───
+// ─── CHAT MODE ───
 async function handleChat(supabase: any, message: string, history: any[], apiKey: string) {
   const [companyState, objectives, directives] = await Promise.all([
     loadCompanyState(supabase),
@@ -236,6 +306,7 @@ async function handleChat(supabase: any, message: string, history: any[], apiKey
     : '\nNo active directives.';
 
   const agentList = Object.entries(AGENT_ROUTES).map(([key, r]) => `${key} → ${getAgentDisplayName(r.employeeId)}`).join(', ');
+  const paramHints = Object.entries(AGENT_PARAM_HINTS).map(([k, v]) => `${k}: ${v}`).join('\n');
 
   const systemPrompt = `You are AYN, the AI Co-Founder and Chief of Staff. The founder is talking to you in the Command Center.
 
@@ -250,6 +321,10 @@ CRITICAL RULES:
 - Be concise. 1-3 sentences unless more detail is needed.
 - Never say "I'll route this to..." without actually calling the tool.
 - You are a PARTNER, not an assistant. Use "we" and "our".
+- When using route_to_agent, TRY to include agent_params with the correct mode and parameters. Use the hints below.
+
+AGENT PARAMETER HINTS:
+${paramHints}
 
 Available agents: ${agentList}
 
@@ -259,10 +334,8 @@ ${directivesBlock}
 
 NEVER mention being Google, Gemini, GPT, or any AI provider. You are AYN.`;
 
-  // Build conversation messages
   const messages: any[] = [{ role: 'system', content: systemPrompt }];
-  
-  // Add history (last 10 messages for context)
+
   if (history && history.length > 0) {
     for (const msg of history.slice(-10)) {
       messages.push({ role: msg.role, content: msg.content });
@@ -270,7 +343,6 @@ NEVER mention being Google, Gemini, GPT, or any AI provider. You are AYN.`;
   }
   messages.push({ role: 'user', content: message });
 
-  // Call AYN with tools
   const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -291,7 +363,7 @@ NEVER mention being Google, Gemini, GPT, or any AI provider. You are AYN.`;
 
   const data = await res.json();
   const choice = data.choices?.[0];
-  
+
   if (!choice) {
     return { type: 'chat', message: "I didn't get a response. Try again?" };
   }
@@ -299,12 +371,10 @@ NEVER mention being Google, Gemini, GPT, or any AI provider. You are AYN.`;
   const toolCalls = choice.message?.tool_calls;
   const directResponse = choice.message?.content?.trim();
 
-  // If no tool calls, just return AYN's direct response
   if (!toolCalls || toolCalls.length === 0) {
     return { type: 'chat', message: directResponse || "Got it.", agent: 'system' };
   }
 
-  // Process tool calls
   const results: any[] = [];
   let aynMessage = directResponse || '';
 
@@ -324,21 +394,23 @@ NEVER mention being Google, Gemini, GPT, or any AI provider. You are AYN.`;
           results.push({ type: 'error', message: `Unknown agent: ${args.agent}` });
           break;
         }
-        const agentResult = await executeAgentCommand(supabase, resolved, args.command);
+        const agentResult = await executeAgentCommand(supabase, resolved, args.command, args.agent_params, apiKey);
         const agentName = getAgentDisplayName(AGENT_ROUTES[resolved].employeeId);
         const agentEmoji = getAgentEmoji(AGENT_ROUTES[resolved].employeeId);
-        
+
         if (!aynMessage) {
           aynMessage = `Routing to ${agentName}...`;
         }
-        
+
         results.push({
           type: 'agent_result',
           agent: resolved,
           agent_name: agentName,
           agent_emoji: agentEmoji,
           command: args.command,
-          result: agentResult,
+          result: agentResult.result || agentResult,
+          message: agentResult.message || '',
+          success: agentResult.success,
         });
         break;
       }
@@ -405,7 +477,6 @@ serve(async (req) => {
     let result: any;
 
     switch (mode) {
-      // ─── NEW: Chat mode (primary) ───
       case 'chat': {
         if (!apiKey) {
           return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -418,7 +489,6 @@ serve(async (req) => {
         break;
       }
 
-      // ─── Legacy modes (kept for backward compat) ───
       case 'list_directives': {
         const { data: allDirectives } = await supabase.from('founder_directives').select('*').order('priority', { ascending: true });
         result = { directives: allDirectives || [] };
