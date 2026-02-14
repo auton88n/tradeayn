@@ -4,6 +4,7 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 import { formatNatural } from "../_shared/aynBrand.ts";
 import { loadCompanyState, logReflection } from "../_shared/employeeState.ts";
+import { pushProactiveAlert } from "../_shared/proactiveAlert.ts";
 
 const EMPLOYEE_ID = 'security_guard';
 
@@ -108,6 +109,16 @@ serve(async (req) => {
 
     if (hasThreats && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
       await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatNatural(EMPLOYEE_ID, reportContent, 'incident'));
+    }
+
+    // Push proactive alert to Command Center for threats
+    if (hasThreats) {
+      await pushProactiveAlert(supabase, {
+        employee_id: EMPLOYEE_ID,
+        message: reportContent,
+        priority: results.some(r => r.includes('blocked')) ? 'critical' : 'warning',
+        details: { findings: results },
+      });
     }
 
     await logReflection(supabase, {

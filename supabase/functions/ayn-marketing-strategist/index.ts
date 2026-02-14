@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { AYN_BRAND, getEmployeeSystemPrompt } from "../_shared/aynBrand.ts";
 import { scrapeUrl, searchWeb } from "../_shared/firecrawlHelper.ts";
 import { logAynActivity } from "../_shared/aynLogger.ts";
+import { pushProactiveAlert } from "../_shared/proactiveAlert.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

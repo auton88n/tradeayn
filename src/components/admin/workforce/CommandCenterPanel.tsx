@@ -191,6 +191,54 @@ export function CommandCenterPanel() {
     } catch { /* ignore */ }
   }, []);
 
+  // ─── Real-time subscription for proactive agent alerts ───
+  useEffect(() => {
+    let channel: any = null;
+
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      channel = supabase
+        .channel('command-center-proactive')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'admin_ai_conversations',
+            filter: `admin_id=eq.${session.user.id}`,
+          },
+          (payload: any) => {
+            const row = payload.new;
+            // Only handle proactive messages (not ones we inserted ourselves)
+            const context = row.context as any;
+            if (context?.proactive && row.role === 'assistant') {
+              const newMsg: ChatMessage = {
+                id: row.id,
+                role: 'assistant',
+                content: row.message || '',
+                agent: (row.actions_taken as any)?.agent || 'system',
+                tool_results: context?.tool_results || undefined,
+                timestamp: new Date(row.created_at),
+              };
+              setMessages(prev => {
+                // Avoid duplicates
+                if (prev.some(m => m.id === row.id)) return prev;
+                return [...prev, newMsg];
+              });
+            }
+          }
+        )
+        .subscribe();
+    };
+
+    setupRealtime();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
+
   useEffect(() => {
     loadHistory();
     loadDirectives();

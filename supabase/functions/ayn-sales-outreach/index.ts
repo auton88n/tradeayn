@@ -5,6 +5,7 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { AYN_BRAND, getEmployeeSystemPrompt, formatNatural } from "../_shared/aynBrand.ts";
 import { logReflection } from "../_shared/employeeState.ts";
 import { scrapeUrl } from "../_shared/firecrawlHelper.ts";
+import { pushProactiveAlert } from "../_shared/proactiveAlert.ts";
 
 const EMPLOYEE_ID = 'sales';
 
@@ -547,6 +548,16 @@ async function handleCronCycle(supabase: any) {
       details: { total, stats, due_follow_ups: dueFollowUps },
       triggered_by: EMPLOYEE_ID,
     });
+
+    // Push proactive alert if there are follow-ups due or new leads
+    if (dueFollowUps > 0) {
+      await pushProactiveAlert(supabase, {
+        employee_id: EMPLOYEE_ID,
+        message: `${dueFollowUps} follow-up${dueFollowUps > 1 ? 's' : ''} due in the pipeline. ${total} total leads. Want me to handle them?`,
+        priority: dueFollowUps >= 5 ? 'warning' : 'info',
+        details: { total, stats, due_follow_ups: dueFollowUps },
+      });
+    }
 
     // If pipeline is empty, log reflection
     if (total === 0) {
