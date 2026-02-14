@@ -4,6 +4,7 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 import { formatNatural, detectToneContext } from "../_shared/aynBrand.ts";
 import { loadCompanyState, logReflection } from "../_shared/employeeState.ts";
+import { notifyFounder } from "../_shared/proactiveAlert.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -131,10 +132,16 @@ serve(async (req) => {
       shared_with_admin: false,
     });
 
-    // Alert on critical issues
-    if (criticalIssues > 0 && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatNatural(EMPLOYEE_ID, reportContent, 'incident'));
-    }
+    // Notify founder — both critical issues AND all-clear
+    await notifyFounder(supabase, {
+      employee_id: EMPLOYEE_ID,
+      message: criticalIssues > 0
+        ? `${criticalIssues} system${criticalIssues > 1 ? 's' : ''} down. ${healthResults.filter(h => !h.is_healthy).map(h => h.function_name).join(', ')}. avg response: ${avgResponseTime}ms. want me to keep monitoring or escalate?`
+        : `all systems green. ${uptimePct}% uptime, avg ${avgResponseTime}ms. nothing to worry about.`,
+      priority: criticalIssues > 0 ? 'critical' : 'info',
+      needs_approval: criticalIssues > 0,
+      details: { critical_issues: criticalIssues, uptime_pct: uptimePct, avg_response_ms: avgResponseTime },
+    });
 
     // Reflection
     await logReflection(supabase, {

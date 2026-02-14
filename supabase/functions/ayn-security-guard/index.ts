@@ -4,7 +4,7 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 import { formatNatural } from "../_shared/aynBrand.ts";
 import { loadCompanyState, logReflection } from "../_shared/employeeState.ts";
-import { pushProactiveAlert } from "../_shared/proactiveAlert.ts";
+import { notifyFounder } from "../_shared/proactiveAlert.ts";
 
 const EMPLOYEE_ID = 'security_guard';
 
@@ -115,19 +115,16 @@ serve(async (req) => {
       shared_with_admin: false,
     });
 
-    if (hasThreats && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, formatNatural(EMPLOYEE_ID, reportContent, 'incident'));
-    }
-
-    // Push proactive alert to Command Center for threats
-    if (hasThreats) {
-      await pushProactiveAlert(supabase, {
-        employee_id: EMPLOYEE_ID,
-        message: reportContent,
-        priority: results.some(r => r.includes('blocked')) ? 'critical' : 'warning',
-        details: { findings: results },
-      });
-    }
+    // Notify founder via unified channel (Telegram + Command Center)
+    await notifyFounder(supabase, {
+      employee_id: EMPLOYEE_ID,
+      message: hasThreats
+        ? `${results.filter(r => !r.includes('secure')).length} threat(s) detected. ${results.filter(r => r.includes('blocked')).length > 0 ? 'already blocked the bad actors.' : 'monitoring closely.'} ${results.slice(0, 3).join('. ')}. should I tighten restrictions?`
+        : `perimeter secure. all clear. standing watch.`,
+      priority: results.some(r => r.includes('blocked')) ? 'critical' : hasThreats ? 'warning' : 'info',
+      needs_approval: hasThreats,
+      details: { findings: results },
+    });
 
     await logReflection(supabase, {
       employee_id: EMPLOYEE_ID,

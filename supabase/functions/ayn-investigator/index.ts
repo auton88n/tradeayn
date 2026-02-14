@@ -4,6 +4,7 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { getEmployeeSystemPrompt, formatNatural } from "../_shared/aynBrand.ts";
 import { logReflection } from "../_shared/employeeState.ts";
 import { scrapeUrl, mapWebsite } from "../_shared/firecrawlHelper.ts";
+import { notifyFounder } from "../_shared/proactiveAlert.ts";
 
 const EMPLOYEE_ID = 'investigator';
 
@@ -188,6 +189,15 @@ Respond in JSON:
     target_id: leadId, target_type: 'sales_lead',
     details: { quality_score: dossier?.quality_score, confidence: dossier?.confidence_level },
     triggered_by: EMPLOYEE_ID,
+  });
+
+  const score = dossier?.quality_score || '?';
+  const confidence = dossier?.confidence_level || 'unknown';
+  await notifyFounder(supabase, {
+    employee_id: EMPLOYEE_ID,
+    message: `finished researching ${lead.company_name}. quality: ${score}/10 (${confidence} confidence). ${dossier?.dossier_summary || 'analysis complete'}. ${score >= 7 ? 'strong fit — sales should move on this.' : 'might need more data before outreach.'}`,
+    priority: score >= 7 ? 'info' : 'info',
+    details: { lead_id: leadId, quality_score: score, confidence },
   });
 
   return jsonRes({ success: true, lead_id: leadId, dossier });

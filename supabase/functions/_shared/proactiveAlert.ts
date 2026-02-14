@@ -1,10 +1,11 @@
 /**
  * Proactive Alert System
- * Allows agents to push important updates directly into the Command Center chat.
- * Messages appear as assistant messages from the specific agent.
+ * Allows agents to push important updates directly into the Command Center chat
+ * AND send Telegram notifications — so the founder always knows what's happening.
  */
 
 import { getAgentDisplayName, getAgentEmoji } from "./aynBrand.ts";
+import { sendTelegramMessage } from "./telegramHelper.ts";
 
 export type AlertPriority = 'info' | 'warning' | 'critical';
 
@@ -15,6 +16,10 @@ interface ProactiveAlertOptions {
   details?: Record<string, unknown>;
 }
 
+interface NotifyFounderOptions extends ProactiveAlertOptions {
+  needs_approval?: boolean;
+}
+
 const PRIORITY_PREFIX: Record<AlertPriority, string> = {
   info: 'ℹ️',
   warning: '⚠️',
@@ -23,7 +28,6 @@ const PRIORITY_PREFIX: Record<AlertPriority, string> = {
 
 /**
  * Push a proactive alert into the Command Center chat for all admin users.
- * The message will appear as an assistant message from the specified agent.
  */
 export async function pushProactiveAlert(
   supabase: any,
@@ -32,7 +36,6 @@ export async function pushProactiveAlert(
   const { employee_id, message, priority = 'info', details } = opts;
 
   try {
-    // Get all admin user IDs
     const { data: admins } = await supabase
       .from('user_roles')
       .select('user_id')
@@ -47,10 +50,8 @@ export async function pushProactiveAlert(
     const agentEmoji = getAgentEmoji(employee_id);
     const prefix = PRIORITY_PREFIX[priority];
 
-    // Format the message with agent identity
     const formattedMessage = `${prefix} **${agentName}** (proactive update):\n\n${message}`;
 
-    // Insert a message for each admin
     const inserts = admins.map((admin: { user_id: string }) => ({
       admin_id: admin.user_id,
       role: 'assistant',
@@ -81,5 +82,47 @@ export async function pushProactiveAlert(
     }
   } catch (e) {
     console.error('[proactiveAlert] Error:', e);
+  }
+}
+
+/**
+ * Unified notification: pushes to Command Center AND sends Telegram message.
+ * Use this at the end of every agent's work cycle.
+ */
+export async function notifyFounder(
+  supabase: any,
+  opts: NotifyFounderOptions,
+): Promise<void> {
+  const { employee_id, message, priority = 'info', details, needs_approval } = opts;
+
+  const agentName = getAgentDisplayName(employee_id);
+  const agentEmoji = getAgentEmoji(employee_id);
+
+  // Build the message with approval prompt if needed
+  let fullMessage = message;
+  if (needs_approval) {
+    fullMessage += '\n\n👆 need your go-ahead on this.';
+  }
+
+  // 1. Push to Command Center
+  await pushProactiveAlert(supabase, {
+    employee_id,
+    message: fullMessage,
+    priority,
+    details,
+  });
+
+  // 2. Send to Telegram
+  try {
+    const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
+
+    if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+      const prefix = PRIORITY_PREFIX[priority];
+      const telegramMsg = `${prefix} ${agentEmoji} <b>${agentName}</b>\n\n${fullMessage}`;
+      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, telegramMsg);
+    }
+  } catch (e) {
+    console.error('[notifyFounder] Telegram send failed:', e);
   }
 }

@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { AYN_BRAND, getEmployeeSystemPrompt } from "../_shared/aynBrand.ts";
 import { scrapeUrl, searchWeb } from "../_shared/firecrawlHelper.ts";
 import { logAynActivity } from "../_shared/aynLogger.ts";
-import { pushProactiveAlert } from "../_shared/proactiveAlert.ts";
+import { notifyFounder } from "../_shared/proactiveAlert.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,6 +50,15 @@ Deno.serve(async (req) => {
     await logAynActivity(supabase, 'marketing_strategist', `Mode: ${mode}`, {
       triggered_by: 'marketing',
       details: { mode, command, result_summary: typeof result?.strategy === 'string' ? result.strategy.substring(0, 200) : 'completed' },
+    });
+
+    // Notify founder with summary
+    const summary = typeof result?.strategy === 'string' ? result.strategy.substring(0, 200) : (typeof result?.analysis === 'string' ? result.analysis.substring(0, 200) : `${mode} complete`);
+    await notifyFounder(supabase, {
+      employee_id: 'marketing',
+      message: `${mode} done. ${summary}${summary.length >= 200 ? '...' : ''} want me to dig deeper or take action?`,
+      priority: 'info',
+      details: { mode, leads_found: result?.leads_found, total_leads: result?.total_leads },
     });
 
     return new Response(JSON.stringify(result), {
