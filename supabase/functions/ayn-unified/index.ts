@@ -128,7 +128,7 @@ async function callLLM(
   model: LLMModel,
   messages: Array<{ role: string; content: any }>,
   stream: boolean = false
-): Promise<Response | { content: string; wasIncomplete?: boolean }> {
+): Promise<Response | { content: string; wasIncomplete?: boolean; usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number } }> {
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
 
@@ -169,16 +169,18 @@ async function callLLM(
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '';
     const finishReason = data.choices?.[0]?.finish_reason;
+    const usage = data.usage || null;
     
     // Smart follow-up detection: if truncated, invite user to continue
     if (finishReason === 'length') {
       return { 
         content: content + "\n\n---\n*want me to continue? just say 'continue' or ask a follow-up!*",
-        wasIncomplete: true 
+        wasIncomplete: true,
+        usage 
       };
     }
     
-    return { content, wasIncomplete: false };
+    return { content, wasIncomplete: false, usage };
   }
 
   if (model.provider === 'openrouter') {
@@ -214,16 +216,18 @@ async function callLLM(
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '';
     const finishReason = data.choices?.[0]?.finish_reason;
+    const usage = data.usage || null;
     
     // Smart follow-up detection
     if (finishReason === 'length') {
       return { 
         content: content + "\n\n---\n*want me to continue? just say 'continue' or ask a follow-up!*",
-        wasIncomplete: true 
+        wasIncomplete: true,
+        usage 
       };
     }
     
-    return { content, wasIncomplete: false };
+    return { content, wasIncomplete: false, usage };
   }
 
   throw new Error(`Unknown provider: ${model.provider}`);
@@ -243,16 +247,29 @@ async function callWithFallback(
     const model = chain[i];
     try {
       console.log(`Trying ${model.display_name} for ${intent}...`);
+      const startTime = Date.now();
       const response = await callLLM(model, messages, stream);
+      const responseTimeMs = Date.now() - startTime;
       
-      // Log successful usage
+      // Extract token usage from non-streaming responses
+      const usage = (response && typeof response === 'object' && 'usage' in response) ? (response as any).usage : null;
+      
+      // Log successful usage with token counts and response time
       try {
         await supabase.from('llm_usage_logs').insert({
           user_id: userId,
           intent_type: intent,
           was_fallback: i > 0,
-          fallback_reason: i > 0 ? `Primary model failed, used ${model.display_name}` : null
+          fallback_reason: i > 0 ? `Primary model failed, used ${model.display_name}` : null,
+          model_name: model.model_id,
+          input_tokens: usage?.prompt_tokens || 0,
+          output_tokens: usage?.completion_tokens || 0,
+          response_time_ms: responseTimeMs,
         });
+        
+        if (usage) {
+          console.log(`[ayn-unified] Token usage - input: ${usage.prompt_tokens}, output: ${usage.completion_tokens}, time: ${responseTimeMs}ms, model: ${model.model_id}`);
+        }
         
         // Check if user has crossed 90% credit usage - send warning email
         if (userId !== 'internal-evaluator') {

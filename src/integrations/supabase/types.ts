@@ -2105,6 +2105,7 @@ export type Database = {
           input_tokens: number | null
           intent_type: string
           model_id: string | null
+          model_name: string | null
           output_tokens: number | null
           response_time_ms: number | null
           user_id: string
@@ -2118,6 +2119,7 @@ export type Database = {
           input_tokens?: number | null
           intent_type: string
           model_id?: string | null
+          model_name?: string | null
           output_tokens?: number | null
           response_time_ms?: number | null
           user_id: string
@@ -2131,6 +2133,7 @@ export type Database = {
           input_tokens?: number | null
           intent_type?: string
           model_id?: string | null
+          model_name?: string | null
           output_tokens?: number | null
           response_time_ms?: number | null
           user_id?: string
