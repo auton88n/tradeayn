@@ -1,72 +1,55 @@
 
-# Make AYN Talk Like a Teammate, Not a Report Generator
+# Fix All AI Employee Issues
 
-## The Problem
+## 1. Fix `ayn_mind` Type Constraint (Root Cause of Silent Failures)
 
-The long structured responses with bold labels like **"Status:"**, **"Alerts:"**, **"Pass Rate:"**, `[ACTION:run_tests:calculator]` come from the `admin-ai-assistant` edge function's system prompt. It explicitly tells AYN to use "markdown formatting for clarity (tables, lists, code blocks)" and embed `[ACTION:]` tags. That's why you get a wall of structured data instead of a normal conversation.
+The `ayn_mind_type_check` constraint only allows 16 types but agents are trying to insert `employee_report`, `innovation_proposal`, `employee_discussion`, and others. Every insert silently fails.
 
-## The Fix
+**Fix:** Drop and recreate the constraint with all needed types:
 
-### 1. Rewrite the System Prompt (`supabase/functions/admin-ai-assistant/index.ts`)
-
-Replace the current report-style instructions with a conversational directive:
-
-**Current prompt says:**
-- "Use markdown formatting for clarity (tables, lists, code blocks)"
-- "Include specific numbers and percentages"
-- "Be proactive: suggest actions when issues are detected"
-- Uses `[ACTION:...]` tags inline in responses
-
-**New prompt will say:**
-- Talk like a teammate in a chat -- 1-3 sentences max
-- No headers, no bold labels, no structured sections
-- Mention key numbers naturally ("5 tests are failing" not "Pass Rate: 0.0%")
-- Actions become simple suggestions ("want me to run the calculator tests?" instead of `[ACTION:run_tests:calculator]`)
-- Only use detail if the user asks for more
-
-### 2. Keep Actions Working Behind the Scenes
-
-The `[ACTION:]` tags are parsed by the frontend to create clickable buttons. Instead of removing them entirely, hide them at the end of the message so the UI can still parse them but they don't clutter the conversation.
-
-### 3. Reduce max_tokens
-
-The current function likely allows long responses. Cap it to encourage brevity.
-
-## Example: Before vs After
-
-**Before (current):**
-```
-Security & Access
-Status: 3 High-severity alerts detected.
-Alerts: Unusual access to admin_contact_messages and rate limit violations.
-Rate Limits: User 0000... has 10 violations.
-Users: 14 Total (9 Active).
-Engineering Check (CRITICAL FAILURE)
-Pass Rate: 0.0% (0/5 tests passed).
-Affected Suite: api_health.
-...
-[ACTION:run_tests:calculator]
-[ACTION:scan_health:full]
+```sql
+ALTER TABLE ayn_mind DROP CONSTRAINT ayn_mind_type_check;
+ALTER TABLE ayn_mind ADD CONSTRAINT ayn_mind_type_check CHECK (type = ANY (ARRAY[
+  'thought', 'observation', 'idea', 'task', 'mood', 'trend',
+  'telegram_admin', 'telegram_ayn', 'sales_lead', 'sales_draft',
+  'vision_analysis', 'proactive_research', 'telegram_summary',
+  'marketing_chat', 'marketing_ayn', 'marketing_summary',
+  'employee_report', 'innovation_proposal', 'employee_discussion',
+  'strategic_advisory', 'security_alert', 'proactive_alert'
+]));
 ```
 
-**After (new):**
+This unblocks QA Watchdog, Security Guard, Innovation, Advisor, and all other agents from saving their reports.
+
+## 2. Fix Health Check False Positives
+
+**File:** `supabase/functions/ayn-qa-watchdog/index.ts`
+
+Change the health check threshold from `>= 500` to `>= 400`. Currently `support-bot` and `ayn-unified` return 400 errors during pings but get marked as "healthy." This gives false 100% uptime.
+
 ```
-Heads up -- all 5 engineering calculators are down right now. Also seeing 3 security alerts, one user with 10 rate limit violations. Want me to run diagnostics on the calculators?
+// Before
+if (statusCode >= 500) { isHealthy = false; }
+
+// After  
+if (statusCode >= 400) { isHealthy = false; }
 ```
 
-## Technical Details
+## 3. Unstick Investigator's Pending Tasks
 
-### File: `supabase/functions/admin-ai-assistant/index.ts`
+3 tasks have been stuck as `pending` since Feb 11-12. Two have invalid `lead_id` values (`all`, `lead_rsp_dubai`) that will never resolve. Mark them as `failed` with an explanation so the Investigator stops retrying them:
 
-1. Replace `ADMIN_SYSTEM_PROMPT` (lines 12-57) with a conversational version:
-   - Remove "Use markdown formatting" instruction
-   - Add "Talk in 1-3 sentences like a real colleague. No headers, no bold labels, no structured reports."
-   - Keep `[ACTION:]` tags but instruct the LLM to place them on the last line only, not inline
-   - Change response guidelines to prioritize brevity
+```sql
+UPDATE employee_tasks 
+SET status = 'failed', 
+    output_data = '{"error": "Invalid lead_id, marked failed during cleanup"}'
+WHERE status = 'pending' 
+  AND to_employee = 'investigator';
+```
 
-2. Reduce `max_tokens` in the LLM call to ~300 to discourage lengthy responses
+## Summary
 
-### File: `src/components/admin/AdminAIAssistant.tsx`
-
-1. Update the action tag parsing to strip them from the displayed message (so they only power buttons, not clutter the chat)
-2. If action tags exist, render them as small suggestion chips below the message instead of inline text
+Three changes total:
+1. **Database migration** -- Expand `ayn_mind_type_check` constraint (unblocks all agent reporting)
+2. **Edge function edit** -- Fix QA Watchdog health threshold from 500 to 400 (accurate health data)
+3. **Data update** -- Mark 3 stuck Investigator tasks as failed (clears the queue)
