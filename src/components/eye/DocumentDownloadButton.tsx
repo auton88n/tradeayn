@@ -1,7 +1,9 @@
-import { FileText, FileSpreadsheet, Download } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, FileSpreadsheet, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { openDocumentUrl } from '@/lib/documentUrlUtils';
 import { hapticFeedback } from '@/lib/haptics';
+import { toast } from '@/hooks/use-toast';
 
 interface DocumentDownloadButtonProps {
   url: string;
@@ -11,20 +13,30 @@ interface DocumentDownloadButtonProps {
 }
 
 export const DocumentDownloadButton = ({ url, name, type, className }: DocumentDownloadButtonProps) => {
+  const [downloading, setDownloading] = useState(false);
   const isPdf = type === 'pdf' || type === 'application/pdf' || name?.endsWith('.pdf');
   const isExcel = type === 'excel' || type?.includes('spreadsheet') || name?.endsWith('.xlsx') || name?.endsWith('.xls');
   
   const Icon = isExcel ? FileSpreadsheet : FileText;
   const label = isPdf ? 'PDF' : isExcel ? 'Excel' : 'Document';
   
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
     hapticFeedback('success');
-    openDocumentUrl(url, name);
+    try {
+      await openDocumentUrl(url, name);
+    } catch {
+      toast({ title: 'Download failed', description: 'Could not download the file. Please try again.', variant: 'destructive' });
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
     <button
       onClick={handleDownload}
+      disabled={downloading}
       className={cn(
         "flex items-center gap-3 w-full p-3 rounded-xl",
         "bg-muted/50 hover:bg-muted border border-border",
@@ -56,9 +68,10 @@ export const DocumentDownloadButton = ({ url, name, type, className }: DocumentD
       <div className={cn(
         "flex-shrink-0 p-2 rounded-lg",
         "bg-primary text-primary-foreground",
-        "group-hover:scale-105 transition-transform"
+        "group-hover:scale-105 transition-transform",
+        downloading && "animate-pulse"
       )}>
-        <Download size={16} />
+        {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
       </div>
     </button>
   );
