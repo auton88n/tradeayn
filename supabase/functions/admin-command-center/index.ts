@@ -11,7 +11,7 @@ const corsHeaders = {
 const AGENT_ROUTES: Record<string, { employeeId: string; functionName: string; defaultMode: string }> = {
   sales: { employeeId: 'sales', functionName: 'ayn-sales-outreach', defaultMode: 'prospect' },
   investigator: { employeeId: 'investigator', functionName: 'ayn-investigator', defaultMode: 'investigate' },
-  marketing: { employeeId: 'marketing', functionName: 'twitter-auto-market', defaultMode: 'scan' },
+  marketing: { employeeId: 'marketing', functionName: 'ayn-marketing-strategist', defaultMode: 'analyze_pipeline' },
   security: { employeeId: 'security_guard', functionName: 'ayn-security-guard', defaultMode: 'scan' },
   lawyer: { employeeId: 'lawyer', functionName: 'ayn-lawyer', defaultMode: 'review' },
   advisor: { employeeId: 'advisor', functionName: 'ayn-advisor', defaultMode: 'analyze' },
@@ -60,7 +60,7 @@ async function loadDirectives(supabase: any) {
 const AGENT_PARAM_HINTS: Record<string, string> = {
   sales: `Sales Hunter modes: "prospect" (needs url), "search_leads" (needs search_query), "pipeline_status", "draft_email" (needs lead_id). For natural commands like "find firms", use search_leads with a search_query.`,
   investigator: `Investigator modes: "investigate" (needs topic or url). Pass the topic or URL directly.`,
-  marketing: `Marketing modes: "scan" (scan competitors), "draft" (draft content), "analyze" (analyze trends).`,
+  marketing: `Marketing Strategist modes: "campaign" (needs target_audience or industry — creates full outreach campaign with emails), "email_copy" (needs lead_id or company_name or industry — drafts personalized email), "positioning" (needs competitor_url — analyzes competitor and recommends positioning), "content_plan" (creates content plan based on pipeline), "analyze_pipeline" (reviews pipeline for marketing priorities). For natural commands about reaching companies or industries, use "campaign" with industry param.`,
   security: `Security Guard modes: "scan" (run security scan), "check" (check specific threat).`,
   lawyer: `Lawyer modes: "review" (review document/situation), "compliance" (check compliance).`,
   advisor: `Advisor modes: "analyze" (strategic analysis), "recommend" (recommendations).`,
