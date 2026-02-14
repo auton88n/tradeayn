@@ -1,32 +1,68 @@
 
 
-## Fix Command Center: Immediate Feedback, Auto-Scroll, and Scroll-to-Bottom Button
+## Remove Cron Jobs, Switch to Event-Driven Agent Activation
 
-### Problem
-1. When you send a message (like "look for companies in Halifax NS"), the chat waits for the full response before showing anything -- feels like it's broken or frozen.
-2. The chat doesn't auto-scroll to the bottom when new messages arrive.
-3. No way to quickly jump back to the bottom after scrolling up.
+### What Changes
 
-### Solution
+Instead of 14 scheduled jobs that run on timers (and mostly do nothing), agents will wake up only when something actually happens in the database. This means faster reactions, zero wasted calls, and agents that feel alive.
 
-#### 1. Immediate "Looking into it" feedback
-When you send a message that triggers a long-running agent task, AYN will immediately show a temporary message like "On it -- looking into that now. I'll have results shortly." while the backend works. This replaces the current behavior of just showing a spinner with no text feedback.
+### Current Problem
 
-#### 2. Fix auto-scroll
-The current scroll code targets the wrong element. It needs to target the internal Radix ScrollArea viewport (`[data-radix-scroll-area-viewport]`) instead of the outer wrapper, matching the fix already applied to AdminAIAssistant.
+Right now, agents run on fixed schedules (every 15 min to 24 hours). Most of the time they check, find nothing, and go back to sleep. Meanwhile, when something important happens (a lead replies, an error spikes), the agent won't notice until its next scheduled run -- which could be hours later.
 
-#### 3. Add scroll-to-bottom arrow button
-A floating down-arrow button appears when you scroll up, letting you jump back to the latest messages with one tap.
+### New Event-Driven Model
+
+Each agent gets activated by a specific database event (a row inserted or updated in a relevant table):
+
+| Agent | Trigger Event | What Activates It |
+|-------|--------------|-------------------|
+| **QA Watchdog** | New row in `error_logs` | An error is logged -- watchdog checks immediately |
+| **Security Guard** | New high/critical `security_logs` entry | A security event fires -- guard investigates |
+| **Follow-Up Agent** | New row in `inbound_email_replies` OR pipeline status change to `contacted` | A lead replies or gets contacted -- follow-up kicks in |
+| **Sales Outreach** | New lead added to `ayn_sales_pipeline` | A new lead appears -- sales prepares |
+| **Investigator** | Pipeline lead status changes to `new` or `needs_investigation` | A lead needs research -- investigator digs in |
+| **Customer Success** | New `contact_messages` or support ticket | A customer reaches out -- success agent responds |
+| **Marketing** | New `twitter_posts` performance data or pipeline changes | Content performs well/poorly -- marketing adjusts |
+| **Outcome Evaluator** | New `employee_reflections` entry | An agent reflects -- evaluator checks if prediction matched reality |
+| **Chief of Staff** | New `ayn_mind` entries (employee reports) | An agent reports something -- chief reviews |
+| **Advisor** | On-demand only (Command Center) | You ask for advice -- advisor responds |
+| **Lawyer** | On-demand only (Command Center) | You ask for legal review -- lawyer responds |
+
+### What Stays the Same
+
+- **Command Center**: You can still directly command any agent anytime
+- **Telegram**: Still works for notifications and direct interaction
+- **Agent functions**: The edge functions themselves don't change -- only HOW they get called changes
+
+### What Gets Removed
+
+All 14 `pg_cron` scheduled jobs will be unscheduled (removed from the cron system).
 
 ### Technical Details
 
-**File: `src/components/admin/workforce/CommandCenterPanel.tsx`**
+**Step 1: SQL Migration** -- Create database trigger functions that use `net.http_post()` to call the relevant edge function when a matching event occurs. Each trigger includes a debounce check (only fires if no similar call was made in the last 2 minutes) to prevent spam.
 
-- **Auto-scroll fix (lines 247-251)**: Update the `useEffect` to query `[data-radix-scroll-area-viewport]` inside `scrollRef.current` and use multi-stage scrolling (immediate + RAF + setTimeout 150ms).
+Example trigger pattern:
+```text
+INSERT into error_logs
+  --> trigger fires
+    --> checks: was qa-watchdog called in last 2 min?
+      --> NO: calls net.http_post to ayn-qa-watchdog
+      --> YES: skips (already watching)
+```
 
-- **Scroll-to-bottom button**: Add state `showScrollButton` that tracks whether the user has scrolled up. Attach an `onScroll` listener to the viewport. Show a floating `ChevronDown` button anchored to the bottom-right of the scroll area that scrolls to bottom on click.
+**Step 2: SQL Migration** -- Remove all existing cron jobs:
+```text
+SELECT cron.unschedule('ayn-qa-watchdog-loop');
+SELECT cron.unschedule('ayn-security-guard-loop');
+... (all 14 jobs)
+```
 
-- **Immediate feedback message**: In `handleSend`, right after adding the user message and before the fetch call, insert a temporary assistant message: "On it -- looking into this now. I'll update you shortly." Then when the real response arrives, replace that temporary message with the actual response. If there's a timeout/error, the temporary message gets replaced with the error message instead.
+**Step 3: Add a debounce tracking table** -- `agent_event_debounce` with columns: `agent_name`, `last_triggered_at`, used to prevent duplicate triggers within short windows.
 
-- **Import**: Add `ArrowDown` from lucide-react.
+**Step 4: Update edge functions** -- Add `{"source": "event_trigger"}` handling alongside existing `{"source": "cron"}` so agents know they were event-triggered and can include the triggering record in their context.
+
+**Files affected:**
+- New SQL migration (database triggers + unschedule crons)
+- Minor updates to edge functions that need to handle the event payload
 
