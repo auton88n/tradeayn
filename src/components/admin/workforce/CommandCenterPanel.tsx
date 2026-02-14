@@ -5,36 +5,49 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   Command as CommandIcon,
   ArrowUp,
   Loader2,
   Trash2,
-  Users,
   Shield,
   Plus,
   X,
-  MessageSquare,
-  Terminal,
-  ScrollText,
-  History,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SUPABASE_URL } from '@/config';
 
-interface DiscussionMessage {
+interface ChatMessage {
   id: string;
-  employee_id: string;
-  topic: string;
-  position: string | null;
-  reasoning: string | null;
-  confidence: number | null;
-  created_at: string;
-  discussion_id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  agent?: string;
+  agent_name?: string;
+  agent_emoji?: string;
+  tool_results?: ToolResult[];
+  timestamp: Date;
+}
+
+interface ToolResult {
+  type: 'agent_result' | 'directive_saved' | 'discussion' | 'error';
+  agent?: string;
+  agent_name?: string;
+  agent_emoji?: string;
+  command?: string;
+  result?: any;
+  success?: boolean;
+  directive?: any;
+  responses?: { name: string; reply: string; emoji: string; employeeId: string }[];
+  discussion_id?: string;
+  message?: string;
+  error?: string;
 }
 
 interface Directive {
@@ -44,15 +57,6 @@ interface Directive {
   priority: number;
   is_active: boolean;
   created_at: string;
-}
-
-interface CommandResult {
-  agent?: string;
-  agent_name?: string;
-  command?: string;
-  result?: any;
-  success?: boolean;
-  error?: string;
 }
 
 const AGENT_META: Record<string, { name: string; emoji: string; gradient: string }> = {
@@ -85,29 +89,22 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export function CommandCenterPanel() {
-  const [messages, setMessages] = useState<DiscussionMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentDiscussionId, setCurrentDiscussionId] = useState<string | null>(null);
   const [directives, setDirectives] = useState<Directive[]>([]);
+  const [showDirectives, setShowDirectives] = useState(false);
   const [newDirective, setNewDirective] = useState('');
-  const [newCategory, setNewCategory] = useState('general');
-  const [commandResult, setCommandResult] = useState<CommandResult | null>(null);
-  const [pastTopics, setPastTopics] = useState<{ discussion_id: string; topic: string; created_at: string }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // ─── Load directives ───
   const loadDirectives = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
-
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-command-center`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: 'list_directives' }),
       });
       const data = await res.json();
@@ -115,48 +112,7 @@ export function CommandCenterPanel() {
     } catch { /* ignore */ }
   }, []);
 
-  // ─── Load past discussions ───
-  const loadPastTopics = useCallback(async () => {
-    const { data } = await supabase
-      .from('employee_discussions')
-      .select('discussion_id, topic, created_at')
-      .order('created_at', { ascending: false })
-      .limit(100);
-
-    if (data) {
-      const seen = new Set<string>();
-      const unique: typeof pastTopics = [];
-      for (const d of data) {
-        if (!seen.has(d.discussion_id)) {
-          seen.add(d.discussion_id);
-          unique.push(d);
-          if (unique.length >= 10) break;
-        }
-      }
-      setPastTopics(unique);
-    }
-  }, []);
-
-  // ─── Load recent discussion ───
-  const loadRecentDiscussion = useCallback(async () => {
-    const { data } = await supabase
-      .from('employee_discussions')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    if (data && data.length > 0) {
-      const latestId = data[0].discussion_id;
-      setCurrentDiscussionId(latestId);
-      setMessages(data.filter(d => d.discussion_id === latestId).reverse());
-    }
-  }, []);
-
-  useEffect(() => {
-    loadDirectives();
-    loadPastTopics();
-    loadRecentDiscussion();
-  }, [loadDirectives, loadPastTopics, loadRecentDiscussion]);
+  useEffect(() => { loadDirectives(); }, [loadDirectives]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -164,77 +120,30 @@ export function CommandCenterPanel() {
     }
   }, [messages, isLoading]);
 
-  // ─── Parse input for @command syntax ───
-  function parseInput(text: string): { mode: string; agent?: string; command?: string; topic?: string } {
-    const atMatch = text.match(/^@(\w+)\s+(.+)$/s);
-    if (atMatch) {
-      return { mode: 'command', agent: atMatch[1].toLowerCase(), command: atMatch[2].trim() };
-    }
-    return { mode: 'discuss', topic: text };
-  }
-
-  // ─── Send ───
+  // ─── Send message ───
   const handleSend = async () => {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput('');
     setIsLoading(true);
-    setCommandResult(null);
+
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: text,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, userMsg]);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error('Not authenticated'); return; }
 
-      const parsed = parseInput(text);
-
-      if (parsed.mode === 'command') {
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-command-center`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ mode: 'command', agent: parsed.agent, command: parsed.command }),
-        });
-        const data = await res.json();
-        setCommandResult(data);
-        if (data.error) toast.error(data.error);
-        else toast.success(`Command sent to ${data.agent_name || parsed.agent}`);
-      } else {
-        setMessages([]);
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-command-center`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ mode: 'discuss', topic: parsed.topic }),
-        });
-
-        if (!res.ok) throw new Error('Failed');
-        const data = await res.json();
-        if (data.discussion_id) {
-          setCurrentDiscussionId(data.discussion_id);
-          setMessages(data.messages || []);
-          loadPastTopics();
-        }
-      }
-    } catch (error) {
-      toast.error('Failed to execute');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // ─── Follow up on past discussion ───
-  const handleFollowUp = async (discussionId: string, topic: string) => {
-    setIsLoading(true);
-    setCommandResult(null);
-    setMessages([]);
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      // Build history for context (last 10 messages)
+      const history = messages.slice(-10).map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-command-center`, {
         method: 'POST',
@@ -242,83 +151,66 @@ export function CommandCenterPanel() {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ mode: 'follow_up', topic: `Follow-up: ${topic}`, follow_up_id: discussionId }),
+        body: JSON.stringify({ mode: 'chat', message: text, history }),
       });
 
+      if (!res.ok) throw new Error('Failed');
       const data = await res.json();
-      if (data.discussion_id) {
-        setCurrentDiscussionId(data.discussion_id);
-        setMessages(data.messages || []);
-        loadPastTopics();
-      }
-    } catch {
-      toast.error('Failed to follow up');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  // ─── Add directive ───
-  const handleAddDirective = async () => {
-    if (!newDirective.trim()) return;
+      const assistantMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: data.message || '',
+        agent: data.agent || 'system',
+        tool_results: data.tool_results || [],
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, assistantMsg]);
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-command-center`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ mode: 'directive', directive: newDirective.trim(), category: newCategory, priority: 1 }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        toast.success('Directive saved');
-        setNewDirective('');
+      // Refresh directives if one was saved
+      if (data.tool_results?.some((r: any) => r.type === 'directive_saved')) {
         loadDirectives();
       }
-    } catch {
-      toast.error('Failed to save directive');
+    } catch (error) {
+      toast.error('Failed to send message');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // ─── Delete directive ───
+  // ─── Add directive manually ───
+  const handleAddDirective = async () => {
+    if (!newDirective.trim()) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      await fetch(`${SUPABASE_URL}/functions/v1/admin-command-center`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'chat', message: `Save this as a directive: ${newDirective.trim()}`, history: [] }),
+      });
+      toast.success('Directive saved');
+      setNewDirective('');
+      loadDirectives();
+    } catch { toast.error('Failed'); }
+  };
+
   const handleDeleteDirective = async (id: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-
       await fetch(`${SUPABASE_URL}/functions/v1/admin-command-center`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: 'delete_directive', id }),
       });
-
-      toast.success('Directive removed');
+      toast.success('Removed');
       loadDirectives();
-    } catch {
-      toast.error('Failed to delete');
-    }
+    } catch { toast.error('Failed'); }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const clearRoom = () => {
-    setMessages([]);
-    setCurrentDiscussionId(null);
-    setCommandResult(null);
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
   return (
@@ -330,280 +222,276 @@ export function CommandCenterPanel() {
             <CommandIcon className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              Command Center
-              <Badge variant="secondary" className="text-[10px] font-normal">Memory + Directives</Badge>
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Discuss, command agents directly, or set standing orders
-            </p>
+            <h2 className="text-lg font-semibold">Command Center</h2>
+            <p className="text-sm text-muted-foreground">Talk to AYN — commands, questions, directives</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={clearRoom} className="text-muted-foreground">
-          <Trash2 className="w-4 h-4 mr-2" /> Clear
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDirectives(!showDirectives)}
+            className="text-xs gap-1.5"
+          >
+            <Shield className="w-3.5 h-3.5" />
+            Directives ({directives.filter(d => d.is_active).length})
+            {showDirectives ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setMessages([])} className="text-muted-foreground">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="discuss" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="discuss" className="gap-1.5 text-xs">
-            <MessageSquare className="w-3.5 h-3.5" /> Discuss
-          </TabsTrigger>
-          <TabsTrigger value="command" className="gap-1.5 text-xs">
-            <Terminal className="w-3.5 h-3.5" /> Command
-          </TabsTrigger>
-          <TabsTrigger value="directives" className="gap-1.5 text-xs">
-            <ScrollText className="w-3.5 h-3.5" /> Directives
-          </TabsTrigger>
-        </TabsList>
-
-        {/* ─── DISCUSS TAB ─── */}
-        <TabsContent value="discuss">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            {/* Past topics sidebar */}
-            <Card className="lg:col-span-1 border border-border">
-              <CardContent className="p-3">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
-                  <History className="w-3.5 h-3.5" /> Past Discussions
-                </h3>
-                <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
-                  {pastTopics.length === 0 && (
-                    <p className="text-xs text-muted-foreground">No past discussions</p>
-                  )}
-                  {pastTopics.map((t) => (
-                    <button
-                      key={t.discussion_id}
-                      onClick={() => handleFollowUp(t.discussion_id, t.topic)}
-                      disabled={isLoading}
-                      className="w-full text-left p-2 rounded-lg hover:bg-muted/50 transition-colors group"
-                    >
-                      <p className="text-xs font-medium truncate">{t.topic}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {new Date(t.created_at).toLocaleDateString()}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Main discussion area */}
-            <Card className="lg:col-span-3 border border-border overflow-hidden">
-              <CardContent className="p-0">
-                <ScrollArea className="h-[450px]" ref={scrollRef}>
-                  <div className="p-4 space-y-3">
-                    {messages.length === 0 && !isLoading && (
-                      <div className="flex flex-col items-center justify-center h-[350px] text-muted-foreground">
-                        <Users className="w-12 h-12 mb-4 opacity-30" />
-                        <p className="text-sm font-medium">No discussion yet</p>
-                        <p className="text-xs mt-1">Type a topic — agents now remember past conversations & directives</p>
-                      </div>
-                    )}
-
-                    {messages.length > 0 && (
-                      <div className="text-center py-2">
-                        <Badge variant="outline" className="text-xs">Topic: {messages[0]?.topic}</Badge>
-                      </div>
-                    )}
-
-                    {messages.map((msg) => {
-                      const agent = getAgentMeta(msg.employee_id);
-                      return (
-                        <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-                          <div className={cn("w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-sm bg-gradient-to-br text-white", agent.gradient)}>
-                            {agent.emoji}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-sm font-medium">{agent.name}</span>
-                              {msg.confidence !== null && (
-                                <Badge variant="secondary" className="text-[9px] px-1 py-0">{Math.round(msg.confidence * 100)}%</Badge>
-                              )}
-                              <span className="text-[10px] text-muted-foreground">
-                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                            <p className="text-sm text-foreground/90 leading-relaxed">{msg.position}</p>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-
-                    {isLoading && (
-                      <div className="flex items-center gap-3 py-4">
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Agents are discussing...</span>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-
-                {/* Input */}
-                <div className="p-3 border-t border-border">
-                  <div className="relative bg-muted/50 border border-border rounded-xl overflow-hidden">
-                    <div className="flex items-end gap-2 p-2">
-                      <Textarea
-                        placeholder="Enter a topic for discussion..."
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyPress}
-                        disabled={isLoading}
-                        className="flex-1 resize-none min-h-[44px] max-h-[120px] text-sm bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2"
-                      />
-                      <AnimatePresence>
-                        {input.trim() && !isLoading && (
-                          <motion.button
-                            initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                            onClick={handleSend}
-                            className="shrink-0 w-9 h-9 rounded-lg bg-foreground text-background flex items-center justify-center hover:opacity-90"
-                          >
-                            <ArrowUp className="w-4 h-4" strokeWidth={2.5} />
-                          </motion.button>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* ─── COMMAND TAB ─── */}
-        <TabsContent value="command">
-          <Card className="border border-border">
-            <CardContent className="p-4 space-y-4">
-              <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                <p className="text-xs font-medium text-muted-foreground mb-2">Syntax: <code className="text-foreground">@agent command</code></p>
-                <div className="flex flex-wrap gap-1.5">
-                  {['sales', 'investigator', 'marketing', 'security', 'lawyer', 'advisor', 'qa', 'followup', 'customer'].map(a => (
-                    <Badge key={a} variant="outline" className="text-[10px] cursor-pointer hover:bg-muted" onClick={() => setInput(`@${a} `)}>
-                      @{a}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="relative bg-muted/50 border border-border rounded-xl overflow-hidden">
-                <div className="flex items-end gap-2 p-2">
-                  <Textarea
-                    placeholder="@sales prospect 10 Canadian engineering firms..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    disabled={isLoading}
-                    className="flex-1 resize-none min-h-[60px] max-h-[120px] text-sm bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2 font-mono"
+      {/* Directives panel (collapsible) */}
+      <AnimatePresence>
+        {showDirectives && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            <Card className="border border-border">
+              <CardContent className="p-3 space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add a standing order..."
+                    value={newDirective}
+                    onChange={(e) => setNewDirective(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddDirective()}
+                    className="flex-1 text-sm h-8"
                   />
-                  <AnimatePresence>
-                    {input.trim() && !isLoading && (
-                      <motion.button
-                        initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                        onClick={handleSend}
-                        className="shrink-0 w-9 h-9 rounded-lg bg-foreground text-background flex items-center justify-center hover:opacity-90"
-                      >
-                        <ArrowUp className="w-4 h-4" strokeWidth={2.5} />
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
+                  <Button size="sm" onClick={handleAddDirective} disabled={!newDirective.trim()} className="h-8">
+                    <Plus className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
-              </div>
-
-              {isLoading && (
-                <div className="flex items-center gap-3 py-4">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Executing command...</span>
-                </div>
-              )}
-
-              {commandResult && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                  <Card className={cn("border", commandResult.error ? "border-destructive/50 bg-destructive/5" : "border-emerald-500/30 bg-emerald-500/5")}>
-                    <CardContent className="p-4">
-                      {commandResult.error ? (
-                        <p className="text-sm text-destructive">{commandResult.error}</p>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary">{commandResult.agent_name}</Badge>
-                            <Badge variant="outline" className="text-emerald-600">✓ Executed</Badge>
-                          </div>
-                          <pre className="text-xs bg-muted/50 rounded-lg p-3 overflow-auto max-h-[300px] whitespace-pre-wrap">
-                            {JSON.stringify(commandResult.result, null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ─── DIRECTIVES TAB ─── */}
-        <TabsContent value="directives">
-          <Card className="border border-border">
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-semibold">Standing Orders</h3>
-                <p className="text-xs text-muted-foreground ml-auto">Injected into every agent's prompt</p>
-              </div>
-
-              {/* Add new directive */}
-              <div className="flex gap-2">
-                <Input
-                  placeholder="e.g., Focus only on Canada..."
-                  value={newDirective}
-                  onChange={(e) => setNewDirective(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddDirective()}
-                  className="flex-1 text-sm"
-                />
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  className="px-2 py-1 rounded-md border border-border bg-background text-sm"
-                >
-                  <option value="general">General</option>
-                  <option value="geo">Geography</option>
-                  <option value="strategy">Strategy</option>
-                  <option value="outreach">Outreach</option>
-                  <option value="budget">Budget</option>
-                </select>
-                <Button size="sm" onClick={handleAddDirective} disabled={!newDirective.trim()}>
-                  <Plus className="w-4 h-4 mr-1" /> Add
-                </Button>
-              </div>
-
-              {/* Active directives */}
-              <div className="space-y-2">
-                {directives.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">No active directives</p>
+                {directives.filter(d => d.is_active).length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">No active directives. Say "from now on..." to add one naturally.</p>
                 )}
                 {directives.filter(d => d.is_active).map((d) => (
-                  <motion.div
-                    key={d.id}
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card"
-                  >
-                    <Badge variant="outline" className={cn("text-[10px] shrink-0 mt-0.5", CATEGORY_COLORS[d.category] || CATEGORY_COLORS.general)}>
-                      P{d.priority} · {d.category}
+                  <div key={d.id} className="flex items-center gap-2 p-2 rounded-lg border border-border bg-card text-sm">
+                    <Badge variant="outline" className={cn("text-[10px] shrink-0", CATEGORY_COLORS[d.category] || CATEGORY_COLORS.general)}>
+                      {d.category}
                     </Badge>
-                    <p className="text-sm flex-1">{d.directive}</p>
-                    <Button
-                      variant="ghost" size="icon"
-                      className="w-7 h-7 shrink-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDeleteDirective(d.id)}
-                    >
+                    <span className="flex-1 truncate">{d.directive}</span>
+                    <button onClick={() => handleDeleteDirective(d.id)} className="text-muted-foreground hover:text-destructive">
                       <X className="w-3.5 h-3.5" />
-                    </Button>
-                  </motion.div>
+                    </button>
+                  </div>
                 ))}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Chat area */}
+      <Card className="border border-border overflow-hidden">
+        <CardContent className="p-0">
+          <ScrollArea className="h-[500px]" ref={scrollRef}>
+            <div className="p-4 space-y-4">
+              {messages.length === 0 && !isLoading && (
+                <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center mb-4">
+                    <span className="text-3xl">🧠</span>
+                  </div>
+                  <p className="text-sm font-medium">Talk to AYN</p>
+                  <p className="text-xs mt-1 max-w-xs text-center">
+                    Give commands, ask questions, set directives. AYN understands what you need and acts immediately.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-4 max-w-sm justify-center">
+                    {[
+                      'Sales, prospect 10 Canadian firms',
+                      'What did security find?',
+                      'Focus only on Canada',
+                      "Get everyone's opinion on pricing",
+                    ].map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => setInput(suggestion)}
+                        className="text-[11px] px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {messages.map((msg) => (
+                <div key={msg.id}>
+                  {msg.role === 'user' ? (
+                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
+                      <div className="max-w-[80%] bg-foreground text-background rounded-2xl rounded-br-md px-4 py-2.5">
+                        <p className="text-sm">{msg.content}</p>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+                      {/* AYN's message */}
+                      {msg.content && (
+                        <div className="flex gap-3">
+                          <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-sm bg-gradient-to-br from-violet-500 to-purple-600 text-white">
+                            🧠
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-medium text-muted-foreground">AYN</span>
+                            <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tool results */}
+                      {msg.tool_results?.map((result, i) => (
+                        <ToolResultCard key={i} result={result} />
+                      ))}
+                    </motion.div>
+                  )}
+                </div>
+              ))}
+
+              {isLoading && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-sm bg-gradient-to-br from-violet-500 to-purple-600 text-white">
+                    🧠
+                  </div>
+                  <div className="flex items-center gap-2 py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">AYN is working...</span>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Input */}
+          <div className="p-3 border-t border-border">
+            <div className="relative bg-muted/30 border border-border rounded-xl overflow-hidden">
+              <div className="flex items-end gap-2 p-2">
+                <Textarea
+                  placeholder="Tell AYN what to do..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  disabled={isLoading}
+                  className="flex-1 resize-none min-h-[44px] max-h-[120px] text-sm bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2"
+                />
+                <AnimatePresence>
+                  {input.trim() && !isLoading && (
+                    <motion.button
+                      initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                      onClick={handleSend}
+                      className="shrink-0 w-9 h-9 rounded-lg bg-foreground text-background flex items-center justify-center hover:opacity-90"
+                    >
+                      <ArrowUp className="w-4 h-4" strokeWidth={2.5} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+// ─── Tool Result Components ───
+
+function ToolResultCard({ result }: { result: ToolResult }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (result.type === 'error') {
+    return (
+      <div className="ml-10 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
+        {result.message || result.error}
+      </div>
+    );
+  }
+
+  if (result.type === 'directive_saved') {
+    return (
+      <div className="ml-10 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+        <div className="flex items-center gap-2 text-sm">
+          <Shield className="w-4 h-4 text-emerald-600" />
+          <span className="font-medium text-emerald-700 dark:text-emerald-400">Directive saved</span>
+        </div>
+        {result.directive && (
+          <p className="text-xs text-muted-foreground mt-1">{result.directive.directive}</p>
+        )}
+      </div>
+    );
+  }
+
+  if (result.type === 'discussion' && result.responses) {
+    return (
+      <div className="ml-10 space-y-2">
+        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Team Discussion</div>
+        {result.responses.map((r, i) => {
+          const meta = getAgentMeta(r.employeeId);
+          return (
+            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex gap-2.5">
+              <div className={cn("w-6 h-6 rounded-md shrink-0 flex items-center justify-center text-xs bg-gradient-to-br text-white", meta.gradient)}>
+                {meta.emoji}
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-medium text-muted-foreground">{meta.name}</span>
+                <p className="text-sm">{r.reply}</p>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (result.type === 'agent_result') {
+    const meta = result.agent ? getAgentMeta(AGENT_EMPLOYEE_MAP[result.agent] || result.agent) : { name: 'Agent', emoji: '🤖', gradient: 'from-gray-500 to-gray-600' };
+    const hasResult = result.result && !result.result.error;
+
+    return (
+      <div className="ml-10 p-3 rounded-lg border border-border bg-card">
+        <div className="flex items-center gap-2 mb-1">
+          <div className={cn("w-6 h-6 rounded-md shrink-0 flex items-center justify-center text-xs bg-gradient-to-br text-white", meta.gradient)}>
+            {result.agent_emoji || meta.emoji}
+          </div>
+          <span className="text-sm font-medium">{result.agent_name || meta.name}</span>
+          {hasResult ? (
+            <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-500/30">✓ Done</Badge>
+          ) : (
+            <Badge variant="outline" className="text-[10px] text-destructive border-destructive/30">Error</Badge>
+          )}
+        </div>
+        {result.result?.error && (
+          <p className="text-xs text-destructive mt-1">{result.result.error}</p>
+        )}
+        {hasResult && (
+          <>
+            <button onClick={() => setExpanded(!expanded)} className="text-xs text-muted-foreground hover:text-foreground mt-1 flex items-center gap-1">
+              {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              {expanded ? 'Hide details' : 'Show details'}
+            </button>
+            {expanded && (
+              <pre className="text-xs bg-muted/50 rounded-lg p-2 mt-2 overflow-auto max-h-[200px] whitespace-pre-wrap">
+                {JSON.stringify(result.result, null, 2)}
+              </pre>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// Map route keys to employee IDs for display
+const AGENT_EMPLOYEE_MAP: Record<string, string> = {
+  sales: 'sales',
+  investigator: 'investigator',
+  marketing: 'marketing',
+  security: 'security_guard',
+  lawyer: 'lawyer',
+  advisor: 'advisor',
+  qa: 'qa_watchdog',
+  followup: 'follow_up',
+  customer: 'customer_success',
+};
