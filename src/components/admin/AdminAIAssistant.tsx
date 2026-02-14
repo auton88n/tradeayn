@@ -79,42 +79,10 @@ const ChatMessage = ({
             {message.content}
           </p>
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown
-              components={{
-                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-                li: ({ children }) => <li className="mb-1">{children}</li>,
-                code: ({ children }) => (
-                  <code className="bg-background/50 px-1.5 py-0.5 rounded text-xs font-mono">
-                    {children}
-                  </code>
-                ),
-                pre: ({ children }) => (
-                  <pre className="bg-background/50 p-2 rounded-lg overflow-x-auto text-xs">
-                    {children}
-                  </pre>
-                ),
-                table: ({ children }) => (
-                  <div className="overflow-x-auto my-2">
-                    <table className="min-w-full text-xs border-collapse">
-                      {children}
-                    </table>
-                  </div>
-                ),
-                th: ({ children }) => (
-                  <th className="border border-border px-2 py-1 bg-muted font-medium text-left">
-                    {children}
-                  </th>
-                ),
-                td: ({ children }) => (
-                  <td className="border border-border px-2 py-1">{children}</td>
-                ),
-              }}
-            >
-              {message.content.replace(/\[ACTION:[^\]]+\]/g, '')}
-            </ReactMarkdown>
+          <div className="text-sm">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+              {message.content.replace(/\[ACTION:[^\]]*\]/g, '').trim()}
+            </p>
           </div>
         )}
         
