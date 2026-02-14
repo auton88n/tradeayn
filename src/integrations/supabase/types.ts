@@ -161,6 +161,21 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_event_debounce: {
+        Row: {
+          agent_name: string
+          last_triggered_at: string
+        }
+        Insert: {
+          agent_name: string
+          last_triggered_at?: string
+        }
+        Update: {
+          agent_name?: string
+          last_triggered_at?: string
+        }
+        Relationships: []
+      }
       agent_telegram_bots: {
         Row: {
           bot_token: string
@@ -3606,6 +3621,15 @@ export type Database = {
       }
       admin_view_contact_with_logging: { Args: never; Returns: boolean }
       backfill_missing_session_titles: { Args: never; Returns: number }
+      call_agent_if_not_debounced: {
+        Args: {
+          p_agent_name: string
+          p_debounce_seconds?: number
+          p_function_name: string
+          p_payload?: Json
+        }
+        Returns: undefined
+      }
       check_api_rate_limit: {
         Args: {
           p_endpoint: string

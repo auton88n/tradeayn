@@ -23,6 +23,17 @@ serve(async (req) => {
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
     const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
 
+    let body: any = {};
+    try { body = await req.json(); } catch { /* empty body ok */ }
+    const source = body.source || 'manual';
+    
+    // Handle ping checks
+    if (body.ping) {
+      return new Response(JSON.stringify({ pong: true, source }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const companyState = await loadCompanyState(supabase);
     const healthResults: any[] = [];
     let criticalIssues = 0;

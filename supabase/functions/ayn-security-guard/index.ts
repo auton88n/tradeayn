@@ -22,8 +22,16 @@ serve(async (req) => {
     const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
 
     let body: any = {};
-    try { body = await req.json(); } catch { /* empty body for cron */ }
+    try { body = await req.json(); } catch { /* empty body */ }
+    const source = body.source || 'manual';
     const mode = body.mode || 'check_threats';
+    
+    // Handle ping checks
+    if (body.ping) {
+      return new Response(JSON.stringify({ pong: true, source }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const results: string[] = [];
 
