@@ -614,7 +614,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             {transcriptMessages.length > 0 && onTranscriptToggle && <button onClick={onTranscriptToggle} className={cn("inline-flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full", "border border-border bg-card/80 backdrop-blur-sm", "text-xs sm:text-sm text-muted-foreground shadow-sm", "hover:bg-muted/50 hover:text-foreground hover:shadow-md", "active:scale-95 transition-all cursor-pointer", transcriptOpen && "bg-muted/60")}>
                 <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">History</span>
-                <span className="text-[10px] sm:text-xs bg-muted px-1 sm:px-1.5 py-0.5 rounded-full">{transcriptMessages.length}</span>
+                <span className="text-[10px] sm:text-xs bg-muted px-1 sm:px-1.5 py-0.5 rounded-full">{messageCount > 0 ? messageCount : transcriptMessages.length}</span>
               </button>}
           </div>
 
