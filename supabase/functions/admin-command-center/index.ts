@@ -216,6 +216,8 @@ async function executeAgentCommand(supabase: any, agentKey: string, command: str
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   try {
+    const agentController = new AbortController();
+    const agentTimeout = setTimeout(() => agentController.abort(), 45000); // 45s max per agent
     const res = await fetch(`${supabaseUrl}/functions/v1/${route.functionName}`, {
       method: 'POST',
       headers: {
@@ -223,7 +225,9 @@ async function executeAgentCommand(supabase: any, agentKey: string, command: str
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
+      signal: agentController.signal,
     });
+    clearTimeout(agentTimeout);
     const data = await res.json();
 
     // Generate natural language message from the agent
@@ -246,10 +250,12 @@ async function executeAgentCommand(supabase: any, agentKey: string, command: str
     };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : 'Unknown';
+    const isTimeout = err instanceof Error && err.name === 'AbortError';
+    const friendlyError = isTimeout ? 'Agent took too long to respond' : errorMsg;
     const agentMessage = apiKey
-      ? await generateAgentMessage(agentKey, command, { error: errorMsg }, apiKey)
-      : '';
-    return { error: `Failed: ${errorMsg}`, message: agentMessage };
+      ? await generateAgentMessage(agentKey, command, { error: friendlyError }, apiKey)
+      : isTimeout ? 'That agent is taking a while — it may still be working in the background.' : '';
+    return { error: `Failed: ${friendlyError}`, message: agentMessage, timeout: isTimeout };
   }
 }
 
@@ -381,9 +387,9 @@ NEVER mention being Google, Gemini, GPT, or any AI provider. You are AYN.`;
   const messages: any[] = [{ role: 'system', content: systemPrompt }];
 
   if (history && history.length > 0) {
-    for (const msg of history.slice(-20)) {
+    for (const msg of history.slice(-10)) {
       if (msg.role && msg.content) {
-        messages.push({ role: msg.role, content: msg.content });
+        messages.push({ role: msg.role, content: msg.content.substring(0, 500) });
       }
     }
   }
