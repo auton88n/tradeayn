@@ -132,6 +132,7 @@ export const useMessages = (
   const [isLoadingFromHistory, setIsLoadingFromHistory] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalMessageCount, setTotalMessageCount] = useState(0);
   const { toast } = useToast();
 
   const PAGE_SIZE = 20;
@@ -175,7 +176,6 @@ export const useMessages = (
 
       if (data && data.length > 0) {
         const chatMessages = mapDbMessages(data);
-        // Deduplicate and sort chronologically (oldest first)
         const uniqueMessages = Array.from(
           new Map(chatMessages.map(m => [m.id, m])).values()
         ).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
@@ -185,6 +185,17 @@ export const useMessages = (
       } else {
         setMessages([]);
         setHasMoreMessages(false);
+      }
+
+      // Fetch total count separately (lightweight query - only IDs)
+      try {
+        const countData = await supabaseApi.get<any[]>(
+          `messages?user_id=eq.${userId}&session_id=eq.${sessionId}&select=id`,
+          session.access_token
+        );
+        setTotalMessageCount(countData?.length ?? data?.length ?? 0);
+      } catch {
+        setTotalMessageCount(data?.length ?? 0);
       }
     } catch (error) {
       console.error('[useMessages] Error loading messages:', error);
@@ -344,6 +355,7 @@ export const useMessages = (
       if (prev.some(m => m.id === userMessage.id)) return prev;
       return [...prev, userMessage];
     });
+    setTotalMessageCount(prev => prev + 1);
     console.log('[useMessages] User message added to UI');
 
     try {
@@ -786,6 +798,9 @@ export const useMessages = (
           description: "Message may not have been saved. Please refresh if issues persist.",
           variant: "destructive"
         });
+      } else {
+        // AYN response saved successfully - increment total count
+        setTotalMessageCount(prev => prev + 1);
       }
 
       // Usage warnings are handled by SystemNotificationBanner from user_ai_limits data
@@ -853,14 +868,15 @@ export const useMessages = (
   const setMessagesFromHistory = useCallback((newMessages: Message[]) => {
     setIsLoadingFromHistory(true);
     setMessages(newMessages);
+    setTotalMessageCount(newMessages.length);
     // Reset flag after effects have checked it
     setTimeout(() => {
       setIsLoadingFromHistory(false);
     }, 200);
   }, []);
 
-  // Message limit tracking
-  const messageCount = messages.length;
+  // Message limit tracking - use totalMessageCount for accurate limit checking
+  const messageCount = totalMessageCount > 0 ? totalMessageCount : messages.length;
   const hasReachedLimit = messageCount >= MAX_MESSAGES_PER_CHAT;
 
   return {
@@ -872,6 +888,7 @@ export const useMessages = (
     lastSuggestedEmotion,
     moodPattern,
     messageCount,
+    totalMessageCount,
     hasReachedLimit,
     maxMessages: MAX_MESSAGES_PER_CHAT,
     isLoadingFromHistory,

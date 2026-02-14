@@ -24,9 +24,10 @@ interface ChatHistoryCollapsibleProps {
   onLoadMore?: () => void;
   hasMore?: boolean;
   isLoadingMore?: boolean;
+  totalMessageCount?: number;
 }
 
-export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear, onLoadMore, hasMore, isLoadingMore }: ChatHistoryCollapsibleProps) => {
+export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear, onLoadMore, hasMore, isLoadingMore, totalMessageCount }: ChatHistoryCollapsibleProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevMessageCountRef = useRef(messages.length);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -134,7 +135,7 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear, on
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">AYN</span>
-                      <span className="text-xs text-muted-foreground">{messages.length} messages</span>
+                      <span className="text-xs text-muted-foreground">{totalMessageCount ?? messages.length} messages</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -228,7 +229,7 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear, on
             >
               <Clock className="h-4 w-4" />
               <span>History</span>
-              <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{messages.length}</span>
+              <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{totalMessageCount ?? messages.length}</span>
             </motion.button>
           </div>
         )}

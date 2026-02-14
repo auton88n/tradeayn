@@ -189,6 +189,7 @@ export interface UseMessagesReturn {
   lastSuggestedEmotion: string | null;
   moodPattern: MoodPattern | null;
   messageCount: number;
+  totalMessageCount: number;
   hasReachedLimit: boolean;
   maxMessages: number;
   isLoadingFromHistory: boolean;
