@@ -1,55 +1,32 @@
 
-# Fix All AI Employee Issues
 
-## 1. Fix `ayn_mind` Type Constraint (Root Cause of Silent Failures)
+## Fix Command Center: Immediate Feedback, Auto-Scroll, and Scroll-to-Bottom Button
 
-The `ayn_mind_type_check` constraint only allows 16 types but agents are trying to insert `employee_report`, `innovation_proposal`, `employee_discussion`, and others. Every insert silently fails.
+### Problem
+1. When you send a message (like "look for companies in Halifax NS"), the chat waits for the full response before showing anything -- feels like it's broken or frozen.
+2. The chat doesn't auto-scroll to the bottom when new messages arrive.
+3. No way to quickly jump back to the bottom after scrolling up.
 
-**Fix:** Drop and recreate the constraint with all needed types:
+### Solution
 
-```sql
-ALTER TABLE ayn_mind DROP CONSTRAINT ayn_mind_type_check;
-ALTER TABLE ayn_mind ADD CONSTRAINT ayn_mind_type_check CHECK (type = ANY (ARRAY[
-  'thought', 'observation', 'idea', 'task', 'mood', 'trend',
-  'telegram_admin', 'telegram_ayn', 'sales_lead', 'sales_draft',
-  'vision_analysis', 'proactive_research', 'telegram_summary',
-  'marketing_chat', 'marketing_ayn', 'marketing_summary',
-  'employee_report', 'innovation_proposal', 'employee_discussion',
-  'strategic_advisory', 'security_alert', 'proactive_alert'
-]));
-```
+#### 1. Immediate "Looking into it" feedback
+When you send a message that triggers a long-running agent task, AYN will immediately show a temporary message like "On it -- looking into that now. I'll have results shortly." while the backend works. This replaces the current behavior of just showing a spinner with no text feedback.
 
-This unblocks QA Watchdog, Security Guard, Innovation, Advisor, and all other agents from saving their reports.
+#### 2. Fix auto-scroll
+The current scroll code targets the wrong element. It needs to target the internal Radix ScrollArea viewport (`[data-radix-scroll-area-viewport]`) instead of the outer wrapper, matching the fix already applied to AdminAIAssistant.
 
-## 2. Fix Health Check False Positives
+#### 3. Add scroll-to-bottom arrow button
+A floating down-arrow button appears when you scroll up, letting you jump back to the latest messages with one tap.
 
-**File:** `supabase/functions/ayn-qa-watchdog/index.ts`
+### Technical Details
 
-Change the health check threshold from `>= 500` to `>= 400`. Currently `support-bot` and `ayn-unified` return 400 errors during pings but get marked as "healthy." This gives false 100% uptime.
+**File: `src/components/admin/workforce/CommandCenterPanel.tsx`**
 
-```
-// Before
-if (statusCode >= 500) { isHealthy = false; }
+- **Auto-scroll fix (lines 247-251)**: Update the `useEffect` to query `[data-radix-scroll-area-viewport]` inside `scrollRef.current` and use multi-stage scrolling (immediate + RAF + setTimeout 150ms).
 
-// After  
-if (statusCode >= 400) { isHealthy = false; }
-```
+- **Scroll-to-bottom button**: Add state `showScrollButton` that tracks whether the user has scrolled up. Attach an `onScroll` listener to the viewport. Show a floating `ChevronDown` button anchored to the bottom-right of the scroll area that scrolls to bottom on click.
 
-## 3. Unstick Investigator's Pending Tasks
+- **Immediate feedback message**: In `handleSend`, right after adding the user message and before the fetch call, insert a temporary assistant message: "On it -- looking into this now. I'll update you shortly." Then when the real response arrives, replace that temporary message with the actual response. If there's a timeout/error, the temporary message gets replaced with the error message instead.
 
-3 tasks have been stuck as `pending` since Feb 11-12. Two have invalid `lead_id` values (`all`, `lead_rsp_dubai`) that will never resolve. Mark them as `failed` with an explanation so the Investigator stops retrying them:
+- **Import**: Add `ArrowDown` from lucide-react.
 
-```sql
-UPDATE employee_tasks 
-SET status = 'failed', 
-    output_data = '{"error": "Invalid lead_id, marked failed during cleanup"}'
-WHERE status = 'pending' 
-  AND to_employee = 'investigator';
-```
-
-## Summary
-
-Three changes total:
-1. **Database migration** -- Expand `ayn_mind_type_check` constraint (unblocks all agent reporting)
-2. **Edge function edit** -- Fix QA Watchdog health threshold from 500 to 400 (accurate health data)
-3. **Data update** -- Mark 3 stuck Investigator tasks as failed (clears the queue)
