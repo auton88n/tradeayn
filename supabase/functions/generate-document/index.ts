@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+import { uploadDocumentToStorage } from "../_shared/storageUpload.ts";
 import { sanitizeUserPrompt } from "../_shared/sanitizePrompt.ts";
 
 const corsHeaders = {
@@ -394,18 +395,7 @@ async function generateExcel(data: DocumentRequest): Promise<Uint8Array> {
   return new Uint8Array(buffer);
 }
 
-// Convert Uint8Array to base64 data URL (bypasses ad-blockers)
-function toDataUrl(data: Uint8Array, mimeType: string): string {
-  // Chunked base64 conversion to prevent "Maximum call stack size exceeded" on large files
-  const CHUNK_SIZE = 8192;
-  let binary = '';
-  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-    const chunk = data.subarray(i, Math.min(i + CHUNK_SIZE, data.length));
-    binary += String.fromCharCode(...chunk);
-  }
-  const base64 = btoa(binary);
-  return `data:${mimeType};base64,${base64}`;
-}
+// toDataUrl removed - files are now uploaded to Supabase Storage
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -473,10 +463,11 @@ serve(async (req) => {
       });
     }
     
-    // Convert to base64 data URL (bypasses ad-blockers completely)
-    const downloadUrl = toDataUrl(fileData, contentType);
+    // Upload to Supabase Storage for permanent URL
+    const userId = body.userId || 'anonymous';
+    const downloadUrl = await uploadDocumentToStorage(fileData, userId, filename, contentType);
     
-    console.log(`[generate-document] Document created as data URL: ${filename} (${Math.round(downloadUrl.length / 1024)}KB)`);
+    console.log(`[generate-document] Document uploaded to storage: ${filename}`);
     
     return new Response(JSON.stringify({
       success: true,

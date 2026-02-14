@@ -5,6 +5,7 @@ import { detectIntent } from "./intentDetector.ts";
 import { buildSystemPrompt } from "./systemPrompts.ts";
 import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
+import { uploadImageToStorage } from "../_shared/storageUpload.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -83,8 +84,21 @@ async function generateImage(prompt: string): Promise<{ imageUrl: string; revise
     throw new Error('No image generated');
   }
 
-  console.log('[ayn-unified] Image generated successfully');
+  console.log('[ayn-unified] Image generated, uploading to storage...');
   return { imageUrl, revisedPrompt };
+}
+
+// Helper: upload image to storage if it's a data URL, return public URL
+async function uploadImageIfDataUrl(imageUrl: string, userId: string): Promise<string> {
+  if (!imageUrl.startsWith('data:image/')) return imageUrl;
+  try {
+    const publicUrl = await uploadImageToStorage(imageUrl, userId);
+    console.log('[ayn-unified] Image uploaded to storage:', publicUrl.substring(0, 80));
+    return publicUrl;
+  } catch (err) {
+    console.error('[ayn-unified] Storage upload failed, falling back to data URL:', err);
+    return imageUrl;
+  }
 }
 
 // Extract and save memories from conversation
@@ -635,7 +649,10 @@ serve(async (req) => {
     // Handle image generation intent (LAB mode)
     if (intent === 'image') {
       try {
-        const { imageUrl, revisedPrompt } = await generateImage(lastMessage);
+        const { imageUrl: rawImageUrl, revisedPrompt } = await generateImage(lastMessage);
+        
+        // Upload to storage for permanent URL
+        const imageUrl = await uploadImageIfDataUrl(rawImageUrl, userId);
         
         // Log usage
         try {
@@ -1030,7 +1047,8 @@ serve(async (req) => {
       try {
         const promptMatch = responseContent.match(/["'](?:prompt|action_input|text)["']\s*:\s*["']([^"']+)["']/);
         const imagePrompt = promptMatch?.[1] || lastMessage;
-        const { imageUrl, revisedPrompt } = await generateImage(imagePrompt);
+        const { imageUrl: rawImgUrl, revisedPrompt } = await generateImage(imagePrompt);
+        const imageUrl = await uploadImageIfDataUrl(rawImgUrl, userId);
         return new Response(JSON.stringify({
           content: revisedPrompt,
           imageUrl,
