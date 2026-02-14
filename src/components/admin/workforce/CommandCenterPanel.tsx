@@ -144,6 +144,7 @@ export function CommandCenterPanel() {
   const [newDirective, setNewDirective] = useState('');
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   // ─── Load conversation history from DB ───
   const loadHistory = useCallback(async () => {
@@ -244,11 +245,34 @@ export function CommandCenterPanel() {
     loadDirectives();
   }, [loadHistory, loadDirectives]);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  // ─── Auto-scroll to bottom ───
+  const scrollToBottom = useCallback(() => {
+    if (!scrollRef.current) return;
+    const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+    if (viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
     }
-  }, [messages, isLoading]);
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+    const raf = requestAnimationFrame(scrollToBottom);
+    const timeout = setTimeout(scrollToBottom, 150);
+    return () => { cancelAnimationFrame(raf); clearTimeout(timeout); };
+  }, [messages, isLoading, scrollToBottom]);
+
+  // ─── Track scroll position for scroll-to-bottom button ───
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = viewport;
+      setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
+    };
+    viewport.addEventListener('scroll', handleScroll);
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [historyLoaded]);
 
   // ─── Send message ───
   const handleSend = async () => {
@@ -263,7 +287,16 @@ export function CommandCenterPanel() {
       content: text,
       timestamp: new Date(),
     };
-    setMessages(prev => [...prev, userMsg]);
+    // Add a temporary "looking into it" message
+    const tempId = crypto.randomUUID();
+    const tempMsg: ChatMessage = {
+      id: tempId,
+      role: 'assistant',
+      content: "On it — looking into this now. I'll update you shortly.",
+      agent: 'system',
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, userMsg, tempMsg]);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -304,7 +337,8 @@ export function CommandCenterPanel() {
         tool_results: data.tool_results || [],
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, assistantMsg]);
+      // Replace the temporary message with the real response
+      setMessages(prev => prev.map(m => m.id === tempId ? assistantMsg : m));
 
       // Persist assistant message
       persistMessage(session.user.id, assistantMsg);
@@ -324,7 +358,8 @@ export function CommandCenterPanel() {
         agent: 'system',
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMsg]);
+      // Replace the temporary message with the error
+      setMessages(prev => prev.map(m => m.id === tempId ? errorMsg : m));
       toast.error(isTimeout ? 'Request timed out' : 'Failed to send message');
     } finally {
       setIsLoading(false);
@@ -452,6 +487,7 @@ export function CommandCenterPanel() {
       {/* Chat area */}
       <Card className="border border-border overflow-hidden">
         <CardContent className="p-0">
+          <div className="relative">
           <ScrollArea className="h-[500px]" ref={scrollRef}>
             <div className="p-4 space-y-4">
               {messages.length === 0 && !isLoading && historyLoaded && (
@@ -556,6 +592,22 @@ export function CommandCenterPanel() {
               )}
             </div>
           </ScrollArea>
+
+          {/* Scroll to bottom button */}
+          <AnimatePresence>
+            {showScrollButton && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={scrollToBottom}
+                className="absolute bottom-20 right-4 w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg hover:opacity-90 transition-opacity z-10"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+          </div>
 
           {/* Input */}
           <div className="p-3 border-t border-border">
