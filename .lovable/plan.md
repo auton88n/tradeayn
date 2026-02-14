@@ -1,124 +1,100 @@
 
 
-# Make Command Center Feel Like a Real Team Chat
+# Persistent Memory + Context-Aware Command Center
 
-## Problems Identified
+## Root Cause Analysis
 
-1. **Agent commands fail silently**: When you say "Sales, prospect 5 Canadian firms," AYN routes to Sales Hunter with `mode: prospect` but the Sales function expects a `url` parameter, not a natural language command. Result: `{"error": "URL is required"}` -- raw JSON shown to you.
+The AI employees feel robotic because of three architectural gaps:
 
-2. **Raw JSON instead of conversation**: Agent results are displayed as expandable JSON blocks, not as human messages. This kills the "team" feeling.
+1. **No persistent memory**: Chat history lives only in browser state -- refresh and it's gone. The `admin_ai_conversations` table exists but the Command Center never reads from or writes to it.
 
-3. **No agent intelligence in routing**: AYN passes a generic `command` string but doesn't translate your intent into the correct parameters each agent needs (e.g., Sales needs `search_query` for finding leads, not `url`).
+2. **Agent results are invisible to AYN**: When Sales Hunter finds leads, that data is returned to the UI but never included in the conversation history sent back to AYN. So AYN literally cannot remember what any agent said or found.
 
-4. **Agents can't talk back naturally**: There's no step where the agent's raw result gets turned into a human-readable message.
+3. **No session continuity**: You can't go back and see past conversations. Every visit starts blank.
 
 ## Solution
 
-### 1. Smart Command Translation (Backend)
-
-**File: `supabase/functions/admin-command-center/index.ts`**
-
-Replace the dumb `executeAgentCommand` with an intelligent two-step process:
-
-- **Step A**: Before calling the agent function, use AYN to translate the natural language command into the correct parameters for that specific agent. For example:
-  - "prospect 5 Canadian firms" becomes `{ mode: 'search_leads', search_query: 'engineering firms Halifax Canada' }` then iterates through results with `{ mode: 'prospect', url: '...' }`
-  - "what did security find?" becomes `{ mode: 'scan' }` (already works)
-
-- **Step B**: After the agent returns raw JSON, make a quick LLM call to have that agent summarize their result in natural language (1-3 sentences, in character). This replaces raw JSON with a human message.
-
-### 2. Agent Results as Chat Messages (Frontend)
+### 1. Persist Every Message to Database
 
 **File: `src/components/admin/workforce/CommandCenterPanel.tsx`**
 
-- Replace the `ToolResultCard` JSON accordion with **chat-style agent messages**
-- Agent results appear as messages from that agent (with their emoji, name, colored accent)
-- Raw JSON hidden behind an optional small "technical details" toggle (not prominent)
-- Error results shown as the agent speaking: "I need a company URL to prospect. Can you give me one?" instead of `{"error": "URL is required"}`
+- On component mount, load the last 50 messages from `admin_ai_conversations` for the current admin
+- After each user message and assistant response, save them to the database
+- Include `tool_results` in the `context` JSONB column so agent findings are preserved
+- Add a "conversation history" indicator showing past messages are loaded
 
-### 3. Agent-Specific Command Routing
+### 2. Include Agent Results in Conversation Context
 
-Update the `route_to_agent` tool to include smarter parameter mapping:
+**File: `supabase/functions/admin-command-center/index.ts`**
 
-```text
-Sales commands:
-  "prospect [company]" -> search_leads first, then prospect each
-  "draft email for [lead]" -> draft_email with lead_id
-  "pipeline status" -> pipeline_status
-  "find [query]" -> search_leads
+- Change how history is built: instead of just `{ role, content }`, include a summary of tool results
+- When an agent returns data (leads, scan results, etc.), append a condensed version to the assistant message in history
+- Example: if Sales found 5 leads, the history entry becomes:
+  ```
+  role: "assistant"
+  content: "Routing to Sales Hunter... [Sales Hunter found: Oickle's Property Management, Halifax Seed, ...]"
+  ```
+- This way AYN knows what happened in previous messages and can reference it
 
-Security commands:
-  "scan" / "check" -> scan mode
-  
-Investigator commands:
-  "investigate [topic]" -> investigate mode
-```
+### 3. Load Past Conversations on Mount
 
-AYN's tool call will include a `parameters` object that maps directly to what the agent function expects, instead of just passing a raw string.
+**File: `src/components/admin/workforce/CommandCenterPanel.tsx`**
 
-### 4. Natural Language Result Interpretation
+- On mount, query `admin_ai_conversations` for the current user's recent messages (last 50)
+- Reconstruct `ChatMessage[]` from database rows including any saved tool results from the `context` column
+- Show a subtle divider: "--- Previous conversation ---" between loaded history and new messages
+- The trash button clears the UI but keeps the database records (or optionally archives them)
 
-After every agent execution, add a quick LLM call:
+### 4. Richer History for AYN's Context Window
 
-```text
-System: "You are [Sales Hunter]. Summarize this result for the founder in 1-3 sentences. 
-         Be direct, stay in character. If there's an error, explain what you need."
-User: [raw JSON result]
-Result: "Found 5 engineering firms in Halifax. Top pick is McInnes Cooper - they have 
-         a solid web presence and likely need our tools. Want me to draft outreach?"
-```
+**File: `supabase/functions/admin-command-center/index.ts`**
 
-This makes every agent response feel like a real team member talking.
+- When building the `messages` array for the LLM call, enrich assistant messages with agent output summaries
+- Cap at last 20 messages (instead of 10) to give AYN more memory
+- For messages with tool results, format them as: `"[AYN] On it. [Sales Hunter] Found 5 leads: Company A, Company B..."`
 
 ## Technical Details
 
-### Backend Changes (`supabase/functions/admin-command-center/index.ts`)
+### Database Usage (existing table `admin_ai_conversations`)
 
-1. **Update `route_to_agent` tool definition** to include an optional `parameters` field so AYN can pass structured params:
-   ```
-   parameters: {
-     agent: "sales",
-     command: "prospect 5 Canadian firms",
-     agent_params: { mode: "search_leads", search_query: "engineering firms Canada Halifax" }
-   }
-   ```
+Columns already available:
+- `id` (uuid)
+- `admin_id` (uuid) -- links to the logged-in admin
+- `message` (text) -- the message content
+- `role` (text) -- "user" or "assistant"
+- `context` (jsonb) -- store tool_results, agent data here
+- `actions_taken` (jsonb) -- store what tools were called
+- `created_at` (timestamptz)
 
-2. **Update `executeAgentCommand`** to:
-   - Accept optional `agent_params` that override the default mode
-   - If no `agent_params`, use a quick LLM call to translate command to params
-   - After getting raw result, make a second LLM call to generate a natural language summary
-   - Return both `result` (raw) and `message` (natural language) fields
+### Frontend Changes (`CommandCenterPanel.tsx`)
 
-3. **Update AYN system prompt** to instruct it to include `agent_params` when possible, mapping user intent to the correct agent function parameters
+1. **On mount**: Load recent messages from `admin_ai_conversations` where `admin_id` = current user, ordered by `created_at`, limit 50
+2. **After user sends**: Insert a row with `role: 'user'`, `message: text`
+3. **After assistant responds**: Insert a row with `role: 'assistant'`, `message: data.message`, `context: { tool_results: data.tool_results }`, `actions_taken: { tools_called: [...] }`
+4. **Build history for backend**: Include enriched content -- for assistant messages with tool_results in context, append agent summaries to the content string
 
-### Frontend Changes (`src/components/admin/workforce/CommandCenterPanel.tsx`)
+### Backend Changes (`admin-command-center/index.ts`)
 
-1. **Update `ToolResultCard`** for `agent_result` type:
-   - Show agent message as a chat bubble (like AYN's messages but with agent's color/emoji)
-   - Display `result.message` (natural language) as the primary content
-   - Keep raw JSON in a small collapsible "Details" section
-   - For errors, show the agent's natural language explanation
+1. **Enrich history processing**: When receiving history entries, check if they have context with tool_results
+2. **Build richer messages**: For each history entry with agent results, append a brief summary so AYN has full context
+3. **Increase history window**: Change from `slice(-10)` to `slice(-20)` for better memory
+4. **Add a `recall_context` tool** (optional): Let AYN explicitly query past agent results from the activity log when it needs to reference older data
 
-2. **Update error display**: Instead of red error boxes, show the agent speaking about what went wrong
+### Expected Result
 
-### Example Flow After Changes
+```
+You: "Sales, find 5 leads in Halifax"
+AYN: "On it."
+Sales Hunter: "Found 5 high-intent leads: Oickle's Property Management, Halifax Seed..."
 
-```text
-You: "Sales, find me 5 engineering firms in Halifax to offer free trials"
+You: "Draft emails for the top 2"
+AYN: "Got it -- drafting for Oickle's and Halifax Seed."  <-- AYN now remembers!
+Sales Hunter: "Done. Two personalized emails ready..."
 
-AYN: "On it. Sending Sales Hunter to search Halifax."
+[Next day, you come back]
+[Previous conversation loads automatically]
 
-Sales Hunter: "Found 5 engineering firms in Halifax:
-1. Smith Engineering - structural focus, 12 employees
-2. Atlantic Design Group - civil engineering, 8 employees  
-3. ...
-Want me to start prospecting and drafting outreach emails?"
-
-You: "Yes, draft emails for the top 3"
-
-AYN: "Sales Hunter is drafting now..."
-
-Sales Hunter: "Done. Drafted personalized outreach for Smith Engineering, 
-Atlantic Design, and Maritime Structural. Each email highlights our free 
-trial and Nova Scotia roots. Ready to send on your approval."
+You: "What did Sales find yesterday?"
+AYN: "Sales Hunter found 5 leads in Halifax yesterday. The top picks were Oickle's and Halifax Seed. We drafted emails for both -- want me to check if they were sent?"
 ```
 
