@@ -1,124 +1,72 @@
 
-# Transform Marketing from Social Media Bot to Strategic Marketing Brain
+# Make AYN Talk Like a Teammate, Not a Report Generator
 
 ## The Problem
 
-Right now, Marketing = `twitter-auto-market`, which can ONLY:
-- Generate tweets
-- Generate tweet threads
-- Generate 7-day social media calendars
+The long structured responses with bold labels like **"Status:"**, **"Alerts:"**, **"Pass Rate:"**, `[ACTION:run_tests:calculator]` come from the `admin-ai-assistant` edge function's system prompt. It explicitly tells AYN to use "markdown formatting for clarity (tables, lists, code blocks)" and embed `[ACTION:]` tags. That's why you get a wall of structured data instead of a normal conversation.
 
-That's it. It's a social media posting tool, not a marketing strategist. It has zero connection to Sales or Investigator, can't craft email campaigns, doesn't analyze your leads or pipeline, and doesn't know what products to push or to whom.
+## The Fix
 
-## The New Marketing Agent
+### 1. Rewrite the System Prompt (`supabase/functions/admin-ai-assistant/index.ts`)
 
-Replace the `twitter-auto-market` routing with a new `ayn-marketing-strategist` edge function that acts as a real marketing brain.
+Replace the current report-style instructions with a conversational directive:
 
-### New Capabilities
+**Current prompt says:**
+- "Use markdown formatting for clarity (tables, lists, code blocks)"
+- "Include specific numbers and percentages"
+- "Be proactive: suggest actions when issues are detected"
+- Uses `[ACTION:...]` tags inline in responses
 
-1. **Campaign Strategy** -- Analyze your pipeline (from Sales data) and create targeted marketing plans for specific industries/companies
-2. **Email Campaign Crafting** -- Write personalized outreach email templates based on Investigator dossiers and lead pain points
-3. **Lead-Aware Content** -- Pull data from `ayn_sales_pipeline` to understand who you're targeting, then create content aimed at those industries
-4. **Cross-Agent Collaboration** -- Can request Investigator to research a company before crafting outreach, or pull Sales pipeline data to prioritize who to market to
-5. **Competitive Positioning** -- Analyze competitor websites (via Firecrawl) and recommend positioning strategies
-6. **Product-Market Messaging** -- Create messaging frameworks for each of AYN's 6 services tailored to specific audience segments
+**New prompt will say:**
+- Talk like a teammate in a chat -- 1-3 sentences max
+- No headers, no bold labels, no structured sections
+- Mention key numbers naturally ("5 tests are failing" not "Pass Rate: 0.0%")
+- Actions become simple suggestions ("want me to run the calculator tests?" instead of `[ACTION:run_tests:calculator]`)
+- Only use detail if the user asks for more
 
-### How It Works
+### 2. Keep Actions Working Behind the Scenes
 
-```text
-You: "Marketing, create an outreach strategy for engineering firms in Halifax"
+The `[ACTION:]` tags are parsed by the frontend to create clickable buttons. Instead of removing them entirely, hide them at the end of the message so the UI can still parse them but they don't clutter the conversation.
 
-Marketing pulls Sales pipeline data for Halifax leads
-Marketing pulls Investigator dossiers if available
-Marketing crafts:
-  - Email templates personalized per company
-  - LinkedIn/cold outreach messaging
-  - Value propositions matched to each company's pain points
-  - Follow-up sequence recommendations
+### 3. Reduce max_tokens
+
+The current function likely allows long responses. Cap it to encourage brevity.
+
+## Example: Before vs After
+
+**Before (current):**
+```
+Security & Access
+Status: 3 High-severity alerts detected.
+Alerts: Unusual access to admin_contact_messages and rate limit violations.
+Rate Limits: User 0000... has 10 violations.
+Users: 14 Total (9 Active).
+Engineering Check (CRITICAL FAILURE)
+Pass Rate: 0.0% (0/5 tests passed).
+Affected Suite: api_health.
+...
+[ACTION:run_tests:calculator]
+[ACTION:scan_health:full]
+```
+
+**After (new):**
+```
+Heads up -- all 5 engineering calculators are down right now. Also seeing 3 security alerts, one user with 10 rate limit violations. Want me to run diagnostics on the calculators?
 ```
 
 ## Technical Details
 
-### 1. New Edge Function: `supabase/functions/ayn-marketing-strategist/index.ts`
+### File: `supabase/functions/admin-ai-assistant/index.ts`
 
-Modes:
-- **`campaign`** -- Create a full outreach campaign for a target audience or set of leads
-  - Reads from `ayn_sales_pipeline` (leads, pain points, dossiers)
-  - Generates personalized email templates, messaging frameworks, outreach sequences
-- **`email_copy`** -- Draft marketing email copy for a specific lead or segment
-  - Uses lead's dossier (from Investigator), pain points, and recommended services
-  - Applies brand voice and email standards (no buzzwords, casual founder tone)
-- **`positioning`** -- Analyze a competitor URL and recommend positioning against them
-  - Uses Firecrawl to scrape competitor, then generates differentiation strategy
-- **`content_plan`** -- Create a content/marketing plan that aligns with current pipeline priorities
-  - Pulls top leads and industries from pipeline, suggests content themes
-- **`analyze_pipeline`** -- Review the full sales pipeline and recommend marketing priorities
-  - Which leads need nurturing, which industries are underserved, where to focus
+1. Replace `ADMIN_SYSTEM_PROMPT` (lines 12-57) with a conversational version:
+   - Remove "Use markdown formatting" instruction
+   - Add "Talk in 1-3 sentences like a real colleague. No headers, no bold labels, no structured reports."
+   - Keep `[ACTION:]` tags but instruct the LLM to place them on the last line only, not inline
+   - Change response guidelines to prioritize brevity
 
-### 2. Update Command Center Routing
+2. Reduce `max_tokens` in the LLM call to ~300 to discourage lengthy responses
 
-**File: `supabase/functions/admin-command-center/index.ts`**
+### File: `src/components/admin/AdminAIAssistant.tsx`
 
-- Change `marketing` route from `twitter-auto-market` to `ayn-marketing-strategist`
-- Update `AGENT_PARAM_HINTS` for marketing:
-  ```
-  marketing: "modes: 'campaign' (needs target_audience or industry), 
-              'email_copy' (needs lead_id or industry), 
-              'positioning' (needs competitor_url), 
-              'content_plan' (creates plan based on pipeline), 
-              'analyze_pipeline' (reviews pipeline for marketing priorities)"
-  ```
-- Keep `twitter-auto-market` available separately (social media is just one channel, not the whole marketing function)
-
-### 3. Cross-Agent Data Access
-
-The new marketing function will:
-- Query `ayn_sales_pipeline` for leads, stages, pain points, dossiers
-- Query `employee_tasks` to see what Investigator has found
-- Query `ayn_mind` for strategic insights and past decisions
-- Use Firecrawl (via `firecrawlHelper.ts`) for competitor analysis
-- Use the existing email branding standards (no buzzwords, casual tone, professional signature)
-
-### 4. Update Marketing Personality
-
-**File: `supabase/functions/_shared/aynBrand.ts`**
-
-Update the marketing personality from "think in campaigns, not posts" to reflect the new strategic role:
-- "You're Marketing. You work hand-in-hand with Sales and Investigator. You craft outreach strategies, email campaigns, and positioning -- not just social posts. You think about who we're targeting, what they need, and how to reach them. Data-driven, conversion-focused."
-
-### Example Interactions After Changes
-
-```text
-You: "Marketing, help me reach engineering firms in Nova Scotia"
-
-Marketing Strategist: "I pulled 8 leads from our pipeline in Nova Scotia. 
-3 have Investigator dossiers. Here's what I recommend:
-
-For Smith Engineering (quality score 8/10): They're using outdated 
-spreadsheets for structural calcs. Lead with our AI Structural Calculator 
--- draft email focuses on time savings.
-
-For Atlantic Design (quality 6/10): Civil firm, no clear pain point yet. 
-Recommend asking Investigator to dig deeper before outreach.
-
-I've drafted personalized emails for the 3 with dossiers. Want me to 
-share them with Sales for sending?"
-```
-
-```text
-You: "Marketing, position us against CompetitorX.com"
-
-Marketing Strategist: "I scanned CompetitorX. They focus on generic 
-project management -- no AI, no engineering calcs, no code compliance. 
-Our angle: we're the only platform that does ACI 318 structural analysis 
-AND generates compliance reports. They can't touch that. 
-
-Suggested tagline for outreach: 'Your project management tool can't 
-check your rebar spacing.' Want me to build a comparison deck?"
-```
-
-### Files to Create/Modify
-
-1. **Create**: `supabase/functions/ayn-marketing-strategist/index.ts` -- The new marketing brain
-2. **Modify**: `supabase/functions/admin-command-center/index.ts` -- Update routing and param hints
-3. **Modify**: `supabase/functions/_shared/aynBrand.ts` -- Update marketing personality
+1. Update the action tag parsing to strip them from the displayed message (so they only power buttons, not clutter the chat)
+2. If action tags exist, render them as small suggestion chips below the message instead of inline text
