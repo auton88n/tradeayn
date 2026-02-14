@@ -130,63 +130,109 @@ export const useMessages = (
   const [moodPattern, setMoodPattern] = useState<MoodPattern | null>(null);
   const [emotionHistory, setEmotionHistory] = useState<EmotionHistoryEntry[]>([]);
   const [isLoadingFromHistory, setIsLoadingFromHistory] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { toast } = useToast();
 
-  // Load messages from database for current session using direct REST API
+  const PAGE_SIZE = 20;
+
+  // Helper to map raw DB rows to Message objects
+  const mapDbMessages = (data: Array<{
+    id: string;
+    content: string;
+    created_at: string;
+    sender: string;
+    attachment_url: string | null;
+    attachment_name: string | null;
+    attachment_type: string | null;
+  }>): Message[] => data.map(msg => ({
+    id: msg.id,
+    content: msg.content,
+    sender: msg.sender as 'user' | 'ayn',
+    timestamp: new Date(msg.created_at),
+    status: 'sent' as const,
+    attachment: msg.attachment_url ? {
+      url: msg.attachment_url,
+      name: msg.attachment_name || 'Attachment',
+      type: msg.attachment_type || 'unknown'
+    } : undefined
+  }));
+
+  // Load the most recent PAGE_SIZE messages for current session
   const loadMessages = useCallback(async () => {
     if (!session || !sessionId) {
       console.warn('[useMessages] No session or sessionId available');
       return;
     }
     
-    // Mark as loading from history to prevent auto-showing response bubbles
     setIsLoadingFromHistory(true);
     
     try {
       const data = await supabaseApi.get<any[]>(
-        `messages?user_id=eq.${userId}&session_id=eq.${sessionId}&select=id,content,created_at,sender,attachment_url,attachment_name,attachment_type&order=created_at.asc`,
+        `messages?user_id=eq.${userId}&session_id=eq.${sessionId}&select=id,content,created_at,sender,attachment_url,attachment_name,attachment_type&order=created_at.desc&limit=${PAGE_SIZE}`,
         session.access_token
       );
 
       if (data && data.length > 0) {
-        const chatMessages: Message[] = data.map((msg: {
-          id: string;
-          content: string;
-          created_at: string;
-          sender: string;
-          attachment_url: string | null;
-          attachment_name: string | null;
-          attachment_type: string | null;
-        }) => ({
-          id: msg.id,
-          content: msg.content,
-          sender: msg.sender as 'user' | 'ayn',
-          timestamp: new Date(msg.created_at),
-          status: 'sent',
-          attachment: msg.attachment_url ? {
-            url: msg.attachment_url,
-            name: msg.attachment_name || 'Attachment',
-            type: msg.attachment_type || 'unknown'
-          } : undefined
-        }));
-
-        // Deduplicate by ID and sort chronologically
+        const chatMessages = mapDbMessages(data);
+        // Deduplicate and sort chronologically (oldest first)
         const uniqueMessages = Array.from(
           new Map(chatMessages.map(m => [m.id, m])).values()
         ).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
         setMessages(uniqueMessages);
+        setHasMoreMessages(data.length >= PAGE_SIZE);
+      } else {
+        setMessages([]);
+        setHasMoreMessages(false);
       }
     } catch (error) {
       console.error('[useMessages] Error loading messages:', error);
-      // Silent fail - messages will be empty
     } finally {
-      // Reset after a short delay to allow effects to check the flag
       setTimeout(() => {
         setIsLoadingFromHistory(false);
       }, 100);
     }
   }, [userId, sessionId, session]);
+
+  // Load older messages using cursor-based pagination
+  const loadMoreMessages = useCallback(async () => {
+    if (!session || !sessionId || isLoadingMore || !hasMoreMessages) return;
+    
+    setIsLoadingMore(true);
+    
+    try {
+      // Find the oldest currently loaded message's timestamp as cursor
+      const oldestTimestamp = messages.length > 0
+        ? messages[0].timestamp.toISOString()
+        : new Date().toISOString();
+
+      const data = await supabaseApi.get<any[]>(
+        `messages?user_id=eq.${userId}&session_id=eq.${sessionId}&created_at=lt.${oldestTimestamp}&select=id,content,created_at,sender,attachment_url,attachment_name,attachment_type&order=created_at.desc&limit=${PAGE_SIZE}`,
+        session.access_token
+      );
+
+      if (data && data.length > 0) {
+        const olderMessages = mapDbMessages(data);
+        // Sort chronologically and prepend
+        const sorted = olderMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+        
+        setMessages(prev => {
+          const existingIds = new Set(prev.map(m => m.id));
+          const newOlder = sorted.filter(m => !existingIds.has(m.id));
+          return [...newOlder, ...prev];
+        });
+        
+        setHasMoreMessages(data.length >= PAGE_SIZE);
+      } else {
+        setHasMoreMessages(false);
+      }
+    } catch (error) {
+      console.error('[useMessages] Error loading more messages:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [session, sessionId, userId, messages, isLoadingMore, hasMoreMessages]);
 
   // Send message with optional file attachment - using direct fetch() to avoid deadlocks
   const sendMessage = useCallback(async (
@@ -830,6 +876,9 @@ export const useMessages = (
     maxMessages: MAX_MESSAGES_PER_CHAT,
     isLoadingFromHistory,
     loadMessages,
+    loadMoreMessages,
+    hasMoreMessages,
+    isLoadingMore,
     sendMessage,
     setMessages,
     setMessagesFromHistory
