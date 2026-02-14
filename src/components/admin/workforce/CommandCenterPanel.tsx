@@ -272,12 +272,15 @@ export function CommandCenterPanel() {
       // Persist user message
       persistMessage(session.user.id, userMsg);
 
-      // Build enriched history for context (last 20 messages)
+      // Build enriched history for context (last 10 messages, truncated)
       const allMessages = [...messages, userMsg];
-      const history = allMessages.slice(-20).map(m => ({
+      const history = allMessages.slice(-10).map(m => ({
         role: m.role,
-        content: buildEnrichedContent(m),
+        content: buildEnrichedContent(m).substring(0, 500),
       }));
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2min timeout
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-command-center`, {
         method: 'POST',
@@ -286,7 +289,9 @@ export function CommandCenterPanel() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ mode: 'chat', message: text, history }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!res.ok) throw new Error('Failed');
       const data = await res.json();
@@ -308,8 +313,19 @@ export function CommandCenterPanel() {
       if (data.tool_results?.some((r: any) => r.type === 'directive_saved')) {
         loadDirectives();
       }
-    } catch (error) {
-      toast.error('Failed to send message');
+    } catch (error: any) {
+      const isTimeout = error?.name === 'AbortError';
+      const errorMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: isTimeout
+          ? "That took too long — the agent is probably still working in the background. Check back in a minute."
+          : "Something went wrong. Try again?",
+        agent: 'system',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
+      toast.error(isTimeout ? 'Request timed out' : 'Failed to send message');
     } finally {
       setIsLoading(false);
     }
