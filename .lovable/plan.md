@@ -1,86 +1,57 @@
 
 
-## Redesign AI Workforce Dashboard Into a Live Team Feed
+## Chat Pagination Fix
 
-### The Problem
+### Will this impact the design?
 
-Right now the Workforce Dashboard shows dry numbers -- action counts, health badges, pending task counts. You can't see what your agents are actually doing, saying, or asking for. The real updates go to the Command Center (a separate tab) and Telegram, but the dashboard itself tells you almost nothing useful.
+**No.** The visual design stays exactly the same. All changes are in the data-fetching layer (hooks) and are invisible to the user. The chat UI, message bubbles, animations, sidebar layout -- everything looks identical. The only visible difference is that old chats load faster.
 
-### What Changes
+### What Changes (4 files)
 
-Replace the current abstract dashboard with a **live team feed** that shows you exactly what each agent is doing, thinking, and asking -- like a team Slack channel. Every agent's proactive messages, status updates, and approval requests will appear right here.
+**File 1: `src/hooks/useChatSession.ts`**
 
-### New Layout
+The sidebar currently fetches 200 messages just to build the "Recent Chats" list. This is wasteful because the `chat_sessions` table already has titles and timestamps.
 
-```text
-+-------------------------------------------------------+
-|  AI Workforce                        [All] [Filter v]  |
-+-------------------------------------------------------+
-|                                                         |
-|  NEEDS YOUR ATTENTION (approval requests)               |
-|  +---------------------------------------------------+  |
-|  | 💼 Sales - 12:03                                   |  |
-|  | "new lead: Halifax Construction. scored 7/10.      |  |
-|  |  want me to draft an outreach?"                    |  |
-|  |                          [Approve] [Dismiss]       |  |
-|  +---------------------------------------------------+  |
-|                                                         |
-|  TEAM FEED (live updates from all agents)               |
-|  +---------------------------------------------------+  |
-|  | 🐕 QA Watchdog - 12:33                             |  |
-|  | "2 systems down: ayn-unified, support-bot.         |  |
-|  |  health is fine. keeping an eye on it."            |  |
-|  +---------------------------------------------------+  |
-|  | 🛡️ Security Guard - 12:37                          |  |
-|  | "1 issue found. Target flagged for rate limiting.  |  |
-|  |  Strike 1 — warning issued."                       |  |
-|  +---------------------------------------------------+  |
-|  | 🤝 Customer Success - 12:35                        |  |
-|  | "checked the pulse — 1 new insight found."         |  |
-|  +---------------------------------------------------+  |
-|                                                         |
-|  AGENT STATUS (compact row of cards)                    |
-|  [🧠 AYN ✓] [📋 CoS ✓] [💼 Sales ✓] [🛡️ Sec ✓] ... |
-|                                                         |
-|  SYSTEM HEALTH              |  QUICK STATS             |
-|  health ✓ 543ms             |  Actions (7d): 287       |
-|  ayn-unified ✗ 199ms        |  Pending: 3              |
-|  support-bot ✗ 243ms        |  Healthy: 1/3            |
-+-------------------------------------------------------+
-```
+Changes:
+- Replace the `limit=200` messages query with a lightweight query to `chat_sessions` that only fetches `session_id, title, updated_at` (10 rows max)
+- Remove the duplicate message-grouping logic (lines 54-111 in `loadRecentChats`, lines 338-401 in `initializeSession`) since we no longer need to derive titles from messages
+- The `loadChat` function stays the same -- when a user clicks a sidebar chat, `useMessages.loadMessages()` fetches that session's messages
 
-### Key Sections
+**File 2: `src/hooks/useMessages.ts`**
 
-1. **Needs Your Attention** -- Approval requests from agents, pulled from `admin_ai_conversations` where `context.needs_approval = true`. Shows the agent's natural language message with Approve/Dismiss buttons.
+The `loadMessages` function currently fetches ALL messages for a session (no limit). Change it to:
+- Add `&limit=20` and `&order=created_at.desc` to fetch only the 20 most recent messages
+- Reverse the result to display chronologically (oldest first)
+- Add a new `loadMoreMessages()` function that uses cursor-based pagination: fetches the next 20 messages older than the oldest currently loaded message (`&created_at=lt.{oldest_timestamp}`)
+- Track `hasMoreMessages` state (set to `false` when a fetch returns fewer than 20 rows)
+- Prepend older messages to the array without affecting scroll position
 
-2. **Team Feed** -- A real-time scrolling feed combining:
-   - Agent proactive alerts from `admin_ai_conversations` (their actual messages to you)
-   - Activity summaries from `ayn_activity_log` (what they did)
-   - Each entry shows the agent emoji, name, time, and their natural language message
+**File 3: `src/types/dashboard.types.ts`**
 
-3. **Agent Status Strip** -- Compact horizontal row showing all 13 agents with a health dot (green/red/grey). Click to filter the feed by that agent.
+Add to the `UseMessagesReturn` interface:
+- `loadMoreMessages: () => Promise<void>` -- function to fetch older messages
+- `hasMoreMessages: boolean` -- whether there are more messages to load
+- `isLoadingMore: boolean` -- loading state for the "load more" action
 
-4. **System Health + Quick Stats** -- Kept from the current dashboard but moved to the bottom as a compact panel.
+**File 4: `src/components/dashboard/ChatHistoryCollapsible.tsx`**
 
-### Technical Details
+Note: This component is currently unused (not imported anywhere). However, to keep it consistent:
+- Remove the `slice(-20)` workaround on line 49 since pagination now handles the limit at the database level
+- Accept optional `onLoadMore` and `hasMore` props
+- Add a small "Load earlier" button at the top of the scroll area (only visible when `hasMore` is true)
 
-**Files modified:**
-- `src/components/admin/workforce/WorkforceDashboard.tsx` -- Complete redesign of layout to prioritize the team feed and approval queue
-- `src/components/admin/workforce/ApprovalQueue.tsx` -- New component fetching from `admin_ai_conversations` where `context->needs_approval = true` and `role = 'assistant'`
-- `src/components/admin/workforce/TeamFeedPanel.tsx` -- New component combining `admin_ai_conversations` (proactive agent messages) with `ayn_activity_log` into a unified timeline, with real-time Supabase subscriptions on both tables
-- `src/components/admin/workforce/AgentStatusStrip.tsx` -- New compact horizontal agent selector replacing the large grid of employee cards
+### What Does NOT Change
 
-**Data sources:**
-- `admin_ai_conversations` -- Agent proactive messages (the "talking like employees" data we just added)
-- `ayn_activity_log` -- Agent action summaries (existing)
-- `system_health_checks` -- Health status (existing)
-- `employee_tasks` -- Pending task count (existing)
+- Message bubbles, animations, layout -- zero visual changes
+- Sidebar appearance -- still shows the same chat list with titles
+- `sendMessage` -- completely untouched
+- `CenterStageLayout` rendering -- still maps over the same `messages` array
+- Scroll behavior -- auto-scroll to bottom still works identically
 
-**Real-time subscriptions:**
-- Subscribe to `admin_ai_conversations` INSERT events for live agent messages
-- Keep existing `ayn_activity_log` subscription for activity updates
+### Technical Notes
 
-**Existing panels kept (moved to bottom):**
-- `HealthStatusPanel` -- Compact system health
-- `CollaborationGraph` and `TaskQueuePanel` -- Available but secondary
+- Cursor pagination uses `created_at` timestamp (already indexed: `idx_messages_user_timestamp`)
+- The `loadMoreMessages` function prepends to the array, so new messages still append at the bottom as before
+- `ChatHistoryCollapsible` is dead code (no imports found) but will be updated for consistency
+- No database migration needed -- existing indexes and tables support this already
 
