@@ -193,6 +193,9 @@ export interface UseMessagesReturn {
   maxMessages: number;
   isLoadingFromHistory: boolean;
   loadMessages: () => Promise<void>;
+  loadMoreMessages: () => Promise<void>;
+  hasMoreMessages: boolean;
+  isLoadingMore: boolean;
   sendMessage: (content: string, attachment?: FileAttachment | null) => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   setMessagesFromHistory: (messages: Message[]) => void;

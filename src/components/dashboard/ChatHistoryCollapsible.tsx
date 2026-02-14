@@ -21,9 +21,12 @@ interface ChatHistoryCollapsibleProps {
   isOpen: boolean;
   onToggle: () => void;
   onClear?: () => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
 
-export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear }: ChatHistoryCollapsibleProps) => {
+export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear, onLoadMore, hasMore, isLoadingMore }: ChatHistoryCollapsibleProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevMessageCountRef = useRef(messages.length);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -46,7 +49,7 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear }: 
       const diff = timeA - timeB;
       return diff !== 0 ? diff : a.i - b.i;
     });
-    return indexed.map(x => x.m).slice(-20);
+    return indexed.map(x => x.m);
   }, [messages]);
 
   // Scroll to bottom function
@@ -158,6 +161,19 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear }: 
                     onScroll={handleScroll}
                     className="h-full overflow-y-auto overscroll-contain py-1"
                   >
+                    {hasMore && onLoadMore && (
+                      <div className="flex justify-center py-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={onLoadMore}
+                          disabled={isLoadingMore}
+                          className="h-7 px-3 text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          {isLoadingMore ? 'Loading...' : 'Load earlier messages'}
+                        </Button>
+                      </div>
+                    )}
                     {sortedMessages.map((msg, index) => (
                       <TranscriptMessage
                         key={msg.id}

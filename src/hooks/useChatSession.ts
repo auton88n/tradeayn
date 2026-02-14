@@ -21,94 +21,29 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
     }
     
     try {
-      // Fetch both messages and stored session titles in parallel
-      const [messagesData, sessionsData] = await Promise.all([
-        supabaseApi.get<Array<{
-          id: string;
-          content: string;
-          created_at: string;
-          sender: string;
-          session_id: string | null;
-        }>>(
-          `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=200`,
-          session.access_token
-        ),
-        supabaseApi.get<Array<{ session_id: string; title: string }>>(
-          `chat_sessions?user_id=eq.${userId}&select=session_id,title`,
-          session.access_token
-        )
-      ]);
+      // Lightweight query: only fetch chat_sessions metadata (no messages needed for sidebar)
+      const sessionsData = await supabaseApi.get<Array<{
+        session_id: string;
+        title: string;
+        updated_at: string;
+      }>>(
+        `chat_sessions?user_id=eq.${userId}&select=session_id,title,updated_at&order=updated_at.desc&limit=10`,
+        session.access_token
+      );
 
-      if (!messagesData || messagesData.length === 0) {
+      if (!sessionsData || sessionsData.length === 0) {
         setRecentChats([]);
         return;
       }
 
-      // Create a map of session_id to stored title
-      const storedTitles = new Map<string, string>();
-      if (sessionsData) {
-        sessionsData.forEach(s => storedTitles.set(s.session_id, s.title));
-      }
-
-      // Group messages by session_id
-      interface ProcessedMessage {
-        id: string;
-        content: string;
-        sender: 'user' | 'ayn';
-        timestamp: Date;
-      }
-      
-      const sessionGroups: { [key: string]: ProcessedMessage[] } = {};
-
-      messagesData.forEach((message) => {
-        const sessionId = message.session_id;
-        if (!sessionId) return;
-        
-        if (!sessionGroups[sessionId]) {
-          sessionGroups[sessionId] = [];
-        }
-        sessionGroups[sessionId].push({
-          id: message.id,
-          content: message.content,
-          sender: message.sender as 'user' | 'ayn',
-          timestamp: new Date(message.created_at)
-        });
-      });
-
-      // Convert to ChatHistory format using stored titles
-      const chatHistories: ChatHistory[] = Object.entries(sessionGroups)
-        .map(([sessionId, messages]) => {
-          const sortedMessages = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-          const lastMessage = sortedMessages[sortedMessages.length - 1];
-
-          // Use stored title first, fallback to first user message
-          const storedTitle = storedTitles.get(sessionId);
-          const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
-          let title = storedTitle;
-          
-          if (!title) {
-            title = firstUserMessage 
-              ? (firstUserMessage.content.length > 30 
-                  ? firstUserMessage.content.substring(0, 30) + '...'
-                  : firstUserMessage.content)
-              : 'Chat Session';
-          }
-
-          // Use first user message for preview (shows what the user asked)
-          const previewMessage = firstUserMessage || sortedMessages[0];
-          
-          return {
-            title,
-            lastMessage: previewMessage.content.length > 50
-              ? previewMessage.content.substring(0, 50) + '...'
-              : previewMessage.content,
-            timestamp: lastMessage.timestamp,
-            messages: sortedMessages,
-            sessionId: sessionId
-          };
-        })
-        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-        .slice(0, 10);
+      // Convert to ChatHistory format directly from chat_sessions
+      const chatHistories: ChatHistory[] = sessionsData.map(s => ({
+        title: s.title || 'Chat Session',
+        lastMessage: s.title || 'Chat Session',
+        timestamp: new Date(s.updated_at),
+        messages: [], // Messages loaded on-demand when user clicks
+        sessionId: s.session_id
+      }));
 
       setRecentChats(chatHistories);
     } catch {
@@ -287,39 +222,25 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
       setIsLoadingChats(true);
       
       try {
-        // PARALLEL QUERIES - fetch all at once for speed
-        const [latestSessionData, recentMessagesData, sessionsData] = await Promise.all([
+        // PARALLEL QUERIES - lightweight: session ID + chat_sessions metadata only
+        const [latestSessionData, sessionsData] = await Promise.all([
           // Query 1: Get latest session_id
           supabaseApi.get<Array<{ session_id: string }>>(
             `messages?user_id=eq.${userId}&select=session_id&order=created_at.desc&limit=1`,
             session.access_token,
             { signal: controller.signal }
           ),
-          // Query 2: Get recent messages
-          supabaseApi.get<Array<{
-            id: string;
-            content: string;
-            created_at: string;
-            sender: string;
-            session_id: string | null;
-          }>>(
-            `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=200`,
-            session.access_token,
-            { signal: controller.signal }
-          ),
-          // Query 3: Get stored session titles
-          supabaseApi.get<Array<{ session_id: string; title: string }>>(
-            `chat_sessions?user_id=eq.${userId}&select=session_id,title`,
+          // Query 2: Get chat_sessions with titles (lightweight, no messages)
+          supabaseApi.get<Array<{ session_id: string; title: string; updated_at: string }>>(
+            `chat_sessions?user_id=eq.${userId}&select=session_id,title,updated_at&order=updated_at.desc&limit=10`,
             session.access_token,
             { signal: controller.signal }
           )
         ]);
         
-        // Check if aborted after fetch
         if (controller.signal.aborted) return;
         
         // Set current session ID - ONLY if not already set
-        // This prevents overwriting a session that was just started but has no DB messages yet
         if (!currentSessionId) {
           if (latestSessionData && latestSessionData.length > 0 && latestSessionData[0].session_id) {
             setCurrentSessionId(latestSessionData[0].session_id);
@@ -328,72 +249,15 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
           }
         }
         
-        // Create a map of session_id to stored title
-        const storedTitles = new Map<string, string>();
-        if (sessionsData) {
-          sessionsData.forEach(s => storedTitles.set(s.session_id, s.title));
-        }
-        
-        // Process recent messages inline (same logic as loadRecentChats)
-        if (recentMessagesData && recentMessagesData.length > 0) {
-          interface ProcessedMessage {
-            id: string;
-            content: string;
-            sender: 'user' | 'ayn';
-            timestamp: Date;
-          }
-          
-          const sessionGroups: { [key: string]: ProcessedMessage[] } = {};
-
-          recentMessagesData.forEach((message) => {
-            const sessionId = message.session_id;
-            if (!sessionId) return;
-            
-            if (!sessionGroups[sessionId]) {
-              sessionGroups[sessionId] = [];
-            }
-            sessionGroups[sessionId].push({
-              id: message.id,
-              content: message.content,
-              sender: message.sender as 'user' | 'ayn',
-              timestamp: new Date(message.created_at)
-            });
-          });
-
-          const chatHistories: ChatHistory[] = Object.entries(sessionGroups)
-            .map(([sessionId, messages]) => {
-              const sortedMessages = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-              const lastMessage = sortedMessages[sortedMessages.length - 1];
-
-              // Use stored title first, fallback to first user message
-              const storedTitle = storedTitles.get(sessionId);
-              let title = storedTitle;
-              
-              if (!title) {
-                const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
-                title = firstUserMessage 
-                  ? (firstUserMessage.content.length > 30 
-                      ? firstUserMessage.content.substring(0, 30) + '...'
-                      : firstUserMessage.content)
-                  : 'Chat Session';
-              }
-
-              // Use first user message for preview (shows what the user asked)
-              const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
-              const previewMessage = firstUserMessage || sortedMessages[0];
-              
-              return {
-                title,
-                lastMessage: previewMessage.content.length > 50
-                  ? previewMessage.content.substring(0, 50) + '...'
-                  : previewMessage.content,
-                timestamp: lastMessage.timestamp,
-                messages: sortedMessages,
-                sessionId: sessionId
-              };
-            })
-            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-            .slice(0, 10);
+        // Build sidebar from chat_sessions metadata directly
+        if (sessionsData && sessionsData.length > 0) {
+          const chatHistories: ChatHistory[] = sessionsData.map(s => ({
+            title: s.title || 'Chat Session',
+            lastMessage: s.title || 'Chat Session',
+            timestamp: new Date(s.updated_at),
+            messages: [], // Messages loaded on-demand when user clicks
+            sessionId: s.session_id
+          }));
 
           setRecentChats(chatHistories);
         } else {
