@@ -466,12 +466,27 @@ export function CommandCenterPanel() {
 
               {isLoading && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-                  <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-sm bg-gradient-to-br from-violet-500 to-purple-600 text-white">
+                  <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-sm bg-gradient-to-br from-violet-500 to-purple-600 text-white animate-pulse">
                     🧠
                   </div>
-                  <div className="flex items-center gap-2 py-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">AYN is working...</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 py-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">AYN is coordinating the team...</span>
+                    </div>
+                    <div className="flex gap-1 mt-1">
+                      {['💼', '🔍', '🛡️', '📣'].map((emoji, i) => (
+                        <motion.span
+                          key={i}
+                          initial={{ opacity: 0.3 }}
+                          animate={{ opacity: [0.3, 1, 0.3] }}
+                          transition={{ duration: 1.5, delay: i * 0.3, repeat: Infinity }}
+                          className="text-xs"
+                        >
+                          {emoji}
+                        </motion.span>
+                      ))}
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -563,31 +578,42 @@ function ToolResultCard({ result }: { result: ToolResult }) {
     const meta = result.agent ? getAgentMeta(AGENT_EMPLOYEE_MAP[result.agent] || result.agent) : { name: 'Agent', emoji: '🤖', gradient: 'from-gray-500 to-gray-600' };
     const agentMessage = result.message;
     const hasError = result.result?.error;
+    const isSuccess = result.success !== false && !hasError;
 
     return (
-      <div className="flex gap-3 ml-4">
+      <div className={cn(
+        "flex gap-3 ml-4 p-2.5 rounded-xl border transition-colors",
+        hasError ? "border-destructive/30 bg-destructive/5" :
+        isSuccess ? "border-emerald-500/20 bg-emerald-500/5" :
+        "border-amber-500/20 bg-amber-500/5"
+      )}>
         <div className={cn("w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-sm bg-gradient-to-br text-white", meta.gradient)}>
           {result.agent_emoji || meta.emoji}
         </div>
         <div className="flex-1 min-w-0">
-          <span className="text-xs font-medium text-muted-foreground">{result.agent_name || meta.name}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">{result.agent_name || meta.name}</span>
+            <span className="text-xs">
+              {hasError ? '❌' : isSuccess ? '✅' : '⚠️'}
+            </span>
+          </div>
           {agentMessage ? (
-            <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
+            <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none mt-0.5">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{agentMessage}</ReactMarkdown>
             </div>
           ) : hasError ? (
-            <p className="text-sm text-destructive">{result.result.error}</p>
+            <p className="text-sm text-destructive mt-0.5">{result.result.error}</p>
           ) : (
-            <p className="text-sm text-muted-foreground">Task completed.</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Task completed.</p>
           )}
-          {result.result && !hasError && (
+          {result.result && (
             <>
-              <button onClick={() => setExpanded(!expanded)} className="text-[11px] text-muted-foreground/60 hover:text-muted-foreground mt-1.5 flex items-center gap-1">
+              <button onClick={() => setExpanded(!expanded)} className="text-[11px] text-muted-foreground/60 hover:text-muted-foreground mt-2 flex items-center gap-1 font-medium">
                 {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                {expanded ? 'Hide technical details' : 'Technical details'}
+                {expanded ? 'Hide details' : '📋 View raw details'}
               </button>
               {expanded && (
-                <pre className="text-[11px] bg-muted/30 rounded-lg p-2 mt-1.5 overflow-auto max-h-[150px] whitespace-pre-wrap text-muted-foreground">
+                <pre className="text-[11px] bg-muted/30 rounded-lg p-2 mt-1.5 overflow-auto max-h-[200px] whitespace-pre-wrap text-muted-foreground border border-border">
                   {JSON.stringify(result.result, null, 2)}
                 </pre>
               )}

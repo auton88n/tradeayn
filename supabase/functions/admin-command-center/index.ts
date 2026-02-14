@@ -124,10 +124,53 @@ const TOOLS = [
   },
 ];
 
+// ─── Build a simple fallback summary from raw data (no LLM needed) ───
+function buildFallbackSummary(agentKey: string, rawResult: any): string {
+  const route = AGENT_ROUTES[agentKey];
+  const agentName = route ? getAgentDisplayName(route.employeeId) : agentKey;
+
+  if (!rawResult) return `${agentName} completed the task but returned no data.`;
+
+  // Handle errors conversationally
+  if (rawResult.error) {
+    const err = typeof rawResult.error === 'string' ? rawResult.error : JSON.stringify(rawResult.error);
+    // Common parameter errors → helpful hints
+    if (err.includes('url') || err.includes('URL')) return `I need a URL to work with. Try something like: "prospect https://example.com"`;
+    if (err.includes('required') || err.includes('missing')) return `I'm missing some info to do that. Could you be more specific about what you need?`;
+    if (err.includes('not found')) return `I couldn't find what you're looking for. Want me to try a different approach?`;
+    return `I ran into an issue: ${err.substring(0, 200)}. Want me to try again?`;
+  }
+
+  // Handle success with data summaries
+  if (rawResult.success === false) return `That didn't work as expected. Let me know if you want me to try differently.`;
+
+  // Array results (leads, items, etc.)
+  if (Array.isArray(rawResult.data || rawResult.leads || rawResult.results)) {
+    const items = rawResult.data || rawResult.leads || rawResult.results;
+    const count = items.length;
+    if (count === 0) return `I looked but didn't find anything matching that criteria.`;
+    const names = items.slice(0, 3).map((i: any) => i.company_name || i.name || i.title || 'item').join(', ');
+    return `Found ${count} result${count > 1 ? 's' : ''}${names ? ': ' + names : ''}${count > 3 ? '...' : ''}.`;
+  }
+
+  // Pipeline/status results
+  if (rawResult.pipeline || rawResult.status) return `Here's the current status. Check the details below for the full picture.`;
+
+  // Generic success
+  if (rawResult.success === true) return `Done! Task completed successfully.`;
+
+  // Default: mention something happened
+  const keys = Object.keys(rawResult).filter(k => k !== 'source').slice(0, 3);
+  if (keys.length > 0) return `Got results back (${keys.join(', ')}). Check the details for more.`;
+
+  return `Task completed.`;
+}
+
 // ─── Generate natural language summary from agent result ───
 async function generateAgentMessage(agentKey: string, command: string, rawResult: any, apiKey: string): Promise<string> {
   const route = AGENT_ROUTES[agentKey];
-  if (!route || !apiKey) return '';
+  if (!route) return buildFallbackSummary(agentKey, rawResult);
+  if (!apiKey) return buildFallbackSummary(agentKey, rawResult);
 
   const personality = getEmployeePersonality(route.employeeId);
   const resultStr = JSON.stringify(rawResult).substring(0, 2000);
@@ -152,11 +195,12 @@ Never show raw JSON. Never mention "parameters" or "API". Talk like a real team 
         max_tokens: 150,
       }),
     });
-    if (!res.ok) return '';
+    if (!res.ok) return buildFallbackSummary(agentKey, rawResult);
     const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() || '';
+    const msg = data.choices?.[0]?.message?.content?.trim();
+    return msg || buildFallbackSummary(agentKey, rawResult);
   } catch {
-    return '';
+    return buildFallbackSummary(agentKey, rawResult);
   }
 }
 
@@ -338,7 +382,9 @@ NEVER mention being Google, Gemini, GPT, or any AI provider. You are AYN.`;
 
   if (history && history.length > 0) {
     for (const msg of history.slice(-20)) {
-      messages.push({ role: msg.role, content: msg.content });
+      if (msg.role && msg.content) {
+        messages.push({ role: msg.role, content: msg.content });
+      }
     }
   }
   messages.push({ role: 'user', content: message });
