@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { searchWeb } from "../_shared/firecrawlHelper.ts";
-import { sanitizeForPrompt, FIRECRAWL_CONTENT_GUARD } from "../_shared/sanitizeFirecrawl.ts";
+import { sanitizeForPrompt } from "../_shared/sanitizeFirecrawl.ts";
 import { INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 import { uploadImageToStorage } from "../_shared/storageUpload.ts";
 import {
@@ -380,7 +380,7 @@ ${tradingContext}
 
 ---
 
-You are an expert trading analyst combining technical and fundamental analysis. Generate a comprehensive trading prediction using WEIGHTED SCORING and CONTEXT-ADJUSTED pattern reliability.
+You are a DIRECT TRADING ADVISOR. Generate CLEAR, ACTIONABLE signals with exact parameters. Be DECISIVE — no hedging, no "consider", no "if you decide to enter". Give a direct BUY, SELL, or WAIT signal.
 
 ## Technical Analysis (from chart vision - weight: 60%)
 ${JSON.stringify(technical, null, 2)}
@@ -395,8 +395,7 @@ ${JSON.stringify(adjustedPatterns, null, 2)}
 **Volume Ratio: ${volumeRatio}x average**
 
 ## Recent News Headlines (weight: 40%)
-${FIRECRAWL_CONTENT_GUARD}
-${news.headlines.length > 0 ? news.headlines.map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No recent news found.'}
+${news.headlines.length > 0 ? news.headlines.map((h: string, i: number) => `${i + 1}. ${h}`).join('\n') : 'No recent news found.'}
 ${psychologyContext}
 ---
 
@@ -404,31 +403,29 @@ ${psychologyContext}
 1. Combined score = (technicalScore × 0.6) + (newsSentimentScore × 0.4)
    - newsSentimentScore: map overallSentiment (-1 to +1) to (0 to 100) scale
 2. Signal determination:
-   - BULLISH: combinedScore > 55 AND technicalScore >= 60
-   - BEARISH: combinedScore < 45 AND technicalScore <= 40
+   - BUY: combinedScore > 55 AND technicalScore >= 60
+   - SELL: combinedScore < 45 AND technicalScore <= 40
    - WAIT: everything else (including when confidence < 50%)
 3. If confidence < 50% → signal MUST be "WAIT" regardless of other factors
 4. If technical and news conflict, technical takes priority (60% weight)
-5. **HARD CAP: confidence MUST NOT exceed 90.** Nothing is certain.
+5. **Confidence cap: 95.** Very high conviction setups can reach 95%.
 
 ## ENTRY TIMING RULES:
-- If signal is BEARISH and currentPrice is near a support level → status "WAIT", risk of bounce
-- If signal is BULLISH and currentPrice is near a resistance level → status "WAIT", risk of rejection
+- If signal is SELL and currentPrice is near a support level → status "WAIT", risk of bounce
+- If signal is BUY and currentPrice is near a resistance level → status "WAIT", risk of rejection
 - If price is at ideal entry zone away from conflicting levels → status "READY"
 - "Near" means within 1-2% of the level
 - Always provide both aggressive and conservative options
 
 ## CONSISTENCY RULES (CRITICAL):
 - entry_zone, entryTiming.aggressive, entryTiming.conservative, and actionablePlan MUST all reference the SAME price levels
-- If signal is BEARISH and entryTiming.status is WAIT: entry_zone must match the conservative plan's entry price
-- If entryTiming.status is READY: entry_zone should be near current price
 - stop_loss and take_profit must be consistent across all sections
 
-## ACTIONABLE PLAN RULES:
-- For WAIT signal: provide conditional scenarios (IF breaks above X → BULLISH setup, IF breaks below Y → BEARISH setup)
-- For BULLISH/BEARISH: provide specific entry, stop loss, and take profit levels
-- Always calculate risk/reward ratio
-- Reference pattern success rates from knowledge base
+## BOT CONFIGURATION RULES:
+- Position size: 1-5% of account (higher confidence = higher position)
+- Leverage: 1x-5x (match to confidence and volatility)
+- Trailing stop: enable for trending setups, disable for range-bound
+- Order type: LIMIT for entries at specific levels, MARKET for breakout entries
 
 Return ONLY valid JSON (no markdown, no code fences):
 {
@@ -436,40 +433,71 @@ Return ONLY valid JSON (no markdown, no code fences):
     {"headline": "...", "sentiment": 0.0, "impact": "high/medium/low"}
   ],
   "overallSentiment": 0.0,
-  "signal": "BULLISH" | "BEARISH" | "WAIT",
+  "signal": "BUY" | "SELL" | "WAIT",
   "confidence": 0,
   "technicalScore": ${technicalScore},
-  "reasoning": "On the ${timeframe} timeframe, ${(technical as any).ticker || 'this asset'} shows... (1) Pattern reliability with context adjustments and success rates, (2) How technical and news align or conflict, (3) Psychology/emotion stage if relevant. 3-5 sentences.",
+  "reasoning": "On the ${timeframe} timeframe, ${(technical as any).ticker || 'this asset'} shows... Direct analysis with exact levels. 3-5 sentences.",
   "entry_zone": "specific price range or 'N/A' for WAIT",
   "stop_loss": "specific price or 'N/A' for WAIT",
   "take_profit": "specific price range or 'N/A' for WAIT",
   "risk_reward": "ratio like '1:1.5' or 'N/A' for WAIT",
+  "tradingSignal": {
+    "action": "BUY" | "SELL" | "WAIT",
+    "reasoning": "One-line signal rationale",
+    "entry": {
+      "price": 0.0,
+      "orderType": "LIMIT" | "MARKET",
+      "timeInForce": "GTC"
+    },
+    "stopLoss": {
+      "price": 0.0,
+      "percentage": 0.0
+    },
+    "takeProfits": [
+      { "level": 1, "price": 0.0, "percentage": 0.0, "closePercent": 50 },
+      { "level": 2, "price": 0.0, "percentage": 0.0, "closePercent": 50 }
+    ],
+    "riskReward": 0.0,
+    "botConfig": {
+      "positionSize": 2,
+      "leverage": 1,
+      "trailingStop": {
+        "enabled": false,
+        "activateAt": "TP1",
+        "trailPercent": 1.0
+      }
+    },
+    "invalidation": {
+      "price": 0.0,
+      "condition": "Describe what invalidates this trade"
+    }
+  },
   "confidenceBreakdown": {
     "technicalScore": ${technicalScore},
     "newsScore": 0,
     "conflictPenalty": 0,
     "calculation": "Technical (X) × 60% + News (Y) × 40% + penalties = Z%",
-    "explanation": "Explain why pattern scores led to this confidence. If patterns conflict (BULLISH and BEARISH both present with scores within 30 points), apply -35% conflict penalty."
+    "explanation": "Why this confidence level."
   },
   "entryTiming": {
     "status": "READY" | "WAIT",
-    "reason": "Why now is or isn't a good time to enter. Reference specific price levels.",
-    "aggressive": "If signal is WAIT: explain WHY aggressive entry is NOT recommended (e.g. 'Not recommended - conflicting signals at support give 60%+ stop-out probability. If you must enter, use 0.5% risk with tight stop.'). If signal is BULLISH/BEARISH: provide specific entry plan with price, stop, target.",
-    "conservative": "Wait for retest plan with specific trigger, entry, stop, target"
+    "reason": "Why now is or isn't a good time to enter.",
+    "aggressive": "Aggressive entry plan with specific price, stop, target",
+    "conservative": "Conservative wait-for-retest plan"
   },
   "actionablePlan": {
     "current": "What to do right now",
     "ifBullishBreakout": "IF price breaks above [resistance] → entry, stop, targets",
     "ifBearishBreakdown": "IF price breaks below [support] → entry, stop, targets"
   },
-  "riskManagement": "Position sizing recommendation (1-2% account risk per trade)",
+  "riskManagement": "Position sizing recommendation",
   "patternBreakdown": [
     {
       "name": "pattern_name",
       "baseScore": 68,
       "adjustments": ["Timeframe 15m: -5%", "At support: +20%"],
       "finalScore": 78,
-      "historicalSuccess": "68% overall, 78% with current context (Bulkowski, 10K+ patterns)",
+      "historicalSuccess": "68% overall, 78% with current context",
       "failureMode": "Breaks below support (32% of cases)",
       "invalidation": "Close below 0.044"
     }
@@ -478,27 +506,23 @@ Return ONLY valid JSON (no markdown, no code fences):
     "marketStage": "optimism | excitement | thrill | euphoria | anxiety | denial | panic | capitulation",
     "crowdPosition": "early adopters | early majority | late majority | laggards",
     "emotionalDrivers": ["FOMO", "fear", "greed"],
-    "commonMistakes": [
-      "Many traders will [do wrong thing] due to [bias]",
-      "If you feel [emotion], that's [bias] - do [correct action] instead"
-    ],
+    "commonMistakes": ["..."],
     "contrarian_insight": "Smart money is likely [doing opposite of crowd]"
   }` : 'null'},
   "disciplineReminders": {
     "positionSizing": "Risk 1-2% of account maximum on this trade",
     "stopLoss": "Set at [specific level] BEFORE entering, NEVER move wider",
-    "emotionalCheck": "If you feel strong emotion (FOMO/fear), wait 10 minutes before entering",
-    "invalidation": "If [specific level] breaks, accept you were wrong and exit"
+    "emotionalCheck": "If you feel strong emotion, wait 10 minutes",
+    "invalidation": "If [specific level] breaks, exit immediately"
   }
 }
 
 Rules:
 - Sentiment scores: -1.0 (very bearish) to +1.0 (very bullish)
-- Confidence: 0-90 (HARD CAP at 90, nothing is certain)
-- Always reference the timeframe and asset type in reasoning
-- Reference specific patterns by name and their research-backed success rates
-- Include pattern success rates in reasoning (e.g., "bull flag has 68% success rate, adjusted to 78% given current context")
-- If no news, base prediction purely on technicals and note that
+- Confidence: 0-95 (cap at 95)
+- Be DIRECT and DECISIVE - give clear BUY/SELL/WAIT
+- Include exact prices in tradingSignal for bot configuration
+- If no news, base prediction purely on technicals
 ${INJECTION_GUARD}`;
 
   const res = await fetch(AI_GATEWAY, {
@@ -688,7 +712,7 @@ Deno.serve(async (req) => {
       })),
       prediction: {
         signal: prediction.signal,
-        confidence: Math.min(prediction.confidence || 0, 90), // Hard cap
+        confidence: Math.min(prediction.confidence || 0, 95), // Cap at 95
         timeframe: technical.timeframe,
         assetType: technical.assetType,
         reasoning,
@@ -702,10 +726,11 @@ Deno.serve(async (req) => {
         ...(prediction.psychologyWarnings ? { psychologyWarnings: prediction.psychologyWarnings } : {}),
         ...(prediction.disciplineReminders ? { disciplineReminders: prediction.disciplineReminders } : {}),
         ...(prediction.confidenceBreakdown ? { confidenceBreakdown: prediction.confidenceBreakdown } : {}),
+        ...(prediction.tradingSignal ? { tradingSignal: prediction.tradingSignal } : {}),
       },
       imageUrl,
       analysisId: analysisId || null,
-      disclaimer: 'Educational analysis only, not financial advice. Even high-confidence patterns fail 20-40% of the time. Always use stop losses and risk only 1-2% per trade.',
+      disclaimer: '⚠️ TESTING MODE - Experimental AI advisor. Signals may be inaccurate. Use paper trading only. Not financial advice.',
     };
 
     console.log('[chart-analyzer] ✅ Analysis complete for', technical.ticker, '| Signal:', prediction.signal, '| Confidence:', result.prediction.confidence);

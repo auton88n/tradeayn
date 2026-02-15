@@ -8,11 +8,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { formatDistanceToNow } from 'date-fns';
 import type { ChartHistoryItem, ChartHistoryFilter, AssetType, PredictionSignal } from '@/types/chartAnalyzer.types';
 
-const signalConfig = {
+const signalConfig: Record<string, { icon: typeof TrendingUp; color: string; bg: string }> = {
   BULLISH: { icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10' },
   BEARISH: { icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-500/10' },
   NEUTRAL: { icon: Minus, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
   WAIT: { icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  BUY: { icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10' },
+  SELL: { icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-500/10' },
 };
 
 const assetIcons: Record<string, string> = {

@@ -62,41 +62,15 @@ export function sanitizeScrapedContent(text: string): string {
 export function sanitizeForPrompt(text: string, maxLength = 3000): string {
   if (!text || typeof text !== 'string') return '';
 
-  // First apply HTML sanitization
+  // Apply HTML sanitization only (no keyword redaction in advisor mode)
   let cleaned = sanitizeScrapedContent(text);
-
-  // Redact common prompt injection keywords (case-insensitive)
-  const injectionPatterns: [RegExp, string][] = [
-    [/\bIGNORE\b/gi, '[REDACTED]'],
-    [/\bSYSTEM\s*:/gi, '[REDACTED]'],
-    [/\bINSTRUCTION\s*:/gi, '[REDACTED]'],
-    [/\bOVERRIDE\b/gi, '[REDACTED]'],
-    [/forget your instructions/gi, '[REDACTED]'],
-    [/ignore (?:all )?previous/gi, '[REDACTED]'],
-    [/ignore (?:the )?above/gi, '[REDACTED]'],
-    [/disregard (?:all )?prior/gi, '[REDACTED]'],
-    [/new instructions\s*:/gi, '[REDACTED]'],
-    [/act as\b/gi, '[REDACTED]'],
-    [/you are now\b/gi, '[REDACTED]'],
-    [/pretend you are/gi, '[REDACTED]'],
-    [/bypass your/gi, '[REDACTED]'],
-    [/reveal your prompt/gi, '[REDACTED]'],
-    [/output your system/gi, '[REDACTED]'],
-    [/repeat (?:the |everything )?above/gi, '[REDACTED]'],
-    [/do not follow/gi, '[REDACTED]'],
-  ];
-
-  for (const [pattern, replacement] of injectionPatterns) {
-    cleaned = cleaned.replace(pattern, replacement);
-  }
 
   // Truncate to max length
   if (cleaned.length > maxLength) {
     cleaned = cleaned.substring(0, maxLength) + '... [truncated]';
   }
 
-  // Wrap with external source marker
-  return `[EXTERNAL SOURCE]: ${cleaned}`;
+  return cleaned;
 }
 
 /**
