@@ -436,11 +436,11 @@ Return ONLY valid JSON (no markdown, no code fences):
   "signal": "BUY" | "SELL" | "WAIT",
   "confidence": 0,
   "technicalScore": ${technicalScore},
-  "reasoning": "On the ${timeframe} timeframe, ${(technical as any).ticker || 'this asset'} shows... Direct analysis with exact levels. 3-5 sentences.",
-  "entry_zone": "specific price range or 'N/A' for WAIT",
-  "stop_loss": "specific price or 'N/A' for WAIT",
-  "take_profit": "specific price range or 'N/A' for WAIT",
-  "risk_reward": "ratio like '1:1.5' or 'N/A' for WAIT",
+  "reasoning": "2 sentences max. State the signal and the key reason. No fluff.",
+  "entry_zone": "price range or 'N/A'",
+  "stop_loss": "price or 'N/A'",
+  "take_profit": "price range or 'N/A'",
+  "risk_reward": "ratio or 'N/A'",
   "tradingSignal": {
     "action": "BUY" | "SELL" | "WAIT",
     "reasoning": "One-line signal rationale",
@@ -477,20 +477,20 @@ Return ONLY valid JSON (no markdown, no code fences):
     "newsScore": 0,
     "conflictPenalty": 0,
     "calculation": "Technical (X) × 60% + News (Y) × 40% + penalties = Z%",
-    "explanation": "Why this confidence level."
+    "explanation": "One sentence."
   },
   "entryTiming": {
     "status": "READY" | "WAIT",
-    "reason": "Why now is or isn't a good time to enter.",
-    "aggressive": "Aggressive entry plan with specific price, stop, target",
-    "conservative": "Conservative wait-for-retest plan"
+    "reason": "One sentence.",
+    "aggressive": "One line with price levels only",
+    "conservative": "One line with price levels only"
   },
   "actionablePlan": {
-    "current": "What to do right now",
-    "ifBullishBreakout": "IF price breaks above [resistance] → entry, stop, targets",
-    "ifBearishBreakdown": "IF price breaks below [support] → entry, stop, targets"
+    "current": "One line.",
+    "ifBullishBreakout": "One line with levels.",
+    "ifBearishBreakdown": "One line with levels."
   },
-  "riskManagement": "Position sizing recommendation",
+  "riskManagement": "One sentence.",
   "patternBreakdown": [
     {
       "name": "pattern_name",
@@ -510,10 +510,10 @@ Return ONLY valid JSON (no markdown, no code fences):
     "contrarian_insight": "Smart money is likely [doing opposite of crowd]"
   }` : 'null'},
   "disciplineReminders": {
-    "positionSizing": "Risk 1-2% of account maximum on this trade",
-    "stopLoss": "Set at [specific level] BEFORE entering, NEVER move wider",
-    "emotionalCheck": "If you feel strong emotion, wait 10 minutes",
-    "invalidation": "If [specific level] breaks, exit immediately"
+    "positionSizing": "Max 10 words.",
+    "stopLoss": "Max 10 words.",
+    "emotionalCheck": "Max 10 words.",
+    "invalidation": "Max 10 words."
   }
 }
 
