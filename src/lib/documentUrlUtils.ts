@@ -93,10 +93,12 @@ export const extractBestDocumentLink = (content: string): {
   // 1. 📄 [Title](url) or 📊 [Title](url) - with emojis
   // 2. [Download here](url) or [Download](url) - simple download links
   const emojiRegex = /[📄📊]\s*\[([^\]]+)\]\(((?:https?:\/\/[^\s)]+|data:[^\s)]+))\)/g;
-  const downloadRegex = /\[([Dd]ownload(?:\s+here)?)\]\(((?:https?:\/\/[^\s)]+|data:[^\s)]+))\)/g;
+  const downloadRegex = /\[([Dd]ownload[^\]]*|[Cc]lick here[^\]]*)\]\(((?:https?:\/\/[^\s)]+|data:[^\s)]+))\)/g;
+  // Generic fallback: any markdown link pointing to a document URL
+  const genericDocRegex = /\[([^\]]+)\]\(((?:https?:\/\/[^\s)]*(?:\.pdf|\.xlsx|\.xls|supabase\.co\/storage\/v1\/object)[^\s)]*|data:application\/(?:pdf|vnd\.openxmlformats[^\s)]+)[^\s)]*))\)/g;
   
   const matches: Array<{ title: string; url: string; type: 'pdf' | 'excel' }> = [];
-  
+
   // Check emoji links first
   let match;
   while ((match = emojiRegex.exec(content)) !== null) {
@@ -111,10 +113,23 @@ export const extractBestDocumentLink = (content: string): {
     });
   }
   
-  // Also check for "Download here" style links
+  // Check "Download ..." / "Click here ..." style links
   while ((match = downloadRegex.exec(content)) !== null) {
     const url = match[2];
-    const isExcel = url.includes('.xlsx') || url.includes('spreadsheetml.sheet');
+    const isExcel = url.includes('.xlsx') || url.includes('.xls') || url.includes('spreadsheetml.sheet');
+    matches.push({
+      title: match[1],
+      url: url,
+      type: isExcel ? 'excel' : 'pdf'
+    });
+  }
+
+  // Generic fallback: any link to a document URL
+  while ((match = genericDocRegex.exec(content)) !== null) {
+    const url = match[2];
+    // Skip if already captured
+    if (matches.some(m => m.url === url)) continue;
+    const isExcel = url.includes('.xlsx') || url.includes('.xls') || url.includes('spreadsheetml.sheet');
     matches.push({
       title: match[1],
       url: url,
