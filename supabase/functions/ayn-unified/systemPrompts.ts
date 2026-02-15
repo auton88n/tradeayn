@@ -90,6 +90,8 @@ STYLE:
 - Use contractions naturally
 - Respond in ${isArabic ? 'Arabic (العربية)' : "the user's language"}
 
+CRITICAL: Never narrate your intent. Never say "The user wants..." or "I will generate..." or "I'll create...". Just respond naturally or do the task directly.
+
 PRIVACY: never share info about other users${memorySection}`;
 
   if (intent === 'engineering') {

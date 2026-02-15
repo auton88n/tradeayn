@@ -22,7 +22,9 @@ export function detectIntent(message: string): string {
     /illustration\s+of/,
     /render\s+(an?\s+)?/,
     /visualize/,
-    /صورة/, /ارسم/, /ارسم لي/, /اعطني صورة/,
+    // Broader: "I want/need an image about X"
+    /(?:i\s+(?:want|need)\s+(?:an?\s+)?)?(?:image|picture|photo)\s+(?:about|of|for)/,
+    /صورة/, /ارسم/, /ارسم لي/, /اعطني صورة/, /ابي\s*صورة/, /سوي\s*صورة/,
     /image\s+de/, /dessine/, /montre\s+moi/, /genere\s+une\s+image/,
     // Retry patterns specific to images
     /try\s+again.*image/, /retry.*image/, /another\s+image/, /new\s+image/, /new\s+picture/,
@@ -39,12 +41,17 @@ export function detectIntent(message: string): string {
     /give\s+me\s+(an?\s+)?pdf/,
     /export\s+as\s+pdf/,
     /pdf\s+(report|document|about|for|of)/,
+    // Broader: "I want/need a pdf about X", "can you make a pdf"
+    /(?:i\s+(?:want|need)\s+(?:an?\s+)?)?pdf\s+(?:about|for|on)/,
+    /(?:can\s+you\s+)?(?:make|create|get)\s+(?:me\s+)?(?:an?\s+)?pdf/,
     /create\s+(an?\s+)?(excel|exel|excell|exsel|ecxel|exl)/,
     /make\s+(an?\s+)?(excel|exel|excell|exsel|ecxel|exl)/,
     /give\s+me\s+(an?\s+)?(excel|exel|excell|exsel|ecxel|exl)/,
     /(excel|exel|excell|exsel|ecxel|exl)\s+(sheet|about|for|of)/,
     /spreadsheet/,
     /xlsx\s+file/,
+    // Broader: "I want/need excel about X"
+    /(?:i\s+(?:want|need)\s+(?:an?\s+)?)?(?:excel|spreadsheet)\s+(?:about|for|on)/,
     /create\s+(an?\s+)?report/,
     /make\s+(an?\s+)?report/,
     /generate\s+(an?\s+)?report/,
@@ -58,6 +65,7 @@ export function detectIntent(message: string): string {
     /اعمل\s*(اكسل|لي)/, /جدول\s*بيانات/, /ملف\s*اكسل/, /تقرير\s*عن/, /انشئ\s*تقرير/,
     /سوي\s*لي/, /اعطني\s*ملف/, /حمل\s*لي/,
     /جدول\s*عن/, /بيانات\s*عن/, /اكسل\s*عن/, /اكسل\s*لـ/,
+    /ابي\s*(?:pdf|اكسل|ملف)/, /اعطني\s*(?:تقرير|ملف|جدول)/, /سوي\s*(?:pdf|اكسل|ملف)/,
     // French
     /créer\s+(un\s+)?pdf/, /faire\s+(un\s+)?pdf/, /rapport\s+pdf/, /document\s+pdf/, /générer\s+(un\s+)?pdf/,
     /créer\s+(un\s+)?excel/, /feuille\s+excel/, /tableur/, /rapport\s+sur/, /faire\s+un\s+rapport/,
