@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Upload, X, Loader2, BarChart3, Search, Brain, CheckCircle2, History, TrendingUp, Target, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,6 +39,7 @@ export default function ChartAnalyzer({ onResult }: ChartAnalyzerProps) {
   const history = useChartHistory();
   const [isDragOver, setIsDragOver] = useState(false);
   const [compareItems, setCompareItems] = useState<[ChartHistoryItem, ChartHistoryItem] | null>(null);
+  const dragCounter = useRef(0);
 
   const isLoading = ['uploading', 'analyzing', 'fetching-news', 'predicting'].includes(step);
 
@@ -47,8 +48,25 @@ export default function ChartAnalyzer({ onResult }: ChartAnalyzerProps) {
     analyzeChart(file);
   }, [analyzeChart]);
 
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current++;
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current--;
+    if (dragCounter.current === 0) setIsDragOver(false);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    dragCounter.current = 0;
     setIsDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file) handleFile(file);
@@ -116,8 +134,9 @@ export default function ChartAnalyzer({ onResult }: ChartAnalyzerProps) {
                     ? 'border-amber-500 bg-amber-500/5 scale-[1.01]'
                     : 'border-amber-500/20 hover:border-amber-500/50 hover:bg-muted/30'
                 }`}
-                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                onDragLeave={() => setIsDragOver(false)}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
               >
