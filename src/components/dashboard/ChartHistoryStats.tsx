@@ -32,7 +32,8 @@ export default function ChartHistoryStats({ items }: Props) {
       tickerMap[t] = (tickerMap[t] || 0) + 1;
 
       for (const p of item.technical.patterns || []) {
-        patternMap[p] = (patternMap[p] || 0) + 1;
+        const name = typeof p === 'string' ? p : (p as any)?.name || String(p);
+        patternMap[name] = (patternMap[name] || 0) + 1;
       }
     }
 

@@ -67,9 +67,16 @@ function CompareColumn({ item }: { item: ChartHistoryItem }) {
       {/* Patterns */}
       {item.technical.patterns.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {item.technical.patterns.map((p, i) => (
-            <Badge key={i} variant="outline" className="text-[10px]">{typeof p === 'string' ? p : (p as any)?.name || JSON.stringify(p)}</Badge>
-          ))}
+          {item.technical.patterns.map((p, i) => {
+            const name = typeof p === 'string' ? p : (p as any)?.name || '';
+            const conf = typeof p === 'object' ? (p as any)?.confidence : null;
+            const confClass = conf === 'HIGH' ? 'border-green-500/30 text-green-600' : conf === 'LOW' ? 'border-red-500/30 text-red-500' : '';
+            return (
+              <Badge key={i} variant="outline" className={`text-[10px] ${confClass}`}>
+                {name.replace(/_/g, ' ')}{conf ? ` (${conf})` : ''}
+              </Badge>
+            );
+          })}
         </div>
       )}
 
