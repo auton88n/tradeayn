@@ -59,14 +59,14 @@ const MessageBubble = memo(({ msg, index }: { msg: { role: string; content: stri
   >
     <div
       className={cn(
-        "max-w-[85%] rounded-2xl px-4 py-2.5",
+        "max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-2.5",
         msg.role === 'user'
           ? "bg-amber-500/15 text-foreground"
           : "bg-muted"
       )}
     >
       {msg.role === 'assistant' ? (
-        <MessageFormatter content={msg.content} className="prose prose-sm dark:prose-invert max-w-none" />
+        <MessageFormatter content={msg.content} className="prose prose-sm dark:prose-invert max-w-prose" />
       ) : (
         <p className="text-sm">{msg.content}</p>
       )}

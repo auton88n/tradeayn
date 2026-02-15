@@ -722,7 +722,7 @@ const ResponseCardComponent = ({
                 className={cn(
                   "text-base sm:text-[15px] leading-relaxed sm:leading-7",
                   "text-foreground",
-                  "prose prose-gray dark:prose-invert max-w-none",
+                  "prose prose-gray dark:prose-invert max-w-prose",
                   "[&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:bg-muted",
                   "[&_code]:text-sm",
                   "[&_ul]:space-y-2 [&_ol]:space-y-2",
