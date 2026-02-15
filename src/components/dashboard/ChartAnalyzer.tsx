@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
-import { Upload, X, Loader2, BarChart3, Search, Brain, CheckCircle2, History } from 'lucide-react';
+import { Upload, X, Loader2, BarChart3, Search, Brain, CheckCircle2, History, TrendingUp, Target, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useChartAnalyzer } from '@/hooks/useChartAnalyzer';
 import { useChartHistory } from '@/hooks/useChartHistory';
@@ -18,6 +19,15 @@ const STEPS = [
   { key: 'fetching-news', label: 'Fetching latest news...', icon: Search },
   { key: 'predicting', label: 'Generating prediction...', icon: Brain },
 ] as const;
+
+const FEATURES = [
+  { label: 'Pattern Detection', icon: TrendingUp },
+  { label: 'Entry/Exit Signals', icon: Target },
+  { label: 'Sentiment Analysis', icon: Activity },
+];
+
+const ASSETS = ['Stock', 'Crypto', 'Forex', 'Commodity'];
+const FORMATS = ['PNG', 'JPG', 'WEBP'];
 
 export default function ChartAnalyzer() {
   const { step, result, error, previewUrl, fileInputRef, analyzeChart, reset } = useChartAnalyzer();
@@ -45,44 +55,83 @@ export default function ChartAnalyzer() {
   }, [reset, history]);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4 p-4">
-      <div className="text-center mb-2">
-        <h2 className="text-xl font-bold flex items-center justify-center gap-2">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          Chart Analyzer
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Upload a trading chart screenshot for AI-powered technical analysis & prediction
-        </p>
+    <div className="max-w-3xl mx-auto space-y-6 p-4">
+      {/* Hero Header */}
+      <div className="text-center space-y-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/25">
+          <BarChart3 className="h-8 w-8 text-white" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600 bg-clip-text text-transparent">
+            Chart Analyzer
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1.5 max-w-md mx-auto">
+            Upload a trading chart screenshot for AI-powered technical analysis, predictions & trade signals
+          </p>
+        </div>
+
+        {/* Feature badges */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {FEATURES.map(({ label, icon: Icon }) => (
+            <div key={label} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted/60 rounded-full px-3 py-1.5 border border-border/50">
+              <Icon className="h-3 w-3 text-amber-500" />
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {/* Asset badges */}
+        <div className="flex items-center justify-center gap-1.5">
+          {ASSETS.map((asset) => (
+            <Badge key={asset} variant="outline" className="text-[10px] px-2 py-0.5 font-medium border-amber-500/30 text-amber-600 dark:text-amber-400">
+              {asset}
+            </Badge>
+          ))}
+        </div>
       </div>
 
+      {/* Tabs */}
       <Tabs defaultValue="analyze" className="w-full">
-        <TabsList className="w-full">
-          <TabsTrigger value="analyze" className="flex-1 gap-1.5">
+        <TabsList className="w-full bg-muted/50 backdrop-blur-sm rounded-xl p-1">
+          <TabsTrigger value="analyze" className="flex-1 gap-1.5 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md">
             <BarChart3 className="h-3.5 w-3.5" /> Analyze
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex-1 gap-1.5">
+          <TabsTrigger value="history" className="flex-1 gap-1.5 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md">
             <History className="h-3.5 w-3.5" /> History
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="analyze">
-          <div className="space-y-4 mt-2">
+          <div className="space-y-4 mt-3">
             {/* Upload Zone */}
             {(step === 'idle' || step === 'error') && (
               <Card
-                className={`border-2 border-dashed transition-colors cursor-pointer ${
-                  isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                className={`border-2 border-dashed transition-all duration-300 cursor-pointer group relative overflow-hidden ${
+                  isDragOver
+                    ? 'border-amber-500 bg-amber-500/5 scale-[1.01]'
+                    : 'border-amber-500/20 hover:border-amber-500/50 hover:bg-muted/30'
                 }`}
                 onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                 onDragLeave={() => setIsDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                  <Upload className="h-10 w-10 text-muted-foreground mb-3" />
-                  <p className="text-sm font-medium">Drop chart screenshot here</p>
-                  <p className="text-xs text-muted-foreground mt-1">or click to browse (PNG, JPG, WEBP)</p>
+                {/* Subtle background gradient */}
+                <div className="absolute inset-0 bg-gradient-to-b from-amber-500/[0.03] to-transparent pointer-events-none" />
+
+                <CardContent className="flex flex-col items-center justify-center py-14 text-center relative">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <Upload className="h-6 w-6 text-amber-500 animate-pulse" />
+                  </div>
+                  <p className="text-sm font-semibold">Drop your chart screenshot here</p>
+                  <p className="text-xs text-muted-foreground mt-1.5 mb-3">or click to browse your files</p>
+                  <div className="flex items-center gap-1.5">
+                    {FORMATS.map((fmt) => (
+                      <span key={fmt} className="text-[10px] font-medium bg-muted rounded-md px-2 py-0.5 text-muted-foreground border border-border/50">
+                        {fmt}
+                      </span>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -120,7 +169,7 @@ export default function ChartAnalyzer() {
                           {isDone ? (
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
                           ) : isActive ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                            <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
                           ) : (
                             <Icon className="h-4 w-4" />
                           )}
@@ -158,7 +207,7 @@ export default function ChartAnalyzer() {
         </TabsContent>
 
         <TabsContent value="history">
-          <div className="mt-2 space-y-3">
+          <div className="mt-3 space-y-3">
             {compareItems ? (
               <ChartCompareView
                 items={compareItems}
