@@ -4,10 +4,13 @@ import { cn } from "@/lib/utils";
 import { Copy, Check, User, Brain, Clock, CornerDownLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { MessageFormatter } from "@/components/shared/MessageFormatter";
 import { StreamingMarkdown } from "@/components/eye/StreamingMarkdown";
 import { AttachmentPreview } from "@/components/transcript/AttachmentPreview";
+import type { ChartAnalysisResult } from "@/types/chartAnalyzer.types";
+
+const ChartAnalyzerResults = lazy(() => import("@/components/dashboard/ChartAnalyzerResults"));
 
 interface TranscriptMessageProps {
   content: string;
@@ -18,6 +21,7 @@ interface TranscriptMessageProps {
   shouldAnimate?: boolean;
   isStreaming?: boolean;
   attachment?: { url: string; name: string; type: string };
+  chartAnalysis?: ChartAnalysisResult;
   onReply?: (content: string) => void;
 }
 
@@ -44,6 +48,7 @@ export const TranscriptMessage = ({
   shouldAnimate = true,
   isStreaming = false,
   attachment,
+  chartAnalysis,
   onReply,
 }: TranscriptMessageProps) => {
   const isUser = sender === "user";
@@ -126,6 +131,15 @@ export const TranscriptMessage = ({
           {/* File attachment preview */}
           {attachment?.url && (
             <AttachmentPreview url={attachment.url} name={attachment.name} type={attachment.type} />
+          )}
+
+          {/* Chart analysis results inline */}
+          {chartAnalysis && !isUser && (
+            <div className="mt-3">
+              <Suspense fallback={<div className="text-xs text-muted-foreground">Loading chart results...</div>}>
+                <ChartAnalyzerResults result={chartAnalysis} />
+              </Suspense>
+            </div>
           )}
         </div>
 
