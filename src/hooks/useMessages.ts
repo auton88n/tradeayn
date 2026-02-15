@@ -399,6 +399,10 @@ export const useMessages = (
         // Other intent detection
         if (/search|find|look up|latest|news/.test(lower)) return 'search';
         if (/beam|column|foundation|slab|calculate|structural/.test(lower)) return 'engineering';
+        
+        // Fallback: if image is attached and no other intent matched, default to chart analysis
+        if (attachment && attachment.type.startsWith('image/')) return 'chart_analysis';
+        
         return 'chat';
       };
 

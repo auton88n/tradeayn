@@ -607,7 +607,8 @@ serve(async (req) => {
 
     // Detect intent from last message or use forced intent
     const lastMessage = messages[messages.length - 1]?.content || '';
-    const intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : detectIntent(lastMessage);
+    const hasImageFile = !!(fileData && fileData.type && fileData.type.startsWith('image/'));
+    const intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : detectIntent(lastMessage, hasImageFile);
     console.log(`Detected intent: ${intent}`);
 
     // === PROMPT INJECTION DEFENSE ===

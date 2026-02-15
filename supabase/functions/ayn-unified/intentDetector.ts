@@ -1,6 +1,6 @@
 // Intent detection for routing requests
 
-export function detectIntent(message: string): string {
+export function detectIntent(message: string, hasImageFile = false): string {
   const lower = message.toLowerCase();
   
   // === IMAGE detection FIRST (prevents "make me a" hijacking) ===
@@ -104,6 +104,9 @@ export function detectIntent(message: string): string {
   if (fileKeywords.some(kw => lower.includes(kw))) return 'files';
   if (searchKeywords.some(kw => lower.includes(kw))) return 'search';
   if (engineeringKeywords.some(kw => lower.includes(kw))) return 'engineering';
+  
+  // Fallback: if an image file is attached and no other intent matched, default to chart analysis
+  if (hasImageFile) return 'chart_analysis';
   
   return 'chat';
 }
