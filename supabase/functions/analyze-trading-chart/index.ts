@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { searchWeb } from "../_shared/firecrawlHelper.ts";
 import { uploadImageToStorage } from "../_shared/storageUpload.ts";
+import { buildTradingContext } from "./tradingKnowledge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -113,7 +114,15 @@ async function generatePrediction(
 ) {
   console.log('[chart-analyzer] Step 3: Generating sentiment + prediction');
 
+  // Inject trading knowledge context
+  const tradingContext = buildTradingContext(
+    (technical as any).assetType || 'stock',
+    (technical as any).timeframe || 'Daily'
+  );
+
   const prompt = `You are an expert trading analyst combining technical and fundamental analysis. Given the following data, produce a trading prediction.
+
+${tradingContext}
 
 ## Technical Analysis
 ${JSON.stringify(technical, null, 2)}

@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SidebarProvider, Sidebar as ShadcnSidebar, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Sidebar as DashboardSidebar } from './Sidebar';
 import { CenterStageLayout } from './CenterStageLayout';
+import ChartAnalyzer from './ChartAnalyzer';
 
 import { TutorialWelcome } from '@/components/tutorial/TutorialWelcome';
 import { TutorialOverlay } from '@/components/tutorial/TutorialOverlay';
@@ -286,6 +287,7 @@ const DashboardContent = ({
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [replyPrefill, setReplyPrefill] = useState<string>('');
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showChartAnalyzer, setShowChartAnalyzer] = useState(false);
   const { setEmotion, setIsResponding } = useAYNEmotion();
   
   // Tutorial system
@@ -453,8 +455,10 @@ const DashboardContent = ({
           onAdminPanelClick={onAdminPanelClick}
               onStartTutorial={tutorial.startTutorial}
               isTutorialProfileStep={tutorial.isActive && tutorial.currentStepData?.id === 'profile'}
-              onOpenFeedback={() => setShowFeedbackModal(true)}
-              betaFeedbackReward={betaConfig?.feedbackReward}
+               onOpenFeedback={() => setShowFeedbackModal(true)}
+               betaFeedbackReward={betaConfig?.feedbackReward}
+               onChartAnalyzerClick={() => setShowChartAnalyzer(prev => !prev)}
+               isChartAnalyzerActive={showChartAnalyzer}
             />
           </div>
         </ShadcnSidebar>
@@ -528,6 +532,11 @@ const DashboardContent = ({
           <div className="h-9 w-9" />
         </header>
 
+        {showChartAnalyzer ? (
+          <div className="flex-1 overflow-auto">
+            <ChartAnalyzer />
+          </div>
+        ) : (
         <CenterStageLayout
           messages={messagesHook.messages}
           onSendMessage={async (content, file) => {
@@ -586,6 +595,7 @@ const DashboardContent = ({
           setShowFeedbackModal={setShowFeedbackModal}
           onCreditsUpdated={usageTracking.refreshUsage}
         />
+        )}
       </main>
 
       </div>

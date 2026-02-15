@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Calculator, Monitor, ClipboardCheck } from 'lucide-react';
+import { Plus, LogOut, Trash2, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Calculator, Monitor, ClipboardCheck, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
@@ -121,7 +121,9 @@ export const Sidebar = ({
   onStartTutorial,
   isTutorialProfileStep,
   onOpenFeedback,
-  betaFeedbackReward = 5
+  betaFeedbackReward = 5,
+  onChartAnalyzerClick,
+  isChartAnalyzerActive,
 }: SidebarProps) => {
   const {
     toggleSidebar
@@ -445,6 +447,23 @@ export const Sidebar = ({
               >
                 <ClipboardCheck className="w-4 h-4" />
                 Compliance
+              </Button>
+              
+              {/* Chart Analyzer Button */}
+              <Button 
+                onClick={onChartAnalyzerClick}
+                className={cn(
+                  "flex-1 h-9 rounded-lg gap-1.5",
+                  isChartAnalyzerActive
+                    ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400"
+                    : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500",
+                  "text-white text-sm font-medium",
+                  "transition-colors duration-150",
+                  "border-0"
+                )}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Charts
               </Button>
             </div>
           </SidebarGroupContent>
