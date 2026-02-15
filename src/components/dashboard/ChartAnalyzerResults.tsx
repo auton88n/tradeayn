@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, Minus, Clock, BarChart3, Newspaper, Target, Shield, Award, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Volume2, Brain, Crosshair, Bell, Bot, Copy } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Clock, BarChart3, Newspaper, Target, Shield, Award, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Volume2, Brain, Crosshair, Bell, Bot, Copy, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -204,6 +204,24 @@ function ConfidenceBreakdownDisplay({ breakdown }: { breakdown: ConfidenceBreakd
   );
 }
 
+function ReasoningDisplay({ text }: { text: string }) {
+  const [showFull, setShowFull] = useState(false);
+  const isLong = text.length > 180;
+
+  return (
+    <div className="mt-3">
+      <p className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-line ${!showFull && isLong ? 'line-clamp-2' : ''}`}>
+        {text}
+      </p>
+      {isLong && (
+        <button onClick={() => setShowFull(!showFull)} className="text-xs text-primary hover:underline mt-1">
+          {showFull ? 'Show less' : 'Show more'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function parseRiskReward(rr: string): { ratio: number | null; label: string; color: string } {
   const match = rr.match(/1[:\s]*(\d+\.?\d*)/);
   if (!match) return { ratio: null, label: '', color: '' };
@@ -214,7 +232,7 @@ function parseRiskReward(rr: string): { ratio: number | null; label: string; col
 }
 
 // ─── Bot Configuration Card ───
-function BotConfigCard({ tradingSignal }: { tradingSignal: TradingSignal }) {
+function BotConfigCard({ tradingSignal, disciplineReminders }: { tradingSignal: TradingSignal; disciplineReminders?: DisciplineReminders }) {
   const actionColor = tradingSignal.action === 'BUY' ? 'text-green-500 bg-green-500/10 border-green-500/30'
     : tradingSignal.action === 'SELL' ? 'text-red-500 bg-red-500/10 border-red-500/30'
     : 'text-blue-500 bg-blue-500/10 border-blue-500/30';
@@ -293,6 +311,13 @@ function BotConfigCard({ tradingSignal }: { tradingSignal: TradingSignal }) {
             Below {tradingSignal.invalidation.price} — {tradingSignal.invalidation.condition}
           </p>
         </div>
+
+        {/* Discipline one-liner merged into Bot Config */}
+        {disciplineReminders && (
+          <p className="text-[11px] text-muted-foreground italic pt-1 border-t border-border/30">
+            ⚠️ {disciplineReminders.positionSizing} • {disciplineReminders.stopLoss}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
@@ -304,54 +329,27 @@ function NextStepsCard({ result }: Props) {
 
   return (
     <Card className="border border-blue-500/30 bg-blue-500/5">
-      <CardContent className="pt-4 pb-4">
-        <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-          <Bell className="h-4 w-4 text-blue-500" />
-          <span className="text-blue-500">📲 What To Do Next</span>
-        </h3>
-        <div className="space-y-3 text-sm">
+      <CardContent className="pt-3 pb-3">
+        <div className="space-y-1.5 text-xs">
           {isWait ? (
-            <>
-              <div>
-                <p className="font-medium text-foreground">1. Set Price Alerts</p>
-                <div className="text-xs text-muted-foreground ml-4 mt-0.5 space-y-0.5">
-                  {technical.resistance.length > 0 && <p>• Alert at {technical.resistance[0]} (bullish trigger)</p>}
-                  {technical.support.length > 0 && <p>• Alert at {technical.support[0]} (bearish trigger)</p>}
+            <div className="grid grid-cols-2 gap-2">
+              {technical.resistance.length > 0 && (
+                <div className="p-2 rounded-lg bg-green-500/10 text-center">
+                  <p className="text-muted-foreground text-[10px]">Bullish alert</p>
+                  <p className="font-semibold text-green-500">{technical.resistance[0]}</p>
                 </div>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">2. Don't Watch the Chart</p>
-                <p className="text-xs text-muted-foreground ml-4 mt-0.5">Staring at price increases emotional trading. Close the chart and wait for alerts.</p>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">3. Re-analyze When:</p>
-                <div className="text-xs text-muted-foreground ml-4 mt-0.5 space-y-0.5">
-                  <p>• Alert triggers (price breaks key level)</p>
-                  <p>• New volume spike occurs</p>
-                  <p>• 4+ hours have passed</p>
+              )}
+              {technical.support.length > 0 && (
+                <div className="p-2 rounded-lg bg-red-500/10 text-center">
+                  <p className="text-muted-foreground text-[10px]">Bearish alert</p>
+                  <p className="font-semibold text-red-500">{technical.support[0]}</p>
                 </div>
-              </div>
-            </>
+              )}
+            </div>
           ) : (
             <>
-              <div>
-                <p className="font-medium text-foreground">1. Review the Setup</p>
-                <p className="text-xs text-muted-foreground ml-4 mt-0.5">Re-read entry plan, stop loss, and targets above. Know WHY you're taking this trade.</p>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">2. Calculate Position Size</p>
-                <p className="text-xs text-muted-foreground ml-4 mt-0.5">Risk 1-2% of account. Formula: (Account × Risk%) ÷ (Entry − Stop)</p>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">3. Set Stop Loss BEFORE Entering</p>
-                <p className="text-xs text-muted-foreground ml-4 mt-0.5">
-                  Place stop at {prediction.stop_loss !== 'N/A' ? prediction.stop_loss : 'your calculated level'}. Never move it wider.
-                </p>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">4. Journal This Trade</p>
-                <p className="text-xs text-muted-foreground ml-4 mt-0.5">Write down: Why entering, what you'll do if stopped out, how you're feeling right now.</p>
-              </div>
+              <p>1. Review entry, SL & targets in Bot Config above.</p>
+              <p>2. Set stop loss at {prediction.stop_loss !== 'N/A' ? prediction.stop_loss : 'your level'} BEFORE entering.</p>
             </>
           )}
         </div>
@@ -363,7 +361,7 @@ function NextStepsCard({ result }: Props) {
 // ─── Main Component ───
 
 export default function ChartAnalyzerResults({ result }: Props) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ botconfig: true });
 
   const toggleSection = (id: string) => {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -408,12 +406,23 @@ export default function ChartAnalyzerResults({ result }: Props) {
             </div>
           </div>
 
-          <p className="mt-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-            {result.prediction.reasoning}
-          </p>
+          {/* Reasoning - truncated with show more */}
+          <ReasoningDisplay text={result.prediction.reasoning} />
 
-          {/* Confidence Breakdown (inline in Quick View) */}
-          {confidenceBreakdown && <ConfidenceBreakdownDisplay breakdown={confidenceBreakdown} />}
+          {/* Confidence Breakdown - collapsible */}
+          {confidenceBreakdown && (
+            <Collapsible>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mt-2">
+                  <ChevronRight className="h-3 w-3" />
+                  <span>Why {result.prediction.confidence}% confidence?</span>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <ConfidenceBreakdownDisplay breakdown={confidenceBreakdown} />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </CardContent>
       </Card>
 
@@ -426,7 +435,7 @@ export default function ChartAnalyzerResults({ result }: Props) {
             'text-blue-500 border-blue-500/30'
           }`}>{tradingSignal.action}</Badge>}
         >
-          <BotConfigCard tradingSignal={tradingSignal} />
+          <BotConfigCard tradingSignal={tradingSignal} disciplineReminders={disciplineReminders} />
         </Section>
       )}
 
@@ -466,36 +475,7 @@ export default function ChartAnalyzerResults({ result }: Props) {
         </Section>
       )}
 
-      {/* Trade Setup */}
-      {result.prediction.entry_zone !== 'N/A' && (
-        <Section id="trade" title="Trade Setup" icon={Target} expanded={expanded} onToggle={toggleSection}>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                <div className="p-2 rounded-lg bg-muted/50">
-                  <p className="text-muted-foreground text-xs">Entry Zone</p>
-                  <p className="font-semibold">{result.prediction.entry_zone}</p>
-                </div>
-                <div className="p-2 rounded-lg bg-red-500/5">
-                  <p className="text-muted-foreground text-xs">Stop Loss</p>
-                  <p className="font-semibold text-red-500">{result.prediction.stop_loss}</p>
-                </div>
-                <div className="p-2 rounded-lg bg-green-500/5">
-                  <p className="text-muted-foreground text-xs">Take Profit</p>
-                  <p className="font-semibold text-green-500">{result.prediction.take_profit}</p>
-                </div>
-                <div className="p-2 rounded-lg bg-muted/50">
-                  <p className="text-muted-foreground text-xs">Risk/Reward</p>
-                  <p className="font-semibold">{result.prediction.risk_reward}</p>
-                  {rrParsed.ratio !== null && (
-                    <p className={`text-[10px] mt-0.5 ${rrParsed.color}`}>{rrParsed.label}</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Section>
-      )}
+      {/* Trade Setup REMOVED - redundant with Bot Config */}
 
       {/* Pattern Breakdown */}
       {patternBreakdown && patternBreakdown.length > 0 && (
@@ -585,21 +565,7 @@ export default function ChartAnalyzerResults({ result }: Props) {
         </Section>
       )}
 
-      {/* Discipline Reminders */}
-      {disciplineReminders && (
-        <Section id="discipline" title="Trading Discipline" icon={Crosshair} expanded={expanded} onToggle={toggleSection}>
-          <Card className="border-border/50 bg-muted/20">
-            <CardContent className="pt-4 pb-4">
-              <div className="space-y-1.5 text-xs text-muted-foreground">
-                <div>• {disciplineReminders.positionSizing}</div>
-                <div>• {disciplineReminders.stopLoss}</div>
-                <div>• {disciplineReminders.emotionalCheck}</div>
-                <div>• {disciplineReminders.invalidation}</div>
-              </div>
-            </CardContent>
-          </Card>
-        </Section>
-      )}
+      {/* Discipline section REMOVED - merged into Bot Config */}
 
       {/* Next Steps */}
       <Section id="nextsteps" title="What To Do Next" icon={Bell} expanded={expanded} onToggle={toggleSection}>
