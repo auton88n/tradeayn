@@ -8,6 +8,9 @@ import { useChartHistory } from '@/hooks/useChartHistory';
 import ChartAnalyzerResults from './ChartAnalyzerResults';
 import ChartHistoryList from './ChartHistoryList';
 import ChartHistoryDetail from './ChartHistoryDetail';
+import ChartHistoryStats from './ChartHistoryStats';
+import ChartCompareView from './ChartCompareView';
+import type { ChartHistoryItem } from '@/types/chartAnalyzer.types';
 
 const STEPS = [
   { key: 'uploading', label: 'Uploading chart...', icon: Upload },
@@ -20,6 +23,7 @@ export default function ChartAnalyzer() {
   const { step, result, error, previewUrl, fileInputRef, analyzeChart, reset } = useChartAnalyzer();
   const history = useChartHistory();
   const [isDragOver, setIsDragOver] = useState(false);
+  const [compareItems, setCompareItems] = useState<[ChartHistoryItem, ChartHistoryItem] | null>(null);
 
   const isLoading = ['uploading', 'analyzing', 'fetching-news', 'predicting'].includes(step);
 
@@ -154,23 +158,32 @@ export default function ChartAnalyzer() {
         </TabsContent>
 
         <TabsContent value="history">
-          <div className="mt-2">
-            {history.selectedItem ? (
+          <div className="mt-2 space-y-3">
+            {compareItems ? (
+              <ChartCompareView
+                items={compareItems}
+                onBack={() => setCompareItems(null)}
+              />
+            ) : history.selectedItem ? (
               <ChartHistoryDetail
                 item={history.selectedItem}
                 onBack={() => history.setSelectedItem(null)}
                 onDelete={history.deleteItem}
               />
             ) : (
-              <ChartHistoryList
-                items={history.items}
-                loading={history.loading}
-                hasMore={history.hasMore}
-                filter={history.filter}
-                onFilterChange={history.setFilter}
-                onSelect={history.setSelectedItem}
-                onLoadMore={history.loadMore}
-              />
+              <>
+                <ChartHistoryStats items={history.items} />
+                <ChartHistoryList
+                  items={history.items}
+                  loading={history.loading}
+                  hasMore={history.hasMore}
+                  filter={history.filter}
+                  onFilterChange={history.setFilter}
+                  onSelect={history.setSelectedItem}
+                  onLoadMore={history.loadMore}
+                  onCompare={setCompareItems}
+                />
+              </>
             )}
           </div>
         </TabsContent>
