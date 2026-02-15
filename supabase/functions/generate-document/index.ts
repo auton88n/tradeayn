@@ -330,47 +330,107 @@ function addFooter(
   doc.text(pageText, pageWidth / 2, footerY, { align: 'center' });
 }
 
-// Generate Excel-compatible CSV (no external dependencies)
+// Generate styled Excel file using HTML table (opens natively in Excel/Sheets/LibreOffice)
 function generateExcel(data: DocumentRequest): Uint8Array {
   const isRTL = data.language === 'ar';
-  const rows: string[][] = [];
+  const dir = isRTL ? 'rtl' : 'ltr';
+  const fontFamily = isRTL ? "'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif" : "'Segoe UI', Calibri, Arial, sans-serif";
+  const dateStr = formatDate(new Date(), data.language);
 
-  // BOM for UTF-8 Excel compatibility
-  const escapeCell = (val: string | number) => {
-    const s = String(val ?? '');
-    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-      return `"${s.replace(/"/g, '""')}"`;
-    }
-    return s;
-  };
+  const esc = (s: string) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // Title row
-  rows.push([escapeCell(data.title)]);
-  rows.push([escapeCell(formatDate(new Date(), data.language))]);
-  rows.push([]);
+  let tableRows = '';
 
   for (const section of data.sections) {
-    rows.push([escapeCell(section.heading)]);
+    // Section heading row (merged across max columns)
+    const maxCols = section.table?.headers?.length || 1;
+    tableRows += `<tr><td colspan="${maxCols}" class="section-heading">${esc(section.heading)}</td></tr>\n`;
 
     if (section.content) {
-      rows.push([escapeCell(section.content)]);
+      tableRows += `<tr><td colspan="${maxCols}" class="content-cell">${esc(section.content)}</td></tr>\n`;
     }
 
     if (section.table && section.table.headers) {
       const headers = isRTL ? [...section.table.headers].reverse() : section.table.headers;
-      rows.push(headers.map(escapeCell));
+      tableRows += '<tr>' + headers.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>\n';
 
       for (const row of section.table.rows || []) {
-        const rowData = isRTL ? [...row].reverse() : row;
-        rows.push(rowData.map(escapeCell));
+        const cells = isRTL ? [...row].reverse() : row;
+        tableRows += '<tr>' + cells.map(c => `<td>${esc(c)}</td>`).join('') + '</tr>\n';
       }
     }
 
-    rows.push([]);
+    // Spacer row
+    tableRows += '<tr><td style="height:12px;border:none;"></td></tr>\n';
   }
 
-  const csvContent = '\uFEFF' + rows.map(r => r.join(',')).join('\r\n');
-  return new TextEncoder().encode(csvContent);
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+<x:Name>Sheet1</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+<style>
+  body { direction: ${dir}; }
+  table { border-collapse: collapse; width: 100%; font-family: ${fontFamily}; font-size: 11pt; }
+  th {
+    background: #1a1a2e;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 10px 14px;
+    border: 1px solid #16213e;
+    text-align: ${isRTL ? 'right' : 'left'};
+    mso-number-format: '\\@';
+  }
+  td {
+    padding: 8px 14px;
+    border: 1px solid #d0d0da;
+    vertical-align: top;
+    mso-number-format: '\\@';
+  }
+  tr:nth-child(even) td { background: #f8f8fc; }
+  .section-heading {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #1a1a2e;
+    background: #eeeef5;
+    padding: 10px 14px;
+    border: none;
+    border-bottom: 2px solid #4e4e78;
+  }
+  .content-cell {
+    color: #3c3c3c;
+    font-size: 10.5pt;
+    border: none;
+    padding: 6px 14px 10px;
+  }
+  .title-row td {
+    font-size: 16pt;
+    font-weight: bold;
+    color: #1a1a2e;
+    padding: 14px;
+    border: none;
+  }
+  .date-row td {
+    font-size: 9pt;
+    color: #828290;
+    padding: 2px 14px 14px;
+    border: none;
+  }
+</style>
+</head>
+<body>
+<table>
+  <tr class="title-row"><td colspan="10">${esc(data.title)}</td></tr>
+  <tr class="date-row"><td colspan="10">${esc(dateStr)}</td></tr>
+  <tr><td colspan="10" style="height:8px;border:none;"></td></tr>
+  ${tableRows}
+</table>
+</body>
+</html>`;
+
+  return new TextEncoder().encode('\uFEFF' + html);
 }
 
 // toDataUrl removed - files are now uploaded to Supabase Storage
@@ -430,8 +490,8 @@ serve(async (req) => {
       contentType = 'application/pdf';
     } else if (body.type === 'excel') {
       fileData = generateExcel({ ...body, language, sections: limitedSections });
-      filename = `${safeTitle}_${timestamp}.csv`;
-      contentType = 'text/csv; charset=utf-8';
+      filename = `${safeTitle}_${timestamp}.xls`;
+      contentType = 'application/vnd.ms-excel';
     } else {
       return new Response(JSON.stringify({ 
         error: 'Invalid type. Must be "pdf" or "excel"' 
