@@ -1,79 +1,36 @@
 
 
-## Replace Controls with History + New Chat Buttons
+## Fix: Click Anywhere in Input Area to Focus Cursor
 
-### What Changes
+### Problem
 
-Remove the current right-side controls (trash icon, minimize, expand arrow, AYN label) from the bottom bar of the Chart Coach chat. Replace them with two buttons:
+The chat input container looks like one big text field, but only clicking directly on the small textarea element focuses it. Clicking the surrounding padding or empty space does nothing, making it feel like you have to find the exact right spot.
 
-1. **History button** -- opens a dropdown/popover showing past conversation sessions the user can click to reload
-2. **New Chat button** -- clears current conversation and starts fresh (same as current trash, but clearly labeled)
+### Solution
 
-This applies to **both** the Chart Coach and Engineering Chat for consistency.
-
-### Storage Model Change
-
-Currently there's a single localStorage key storing one flat array of messages. To support history, we need to store **multiple sessions**:
-
-```text
-Storage key: ayn-chart-coach-sessions
-Value: [
-  { id: "uuid", title: "First user message...", messages: [...], updatedAt: timestamp },
-  { id: "uuid", title: "Should I take...", messages: [...], updatedAt: timestamp },
-]
-
-Storage key: ayn-engineering-chat-sessions-{calculatorType}
-Value: same structure
-```
-
-- Each session gets a title from the first user message (truncated to 40 chars)
-- Sessions are sorted by most recent
-- Max 20 stored sessions (oldest auto-pruned)
-- "New Chat" saves the current session (if it has messages) then starts a new empty one
-- "History" shows a small popover with session titles to switch between
-
-### UI Changes
-
-**Bottom bar (Row 2) -- right side controls replaced:**
-
-Before: `[trash] [minimize] [expand] [Brain AYN]`
-
-After: `[History icon + "History"] [+ "New Chat"] [minimize] [Brain AYN]`
-
-- **History**: Clock icon, opens a popover above the bar listing past sessions (title + relative time). Clicking one loads it. Current session highlighted.
-- **New Chat**: Plus icon, saves current session to history and starts blank.
-- Keep minimize button (users need it)
-- Keep the AYN branding
+Make the entire input row (Row 1) act as a click target that focuses the textarea. Also ensure the textarea fills the full width and height of its container so clicks register properly.
 
 ### Technical Details
 
-**Files to modify:**
+**File: `src/components/dashboard/ChartCoachChat.tsx`**
 
-| File | Changes |
-|------|---------|
-| `src/hooks/useChartCoach.ts` | Change storage from flat array to multi-session model. Add `sessions`, `activeSessionId`, `switchSession()`, `newChat()`. Export session list for the UI. |
-| `src/components/dashboard/ChartCoachChat.tsx` | Replace right-side controls with History popover + New Chat button. Import `Popover` from radix. Remove standalone `Trash2` button. |
-| `src/components/engineering/EngineeringAIChat.tsx` | Same pattern: multi-session localStorage keyed by calculator type, History popover + New Chat in the controls area. |
+Two changes:
 
-**History popover design:**
-- Small popover (max 300px tall, scrollable) anchored to the History button
-- Each item shows: truncated title (first message) + relative time ("2h ago", "Yesterday")
-- Active session has amber highlight
-- Empty state: "No previous chats"
-- Clicking a session switches to it, popover closes
+1. **Add `onClick` to the Row 1 wrapper div** (line 338) so clicking anywhere in the input area focuses the textarea:
+   ```
+   <div className="flex items-end gap-2 px-4 pt-3 pb-2 cursor-text"
+        onClick={() => textareaRef.current?.focus()}>
+   ```
 
-**Hook API changes (useChartCoach):**
+2. **Make the textarea fill its container** by adding `w-full` to ensure it spans the full width (line 350-353):
+   ```
+   className="resize-none pl-0.5 pr-0 py-3 min-h-[44px] max-h-[120px] w-full text-base ..."
+   ```
 
-```text
-return {
-  messages,          // current session messages
-  isLoading,
-  sendMessage,
-  clearChat,         // renamed internally to newChat behavior
-  sessions,          // array of { id, title, updatedAt }
-  activeSessionId,
-  switchSession,     // (id) => void
-  newChat,           // () => void -- saves current, starts fresh
-}
-```
+Same fix applied to `EngineeringAIChat.tsx` for consistency.
+
+| File | Change |
+|------|--------|
+| `src/components/dashboard/ChartCoachChat.tsx` | Add `cursor-text` + `onClick` to input row div, add `w-full` to textarea |
+| `src/components/engineering/EngineeringAIChat.tsx` | Same fix for consistency |
 
