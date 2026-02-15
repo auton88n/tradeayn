@@ -178,7 +178,14 @@ export const useMessages = (
         const chatMessages = mapDbMessages(data);
         const uniqueMessages = Array.from(
           new Map(chatMessages.map(m => [m.id, m])).values()
-        ).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+        ).sort((a, b) => {
+          const timeDiff = a.timestamp.getTime() - b.timestamp.getTime();
+          if (timeDiff !== 0) return timeDiff;
+          // Same timestamp: user messages come before ayn
+          if (a.sender === 'user' && b.sender === 'ayn') return -1;
+          if (a.sender === 'ayn' && b.sender === 'user') return 1;
+          return 0;
+        });
 
         setMessages(uniqueMessages);
         setHasMoreMessages(data.length >= PAGE_SIZE);
@@ -785,6 +792,7 @@ export const useMessages = (
             content: content,
             sender: 'user',
             mode_used: selectedMode,
+            created_at: userMessage.timestamp.toISOString(),
             attachment_url: attachment?.url || null,
             attachment_name: attachment?.name || null,
             attachment_type: attachment?.type || null
@@ -795,6 +803,7 @@ export const useMessages = (
             content: response.replace(/!\[([^\]]*)\]\(data:image\/[^;]+;base64,[^)]+\)/g, '![$1](image-generated)'),
             sender: 'ayn',
             mode_used: selectedMode,
+            created_at: new Date(userMessage.timestamp.getTime() + 1).toISOString(),
             // Save document URL as attachment for reliable download
             attachment_url: webhookData?.documentUrl || null,
             attachment_name: webhookData?.documentUrl 
