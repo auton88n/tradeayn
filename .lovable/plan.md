@@ -1,60 +1,98 @@
 
 
-## Fix Scroll-to-Bottom Arrow in Chat History
+## Restore Chart Analyzer as Standalone Tool + Link History to AYN
 
-### Root Cause
+### Overview
 
-The scroll-to-bottom arrow never appears because the scroll container doesn't actually overflow internally -- even though content is visually clipped.
+Move the Chart Analyzer back to a standalone sidebar tool (like Engineering and Compliance) while keeping AYN aware of the user's chart analysis history so it can reference past analyses in conversation.
 
-Here's the height chain:
+### Part 1: Add Chart Analyzer as Sidebar Button
+
+**File: `src/components/dashboard/Sidebar.tsx`**
+
+Add a "Charts" button next to the existing "Eng" and "Compliance" buttons in the action buttons row (around line 393-451). It will navigate to `/chart-analyzer`.
 
 ```text
-CenterStageLayout wrapper (motion.div)
-  - maxHeight: calc(100vh - footerHeight - 200px)
-  - overflow: hidden  <-- clips visually but doesn't constrain child percentage heights
-
-  ResponseCard (motion.div)
-    - h-full  <-- resolves to parent's AUTO height (content height), NOT the maxHeight
-    - overflow-hidden
-
-    Scroll container (div)
-      - flex-1 min-h-0 overflow-y-auto
-      - BUT parent height = full content height, so scrollHeight === clientHeight
-      - Therefore: showHistoryScrollDown is NEVER true
+<Button onClick={() => navigate('/chart-analyzer')} ...>
+  <BarChart3 /> Charts
+</Button>
 ```
 
-The `h-full` (100%) on the ResponseCard resolves against the parent's **auto/content height**, not the `maxHeight`. So the card grows to full content height (just visually clipped by the parent), the internal scroll container never overflows, and `checkScroll` always finds `scrollHeight - clientHeight = 0`.
+The three buttons (Eng, Compliance, Charts) will share the row equally with `flex-1`.
 
-### Fix
+### Part 2: Create Chart Analyzer Page
 
-**File: `src/components/dashboard/CenterStageLayout.tsx`** (line 657-662)
+**New file: `src/pages/ChartAnalyzerPage.tsx`**
 
-Change the parent wrapper from `maxHeight` to also include `height` so that child `h-full` resolves correctly:
+A simple authenticated page wrapper (similar to `EngineeringWorkspacePage.tsx`) that:
+- Checks auth, redirects to `/` if not logged in
+- Renders the existing `ChartAnalyzer` component (which already has upload, analysis, history tabs, compare, and stats)
+- Includes a back button to return to the dashboard
 
-```typescript
-style={{
-  maxHeight: `calc(100vh - ${footerHeight + 200}px)`,
-  height: transcriptOpen ? `calc(100vh - ${footerHeight + 200}px)` : undefined,
-  overflow: "hidden",
-}}
+### Part 3: Add Route
+
+**File: `src/App.tsx`**
+
+Add lazy import and route:
+```text
+const ChartAnalyzerPage = lazy(() => import("./pages/ChartAnalyzerPage"));
+// ...
+<Route path="/chart-analyzer" element={<Suspense ...><ChartAnalyzerPage /></Suspense>} />
 ```
 
-When `transcriptOpen` is true, the wrapper gets an explicit `height` equal to the `maxHeight`. This makes the ResponseCard's `h-full` resolve to a real pixel value, which cascades down to the scroll container, enabling actual overflow and making the scroll-to-bottom arrow appear.
+### Part 4: Give AYN Context About Chart History
 
-When `transcriptOpen` is false (normal response mode), `height` remains `undefined` so the card sizes to its content as before.
+When AYN builds its system prompt, inject the user's recent chart analyses so it can discuss them naturally.
 
-**File: `src/components/eye/ResponseCard.tsx`** (no structural change needed)
+**File: `supabase/functions/ayn-unified/index.ts`**
 
-The existing scroll detection and arrow button code (lines 308-327 and 483-498) is correct. Once the height chain resolves properly, `checkScroll` will detect `scrollHeight > clientHeight` and set `showHistoryScrollDown = true`.
+After fetching `userContext` (line 656-659), also fetch the user's last 5 chart analyses:
 
-### Files Modified
+```text
+const [limitCheck, userContext, chartHistory] = await Promise.all([
+  ...,
+  ...,
+  supabase.from('chart_analyses')
+    .select('ticker, asset_type, timeframe, prediction_signal, confidence, sentiment_score, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(5)
+]);
+```
 
-| File | Change |
+Then append a chart history section to the system prompt (line 683):
+
+```text
+const chartSection = chartHistory?.data?.length
+  ? `\n\nUSER'S RECENT CHART ANALYSES (reference when they ask about their trading history):
+${chartHistory.data.map(c => 
+  `- ${c.ticker} (${c.asset_type}): ${c.prediction_signal} signal, ${c.confidence}% confidence, ${c.timeframe} timeframe (${new Date(c.created_at).toLocaleDateString()})`
+).join('\n')}`
+  : '';
+
+const systemPrompt = buildSystemPrompt(...) + chartSection + INJECTION_GUARD;
+```
+
+This lets AYN naturally answer questions like "what was my last analysis?", "how did my BTC chart look?", or "what signals have I been getting?" without any new intent -- it's just part of AYN's memory context.
+
+### Part 5: Keep Chat-Embedded Analysis Working
+
+The existing chat-embedded chart analysis (sending an image to AYN with chart keywords) will continue to work as-is. The standalone tool is an additional entry point that uses the same `analyze-trading-chart` edge function and same `chart_analyses` table. Both paths write to the same history.
+
+### Files Summary
+
+| File | Action |
 |------|--------|
-| `src/components/dashboard/CenterStageLayout.tsx` | Add explicit `height` when `transcriptOpen` so child `h-full` resolves correctly |
+| `src/pages/ChartAnalyzerPage.tsx` | Create - authenticated wrapper for ChartAnalyzer component |
+| `src/App.tsx` | Edit - add lazy import + route for `/chart-analyzer` |
+| `src/components/dashboard/Sidebar.tsx` | Edit - add Charts button in action row |
+| `supabase/functions/ayn-unified/index.ts` | Edit - fetch chart history + inject into system prompt |
 
-### What stays the same
-- ResponseCard scroll detection logic (already correct)
-- Arrow button component and styling (already correct)
-- Multi-stage scroll-to-bottom logic (already correct)
-- All other components unchanged
+### What Stays the Same
+
+- All existing Chart Analyzer components (ChartAnalyzer, ChartAnalyzerResults, ChartHistoryList, etc.) - reused as-is
+- Chat-embedded chart analysis via image attachment still works
+- `analyze-trading-chart` edge function unchanged
+- `chart_analyses` database table unchanged
+- `useChartAnalyzer` and `useChartHistory` hooks unchanged
+
