@@ -70,7 +70,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'chart-analyzer',
     title: 'Chart Analyzer',
-    description: 'Upload trading charts for AI-powered technical analysis with pattern detection, support/resistance levels, and trade signals.',
+    description: 'Analyze stock and crypto charts with AI-powered pattern detection, support/resistance levels, entry/exit signals, and market sentiment scoring.',
     icon: 'BarChart3',
   },
   {

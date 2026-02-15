@@ -548,15 +548,14 @@ export const EngineeringIllustration = () =>
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-sm font-semibold text-foreground">
-        Your Tool Suite
+        Engineering Suite
       </motion.div>
       
-      {/* 3 Tool Cards */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* 2 Tool Cards */}
+      <div className="grid grid-cols-2 gap-4">
         {[
-          { icon: Calculator, label: 'Engineering', subtitle: 'Design Tools', gradient: 'from-cyan-500/15 to-blue-500/15', border: 'border-cyan-500/30', iconColor: 'text-cyan-500', glowColor: 'hover:shadow-cyan-500/20' },
+          { icon: Calculator, label: 'Engineering', subtitle: 'Structural Design', gradient: 'from-cyan-500/15 to-blue-500/15', border: 'border-cyan-500/30', iconColor: 'text-cyan-500', glowColor: 'hover:shadow-cyan-500/20' },
           { icon: ClipboardCheck, label: 'Compliance', subtitle: 'Code Check', gradient: 'from-teal-500/15 to-emerald-500/15', border: 'border-teal-500/30', iconColor: 'text-teal-500', glowColor: 'hover:shadow-teal-500/20' },
-          { icon: BarChart3, label: 'Charts', subtitle: 'Analysis', gradient: 'from-amber-500/15 to-orange-500/15', border: 'border-amber-500/30', iconColor: 'text-amber-500', glowColor: 'hover:shadow-amber-500/20' },
         ].map((tool, i) => (
           <motion.div
             key={tool.label}
@@ -584,7 +583,7 @@ export const EngineeringIllustration = () =>
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
         className="text-[10px] text-muted-foreground">
-        Find these in your sidebar ↗
+        Beam, Column, Slab & more ↗
       </motion.div>
     </div>
   </div>;
@@ -718,13 +717,27 @@ export const ChartAnalyzerIllustration = () =>
       
       <div className="relative w-64 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-2 p-2.5 border-b border-border/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
-            <BarChart3 className="w-4 h-4 text-amber-500" />
+        <div className="flex items-center justify-between p-2.5 border-b border-border/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 text-amber-500" />
+            </div>
+            <div>
+              <div className="font-semibold text-xs">BTC/USDT</div>
+              <div className="text-[10px] text-muted-foreground">4H Timeframe</div>
+            </div>
           </div>
-          <div>
-            <div className="font-semibold text-xs">Chart Analyzer</div>
-            <div className="text-[10px] text-muted-foreground">AI Technical Analysis</div>
+          <div className="flex gap-1">
+            {['Crypto', 'Stock', 'Forex'].map((t, i) => (
+              <motion.span
+                key={t}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 + i * 0.1 }}
+                className={`text-[7px] px-1.5 py-0.5 rounded-full font-medium ${i === 0 ? 'bg-amber-500/20 text-amber-500' : 'bg-muted/50 text-muted-foreground'}`}>
+                {t}
+              </motion.span>
+            ))}
           </div>
         </div>
         
