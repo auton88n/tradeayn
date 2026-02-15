@@ -1,8 +1,9 @@
 
 
-## Make AYN Coach Chat Floating
+## Redesign AYN Trading Coach to Match Engineering Bottom Chat Style
 
-Convert the coach chat from an inline collapsible embedded in the results to a **floating chat widget** (fixed bottom-right corner) that's always visible on the Chart Analyzer page.
+### Overview
+Replace the current floating popup ChartCoachChat with a **bottom-anchored input bar** that expands upward to show messages -- matching the engineering page's `EngineeringBottomChat` design.
 
 ---
 
@@ -10,69 +11,73 @@ Convert the coach chat from an inline collapsible embedded in the results to a *
 
 #### 1. Rewrite `src/components/dashboard/ChartCoachChat.tsx`
 
-Remove the `Collapsible` wrapper. Replace with:
+Replace the floating bubble + popup with a bottom-fixed bar:
 
-- **Floating trigger button**: A circular amber button with Brain icon, fixed at `bottom-6 right-6` with `z-50`. Includes a subtle pulse animation when results are available. Shows unread dot when there are new messages.
-- **Floating chat panel**: When open, renders a card panel fixed at `bottom-20 right-6` (above the button), sized ~`w-80 h-96`. Contains:
-  - Header bar with "AYN Coach" title + close (X) button
-  - Same ScrollArea message list with react-markdown rendering
-  - Same quick-action buttons when no messages
-  - Same input bar at bottom
-  - Same security (input validation, response sanitization, emotion detection already in the hook)
-- The `result` prop becomes **optional** (`result?: ChartAnalysisResult | null`). When no result exists, the quick actions change to general ones and the placeholder says "Upload a chart first for personalized coaching."
+**Collapsed state**: A floating Brain button (bottom-right) with message count badge -- same as engineering.
 
-#### 2. Move rendering from `ChartAnalyzer.tsx` to `ChartAnalyzerPage.tsx`
+**Expanded state** (default): A bottom-fixed bar spanning the page width with:
+- **Messages area** (expandable upward): rounded panel above the input bar with header ("AYN Coach" + Brain icon), ScrollArea (h-[280px]), message bubbles with react-markdown, and "AYN is thinking..." loading indicator. Shows/hides based on `isExpanded` state.
+- **Input bar**: Textarea with animated rotating placeholders, send button that appears when text is entered, and a row of action buttons below:
+  - Quick action chips (the 5 coaching questions) shown as small buttons
+  - Clear chat button
+  - Minimize button (collapses to floating Brain icon)
 
-- **Remove** the `<ChartCoachChat>` from inside `ChartAnalyzer.tsx` (line 200)
-- **Add** it to `ChartAnalyzerPage.tsx` as a sibling rendered outside the main content flow, so it floats independently
-- Pass the current analysis result via a lifted state or by making `ChartAnalyzer` expose its result. Simplest approach: add an `onResult` callback prop to `ChartAnalyzer` that fires when analysis completes, and store it in `ChartAnalyzerPage` state.
+**Key behaviors** (borrowed from engineering):
+- Auto-expand when first message arrives
+- Smart auto-scroll (only scrolls to bottom when user is near bottom)
+- Keyboard shortcuts: Esc to collapse, / to reopen
+- Textarea auto-resize (up to 120px)
+- Rotating placeholder text (trading-specific)
+- Amber/orange accent color theme retained
 
-#### 3. Update `src/components/dashboard/ChartAnalyzer.tsx`
+**Placeholders** (rotating):
+```
+"Should I take this trade?"
+"What's my biggest risk here?"
+"Help me stay disciplined..."
+"Explain the chart patterns..."
+"Am I being emotional about this?"
+```
 
-- Remove `ChartCoachChat` import and usage (line 200)
-- Add `onResult?: (result: ChartAnalysisResult) => void` prop
-- Call `onResult(result)` when analysis completes (in the results render block or via useEffect)
+#### 2. Update `src/pages/ChartAnalyzerPage.tsx`
+
+- Pass `result` prop as before
+- No structural changes needed -- the component still renders as a sibling
 
 ---
 
 ### Technical Details
 
-**ChartCoachChat.tsx new structure:**
+**New ChartCoachChat structure:**
 ```text
-<>
-  {/* Floating trigger */}
-  <button fixed bottom-6 right-6 z-50
-    circular w-12 h-12 bg-amber-500 shadow-lg
-    onClick toggle isOpen>
-    <Brain /> or <X /> based on isOpen
-  </button>
+// Collapsed: floating Brain button (bottom-right)
+if (isCollapsed) return <FloatingBrainButton />
 
-  {/* Chat panel */}
-  {isOpen && (
-    <div fixed bottom-20 right-6 z-50
-      w-80 h-[400px] rounded-2xl shadow-2xl
-      border border-amber-500/20 bg-background>
-      
-      Header: "AYN Coach" + minimize button
-      ScrollArea: messages or quick actions
-      Input bar: same as current
+// Expanded: bottom-fixed bar
+<div fixed bottom-0 left-0 right-0 z-50 p-4 pb-6>
+  <div max-w-2xl mx-auto>
+    
+    // Messages panel (slides up when isExpanded && messages.length > 0)
+    <AnimatePresence>
+      {isExpanded && messages.length > 0 && (
+        <div rounded-2xl bg-background/95 backdrop-blur border shadow>
+          Header: "AYN Coach" + Clear + Close
+          ScrollArea h-[280px]: message bubbles
+          Loading indicator
+        </div>
+      )}
+    </AnimatePresence>
+
+    // Input container
+    <div rounded-2xl bg-background/95 backdrop-blur border shadow>
+      Row 1: Textarea + Send button
+      Row 2: Quick action chips + Minimize button
     </div>
-  )}
-</>
-```
-
-**ChartAnalyzerPage.tsx integration:**
-```text
-const [analysisResult, setAnalysisResult] = useState(null);
-
-return (
-  <div>
-    ...
-    <ChartAnalyzer onResult={setAnalysisResult} />
-    <ChartCoachChat result={analysisResult} />
   </div>
-);
+</div>
 ```
+
+**Security**: All three layers (input validation, response sanitization, emotion detection) remain in the `useChartCoach` hook -- no changes needed there.
 
 ---
 
@@ -80,8 +85,7 @@ return (
 
 | File | Change |
 |------|--------|
-| `src/components/dashboard/ChartCoachChat.tsx` | Rewrite to floating widget (fixed position, circular trigger, panel) |
-| `src/components/dashboard/ChartAnalyzer.tsx` | Remove ChartCoachChat, add onResult callback prop |
-| `src/pages/ChartAnalyzerPage.tsx` | Add state for result, render floating ChartCoachChat |
+| `src/components/dashboard/ChartCoachChat.tsx` | Full rewrite to bottom-bar style matching engineering chat |
 
-No edge function changes needed -- only UI restructuring.
+Single file change. No hook or edge function modifications needed.
+
