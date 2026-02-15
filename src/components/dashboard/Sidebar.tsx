@@ -387,12 +387,13 @@ export const Sidebar = ({
         )}
 
         
-        {/* Action Buttons - Compact Row */}
+        {/* Tool Buttons - Card Grid */}
         <SidebarGroup className="flex-shrink-0 px-4 pb-3">
           <SidebarGroupContent>
-            <div className="flex gap-2">
-              {/* Engineering Button */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* Engineering Card */}
               <Button 
+                variant="ghost"
                 onClick={() => {
                   if (isMobile) {
                     toast({
@@ -407,20 +408,24 @@ export const Sidebar = ({
                   }
                 }}
                 className={cn(
-                  "flex-1 h-9 rounded-lg gap-1.5",
-                  "bg-gradient-to-r from-cyan-600 to-blue-600",
-                  "hover:from-cyan-500 hover:to-blue-500",
-                  "text-white text-sm font-medium",
-                  "transition-colors duration-150",
-                  "border-0"
+                  "flex-1 flex flex-col items-center gap-1.5 h-auto py-3 px-2 rounded-xl",
+                  "bg-card/60 border border-border/50 backdrop-blur-sm",
+                  "hover:border-cyan-500/40 hover:bg-card/80 hover:shadow-lg hover:-translate-y-0.5",
+                  "text-foreground transition-all duration-200"
                 )}
               >
-                <Calculator className="w-4 h-4" />
-                Eng
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500/15 to-blue-500/15 flex items-center justify-center">
+                  <Calculator className="w-3.5 h-3.5 text-cyan-500" />
+                </div>
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-xs font-semibold">Engineering</span>
+                  <span className="text-[9px] text-muted-foreground">Design Tools</span>
+                </div>
               </Button>
               
-              {/* Compliance Button */}
+              {/* Compliance Card */}
               <Button 
+                variant="ghost"
                 onClick={() => {
                   if (isMobile) {
                     toast({
@@ -435,34 +440,40 @@ export const Sidebar = ({
                   }
                 }}
                 className={cn(
-                  "flex-1 h-9 rounded-lg gap-1.5",
-                  "bg-gradient-to-r from-teal-600 to-cyan-600",
-                  "hover:from-teal-500 hover:to-cyan-500",
-                  "text-white text-sm font-medium",
-                  "transition-colors duration-150",
-                  "border-0"
+                  "flex-1 flex flex-col items-center gap-1.5 h-auto py-3 px-2 rounded-xl",
+                  "bg-card/60 border border-border/50 backdrop-blur-sm",
+                  "hover:border-teal-500/40 hover:bg-card/80 hover:shadow-lg hover:-translate-y-0.5",
+                  "text-foreground transition-all duration-200"
                 )}
               >
-                <ClipboardCheck className="w-4 h-4" />
-                Compliance
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500/15 to-emerald-500/15 flex items-center justify-center">
+                  <ClipboardCheck className="w-3.5 h-3.5 text-teal-500" />
+                </div>
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-xs font-semibold">Compliance</span>
+                  <span className="text-[9px] text-muted-foreground">Code Check</span>
+                </div>
               </Button>
 
-              {/* Charts Button */}
+              {/* Charts Card */}
               <Button 
+                variant="ghost"
                 onClick={() => navigate('/chart-analyzer')}
                 className={cn(
-                  "flex-1 h-9 rounded-lg gap-1.5",
-                  "bg-gradient-to-r from-amber-600 to-orange-600",
-                  "hover:from-amber-500 hover:to-orange-500",
-                  "text-white text-sm font-medium",
-                  "transition-colors duration-150",
-                  "border-0"
+                  "flex-1 flex flex-col items-center gap-1.5 h-auto py-3 px-2 rounded-xl",
+                  "bg-card/60 border border-border/50 backdrop-blur-sm",
+                  "hover:border-amber-500/40 hover:bg-card/80 hover:shadow-lg hover:-translate-y-0.5",
+                  "text-foreground transition-all duration-200"
                 )}
               >
-                <BarChart3 className="w-4 h-4" />
-                Charts
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/15 to-orange-500/15 flex items-center justify-center">
+                  <BarChart3 className="w-3.5 h-3.5 text-amber-500" />
+                </div>
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-xs font-semibold">Charts</span>
+                  <span className="text-[9px] text-muted-foreground">Analysis</span>
+                </div>
               </Button>
-              
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
