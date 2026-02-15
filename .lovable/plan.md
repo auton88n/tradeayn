@@ -1,76 +1,75 @@
 
-## Phase 3: Historical Tracking & Comparison
+
+## Phase 4: Analysis Comparison & Performance Insights
 
 ### What's changing
 
-Add a "History" tab to the Chart Analyzer that lets users browse, filter, and compare their past chart analyses. Every analysis is already saved in `chart_analyses` -- this phase surfaces that data.
+Add a "Compare" feature to the History tab and a performance summary card, letting users place two past analyses side-by-side and see aggregate stats about their analysis history.
 
 ### New Components
 
-**1. `src/hooks/useChartHistory.ts`** -- Data fetching hook
+**1. `src/components/dashboard/ChartCompareView.tsx`** -- Side-by-side comparison
 
-- Fetches user's past analyses from `chart_analyses` table ordered by `created_at DESC`
-- Supports filtering by ticker, asset type, signal, and date range
-- Pagination (load more / infinite scroll)
-- Returns typed `ChartAnalysisResult[]` mapped from DB rows
+- Two-column layout showing two selected analyses
+- Each column displays: chart image, signal badge, confidence, trade setup (entry/SL/TP), key patterns
+- Highlights differences: signal direction, confidence delta, pattern overlap
+- "Select analyses to compare" prompt when fewer than 2 are chosen
+- Responsive: stacks vertically on mobile
 
-**2. `src/components/dashboard/ChartHistoryList.tsx`** -- History list view
+**2. `src/components/dashboard/ChartHistoryStats.tsx`** -- Aggregate performance card
 
-- Compact card for each past analysis showing:
-  - Ticker badge, asset type icon, timeframe
-  - Signal (BULLISH/BEARISH/NEUTRAL) with color coding
-  - Confidence percentage
-  - Date/time (relative: "2h ago", "Yesterday")
-  - Small chart thumbnail (from stored `image_url`)
-- Click a card to expand full `ChartAnalyzerResults` view
-- Filter bar at top: ticker search, asset type dropdown, signal filter
-- Empty state when no history exists
-
-**3. `src/components/dashboard/ChartHistoryDetail.tsx`** -- Expanded detail view
-
-- Shows the original chart image full-size
-- Renders the full `ChartAnalyzerResults` component with stored data
-- "Back to History" button
-- Delete analysis button
+- Shown at the top of the History tab
+- Displays:
+  - Total analyses count
+  - Signal distribution (pie/bar: X% Bullish, Y% Bearish, Z% Neutral)
+  - Average confidence across all analyses
+  - Most analyzed ticker
+  - Most common pattern detected
+- Computed client-side from the loaded history items
+- Collapsible to save space
 
 ### Modifications to Existing Files
 
-**4. `src/components/dashboard/ChartAnalyzer.tsx`** -- Add tabs
+**3. `src/components/dashboard/ChartHistoryList.tsx`** -- Add compare selection mode
 
-- Add a tab bar at the top: **"Analyze"** | **"History"**
-- "Analyze" tab shows the current upload + results flow (unchanged)
-- "History" tab renders `ChartHistoryList`
-- When user clicks a history item, swap to detail view
+- Add a "Compare" toggle button in the filter bar
+- When active, show checkboxes on each history card (max 2 selections)
+- "Compare Selected" button appears when exactly 2 items are checked
+- Clicking it calls `onCompare(item1, item2)`
 
-**5. `src/types/chartAnalyzer.types.ts`** -- Add history types
+**4. `src/components/dashboard/ChartAnalyzer.tsx`** -- Wire compare view
 
-- `ChartHistoryItem`: extends `ChartAnalysisResult` with `id`, `created_at`
-- `ChartHistoryFilter`: ticker, assetType, signal, dateRange
+- Add state for compare mode: `compareItems: [ChartHistoryItem, ChartHistoryItem] | null`
+- When compare is triggered from history list, render `ChartCompareView` instead of detail view
+- "Back to History" returns to list
+
+**5. `src/hooks/useChartHistory.ts`** -- Add stats computation
+
+- Add a `stats` property computed from `items`:
+  - `totalCount`, `signalDistribution`, `avgConfidence`, `topTicker`, `topPattern`
+- Add `compareItems` state and `setCompareItems` setter
 
 ### Technical Details
 
-**Data flow:**
+**Stats computation (client-side):**
 ```text
-chart_analyses table
-  --> useChartHistory hook (fetch + filter + paginate)
-    --> ChartHistoryList (compact cards)
-      --> ChartHistoryDetail (full view with original image)
+items[] --> reduce to:
+  { total, bullish/bearish/neutral counts, confidence sum, ticker frequency map, pattern frequency map }
 ```
 
-**Database query pattern:**
-- Uses Supabase client with RLS (user can only see own analyses)
-- Query: `supabase.from('chart_analyses').select('*').eq('user_id', userId).order('created_at', { ascending: false }).range(offset, offset + limit)`
-- Optional filters chained: `.eq('asset_type', filter)`, `.eq('prediction_signal', filter)`, `.ilike('ticker', '%search%')`
+No additional database queries needed -- stats are derived from already-fetched history items. For users with many analyses, initial fetch already pages in 10 at a time; stats will reflect loaded items with a note like "Based on last N analyses."
 
-**No schema changes needed** -- the `chart_analyses` table already has all required columns including `image_url`, `prediction_details` (JSON with full prediction data), and `technical_analysis` (JSON).
+**Compare layout uses CSS grid:**
+- Desktop: `grid-cols-2` with a thin divider
+- Mobile: `grid-cols-1` stacked
 
-**Tab implementation** uses Radix `Tabs` component (already installed) for consistent styling with the rest of the app.
+**No schema changes needed.**
 
 ### Success Criteria
 
-1. Users see a "History" tab in Chart Analyzer
-2. Past analyses appear as compact cards with signal, confidence, ticker
-3. Clicking a card shows the full analysis with original chart image
-4. Filters work for ticker search, asset type, and signal type
-5. Empty state shown when no analyses exist yet
-6. Delete functionality removes analysis from DB and list
+1. Users can toggle "Compare" mode in the history list
+2. Selecting exactly 2 analyses enables the "Compare" button
+3. Side-by-side view clearly shows both analyses with signal/confidence/trade setup
+4. Stats card at top of History shows signal distribution and average confidence
+5. Compare view works on both desktop and mobile layouts
+
