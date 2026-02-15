@@ -38,7 +38,7 @@ import { toast } from "sonner";
 import { extractBestDocumentLink, openDocumentUrl } from "@/lib/documentUrlUtils";
 import type { Message } from "@/types/dashboard.types";
 
-const ChartAnalyzerResultsLazy = lazy(() => import("@/components/dashboard/ChartAnalyzerResults"));
+
 
 interface ResponseBubbleAttachment {
   url: string;
@@ -51,7 +51,7 @@ interface ResponseBubble {
   content: string;
   isVisible: boolean;
   attachment?: ResponseBubbleAttachment;
-  chartAnalysis?: import('@/types/chartAnalyzer.types').ChartAnalysisResult;
+  
 }
 
 interface ResponseCardProps {
@@ -455,7 +455,7 @@ const ResponseCardComponent = ({
                         shouldAnimate={isNew}
                         compact
                         attachment={msg.attachment}
-                        chartAnalysis={msg.chartAnalysis}
+                        
                         onReply={onReply ? (content) => onReply(`> ${content.slice(0, 100)}\n`) : undefined}
                       />
                     );
@@ -551,14 +551,6 @@ const ResponseCardComponent = ({
 
                 {/* Document downloads handled inline via markdown links */}
 
-                {/* Inline Chart Analysis Results */}
-                {visibleResponses[0]?.chartAnalysis && (
-                  <div className="px-3 pb-2">
-                    <Suspense fallback={<div className="animate-pulse h-32 bg-muted rounded-lg" />}>
-                      <ChartAnalyzerResultsLazy result={visibleResponses[0].chartAnalysis} />
-                    </Suspense>
-                  </div>
-                )}
               </div>
 
               {isScrollable && !isAtBottom && (
