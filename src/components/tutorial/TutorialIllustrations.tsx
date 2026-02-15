@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp, Heart, Eye, Building2, Ruler, Calculator, Layers, ClipboardCheck, CheckCircle2, XCircle, AlertTriangle, FileSpreadsheet, Download } from 'lucide-react';
+import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp, Heart, Eye, Building2, Ruler, Calculator, Layers, ClipboardCheck, CheckCircle2, XCircle, AlertTriangle, FileSpreadsheet, Download, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 
 export const MeetAynIllustration = () =>
 <div className="relative w-full h-full flex items-center justify-center">
@@ -542,64 +542,50 @@ export const ProfileIllustration = () =>
 
 export const EngineeringIllustration = () =>
 <div className="w-full h-full flex items-center justify-center">
-    <div className="relative">
-      {/* Glow effect */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 blur-2xl scale-150" />
+    <div className="flex flex-col items-center gap-3">
+      {/* Title */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-sm font-semibold text-foreground">
+        Your Tool Suite
+      </motion.div>
       
-      {/* Main structure mockup */}
-      <div className="relative w-64 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-2 p-2.5 border-b border-border/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
-          <div className="w-7 h-7 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-            <Building2 className="w-4 h-4 text-cyan-500" />
-          </div>
-          <div>
-            <div className="font-semibold text-xs">Engineering Tools</div>
-            <div className="text-[10px] text-muted-foreground">6 Structural Calculators</div>
-          </div>
-        </div>
-        
-        {/* Calculator options - All 7 tools */}
-        <div className="p-2 grid grid-cols-2 gap-1.5">
-          {[
-        { icon: Layers, label: 'Beam', color: 'text-cyan-500' },
-        { icon: Building2, label: 'Column', color: 'text-blue-500' },
-        { icon: Calculator, label: 'Slab', color: 'text-indigo-500' },
-        { icon: Layers, label: 'Foundation', color: 'text-violet-500' },
-        { icon: Building2, label: 'Retaining', color: 'text-purple-500' },
-        { icon: Ruler, label: 'Grading', color: 'text-emerald-500' }].
-        map((item, i) =>
-        <motion.div
-          key={item.label}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: i * 0.08 }}
-          className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-
-              <item.icon className={`w-3 h-3 ${item.color}`} />
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </motion.div>
-        )}
-        </div>
-        
-        {/* Results preview */}
-        <motion.div
-        className="p-2 border-t border-border/30"
+      {/* 3 Tool Cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { icon: Calculator, label: 'Engineering', subtitle: 'Design Tools', gradient: 'from-cyan-500/15 to-blue-500/15', border: 'border-cyan-500/30', iconColor: 'text-cyan-500', glowColor: 'hover:shadow-cyan-500/20' },
+          { icon: ClipboardCheck, label: 'Compliance', subtitle: 'Code Check', gradient: 'from-teal-500/15 to-emerald-500/15', border: 'border-teal-500/30', iconColor: 'text-teal-500', glowColor: 'hover:shadow-teal-500/20' },
+          { icon: BarChart3, label: 'Charts', subtitle: 'Analysis', gradient: 'from-amber-500/15 to-orange-500/15', border: 'border-amber-500/30', iconColor: 'text-amber-500', glowColor: 'hover:shadow-amber-500/20' },
+        ].map((tool, i) => (
+          <motion.div
+            key={tool.label}
+            initial={{ opacity: 0, scale: 0.8, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay: i * 0.12, type: 'spring', stiffness: 200 }}
+            className={`flex flex-col items-center gap-2 py-4 px-5 rounded-xl bg-card/60 border ${tool.border} backdrop-blur-sm shadow-md ${tool.glowColor} hover:shadow-lg transition-all duration-200`}>
+            
+            {/* Icon container */}
+            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${tool.gradient} flex items-center justify-center`}>
+              <tool.icon className={`w-5 h-5 ${tool.iconColor}`} />
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-semibold text-foreground">{tool.label}</span>
+              <span className="text-[9px] text-muted-foreground">{tool.subtitle}</span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+      
+      {/* Hint */}
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}>
-
-          <div className="bg-muted/20 rounded-lg p-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-cyan-500/20 flex items-center justify-center">
-                <Eye className="w-3 h-3 text-cyan-500" />
-              </div>
-              <span className="text-[10px]">3D Visualization</span>
-            </div>
-            <span className="text-emerald-500 text-[10px] font-medium">✓ Ready</span>
-          </div>
-        </motion.div>
-      </div>
+        transition={{ delay: 0.5 }}
+        className="text-[10px] text-muted-foreground">
+        Find these in your sidebar ↗
+      </motion.div>
     </div>
   </div>;
 
@@ -722,4 +708,88 @@ export const DocumentsIllustration = () =>
       </motion.div>
     </div>
 
+  </div>;
+
+
+export const ChartAnalyzerIllustration = () =>
+<div className="w-full h-full flex items-center justify-center">
+    <div className="relative">
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 blur-2xl scale-150" />
+      
+      <div className="relative w-64 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-2 p-2.5 border-b border-border/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10">
+          <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
+            <BarChart3 className="w-4 h-4 text-amber-500" />
+          </div>
+          <div>
+            <div className="font-semibold text-xs">Chart Analyzer</div>
+            <div className="text-[10px] text-muted-foreground">AI Technical Analysis</div>
+          </div>
+        </div>
+        
+        {/* Mini candlestick chart */}
+        <div className="p-3 flex items-end justify-center gap-1.5 h-28">
+          {[
+            { h: 40, body: 15, up: true },
+            { h: 50, body: 20, up: false },
+            { h: 35, body: 12, up: true },
+            { h: 55, body: 25, up: true },
+            { h: 45, body: 18, up: false },
+            { h: 60, body: 22, up: true },
+            { h: 48, body: 16, up: true },
+            { h: 65, body: 28, up: true },
+          ].map((candle, i) => (
+            <motion.div
+              key={i}
+              initial={{ height: 0 }}
+              animate={{ height: candle.h }}
+              transition={{ delay: i * 0.08, duration: 0.4 }}
+              className="flex flex-col items-center justify-end relative"
+              style={{ width: 8 }}>
+              {/* Wick */}
+              <div className={`w-px absolute top-0 bottom-0 ${candle.up ? 'bg-emerald-500/50' : 'bg-red-500/50'}`} />
+              {/* Body */}
+              <div
+                className={`w-full rounded-sm ${candle.up ? 'bg-emerald-500' : 'bg-red-500'}`}
+                style={{ height: candle.body }}
+              />
+            </motion.div>
+          ))}
+        </div>
+        
+        {/* Indicators */}
+        <div className="px-3 pb-2 flex items-center gap-2">
+          {[
+            { label: 'RSI', value: '62.4', color: 'text-amber-500' },
+            { label: 'MACD', value: '+0.12', color: 'text-emerald-500' },
+          ].map((ind, i) => (
+            <motion.div
+              key={ind.label}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 + i * 0.15 }}
+              className="flex items-center gap-1 px-2 py-1 rounded-md bg-muted/30 text-[9px]">
+              <span className="text-muted-foreground font-medium">{ind.label}</span>
+              <span className={`font-semibold ${ind.color}`}>{ind.value}</span>
+            </motion.div>
+          ))}
+        </div>
+        
+        {/* Signal badge */}
+        <motion.div
+          className="p-2 border-t border-border/30"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}>
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-[10px] font-semibold text-emerald-500">BULLISH</span>
+            </div>
+            <span className="text-[10px] text-muted-foreground">Confidence: 78%</span>
+          </div>
+        </motion.div>
+      </div>
+    </div>
   </div>;
