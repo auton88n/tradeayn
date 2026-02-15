@@ -23,29 +23,29 @@ import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
 import { formatDistanceToNow } from 'date-fns';
 
 const QUICK_ACTIONS_WITH_RESULT = [
-  "Should I take this trade?",
-  "What's my biggest risk here?",
-  "Am I being emotional?",
-  "Explain the patterns",
-  "Help me stay disciplined",
+  "Should I buy or sell?",
+  "Build me a strategy",
+  "What's my exact entry?",
+  "Risk analysis",
+  "Set my stop loss",
 ];
 
 const QUICK_ACTIONS_GENERAL = [
-  "How do I manage risk?",
-  "Help me stay disciplined",
-  "What's position sizing?",
-  "Am I being emotional?",
+  "How to build a trading plan?",
+  "Explain position sizing",
+  "Best entry strategies",
+  "Risk management rules",
 ];
 
 const getNewsChip = (ticker?: string) =>
   ticker ? `Latest news on ${ticker}` : null;
 
 const placeholders = [
-  "Should I take this trade?",
-  "What's my biggest risk here?",
-  "Help me stay disciplined...",
-  "Explain the chart patterns...",
-  "Am I being emotional about this?",
+  "Should I buy or sell this?",
+  "Build me a trading strategy...",
+  "What's my risk here?",
+  "Where should I enter?",
+  "Help me plan this trade...",
 ];
 
 // Memoized message bubble
@@ -241,7 +241,7 @@ export default function ChartCoachChat({ result }: ChartCoachChatProps) {
             </motion.button>
           </TooltipTrigger>
           <TooltipContent side="left" className="text-xs">
-            <p>Open AYN Coach <kbd className="ml-1 px-1 py-0.5 rounded bg-muted text-muted-foreground">/</kbd></p>
+            <p>Open AYN Trade Advisor <kbd className="ml-1 px-1 py-0.5 rounded bg-muted text-muted-foreground">/</kbd></p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -277,7 +277,7 @@ export default function ChartCoachChat({ result }: ChartCoachChatProps) {
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/30">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Brain className="w-4 h-4 text-amber-500" />
-                    <span className="font-medium">AYN Coach</span>
+                    <span className="font-medium">AYN Trade Advisor</span>
                     {result && (
                       <span className="text-xs text-amber-500/70">· {result.ticker}</span>
                     )}
