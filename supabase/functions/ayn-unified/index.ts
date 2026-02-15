@@ -697,7 +697,52 @@ serve(async (req) => {
       : '';
 
     // Build system prompt with user message for language detection AND user memories
-    const systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + INJECTION_GUARD;
+    let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + INJECTION_GUARD;
+
+    // === FIRECRAWL INTEGRATION FOR TRADING COACH ===
+    if (intent === 'trading-coach') {
+      const { scrapeUrl: urlToScrape, searchQuery } = context;
+
+      const firecrawlTasks: Promise<void>[] = [];
+
+      if (urlToScrape && typeof urlToScrape === 'string') {
+        firecrawlTasks.push((async () => {
+          try {
+            const { scrapeUrl: scrapeUrlFn } = await import("../_shared/firecrawlHelper.ts");
+            const scraped = await scrapeUrlFn(urlToScrape);
+            if (scraped.success && scraped.markdown) {
+              const title = scraped.metadata?.title || 'Article';
+              systemPrompt += `\n\nARTICLE CONTENT (user shared this URL - "${title}"):\n${scraped.markdown.substring(0, 3000)}`;
+              console.log(`[ayn-unified] Scraped URL for trading coach: ${urlToScrape.substring(0, 60)}`);
+            }
+          } catch (err) {
+            console.error('[ayn-unified] Firecrawl scrape error:', err);
+          }
+        })());
+      }
+
+      if (searchQuery && typeof searchQuery === 'string') {
+        firecrawlTasks.push((async () => {
+          try {
+            const { searchWeb } = await import("../_shared/firecrawlHelper.ts");
+            const results = await searchWeb(searchQuery, { limit: 5 });
+            if (results.success && results.data?.length) {
+              const newsLines = results.data.map((r: { title: string; description: string; url: string }) =>
+                `- ${r.title}: ${r.description} (${r.url})`
+              ).join('\n');
+              systemPrompt += `\n\nLIVE MARKET NEWS (from web search for "${searchQuery}"):\n${newsLines}\n\nUse this info naturally. Cite sources when relevant. Never reveal you used Firecrawl or web search tools.`;
+              console.log(`[ayn-unified] Web search for trading coach: "${searchQuery}" - ${results.data.length} results`);
+            }
+          } catch (err) {
+            console.error('[ayn-unified] Firecrawl search error:', err);
+          }
+        })());
+      }
+
+      if (firecrawlTasks.length > 0) {
+        await Promise.all(firecrawlTasks);
+      }
+    }
 
     // Handle image generation intent (LAB mode)
     if (intent === 'image') {

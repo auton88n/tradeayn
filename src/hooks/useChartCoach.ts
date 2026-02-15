@@ -19,8 +19,21 @@ const FORBIDDEN_PATTERNS = [
 
 const BLOCKED_RESPONSE = "I'm here to help you trade better, not discuss technical details. What trading question can I help with?";
 
+const URL_REGEX = /https?:\/\/[^\s]+/gi;
+
+const NEWS_PATTERNS = /\b(news|latest|what.{0,10}happening|market.{0,6}update|headlines|sentiment|outlook)\b/i;
+
 function validateInput(message: string): boolean {
   return !FORBIDDEN_PATTERNS.some(p => p.test(message));
+}
+
+function detectSearchIntent(message: string, ticker?: string): string | null {
+  if (!NEWS_PATTERNS.test(message)) return null;
+  if (ticker) return `${ticker} trading news today`;
+  // Try to extract a subject from the message
+  const subjectMatch = message.match(/(?:news|latest|update|headlines)\s+(?:on|about|for)\s+(\w+)/i);
+  if (subjectMatch) return `${subjectMatch[1]} trading news today`;
+  return 'stock market news today';
 }
 
 // === SECURITY LAYER 2: Response Sanitization ===
@@ -101,6 +114,10 @@ export function useChartCoach(result?: ChartAnalysisResult) {
     const emotionalState = detectEmotionalState(trimmed);
     const fileContext = result ? buildFileContext(result, emotionalState) : `No chart analyzed yet.\nUser Emotional State: ${emotionalState}`;
 
+    // Detect URLs and search intent for Firecrawl
+    const urls = trimmed.match(URL_REGEX);
+    const searchQuery = detectSearchIntent(trimmed, result?.ticker);
+
     const newUserMsg: CoachMessage = { role: 'user', content: trimmed };
     setMessages(prev => {
       const updated = [...prev, newUserMsg];
@@ -120,7 +137,11 @@ export function useChartCoach(result?: ChartAnalysisResult) {
         body: {
           messages: conversationMessages,
           intent: 'trading-coach',
-          context: { fileContext },
+          context: {
+            fileContext,
+            scrapeUrl: urls?.[0] || null,
+            searchQuery: searchQuery || null,
+          },
           stream: false,
         },
       });

@@ -9,6 +9,7 @@ import {
   ChevronUp,
   Sparkles,
   Trash2,
+  Globe,
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,6 +33,9 @@ const QUICK_ACTIONS_GENERAL = [
   "What's position sizing?",
   "Am I being emotional?",
 ];
+
+const getNewsChip = (ticker?: string) =>
+  ticker ? `Latest news on ${ticker}` : null;
 
 const placeholders = [
   "Should I take this trade?",
@@ -396,6 +400,17 @@ export default function ChartCoachChat({ result }: ChartCoachChatProps) {
           <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
             {/* Left: Quick action chips */}
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+              {/* News chip when ticker available */}
+              {result?.ticker && getNewsChip(result.ticker) && (
+                <button
+                  onClick={() => sendMessage(getNewsChip(result.ticker)!)}
+                  disabled={isLoading}
+                  className="shrink-0 text-[11px] px-2.5 py-1 rounded-full border border-blue-500/20 text-blue-500 dark:text-blue-400 hover:bg-blue-500/10 transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-1"
+                >
+                  <Globe className="w-3 h-3" />
+                  News on {result.ticker}
+                </button>
+              )}
               {quickActions.map((action) => (
                 <button
                   key={action}
