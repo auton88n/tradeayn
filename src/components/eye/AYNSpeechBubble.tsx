@@ -167,7 +167,7 @@ export const AYNSpeechBubble = ({
           >
             <MessageFormatter 
               content={cleanedContent} 
-              className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-gray-900 dark:[&_strong]:text-white max-w-none break-words" 
+              className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-gray-900 dark:[&_strong]:text-white max-w-prose break-words" 
             />
           </div>
 
