@@ -1,83 +1,87 @@
 
 
-## Redesign AYN Trading Coach to Match Engineering Bottom Chat Style
+## Add Firecrawl to AYN Trading Coach
 
-### Overview
-Replace the current floating popup ChartCoachChat with a **bottom-anchored input bar** that expands upward to show messages -- matching the engineering page's `EngineeringBottomChat` design.
+Integrate web search and URL scraping into the trading coach so users can get live market news and paste URLs for the coach to analyze.
+
+---
+
+### How it works
+
+- When a user asks about a ticker, market event, or news, the system automatically searches the web for recent information and includes it as context for the AI
+- When a user pastes a URL, the system scrapes the page content and feeds it to the AI for discussion
+- All of this happens transparently -- the user just chats normally
 
 ---
 
 ### Changes
 
-#### 1. Rewrite `src/components/dashboard/ChartCoachChat.tsx`
+#### 1. `src/hooks/useChartCoach.ts` -- Add URL detection and search trigger
 
-Replace the floating bubble + popup with a bottom-fixed bar:
+- **Detect URLs** in user messages using a regex. If a URL is found, call the backend with a `scrapeUrl` flag
+- **Detect search-worthy messages** (mentions of tickers, "news about", "what's happening with", market events). Pass a `searchQuery` flag to the backend
+- Pass these as part of the `context` object sent to `ayn-unified`
 
-**Collapsed state**: A floating Brain button (bottom-right) with message count badge -- same as engineering.
+#### 2. `supabase/functions/ayn-unified/index.ts` -- Handle Firecrawl for trading-coach intent
 
-**Expanded state** (default): A bottom-fixed bar spanning the page width with:
-- **Messages area** (expandable upward): rounded panel above the input bar with header ("AYN Coach" + Brain icon), ScrollArea (h-[280px]), message bubbles with react-markdown, and "AYN is thinking..." loading indicator. Shows/hides based on `isExpanded` state.
-- **Input bar**: Textarea with animated rotating placeholders, send button that appears when text is entered, and a row of action buttons below:
-  - Quick action chips (the 5 coaching questions) shown as small buttons
-  - Clear chat button
-  - Minimize button (collapses to floating Brain icon)
+When intent is `trading-coach` and context contains:
+- `scrapeUrl`: Call `scrapeUrl()` from `firecrawlHelper.ts`, truncate to 3000 chars, and inject the scraped content into the system prompt as "ARTICLE CONTENT" context
+- `searchQuery`: Call `searchWeb()` from `firecrawlHelper.ts` with the query (limit 5), and inject the results into the system prompt as "LIVE MARKET NEWS" context
 
-**Key behaviors** (borrowed from engineering):
-- Auto-expand when first message arrives
-- Smart auto-scroll (only scrolls to bottom when user is near bottom)
-- Keyboard shortcuts: Esc to collapse, / to reopen
-- Textarea auto-resize (up to 120px)
-- Rotating placeholder text (trading-specific)
-- Amber/orange accent color theme retained
+This leverages the existing shared `firecrawlHelper.ts` that already has raw-fetch fallback.
 
-**Placeholders** (rotating):
-```
-"Should I take this trade?"
-"What's my biggest risk here?"
-"Help me stay disciplined..."
-"Explain the chart patterns..."
-"Am I being emotional about this?"
-```
+#### 3. `src/components/dashboard/ChartCoachChat.tsx` -- UI additions
 
-#### 2. Update `src/pages/ChartAnalyzerPage.tsx`
-
-- Pass `result` prop as before
-- No structural changes needed -- the component still renders as a sibling
+- Add a small link/globe icon button in the action row to let users know they can paste URLs
+- Add a "What's the latest news?" quick action chip when a chart result with a ticker is available (e.g., "Latest news on BTC")
+- Show a subtle "Searching web..." or "Reading article..." indicator below the input when Firecrawl is active
 
 ---
 
 ### Technical Details
 
-**New ChartCoachChat structure:**
+**URL Detection (useChartCoach.ts):**
 ```text
-// Collapsed: floating Brain button (bottom-right)
-if (isCollapsed) return <FloatingBrainButton />
+const URL_REGEX = /https?:\/\/[^\s]+/gi;
+const urls = trimmed.match(URL_REGEX);
 
-// Expanded: bottom-fixed bar
-<div fixed bottom-0 left-0 right-0 z-50 p-4 pb-6>
-  <div max-w-2xl mx-auto>
-    
-    // Messages panel (slides up when isExpanded && messages.length > 0)
-    <AnimatePresence>
-      {isExpanded && messages.length > 0 && (
-        <div rounded-2xl bg-background/95 backdrop-blur border shadow>
-          Header: "AYN Coach" + Clear + Close
-          ScrollArea h-[280px]: message bubbles
-          Loading indicator
-        </div>
-      )}
-    </AnimatePresence>
-
-    // Input container
-    <div rounded-2xl bg-background/95 backdrop-blur border shadow>
-      Row 1: Textarea + Send button
-      Row 2: Quick action chips + Minimize button
-    </div>
-  </div>
-</div>
+// Pass to backend
+context: {
+  fileContext,
+  scrapeUrl: urls?.[0],  // first URL found
+  searchQuery: detectSearchIntent(trimmed, result?.ticker)
+}
 ```
 
-**Security**: All three layers (input validation, response sanitization, emotion detection) remain in the `useChartCoach` hook -- no changes needed there.
+**Search Intent Detection (useChartCoach.ts):**
+```text
+function detectSearchIntent(msg, ticker):
+  if msg matches /news|latest|what.*happening|market.*update|headlines/i:
+    return ticker ? `${ticker} trading news today` : extract subject from msg
+  return null
+```
+
+**Backend integration (ayn-unified/index.ts):**
+```text
+// Inside the trading-coach handler, before building messages:
+if (context.scrapeUrl) {
+  const scraped = await scrapeUrl(context.scrapeUrl);
+  if (scraped.success) {
+    fileContext += "\n\nARTICLE CONTENT (user shared this URL):\n" 
+      + scraped.markdown.substring(0, 3000);
+  }
+}
+
+if (context.searchQuery) {
+  const results = await searchWeb(context.searchQuery, { limit: 5 });
+  if (results.success && results.data?.length) {
+    fileContext += "\n\nLIVE MARKET NEWS:\n" 
+      + results.data.map(r => `- ${r.title}: ${r.description}`).join("\n");
+  }
+}
+```
+
+**Security**: The existing `FORBIDDEN_PATTERNS` in the hook already blocks mentions of "firecrawl" from users. The scrape/search happens server-side only, and results are sanitized through the existing response sanitization layer.
 
 ---
 
@@ -85,7 +89,7 @@ if (isCollapsed) return <FloatingBrainButton />
 
 | File | Change |
 |------|--------|
-| `src/components/dashboard/ChartCoachChat.tsx` | Full rewrite to bottom-bar style matching engineering chat |
-
-Single file change. No hook or edge function modifications needed.
+| `src/hooks/useChartCoach.ts` | Add URL detection, search intent detection, pass to context |
+| `supabase/functions/ayn-unified/index.ts` | Import firecrawlHelper, add scrape/search for trading-coach intent |
+| `src/components/dashboard/ChartCoachChat.tsx` | Add "Latest news" quick action, web search loading indicator |
 
