@@ -1,75 +1,115 @@
 
 
-## Phase 4: Analysis Comparison & Performance Insights
+## Embed Chart Analyzer into AYN Chat
 
 ### What's changing
 
-Add a "Compare" feature to the History tab and a performance summary card, letting users place two past analyses side-by-side and see aggregate stats about their analysis history.
+Instead of the Chart Analyzer being a separate dashboard tool, users will be able to attach a chart image in the AYN chat and AYN will automatically detect it as a chart analysis request, run the full pipeline (vision analysis, news fetch, prediction), and render the results inline in the chat -- just like how image generation and document creation already work inside AYN.
 
-### New Components
+### How it works (user perspective)
 
-**1. `src/components/dashboard/ChartCompareView.tsx`** -- Side-by-side comparison
+1. User attaches a chart screenshot via the existing paperclip button in AYN
+2. User types something like "analyze this chart" or "what do you see?" (or just sends the image)
+3. AYN detects the `chart_analysis` intent
+4. AYN shows a typing/thinking indicator while the pipeline runs
+5. Results appear inline in the chat as a rich message with signal badge, confidence, trade setup, and key observations
+6. History tab in the dashboard still works for browsing past analyses
 
-- Two-column layout showing two selected analyses
-- Each column displays: chart image, signal badge, confidence, trade setup (entry/SL/TP), key patterns
-- Highlights differences: signal direction, confidence delta, pattern overlap
-- "Select analyses to compare" prompt when fewer than 2 are chosen
-- Responsive: stacks vertically on mobile
+### Technical Changes
 
-**2. `src/components/dashboard/ChartHistoryStats.tsx`** -- Aggregate performance card
+**1. `supabase/functions/ayn-unified/intentDetector.ts`** -- Add chart analysis intent
 
-- Shown at the top of the History tab
-- Displays:
-  - Total analyses count
-  - Signal distribution (pie/bar: X% Bullish, Y% Bearish, Z% Neutral)
-  - Average confidence across all analyses
-  - Most analyzed ticker
-  - Most common pattern detected
-- Computed client-side from the loaded history items
-- Collapsible to save space
+Add detection patterns before the "files" intent check:
+- English: `analyze this chart`, `chart analysis`, `trading chart`, `what does this chart show`, `technical analysis`
+- Arabic: `حلل الشارت`, `تحليل فني`, `تحليل الشارت`
+- Combined: when a file attachment is an image AND message mentions chart/trading/analysis
 
-### Modifications to Existing Files
+**2. `supabase/functions/ayn-unified/index.ts`** -- Handle `chart_analysis` intent
 
-**3. `src/components/dashboard/ChartHistoryList.tsx`** -- Add compare selection mode
+Add a new intent handler block (similar to the existing `image` and `document` blocks) that:
+- Extracts the attached image URL from the context (`context.fileContext.url`)
+- Calls the `analyze-trading-chart` edge function internally (server-to-server fetch, like document generation does with `generate-document`)
+- Formats the result into a rich markdown response with signal, confidence, trade setup, patterns, and disclaimer
+- Returns it as a non-streaming JSON response with a special `chartAnalysis` field so the frontend can render it richly
 
-- Add a "Compare" toggle button in the filter bar
-- When active, show checkboxes on each history card (max 2 selections)
-- "Compare Selected" button appears when exactly 2 items are checked
-- Clicking it calls `onCompare(item1, item2)`
+**3. `src/hooks/useMessages.ts`** -- Detect chart intent on frontend
 
-**4. `src/components/dashboard/ChartAnalyzer.tsx`** -- Wire compare view
+Add `chart_analysis` to the `detectIntent()` function:
+- When an image file is attached AND the message matches chart-related keywords, set intent to `chart_analysis`
+- Add `chart_analysis` to `requiresNonStreaming` list (it returns JSON, not streamed text)
 
-- Add state for compare mode: `compareItems: [ChartHistoryItem, ChartHistoryItem] | null`
-- When compare is triggered from history list, render `ChartCompareView` instead of detail view
-- "Back to History" returns to list
+**4. `src/components/transcript/TranscriptMessage.tsx`** -- Render chart results inline
 
-**5. `src/hooks/useChartHistory.ts`** -- Add stats computation
+When the assistant message contains `chartAnalysis` data:
+- Render the existing `ChartAnalyzerResults` component inline in the chat bubble
+- Show the chart image thumbnail, signal badge, confidence gauge, and trade setup
+- This reuses the component already built in Phase 3
 
-- Add a `stats` property computed from `items`:
-  - `totalCount`, `signalDistribution`, `avgConfidence`, `topTicker`, `topPattern`
-- Add `compareItems` state and `setCompareItems` setter
+**5. `src/hooks/useMessages.ts`** -- Handle chart response format
+
+After receiving the response, detect the `chartAnalysis` field and:
+- Store the rich data alongside the message
+- Trigger the results rendering in the transcript
+
+### Architecture Flow
+
+```text
+User attaches chart image + types "analyze this"
+  --> useMessages detects intent = "chart_analysis"
+  --> Sends to ayn-unified with intent + fileContext (image URL)
+  --> ayn-unified routes to chart_analysis handler
+  --> Handler calls analyze-trading-chart internally
+  --> Returns formatted result as JSON
+  --> Frontend renders ChartAnalyzerResults inline in chat
+```
+
+### What stays the same
+
+- The standalone Chart Analyzer dashboard tool remains available (power users may prefer it)
+- The History tab continues to work (analyses are still saved to `chart_analyses` table by the edge function)
+- The `analyze-trading-chart` edge function is unchanged -- ayn-unified calls it as a service
 
 ### Technical Details
 
-**Stats computation (client-side):**
-```text
-items[] --> reduce to:
-  { total, bullish/bearish/neutral counts, confidence sum, ticker frequency map, pattern frequency map }
+**Server-to-server call pattern** (already used for document generation):
+```typescript
+const chartResponse = await fetch(`${supabaseUrl}/functions/v1/analyze-trading-chart`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ imageBase64: null, imageUrl: fileContext.url, sessionId })
+});
 ```
 
-No additional database queries needed -- stats are derived from already-fetched history items. For users with many analyses, initial fetch already pages in 10 at a time; stats will reflect loaded items with a note like "Based on last N analyses."
+Note: The `analyze-trading-chart` function currently expects `imageBase64`. We will add support for accepting a direct `imageUrl` to skip the re-upload step when the image is already in storage (since the user already uploaded it via the chat attachment flow).
 
-**Compare layout uses CSS grid:**
-- Desktop: `grid-cols-2` with a thin divider
-- Mobile: `grid-cols-1` stacked
+**Response format from ayn-unified:**
+```json
+{
+  "content": "Here's my analysis of **AAPL** on the **4H** timeframe...",
+  "chartAnalysis": { /* full ChartAnalysisResult object */ },
+  "intent": "chart_analysis"
+}
+```
 
-**No schema changes needed.**
+The `content` field contains a markdown summary for the chat bubble, while `chartAnalysis` contains the structured data for rendering the rich results component.
+
+### Files Modified Summary
+
+| File | Change |
+|------|--------|
+| `supabase/functions/ayn-unified/intentDetector.ts` | Add chart analysis patterns |
+| `supabase/functions/ayn-unified/index.ts` | Add chart_analysis handler block |
+| `supabase/functions/analyze-trading-chart/index.ts` | Accept `imageUrl` as alternative to `imageBase64` |
+| `src/hooks/useMessages.ts` | Add chart intent detection + response handling |
+| `src/components/transcript/TranscriptMessage.tsx` | Render ChartAnalyzerResults inline |
 
 ### Success Criteria
 
-1. Users can toggle "Compare" mode in the history list
-2. Selecting exactly 2 analyses enables the "Compare" button
-3. Side-by-side view clearly shows both analyses with signal/confidence/trade setup
-4. Stats card at top of History shows signal distribution and average confidence
-5. Compare view works on both desktop and mobile layouts
-
+1. User attaches a chart image and says "analyze this chart" -- AYN runs the full pipeline
+2. Results appear inline in the chat with signal badge, confidence, and trade setup
+3. The analysis is saved to history (accessible from History tab)
+4. The standalone Chart Analyzer tool still works independently
+5. Intent detection correctly distinguishes chart images from regular image attachments
