@@ -39,7 +39,10 @@ export function useChartAnalyzer() {
         body: { imageBase64: base64, sessionId: null },
       });
 
-      if (res.error) throw new Error(res.error.message || 'Analysis failed');
+      if (res.error) {
+        const bodyError = res.data?.error;
+        throw new Error(bodyError || res.error.message || 'Analysis failed');
+      }
 
       setResult(res.data as ChartAnalysisResult);
       setStep('done');

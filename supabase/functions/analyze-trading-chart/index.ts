@@ -161,13 +161,27 @@ Be specific with price levels. If you can see indicator values, include them. If
 
   const data = await res.json();
   const content = data.choices?.[0]?.message?.content || '';
-  
+
+  // Detect non-chart image responses before attempting JSON parse
+  const notChartPatterns = [
+    /not a.{0,20}(trading |price |stock )?chart/i,
+    /cannot.{0,20}(apply|perform).{0,20}(technical )?analysis/i,
+    /photograph|selfie|screenshot of.{0,10}(a |an )?(app|website|desktop)/i,
+    /no.{0,10}(candlestick|price action|trading data)/i,
+    /does not (appear|seem|look).{0,20}(chart|financial|trading)/i,
+    /not.{0,10}(a |an )?(financial|technical|stock market)/i,
+  ];
+  if (notChartPatterns.some(p => p.test(content))) {
+    console.log('[chart-analyzer] Non-chart image detected:', content.substring(0, 100));
+    throw new Error('NOT_A_CHART');
+  }
+
   const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   try {
     return JSON.parse(jsonStr);
   } catch {
     console.error('[chart-analyzer] Failed to parse vision response:', content);
-    throw new Error('Failed to parse chart analysis from AI');
+    throw new Error('NOT_A_CHART');
   }
 }
 
@@ -702,6 +716,13 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[chart-analyzer] Error:', error);
     const msg = error instanceof Error ? error.message : 'Unknown error';
+
+    if (msg === 'NOT_A_CHART') {
+      return new Response(JSON.stringify({
+        error: "This doesn't appear to be a trading chart. Please upload a screenshot of a price chart (candlesticks, line chart, or bar chart) for analysis."
+      }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
