@@ -4,6 +4,8 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { getEmployeeSystemPrompt, formatNatural } from "../_shared/aynBrand.ts";
 import { logReflection } from "../_shared/employeeState.ts";
 import { scrapeUrl, mapWebsite } from "../_shared/firecrawlHelper.ts";
+import { sanitizeForPrompt, FIRECRAWL_CONTENT_GUARD } from "../_shared/sanitizeFirecrawl.ts";
+import { sanitizeUserPrompt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 import { notifyFounder } from "../_shared/proactiveAlert.ts";
 
 const EMPLOYEE_ID = 'investigator';
@@ -87,7 +89,7 @@ async function investigateLead(supabase: any, apiKey: string, leadId: string, ta
         mapWebsite(lead.company_url, { limit: 30 }),
       ]);
       if (scrapeResult.success) {
-        websiteContent = (scrapeResult.markdown || '').slice(0, 12000);
+        websiteContent = sanitizeForPrompt((scrapeResult.markdown || ''), 12000);
       }
       if (mapResult.success && mapResult.links) {
         siteMap = mapResult.links.slice(0, 20);
@@ -108,7 +110,7 @@ async function investigateLead(supabase: any, apiKey: string, leadId: string, ta
 7. Lead quality score (1-10) with honest justification
 
 Be thorough. I'd rather you say "insufficient data — confidence: LOW" than guess.
-
+${FIRECRAWL_CONTENT_GUARD}
 Respond in JSON:
 {
   "company_size": "...",
@@ -122,7 +124,7 @@ Respond in JSON:
   "quality_justification": "...",
   "confidence_level": "HIGH/MEDIUM/LOW",
   "dossier_summary": "..."
-}`);
+}`) + INJECTION_GUARD;
 
   const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',

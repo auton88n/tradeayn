@@ -1,7 +1,10 @@
 /**
  * Shared Firecrawl helper for AYN workforce agents.
  * Provides clean markdown scraping, search, and mapping via Firecrawl API.
+ * All outputs are sanitized via sanitizeScrapedContent before returning.
  */
+
+import { sanitizeScrapedContent } from "./sanitizeFirecrawl.ts";
 
 const FIRECRAWL_API = 'https://api.firecrawl.dev/v1';
 
@@ -59,10 +62,16 @@ export async function scrapeUrl(url: string, options?: {
     }
 
     const data = await res.json();
+    const rawMarkdown = data.data?.markdown || data.markdown || '';
+    const rawMetadata = data.data?.metadata || data.metadata || {};
     return {
       success: true,
-      markdown: data.data?.markdown || data.markdown || '',
-      metadata: data.data?.metadata || data.metadata || {},
+      markdown: sanitizeScrapedContent(rawMarkdown),
+      metadata: {
+        ...rawMetadata,
+        title: rawMetadata.title ? sanitizeScrapedContent(rawMetadata.title) : undefined,
+        description: rawMetadata.description ? sanitizeScrapedContent(rawMetadata.description) : undefined,
+      },
     };
   } catch (e) {
     console.error('[firecrawl] Scrape error:', e);
@@ -102,7 +111,14 @@ export async function searchWeb(query: string, options?: {
     }
 
     const data = await res.json();
-    return { success: true, data: data.data || [] };
+    // Sanitize all search result text fields
+    const sanitizedData = (data.data || []).map((item: any) => ({
+      ...item,
+      title: item.title ? sanitizeScrapedContent(item.title) : '',
+      description: item.description ? sanitizeScrapedContent(item.description) : '',
+      markdown: item.markdown ? sanitizeScrapedContent(item.markdown) : undefined,
+    }));
+    return { success: true, data: sanitizedData };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : 'Search error' };
   }
@@ -162,17 +178,13 @@ async function rawFetchFallback(url: string): Promise<ScrapeResult> {
 
     const html = await res.text();
     const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
-    const content = html
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    // Apply sanitizeScrapedContent for consistent cleaning
+    const content = sanitizeScrapedContent(html);
 
     return {
       success: true,
       markdown: content,
-      metadata: { title: titleMatch?.[1]?.trim(), sourceURL: url },
+      metadata: { title: titleMatch?.[1]?.trim() ? sanitizeScrapedContent(titleMatch[1].trim()) : undefined, sourceURL: url },
     };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : 'Fetch failed' };

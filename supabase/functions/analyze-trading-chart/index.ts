@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { searchWeb } from "../_shared/firecrawlHelper.ts";
+import { sanitizeForPrompt, FIRECRAWL_CONTENT_GUARD } from "../_shared/sanitizeFirecrawl.ts";
+import { INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 import { uploadImageToStorage } from "../_shared/storageUpload.ts";
 import {
   getFullKnowledgeBase,
@@ -169,12 +171,31 @@ Be specific with price levels. If you can see indicator values, include them. If
   }
 }
 
-// ─── Step 2: News Fetch via Firecrawl (with filtering) ───
+// ─── Step 2: News Fetch via Firecrawl (with caching + filtering) ───
 async function fetchTickerNews(ticker: string, assetType: string) {
   console.log(`[chart-analyzer] Step 2: Fetching news for ${ticker} (${assetType})`);
   
   if (ticker === 'UNKNOWN') {
     return { headlines: [], raw: [] };
+  }
+
+  // Check 30-minute cache first
+  try {
+    const supabase = getServiceClient();
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const { data: cached } = await supabase
+      .from('news_cache')
+      .select('news_data')
+      .eq('ticker', ticker)
+      .gte('created_at', thirtyMinAgo)
+      .single();
+    
+    if (cached?.news_data) {
+      console.log(`[chart-analyzer] Using cached news for ${ticker}`);
+      return cached.news_data as any;
+    }
+  } catch {
+    // Cache miss or error, proceed with fetch
   }
 
   const typeLabel = assetType === 'crypto' ? 'cryptocurrency' : assetType;
@@ -224,15 +245,30 @@ async function fetchTickerNews(ticker: string, assetType: string) {
     console.log(`[chart-analyzer] Warning: Only ${filtered.length} news items after filtering - sentiment may not be reliable`);
   }
 
-  return {
-    headlines: filtered.map((d: any) => d.title).filter(Boolean),
+  const newsResult = {
+    headlines: filtered.map((d: any) => sanitizeForPrompt(d.title || '', 200)).filter(Boolean),
     raw: filtered.map((d: any) => ({
-      title: d.title,
+      title: sanitizeForPrompt(d.title || '', 200),
       url: d.url,
-      description: d.description || '',
+      description: sanitizeForPrompt(d.description || '', 300),
     })),
     limitedNews,
   };
+
+  // Cache the result for 30 minutes
+  try {
+    const supabase = getServiceClient();
+    await supabase.from('news_cache').upsert({
+      ticker,
+      news_data: newsResult,
+      created_at: new Date().toISOString(),
+    }, { onConflict: 'ticker' });
+    console.log(`[chart-analyzer] Cached news for ${ticker}`);
+  } catch (e) {
+    console.warn('[chart-analyzer] Failed to cache news:', e);
+  }
+
+  return newsResult;
 }
 
 // ─── Step 3: Sentiment + Prediction (Enhanced with Psychology & Context) ───
@@ -345,6 +381,7 @@ ${JSON.stringify(adjustedPatterns, null, 2)}
 **Volume Ratio: ${volumeRatio}x average**
 
 ## Recent News Headlines (weight: 40%)
+${FIRECRAWL_CONTENT_GUARD}
 ${news.headlines.length > 0 ? news.headlines.map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No recent news found.'}
 ${psychologyContext}
 ---
@@ -447,7 +484,8 @@ Rules:
 - Always reference the timeframe and asset type in reasoning
 - Reference specific patterns by name and their research-backed success rates
 - Include pattern success rates in reasoning (e.g., "bull flag has 68% success rate, adjusted to 78% given current context")
-- If no news, base prediction purely on technicals and note that`;
+- If no news, base prediction purely on technicals and note that
+${INJECTION_GUARD}`;
 
   const res = await fetch(AI_GATEWAY, {
     method: 'POST',
