@@ -1,83 +1,126 @@
 
 
-## Better Error Handling for Non-Chart Images
+## Transform Chart Analyzer: Coach Mode to Advisor Mode (Testing)
 
-### Problem
+### Overview
 
-When you upload a regular photo (not a chart), the AI correctly identifies it's not a trading chart but then the system crashes trying to parse the response as chart data. You see a generic "Edge Function returned a non-2xx status code" error instead of a helpful message.
+Switch the Chart Analyzer from cautious coach mode to a direct trading advisor that outputs bot-ready signals with exact prices, position sizing, leverage, trailing stops, and a copyable configuration block. Also remove Firecrawl content sanitization restrictions so search results flow through unfiltered.
 
-### Root Cause
+### Changes
 
-The AI responds with plain text like "This is a photograph of a city skyline, not a trading chart" -- but the code expects a JSON object. The JSON parse fails, throwing a generic 500 error. The frontend doesn't extract the actual error message from the response body.
+#### 1. Remove Firecrawl Sanitization Restrictions
 
-### Solution
+**Files:** `supabase/functions/_shared/sanitizeFirecrawl.ts`, `supabase/functions/analyze-trading-chart/index.ts`
 
-Two fixes:
+- In `sanitizeFirecrawl.ts`: gut the `sanitizeForPrompt` function so it only truncates (no keyword redaction, no `[EXTERNAL SOURCE]` wrapper)
+- In `index.ts`: remove `FIRECRAWL_CONTENT_GUARD` usage from the prediction prompt (line 398) so news content passes through cleanly
+- Keep `sanitizeScrapedContent` (HTML stripping) intact since that's basic hygiene, not a restriction
 
-1. **Edge function**: Before trying to parse JSON, check if the AI response indicates "not a chart". Return a clear 400 error with a user-friendly message like "This doesn't appear to be a trading chart. Please upload a screenshot of a price chart with candlesticks or price action."
+#### 2. Update Prediction Prompt to Advisor Mode
 
-2. **Frontend hook**: Improve error extraction so even when the edge function returns a non-2xx status, the actual error message from the response body is displayed instead of the generic Supabase wrapper message.
+**File:** `supabase/functions/analyze-trading-chart/index.ts` (lines 378-502)
 
----
+Replace the coaching-style prompt with a direct advisor prompt:
+- Remove hedging language ("educational insights", "IF you decide to enter")
+- Add: "You are a direct trading advisor. Generate CLEAR, ACTIONABLE signals with exact parameters. Be DECISIVE."
+- Add `tradingSignal` object to the JSON schema with: action, entry (price + orderType), stopLoss (price + percentage), two takeProfits (price + percentage + closePercent), riskReward ratio, botConfig (positionSize, leverage, trailingStop), and invalidation (price + condition)
+- Remove confidence hard-cap language (keep cap at 95 instead of 90)
+- Change signal names: BULLISH becomes BUY, BEARISH becomes SELL, keep WAIT
 
-### Technical Details
+#### 3. Update Trading Knowledge Base Rules
 
-**File: `supabase/functions/analyze-trading-chart/index.ts` (lines 162-171)**
+**File:** `supabase/functions/analyze-trading-chart/tradingKnowledge.ts` (lines 1997-2006)
 
-In the `analyzeChartImage` function, after getting the AI response content, check for non-chart indicators before attempting JSON parse:
+Replace the CRITICAL ANALYSIS RULES section with advisor-mode rules:
+- "Provide CLEAR trading signals: BUY, SELL, or WAIT"
+- "Include EXACT entry prices, stop loss, take profit levels"
+- "Include bot configuration parameters"
+- "Be DIRECT and ACTIONABLE"
+- Keep pattern limit (max 3) and context adjustment formula
+
+#### 4. Add TradingSignal Type
+
+**File:** `src/types/chartAnalyzer.types.ts`
+
+Add new interface:
 
 ```text
-const content = data.choices?.[0]?.message?.content || '';
-
-// Detect non-chart image responses
-const notChartPatterns = [
-  /not a.{0,20}(trading |price |stock )?chart/i,
-  /cannot.{0,20}(apply|perform).{0,20}(technical )?analysis/i,
-  /photograph|selfie|screenshot of.{0,10}(a |an )?(app|website|desktop)/i,
-  /no.{0,10}(candlestick|price action|trading data)/i,
-];
-if (notChartPatterns.some(p => p.test(content))) {
-  throw new Error('NOT_A_CHART');
-}
-```
-
-Then in the main handler catch block (line 702-709), detect this specific error and return a 400 with a friendly message:
-
-```text
-} catch (error) {
-  const msg = error instanceof Error ? error.message : 'Unknown error';
-  
-  if (msg === 'NOT_A_CHART') {
-    return new Response(JSON.stringify({
-      error: "This doesn't appear to be a trading chart. Please upload a screenshot of a price chart (candlesticks, line chart, or bar chart) for analysis."
-    }), { status: 400, headers: corsHeaders });
+TradingSignal {
+  action: "BUY" | "SELL" | "WAIT"
+  reasoning: string
+  entry: { price: number, orderType: "LIMIT" | "MARKET", timeInForce: "GTC" }
+  stopLoss: { price: number, percentage: number }
+  takeProfits: [
+    { level: 1, price: number, percentage: number, closePercent: 50 },
+    { level: 2, price: number, percentage: number, closePercent: 50 }
+  ]
+  riskReward: number
+  botConfig: {
+    positionSize: number
+    leverage: number
+    trailingStop: { enabled: boolean, activateAt: "TP1"|"TP2", trailPercent: number }
   }
-  
-  return new Response(JSON.stringify({ error: msg }), {
-    status: 500, headers: corsHeaders
-  });
+  invalidation: { price: number, condition: string }
 }
 ```
 
-**File: `src/hooks/useChartAnalyzer.ts` (lines 38-49)**
+Add `tradingSignal?: TradingSignal` to `ChartPrediction` interface. Update `PredictionSignal` to include `'BUY' | 'SELL'`.
 
-Improve error extraction from Supabase function responses. When `supabase.functions.invoke` gets a non-2xx response, the actual error details are in `res.data?.error` or `res.error.context?.body`, not in `res.error.message`:
+#### 5. Update Signal Config and Results UI
+
+**File:** `src/components/dashboard/ChartAnalyzerResults.tsx`
+
+- Add BUY/SELL to `signalConfig` (BUY = green, SELL = red)
+- Add new "Bot Configuration" collapsible section after Trade Setup with:
+  - Large colored BUY/SELL/WAIT badge
+  - Entry price + order type row
+  - Stop loss with risk percentage
+  - TP1 and TP2 with close percentages
+  - Bot parameters: position size, leverage, R:R
+  - Trailing stop info
+  - "Copy Bot Config" button that copies a formatted text block to clipboard
+  - Invalidation warning in red
+- Replace the existing disclaimer with a red "TESTING MODE - HIGH RISK" banner
+
+#### 6. Add Copy Function
+
+**File:** `src/components/dashboard/ChartAnalyzerResults.tsx`
+
+Add a `copyBotConfig` function that formats all signal data into a clean text block:
 
 ```text
-const res = await supabase.functions.invoke(...);
-
-if (res.error) {
-  // Extract the actual error message from the response body
-  const bodyError = res.data?.error;
-  throw new Error(bodyError || res.error.message || 'Analysis failed');
-}
+SIGNAL: BUY
+ENTRY: 0.0426 (LIMIT)
+STOP: 0.0420 (-1.4%)
+TP1: 0.0445 (+4.5%) - Close 50%
+TP2: 0.0470 (+10.3%) - Close 50%
+BOT CONFIG:
+Position: 2%
+Leverage: 2x
+R:R: 1:3.2
+Trailing: 1.5% after TP1
+INVALIDATION: Below 0.0415 - bearish structure confirmed
 ```
 
-| File | Change |
-|------|--------|
-| `supabase/functions/analyze-trading-chart/index.ts` | Detect non-chart AI responses, return friendly 400 error |
-| `src/hooks/useChartAnalyzer.ts` | Extract actual error message from response body |
+Uses `navigator.clipboard.writeText()` with a toast confirmation.
 
-### Result
+#### 7. Update Edge Function Result Builder
 
-When you upload a photo instead of a chart, you'll see: "This doesn't appear to be a trading chart. Please upload a screenshot of a price chart (candlesticks, line chart, or bar chart) for analysis." -- instead of a confusing technical error.
+**File:** `supabase/functions/analyze-trading-chart/index.ts` (lines 668-709)
+
+Pass `tradingSignal` from prediction response through to the result object so the frontend can render the bot config card.
+
+### Files Summary
+
+| File | Changes |
+|------|---------|
+| `supabase/functions/_shared/sanitizeFirecrawl.ts` | Remove keyword redaction and `[EXTERNAL SOURCE]` wrapper from `sanitizeForPrompt` |
+| `supabase/functions/analyze-trading-chart/tradingKnowledge.ts` | Replace CRITICAL ANALYSIS RULES with advisor-mode directives |
+| `supabase/functions/analyze-trading-chart/index.ts` | Advisor prompt, add tradingSignal schema, remove FIRECRAWL_CONTENT_GUARD, pass tradingSignal to result |
+| `src/types/chartAnalyzer.types.ts` | Add TradingSignal interface, update PredictionSignal type |
+| `src/components/dashboard/ChartAnalyzerResults.tsx` | Add Bot Configuration card, copy function, BUY/SELL signals, testing mode disclaimer |
+
+### Reversibility
+
+All changes are in clearly identifiable sections. To revert back to coach mode later: restore the original CRITICAL ANALYSIS RULES, restore sanitizeForPrompt redaction, restore the coaching prompt language, and swap the disclaimer back.
+
