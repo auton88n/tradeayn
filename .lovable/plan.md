@@ -1,38 +1,50 @@
 
 
-## Fix Tutorial: Separate Charts from Engineering Tools
+## Redesign Chart Analyzer Page -- Premium Trading UI
 
-### Problem
-The Engineering tutorial step currently shows all 3 sidebar tools together (Engineering, Compliance, Charts). But Charts is **not** an engineering tool -- it's for stock and crypto trading analysis. They need to be presented separately with proper context.
+### Overview
 
-### Changes
+The current Chart Analyzer page looks bare and plain -- just a basic header, tabs, and a dashed upload box on a flat background. We'll transform it into a polished, professional trading-tool interface with visual depth, gradient accents, feature highlights, and a more engaging upload zone.
 
-#### 1. Update Engineering illustration -- remove Charts card
-**File: `src/components/tutorial/TutorialIllustrations.tsx`** (lines 543-590)
+### Design Changes
 
-- Change the grid from `grid-cols-3` to `grid-cols-2` 
-- Remove the Charts card from the array (keep only Engineering and Compliance)
-- Update the title from "Your Tool Suite" to "Engineering Suite" or similar
-- Update the hint text to match
+#### 1. Page wrapper with subtle gradient background
+**File: `src/pages/ChartAnalyzerPage.tsx`**
 
-#### 2. Update Chart Analyzer tutorial step description
-**File: `src/types/tutorial.types.ts`** (lines 71-75)
+- Add a subtle radial gradient overlay behind the content (amber/orange glow, very faint) to give the page depth
+- Widen the container from `max-w-2xl` to `max-w-3xl` for more breathing room
+- Style the back button with a semi-transparent pill style
 
-- Change the description to better explain it's for stocks and crypto trading, not engineering:
-  - Current: "Upload trading charts for AI-powered technical analysis with pattern detection, support/resistance levels, and trade signals."
-  - New: "Analyze stock and crypto charts with AI-powered pattern detection, support/resistance levels, entry/exit signals, and market sentiment scoring."
+#### 2. Redesign the header section
+**File: `src/components/dashboard/ChartAnalyzer.tsx`**
 
-#### 3. Enhance Chart Analyzer illustration
-**File: `src/components/tutorial/TutorialIllustrations.tsx`** (lines 714-795)
+Replace the simple text header with a hero-style header:
+- Large gradient icon container (amber/orange) with the BarChart3 icon
+- Bigger title with gradient text effect
+- Subtitle with better typography
+- Add 3 small feature badges below: "Pattern Detection", "Entry/Exit Signals", "Sentiment Analysis" -- showing what the tool does at a glance
+- Add supported asset badges: Stock, Crypto, Forex, Commodity
 
-- Add a ticker label (e.g., "BTC/USDT" or "AAPL") to the header to make it clear this is for trading
-- Add asset type badges (Stock, Crypto, Forex) below the header to show supported markets
-- Keep the existing candlestick chart, indicators, and signal badge (they already look good)
+#### 3. Redesign the upload zone
+**File: `src/components/dashboard/ChartAnalyzer.tsx`**
+
+Transform the plain dashed box into a more inviting drop zone:
+- Gradient dashed border (amber tint) instead of plain gray
+- Animated upload icon with a subtle pulse
+- Better visual hierarchy with icon in a gradient circle
+- Add supported format badges (PNG, JPG, WEBP) as small pills instead of plain text
+- Subtle background pattern or gradient inside the zone
+
+#### 4. Style the tabs
+**File: `src/components/dashboard/ChartAnalyzer.tsx`**
+
+- Give the TabsList a more defined look with `bg-muted/50` and rounded corners
+- Add amber accent to active tab
 
 ### Files Summary
 
 | File | Change |
 |------|--------|
-| `src/types/tutorial.types.ts` | Update chart-analyzer description to emphasize stocks/crypto |
-| `src/components/tutorial/TutorialIllustrations.tsx` | Remove Charts from Engineering illustration; enhance Chart Analyzer illustration with ticker + asset badges |
+| `src/pages/ChartAnalyzerPage.tsx` | Add gradient background, widen container, style back button |
+| `src/components/dashboard/ChartAnalyzer.tsx` | Hero header with gradient icon + feature badges, redesigned upload zone, styled tabs |
 
