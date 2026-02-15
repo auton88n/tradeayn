@@ -50,14 +50,48 @@ const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
   ],
 };
 
-// Generate image using Lovable AI
+// Generate image using Lovable AI (DALL-E 3 primary, Gemini fallback)
 async function generateImage(prompt: string): Promise<{ imageUrl: string; revisedPrompt: string }> {
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
   console.log('[ayn-unified] Generating image with prompt:', prompt.substring(0, 100));
 
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  // Primary: DALL-E 3 via /v1/images/generations
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'hd',
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const imageUrl = data.data?.[0]?.url || '';
+      const revisedPrompt = data.data?.[0]?.revised_prompt || prompt;
+      if (imageUrl) {
+        console.log('[ayn-unified] Image generated via DALL-E 3');
+        return { imageUrl, revisedPrompt };
+      }
+    } else {
+      const errText = await response.text();
+      console.warn('[ayn-unified] DALL-E 3 failed, trying Gemini fallback:', response.status, errText);
+    }
+  } catch (err) {
+    console.warn('[ayn-unified] DALL-E 3 error, trying Gemini fallback:', err);
+  }
+
+  // Fallback: Gemini image model via /v1/chat/completions
+  const fallbackResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${LOVABLE_API_KEY}`,
@@ -65,26 +99,26 @@ async function generateImage(prompt: string): Promise<{ imageUrl: string; revise
     },
     body: JSON.stringify({
       model: 'google/gemini-2.5-flash-image',
-      messages: [{ role: 'user', content: prompt }],
-      modalities: ['image', 'text']
+      messages: [{ role: 'user', content: `Generate an image: ${prompt}` }],
+      modalities: ['image', 'text'],
     }),
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[ayn-unified] Image generation failed:', response.status, errorText);
-    throw new Error(`Image generation failed: ${response.status}`);
+  if (!fallbackResponse.ok) {
+    const errorText = await fallbackResponse.text();
+    console.error('[ayn-unified] Gemini image fallback also failed:', fallbackResponse.status, errorText);
+    throw new Error(`Image generation failed: ${fallbackResponse.status}`);
   }
 
-  const data = await response.json();
-  const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url || '';
-  const revisedPrompt = data.choices?.[0]?.message?.content || prompt;
+  const fallbackData = await fallbackResponse.json();
+  const imageUrl = fallbackData.choices?.[0]?.message?.images?.[0]?.image_url?.url || '';
+  const revisedPrompt = fallbackData.choices?.[0]?.message?.content || prompt;
 
   if (!imageUrl) {
     throw new Error('No image generated');
   }
 
-  console.log('[ayn-unified] Image generated, uploading to storage...');
+  console.log('[ayn-unified] Image generated via Gemini fallback');
   return { imageUrl, revisedPrompt };
 }
 
