@@ -75,7 +75,7 @@ function buildFileContext(result: ChartAnalysisResult, emotionalState: string): 
     typeof pat === 'string' ? pat : `${pat.name} (${pat.type}, ${pat.confidence} confidence)`
   ).join(', ');
 
-  return `CURRENT CHART ANALYSIS:
+  let context = `CURRENT CHART ANALYSIS:
 Ticker: ${result.ticker}
 Asset Type: ${result.assetType}
 Timeframe: ${result.timeframe}
@@ -94,6 +94,44 @@ ${p.entryTiming ? `Entry Status: ${p.entryTiming.status} - ${p.entryTiming.reaso
 ${p.psychologyWarnings ? `Market Stage: ${p.psychologyWarnings.marketStage}` : ''}
 ${p.confidenceBreakdown ? `Confidence Breakdown: ${p.confidenceBreakdown.explanation}` : ''}
 User Emotional State: ${emotionalState}`;
+
+  // Append tradingSignal data if available
+  const ts = (p as unknown as Record<string, unknown>).tradingSignal as Record<string, unknown> | undefined;
+  if (ts) {
+    const entry = ts.entry as Record<string, unknown> | undefined;
+    const sl = ts.stopLoss as Record<string, unknown> | undefined;
+    const tps = ts.takeProfits as Array<Record<string, unknown>> | undefined;
+    const bot = ts.botConfig as Record<string, unknown> | undefined;
+    const inv = ts.invalidation as Record<string, unknown> | undefined;
+
+    context += `\n\nTRADING SIGNAL:
+Action: ${ts.action || 'N/A'}
+Entry: ${entry?.price || 'N/A'} (${entry?.orderType || 'N/A'})
+Stop Loss: ${sl?.price || 'N/A'} (-${sl?.percentage || '?'}%)`;
+
+    if (tps && tps.length > 0) {
+      context += `\nTP1: ${tps[0]?.price || 'N/A'} (+${tps[0]?.percentage || '?'}%) - Close ${tps[0]?.closePercent || '?'}%`;
+      if (tps[1]) {
+        context += `\nTP2: ${tps[1]?.price || 'N/A'} (+${tps[1]?.percentage || '?'}%) - Close ${tps[1]?.closePercent || '?'}%`;
+      }
+    }
+
+    context += `\nR:R: 1:${ts.riskReward || 'N/A'}`;
+
+    if (bot) {
+      context += `\nPosition Size: ${bot.positionSize || '?'}% | Leverage: ${bot.leverage || '?'}x | Trailing Stop: ${bot.trailingStop || 'N/A'}`;
+    }
+
+    if (inv) {
+      context += `\nInvalidation: ${inv.condition || 'N/A'} at ${inv.price || 'N/A'}`;
+    }
+
+    if (ts.reasoning) {
+      context += `\nReasoning: ${ts.reasoning}`;
+    }
+  }
+
+  return context;
 }
 
 const MAX_MESSAGES = 50;
