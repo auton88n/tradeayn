@@ -335,7 +335,7 @@ export default function ChartCoachChat({ result }: ChartCoachChatProps) {
           )}
         >
           {/* Row 1: Input Area */}
-          <div className="flex items-end gap-2 px-4 pt-3 pb-2">
+          <div className="flex items-end gap-2 px-4 pt-3 pb-2 cursor-text" onClick={() => textareaRef.current?.focus()}>
             <div className="flex-1 relative">
               <Textarea
                 ref={textareaRef}
@@ -348,7 +348,7 @@ export default function ChartCoachChat({ result }: ChartCoachChatProps) {
                 disabled={isLoading}
                 unstyled
                 className={cn(
-                  "resize-none pl-0.5 pr-0 py-3 min-h-[44px] max-h-[120px]",
+                  "resize-none pl-0.5 pr-0 py-3 min-h-[44px] max-h-[120px] w-full",
                   "text-base placeholder:text-muted-foreground/60"
                 )}
                 rows={1}
