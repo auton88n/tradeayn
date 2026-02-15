@@ -1579,62 +1579,63 @@ export function calculatePatternReliability(
   const adjustments: string[] = [];
   let finalRate = baseRate;
 
-  // 1. Timeframe adjustment
+  // 1. Timeframe adjustment (additive)
   const tf = CONTEXT_RULES.timeframe_multipliers[context.timeframe] || CONTEXT_RULES.timeframe_multipliers['unknown'];
   if (tf.reliability !== 1.0) {
-    const change = ((tf.reliability - 1) * 100).toFixed(0);
-    adjustments.push(`Timeframe ${context.timeframe}: ${Number(change) > 0 ? '+' : ''}${change}% (${tf.note})`);
-    finalRate *= tf.reliability;
+    const change = Math.round((tf.reliability - 1) * 100);
+    adjustments.push(`Timeframe ${context.timeframe}: ${change > 0 ? '+' : ''}${change}%`);
+    finalRate += change;
   }
 
-  // 2. Asset type adjustment
+  // 2. Asset type adjustment (additive)
   if (context.assetType === 'crypto') {
     const mult = CONTEXT_RULES.asset_multipliers.crypto.patterns;
     if (mult !== 1.0) {
-      adjustments.push(`Crypto asset: ${((mult - 1) * 100).toFixed(0)}% (patterns less reliable in volatile markets)`);
-      finalRate *= mult;
+      const change = Math.round((mult - 1) * 100);
+      adjustments.push(`Crypto asset: ${change}% (volatile markets)`);
+      finalRate += change;
     }
   }
 
-  // 3. Volume adjustment
+  // 3. Volume adjustment (additive)
   if (context.volumeRatio >= 2.0) {
     adjustments.push('Volume spike (>2x): +15%');
-    finalRate *= 1.15;
+    finalRate += 15;
   } else if (context.volumeRatio >= 1.5) {
     adjustments.push('Increased volume (1.5x): +10%');
-    finalRate *= 1.10;
+    finalRate += 10;
   } else if (context.volumeRatio < 0.7) {
-    adjustments.push('Low volume (<0.7x): -10% (weak confirmation)');
-    finalRate *= 0.90;
+    adjustments.push('Low volume (<0.7x): -10%');
+    finalRate -= 10;
   }
 
-  // 4. Support/resistance adjustment
+  // 4. Support/resistance adjustment (additive)
   if (pattern.type === 'BULLISH' && context.atSupport) {
     adjustments.push('At support level: +20%');
-    finalRate *= 1.20;
+    finalRate += 20;
   } else if (pattern.type === 'BEARISH' && context.atResistance) {
     adjustments.push('At resistance level: +20%');
-    finalRate *= 1.20;
+    finalRate += 20;
   } else if (pattern.type === 'BULLISH' && context.atResistance) {
-    adjustments.push('At resistance level: -15% (overhead supply)');
-    finalRate *= 0.85;
+    adjustments.push('At resistance level: -15%');
+    finalRate -= 15;
   } else if (pattern.type === 'BEARISH' && context.atSupport) {
-    adjustments.push('At support level: -15% (demand below)');
-    finalRate *= 0.85;
+    adjustments.push('At support level: -15%');
+    finalRate -= 15;
   }
 
-  // 5. Trend context
+  // 5. Trend context (additive)
   const isContinuation = pattern.description.toLowerCase().includes('continuation');
   if (isContinuation && context.inTrend) {
-    adjustments.push('In trending market: +15% (continuation patterns work best)');
-    finalRate *= 1.15;
+    adjustments.push('In trending market: +15%');
+    finalRate += 15;
   } else if (isContinuation && !context.inTrend) {
-    adjustments.push('Sideways market: -20% (wait for trend)');
-    finalRate *= 0.80;
+    adjustments.push('Sideways market: -20%');
+    finalRate -= 20;
   }
 
-  // Cap at 90% (nothing is certain)
-  const finalScore = Math.min(Math.round(finalRate), 90);
+  // Floor at 30%, cap at 90%
+  const finalScore = Math.max(30, Math.min(Math.round(finalRate), 90));
 
   let reliability: 'HIGH' | 'MEDIUM' | 'LOW';
   if (finalScore >= 70) reliability = 'HIGH';
