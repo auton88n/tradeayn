@@ -5,13 +5,13 @@ import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.min.css';
 import { cn } from '@/lib/utils';
 import { sanitizeUserInput, isValidUserInput } from '@/lib/security';
-import { Copy, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Copy, Check, AlertCircle, Loader2, Download } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
 import { persistDalleImage } from '@/hooks/useImagePersistence';
-import { isDocumentStorageUrl, openDocumentUrl } from '@/lib/documentUrlUtils';
+import { isDocumentStorageUrl, isSupabaseStorageUrl, openDocumentUrl } from '@/lib/documentUrlUtils';
 
 interface MessageFormatterProps {
   content: string;
@@ -411,17 +411,31 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             a: ({ children, href }) => {
               const isDataURL = href?.startsWith('data:');
               const isDocUrl = isDocumentStorageUrl(href || '');
+              const isSupabaseUrl = isSupabaseStorageUrl(href || '');
               
               const handleClick = (e: React.MouseEvent) => {
                 if (isDataURL && href) {
-                  // All data: URLs must be downloaded, never navigated
                   e.preventDefault();
                   openDocumentUrl(href);
-                } else if (isDocUrl && href) {
+                } else if ((isDocUrl || isSupabaseUrl) && href) {
                   e.preventDefault();
-                  openDocumentUrl(href);
+                  // Extract filename from URL path
+                  const urlFilename = href.split('/').pop()?.split('?')[0] || 'download';
+                  openDocumentUrl(href, urlFilename);
                 }
               };
+              
+              // For supabase storage URLs, show as a download button instead of a link
+              if (isSupabaseUrl && href) {
+                return (
+                  <button
+                    onClick={handleClick}
+                    className="inline-flex items-center gap-1 text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
+                  >
+                    {children}
+                  </button>
+                );
+              }
               
               return (
                 <a 
@@ -443,6 +457,26 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
               const isDalleUrl = cleanSrc.includes('oaidalleapiprodscus.blob.core.windows.net');
               const isSaving = savingImages.has(cleanSrc);
               const hasFailed = failedImages.has(cleanSrc);
+              const isSupabase = isSupabaseStorageUrl(cleanSrc);
+
+              const handleImageError = async (e: React.SyntheticEvent<HTMLImageElement>) => {
+                const imgEl = e.currentTarget;
+                // Avoid infinite loop: only retry once via blob
+                if (imgEl.dataset.blobRetried) return;
+                imgEl.dataset.blobRetried = 'true';
+                
+                try {
+                  const response = await fetch(cleanSrc);
+                  if (!response.ok) throw new Error('fetch failed');
+                  const blob = await response.blob();
+                  const blobUrl = URL.createObjectURL(blob);
+                  imgEl.src = blobUrl;
+                } catch {
+                  if (isDalleUrl && !hasFailed) {
+                    setFailedImages(prev => new Set(prev).add(cleanSrc));
+                  }
+                }
+              };
 
               return (
                 <div className="relative my-2">
@@ -452,11 +486,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                     loading="lazy"
                     className="max-w-full h-auto rounded-lg cursor-zoom-in hover:opacity-90 transition-opacity shadow-sm"
                     onClick={() => setLightboxImage({ src: displaySrc, alt: alt || '' })}
-                    onError={() => {
-                      if (isDalleUrl && !hasFailed) {
-                        setFailedImages(prev => new Set(prev).add(cleanSrc));
-                      }
-                    }}
+                    onError={handleImageError}
                   />
                   {/* Saving indicator */}
                   {isSaving && (
@@ -474,6 +504,20 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                         <p className="text-xs text-muted-foreground mt-1">Please regenerate the image</p>
                       </div>
                     </div>
+                  )}
+                  {/* Download button for supabase images */}
+                  {isSupabase && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const filename = cleanSrc.split('/').pop()?.split('?')[0] || 'image.png';
+                        openDocumentUrl(cleanSrc, filename);
+                      }}
+                      className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-md bg-foreground/70 text-background text-xs hover:bg-foreground/90 transition-colors"
+                    >
+                      <Download size={12} />
+                      <span>Download</span>
+                    </button>
                   )}
                 </div>
               );

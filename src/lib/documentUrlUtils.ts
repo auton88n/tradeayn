@@ -58,8 +58,21 @@ export const isDocumentUrl = (url: string): boolean => {
     return true;
   }
   
+  // Supabase storage URLs
+  if (url.includes('supabase.co/storage/v1/object')) {
+    return true;
+  }
+  
   // HTTP URLs with document extensions
   return url.includes('.pdf') || url.includes('.xlsx') || url.includes('.xls');
+};
+
+/**
+ * Check if a URL points to Supabase storage
+ */
+export const isSupabaseStorageUrl = (url: string): boolean => {
+  if (!url) return false;
+  return url.includes('supabase.co/storage/v1/object');
 };
 
 /**
