@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { lazy, Suspense } from "react";
 import { useRef, useState, useEffect, useCallback, memo, useMemo } from "react";
 
 import { cn } from "@/lib/utils";
@@ -37,6 +38,8 @@ import { toast } from "sonner";
 import { extractBestDocumentLink, openDocumentUrl } from "@/lib/documentUrlUtils";
 import type { Message } from "@/types/dashboard.types";
 
+const ChartAnalyzerResultsLazy = lazy(() => import("@/components/dashboard/ChartAnalyzerResults"));
+
 interface ResponseBubbleAttachment {
   url: string;
   name: string;
@@ -48,6 +51,7 @@ interface ResponseBubble {
   content: string;
   isVisible: boolean;
   attachment?: ResponseBubbleAttachment;
+  chartAnalysis?: import('@/types/chartAnalyzer.types').ChartAnalysisResult;
 }
 
 interface ResponseCardProps {
@@ -489,7 +493,7 @@ const ResponseCardComponent = ({
                 ref={contentRef}
                 className={cn(
                   "flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
-                  variant === "inline" && "max-h-[35vh] sm:max-h-[40vh]",
+                  variant === "inline" && "max-h-[50vh] sm:max-h-[55vh]",
                   "[&_img]:w-full [&_img]:max-h-[200px] [&_img]:object-cover [&_img]:rounded-lg",
                   "[&>div]:px-4 [&>div]:py-3",
                   "[-webkit-overflow-scrolling:touch]",
@@ -533,6 +537,15 @@ const ResponseCardComponent = ({
                 )}
 
                 {/* Document downloads handled inline via markdown links */}
+
+                {/* Inline Chart Analysis Results */}
+                {visibleResponses[0]?.chartAnalysis && (
+                  <div className="px-3 pb-2">
+                    <Suspense fallback={<div className="animate-pulse h-32 bg-muted rounded-lg" />}>
+                      <ChartAnalyzerResultsLazy result={visibleResponses[0].chartAnalysis} />
+                    </Suspense>
+                  </div>
+                )}
               </div>
 
               {isScrollable && !isAtBottom && (
