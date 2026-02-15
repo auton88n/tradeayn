@@ -55,3 +55,14 @@ export interface ChartAnalysisResult {
 }
 
 export type ChartAnalyzerStep = 'idle' | 'uploading' | 'analyzing' | 'fetching-news' | 'predicting' | 'done' | 'error';
+
+export interface ChartHistoryItem extends ChartAnalysisResult {
+  id: string;
+  created_at: string;
+}
+
+export interface ChartHistoryFilter {
+  ticker?: string;
+  assetType?: AssetType | '';
+  signal?: PredictionSignal | '';
+}
