@@ -658,6 +658,7 @@ export const CenterStageLayout = ({
                 className="w-full flex justify-center mt-2"
                 style={{
                   maxHeight: `calc(100vh - ${footerHeight + 200}px)`,
+                  height: transcriptOpen ? `calc(100vh - ${footerHeight + 200}px)` : undefined,
                   overflow: "hidden",
                 }}
                 initial={{ opacity: 0, y: 10 }}
