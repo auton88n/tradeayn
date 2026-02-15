@@ -4,11 +4,14 @@ import { BarChart3, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import ChartAnalyzer from '@/components/dashboard/ChartAnalyzer';
+import ChartCoachChat from '@/components/dashboard/ChartCoachChat';
+import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
 
 const ChartAnalyzerPage = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [analysisResult, setAnalysisResult] = useState<ChartAnalysisResult | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -57,8 +60,10 @@ const ChartAnalyzerPage = () => {
           <ArrowLeft className="h-4 w-4" />
           Back to Dashboard
         </Button>
-        <ChartAnalyzer />
+        <ChartAnalyzer onResult={setAnalysisResult} />
       </div>
+
+      <ChartCoachChat result={analysisResult} />
     </div>
   );
 };

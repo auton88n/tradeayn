@@ -11,8 +11,8 @@ import ChartHistoryList from './ChartHistoryList';
 import ChartHistoryDetail from './ChartHistoryDetail';
 import ChartHistoryStats from './ChartHistoryStats';
 import ChartCompareView from './ChartCompareView';
-import ChartCoachChat from './ChartCoachChat';
 import type { ChartHistoryItem } from '@/types/chartAnalyzer.types';
+import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
 
 const STEPS = [
   { key: 'uploading', label: 'Uploading chart...', icon: Upload },
@@ -30,7 +30,11 @@ const FEATURES = [
 const ASSETS = ['Stock', 'Crypto', 'Forex', 'Commodity'];
 const FORMATS = ['PNG', 'JPG', 'WEBP'];
 
-export default function ChartAnalyzer() {
+interface ChartAnalyzerProps {
+  onResult?: (result: ChartAnalysisResult) => void;
+}
+
+export default function ChartAnalyzer({ onResult }: ChartAnalyzerProps) {
   const { step, result, error, previewUrl, fileInputRef, analyzeChart, reset } = useChartAnalyzer();
   const history = useChartHistory();
   const [isDragOver, setIsDragOver] = useState(false);
@@ -197,7 +201,6 @@ export default function ChartAnalyzer() {
             {result && step === 'done' && (
               <>
                 <ChartAnalyzerResults result={result} />
-                <ChartCoachChat result={result} />
                 <div className="text-center">
                   <Button variant="outline" onClick={handleAnalyzeComplete} className="gap-2">
                     <X className="h-4 w-4" /> Analyze Another Chart

@@ -79,7 +79,7 @@ User Emotional State: ${emotionalState}`;
 
 const MAX_MESSAGES = 50;
 
-export function useChartCoach(result: ChartAnalysisResult) {
+export function useChartCoach(result?: ChartAnalysisResult) {
   const [messages, setMessages] = useState<CoachMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -99,7 +99,7 @@ export function useChartCoach(result: ChartAnalysisResult) {
     }
 
     const emotionalState = detectEmotionalState(trimmed);
-    const fileContext = buildFileContext(result, emotionalState);
+    const fileContext = result ? buildFileContext(result, emotionalState) : `No chart analyzed yet.\nUser Emotional State: ${emotionalState}`;
 
     const newUserMsg: CoachMessage = { role: 'user', content: trimmed };
     setMessages(prev => {
