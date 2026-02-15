@@ -608,6 +608,7 @@ export const CenterStageLayout = ({
         <motion.div
           className={cn(
             "flex flex-col items-center w-full px-4",
+            transcriptOpen && "flex-1 min-h-0",
             sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-42rem)]",
             sidebarOpen && !transcriptOpen && "lg:max-w-[calc(100vw-22rem)]",
             !sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-22rem)]",
@@ -655,7 +656,7 @@ export const CenterStageLayout = ({
           <AnimatePresence>
             {(responseBubbles.length > 0 || transcriptOpen) && (
               <motion.div
-                className="w-full flex justify-center mt-2"
+                className={cn("w-full flex justify-center mt-2", transcriptOpen && "flex-1 min-h-0")}
                 style={{
                   maxHeight: `calc(100vh - ${footerHeight + 200}px)`,
                   height: transcriptOpen ? `calc(100vh - ${footerHeight + 200}px)` : undefined,
