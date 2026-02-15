@@ -1,77 +1,76 @@
 
 
-## Fix Chart Pattern Detection - Enhanced Vision & Prediction
+## Fix Chart Analysis Auto-Detection and Response Card Display
 
-### Overview
+### Problem Summary
 
-Rewrite the Gemini Vision prompt (Step 1) and prediction prompt (Step 3) in the `analyze-trading-chart` edge function to use a systematic pattern checklist approach with the trading knowledge base. Add a `WAIT` signal for low-confidence setups.
+1. **Intent detection too strict**: Requires keywords like "chart", "analyze", "trading" even when an image is attached. Users just attaching a chart and saying "what do you see?" or even just sending the image get regular chat instead of chart analysis.
+2. **Response card truncates**: The `max-h-[35vh]` cuts off long chart analysis responses.
+3. **Rich chart results not shown in live response**: The `ChartAnalyzerResults` component only renders in history transcript, not in the live ResponseCard.
 
 ### Changes
 
-**1. `supabase/functions/analyze-trading-chart/index.ts` -- Rewrite `analyzeChartImage()` (Step 1)**
+**1. `src/hooks/useMessages.ts` -- Auto-detect chart_analysis for image attachments**
 
-Replace the current generic prompt (lines 26-49) with a structured checklist prompt that:
-- Places `getCompactKnowledge()` at the TOP as primary reference
-- Adds explicit pattern priority order: Chart patterns first, then candlestick patterns, then volume, then S/R and trend
-- Adds visual identification rules for each category (bull flag = sharp rally + tight consolidation, engulfing = large candle covers prior, etc.)
-- Adds volume spike detection rules (2x+ average = spike, note WHERE spikes occur)
-- Adds confidence calibration: HIGH (70-90, textbook + volume confirms), MEDIUM (50-70, present but imperfect), LOW (30-50, questionable)
-- Changes JSON response: `patterns` becomes array of objects with `name`, `type`, `confidence`, `score`, `reasoning`, `location`
-- Adds `trendReasoning`, `currentPrice`, and structured `volume` object
-- Increases `max_tokens` from 2000 to 3000
+Change the frontend intent detection (line ~397) so that when an image is attached, it defaults to `chart_analysis` unless another strong intent (image generation, document) was already matched. The logic becomes:
 
-**2. `supabase/functions/analyze-trading-chart/index.ts` -- Rewrite `generatePrediction()` (Step 3)**
-
-Replace the current prediction prompt (lines 129-160) with one that:
-- Injects `getFullKnowledgeBase()` for pattern significance context
-- Uses weighted scoring: 60% technical (from HIGH confidence pattern scores), 40% news sentiment
-- Enforces: confidence < 50% forces `WAIT` signal
-- Generates `actionablePlan` with conditional breakout/breakdown scenarios and specific price levels
-- Adds `riskManagement` field
-- Increases `max_tokens` to 2500
-- Adds `WAIT` as valid signal option alongside BULLISH/BEARISH/NEUTRAL
-
-**3. `supabase/functions/analyze-trading-chart/index.ts` -- Update Result Builder (Step 5, lines 277-309)**
-
-Map the new richer Step 1 response to the frontend format:
-- Extract pattern names from pattern objects array for `technical.patterns` (keeps frontend compatible)
-- Map `technicalSummary` + `trendReasoning` to `keyObservations`
-- Map structured `volume` object to `indicators.volume` as a descriptive string
-- Pass through `actionablePlan` in prediction reasoning
-
-**4. `src/types/chartAnalyzer.types.ts` -- Add WAIT signal**
-
-Change line 6:
-```typescript
-export type PredictionSignal = 'BULLISH' | 'BEARISH' | 'NEUTRAL' | 'WAIT';
+```text
+If image attached AND no other intent matched --> chart_analysis
 ```
 
-**5. `src/components/dashboard/ChartAnalyzerResults.tsx` -- Add WAIT signal styling**
+This means any image attachment without explicit image-generation or document keywords will trigger chart analysis. The backend already validates whether the image is actually a chart.
 
-Add to `signalConfig` (line 14):
-```typescript
-WAIT: { icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'WAIT' },
+Specifically, replace the current chart detection line:
+```
+if (attachment && attachment.type.startsWith('image/') && /chart|trading|.../.test(lower)) return 'chart_analysis';
 ```
 
-**6. `src/components/dashboard/ChartHistoryStats.tsx` -- Handle WAIT in stats**
+With a broader fallback at the END of the function (before `return 'chat'`):
+```
+// If image is attached and no other intent matched, default to chart analysis
+if (attachment && attachment.type.startsWith('image/')) return 'chart_analysis';
+```
 
-Add WAIT to the signal distribution counting logic so it appears in the performance insights bar.
+**2. `supabase/functions/ayn-unified/intentDetector.ts` -- Backend fallback for image + no intent**
 
-### What stays the same
+Add a `hasFile` parameter to `detectIntent()` so the backend can also default to `chart_analysis` when an image file is present and no other intent matched. This ensures even if the frontend sends `chat` intent, the backend re-evaluates.
 
-- Pipeline flow (Step 1 -> 2 -> 3 -> 4 -> 5) unchanged
-- `tradingKnowledge.ts` unchanged (we just use its exports more effectively)
-- News fetching (Step 2) unchanged
-- Database storage (Step 4) unchanged
-- `ChartAnalysisResult` response shape stays compatible -- patterns remain `string[]` in the frontend type (extracted from the richer objects on the backend)
-- AYN chat integration unchanged
+**3. `src/components/eye/ResponseCard.tsx` -- Fix content height**
 
-### Expected outcome
+Change line 492:
+```
+"max-h-[35vh] sm:max-h-[40vh]"
+```
+to:
+```
+"max-h-[50vh] sm:max-h-[55vh]"
+```
 
-A chart with a clear bull flag will produce:
-- Patterns detected with reasoning: "bull_flag (HIGH, 75) - Sharp rally formed flagpole, tight downward consolidation with decreasing volume"
-- Volume analysis confirming patterns
-- Signal: BULLISH or WAIT (conditional on breakout) instead of generic NEUTRAL
-- Confidence: 70%+ for clear patterns instead of 40%
-- Actionable plan with specific entry/SL/TP levels
+**4. `src/components/eye/ResponseCard.tsx` -- Render ChartAnalyzerResults inline**
 
+- Add `chartAnalysis` field to the `ResponseBubble` interface
+- After the `StreamingMarkdown`/`MessageFormatter` content block (around line 520), add conditional rendering of the `ChartAnalyzerResults` component when `chartAnalysis` data is present in the first visible response
+- Lazy-load the component (same pattern as TranscriptMessage)
+
+**5. `src/hooks/useMessages.ts` -- Pass chartAnalysis to response bubbles**
+
+The code already extracts `chartAnalysisData` at line 695 and sets it on the message. We need to ensure the parent component that builds `ResponseBubble[]` passes it through. This requires checking `CenterStageLayout` or wherever `responses` prop is built.
+
+**6. Wire chartAnalysis from Message to ResponseBubble in the parent**
+
+Find where `ResponseBubble[]` array is constructed from messages and add `chartAnalysis: msg.chartAnalysis` to each bubble object.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/hooks/useMessages.ts` | Move chart detection to fallback for any image attachment |
+| `supabase/functions/ayn-unified/intentDetector.ts` | Add hasFile param, default image+no-intent to chart_analysis |
+| `src/components/eye/ResponseCard.tsx` | Increase max-h, add ChartAnalyzerResults rendering, update ResponseBubble interface |
+| Parent component building ResponseBubble[] | Pass chartAnalysis data through |
+
+### Expected Behavior After Fix
+
+1. User attaches any chart image (with or without keywords) --> triggers chart analysis automatically
+2. Response card shows full content without cutting off
+3. Rich chart results (signal badge, confidence, trade setup) appear inline in the live response card
