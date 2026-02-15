@@ -219,6 +219,11 @@ async function fetchTickerNews(ticker: string, assetType: string) {
 
   console.log(`[chart-analyzer] Filtered ${result.data.length - filtered.length} non-news results`);
 
+  const limitedNews = filtered.length < 3;
+  if (limitedNews) {
+    console.log(`[chart-analyzer] Warning: Only ${filtered.length} news items after filtering - sentiment may not be reliable`);
+  }
+
   return {
     headlines: filtered.map((d: any) => d.title).filter(Boolean),
     raw: filtered.map((d: any) => ({
@@ -226,6 +231,7 @@ async function fetchTickerNews(ticker: string, assetType: string) {
       url: d.url,
       description: d.description || '',
     })),
+    limitedNews,
   };
 }
 
@@ -607,10 +613,6 @@ Deno.serve(async (req) => {
       reasoning += `\n\n⚠️ Risk: ${prediction.riskManagement}`;
     }
 
-    // Build enhanced disclaimer with success rate
-    const topPattern = prediction.patternBreakdown?.[0];
-    const disclaimerRate = topPattern ? ` Top pattern success rate: ${topPattern.historicalSuccess || topPattern.finalScore + '%'}.` : '';
-
     const result = {
       ticker: technical.ticker,
       assetType: technical.assetType,
@@ -651,7 +653,7 @@ Deno.serve(async (req) => {
       },
       imageUrl,
       analysisId: analysisId || null,
-      disclaimer: `This analysis is for educational purposes only. Not financial advice.${disclaimerRate} Always do your own research and use stop losses.`,
+      disclaimer: 'Educational analysis only, not financial advice. Even high-confidence patterns fail 20-40% of the time. Always use stop losses and risk only 1-2% per trade.',
     };
 
     console.log('[chart-analyzer] ✅ Analysis complete for', technical.ticker, '| Signal:', prediction.signal, '| Confidence:', result.prediction.confidence);
