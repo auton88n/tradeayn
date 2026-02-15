@@ -893,18 +893,17 @@ serve(async (req) => {
           console.error('Failed to log document usage:', logError);
         }
         
-        // Return friendly response WITHOUT embedding data URL in markdown
-        // The download URL stays in JSON field, rendered by UI as separate button
+        // Return friendly response with inline download link
         const docLang = documentData.language || language;
         const emoji = docType === 'excel' ? '📊' : '📄';
         const newCreditsRemaining = creditsRemaining - creditCost;
         const docTypeName = docType === 'excel' ? 'Excel' : 'PDF';
+        const dlFilename = filename || `${documentData.title}.${docType === 'excel' ? 'xls' : 'pdf'}`;
         
-        // Clean message without embedded data URL (which breaks markdown parsing)
         const successMessages: Record<string, string> = {
-          ar: `تم إنشاء المستند بنجاح! ${emoji}\n\n**${documentData.title}**\n\nاضغط زر التحميل أدناه لتنزيل الملف.\n\n_(${creditCost} رصيد مخصوم • ${newCreditsRemaining} متبقي)_`,
-          fr: `Document créé avec succès! ${emoji}\n\n**${documentData.title}**\n\nCliquez sur le bouton de téléchargement ci-dessous.\n\n_(${creditCost} crédits déduits • ${newCreditsRemaining} restants)_`,
-          en: `Document created successfully! ${emoji}\n\n**${documentData.title}**\n\nClick the download button below to get your ${docTypeName}.\n\n_(${creditCost} credits used • ${newCreditsRemaining} remaining)_`
+          ar: `تم إنشاء المستند بنجاح! ${emoji}\n\n**${documentData.title}**\n\n📥 [اضغط هنا لتحميل الملف](${downloadUrl})\n\n_(${creditCost} رصيد مخصوم • ${newCreditsRemaining} متبقي)_`,
+          fr: `Document créé avec succès! ${emoji}\n\n**${documentData.title}**\n\n📥 [Cliquez ici pour télécharger](${downloadUrl})\n\n_(${creditCost} crédits déduits • ${newCreditsRemaining} restants)_`,
+          en: `Document created successfully! ${emoji}\n\n**${documentData.title}**\n\n📥 [Click here to download your ${docTypeName}](${downloadUrl})\n\n_(${creditCost} credits used • ${newCreditsRemaining} remaining)_`
         };
         
         return new Response(JSON.stringify({
