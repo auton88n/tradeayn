@@ -1,45 +1,49 @@
 
 
-## Unified Text Formatting + Chat History Persistence
+## Replace Controls with History + New Chat Buttons
 
-Two changes: make the trading coach and engineering chat format text the same way as the main AYN chat, and keep your messages when you close/reopen these chats.
+### What Changes
 
----
+Remove the current right-side controls (trash icon, minimize, expand arrow, AYN label) from the bottom bar of the Chart Coach chat. Replace them with two buttons:
 
-### Part 1: Consistent Text Formatting
+1. **History button** -- opens a dropdown/popover showing past conversation sessions the user can click to reload
+2. **New Chat button** -- clears current conversation and starts fresh (same as current trash, but clearly labeled)
 
-Right now, the main AYN chat uses the `MessageFormatter` component which supports rich markdown (tables, code blocks with copy buttons, RTL Arabic text, styled lists, image rendering, etc.). The trading coach and engineering chat only use basic `ReactMarkdown` which gives plain, unstyled output.
+This applies to **both** the Chart Coach and Engineering Chat for consistency.
 
-**Trading Coach (`ChartCoachChat.tsx`)**:
-- Replace the basic `ReactMarkdown` in the `MessageBubble` component with `MessageFormatter`
-- Remove the direct `ReactMarkdown` import since `MessageFormatter` handles it internally
+### Storage Model Change
 
-**Engineering Chat (`EngineeringAIChat.tsx`)**:
-- Replace the basic `ReactMarkdown` + `remarkGfm` in the assistant `MessageBubble` with `MessageFormatter`
-- Also replace the streaming content `ReactMarkdown` with `MessageFormatter` (streaming content is accumulated text, so it works fine)
-- Keep the structured data cards (formula, calculation, code reference) as they are -- those are unique to engineering
+Currently there's a single localStorage key storing one flat array of messages. To support history, we need to store **multiple sessions**:
 
----
+```text
+Storage key: ayn-chart-coach-sessions
+Value: [
+  { id: "uuid", title: "First user message...", messages: [...], updatedAt: timestamp },
+  { id: "uuid", title: "Should I take...", messages: [...], updatedAt: timestamp },
+]
 
-### Part 2: Chat History Persistence
+Storage key: ayn-engineering-chat-sessions-{calculatorType}
+Value: same structure
+```
 
-Currently both chats store messages in `useState` which is lost on close/reopen. The fix is to persist messages to `localStorage` so they survive across sessions.
+- Each session gets a title from the first user message (truncated to 40 chars)
+- Sessions are sorted by most recent
+- Max 20 stored sessions (oldest auto-pruned)
+- "New Chat" saves the current session (if it has messages) then starts a new empty one
+- "History" shows a small popover with session titles to switch between
 
-**Trading Coach (`useChartCoach.ts`)**:
-- On mount, load messages from `localStorage` key `ayn-chart-coach-history`
-- On every message change, save to `localStorage`
-- `clearChat` also clears `localStorage`
-- Cap stored history at 50 messages (already the `MAX_MESSAGES` limit)
+### UI Changes
 
-**Engineering Chat (`EngineeringAIChat.tsx`)**:
-- On mount, load messages from `localStorage` key `ayn-engineering-chat-{calculatorType}`
-- On every message change, save to `localStorage`
-- `clearConversation` also clears `localStorage`
-- Messages are keyed by calculator type so beam, column, foundation etc. each keep their own history
+**Bottom bar (Row 2) -- right side controls replaced:**
 
-Both chats will show previous messages immediately when opened, so users can continue where they left off.
+Before: `[trash] [minimize] [expand] [Brain AYN]`
 
----
+After: `[History icon + "History"] [+ "New Chat"] [minimize] [Brain AYN]`
+
+- **History**: Clock icon, opens a popover above the bar listing past sessions (title + relative time). Clicking one loads it. Current session highlighted.
+- **New Chat**: Plus icon, saves current session to history and starts blank.
+- Keep minimize button (users need it)
+- Keep the AYN branding
 
 ### Technical Details
 
@@ -47,62 +51,29 @@ Both chats will show previous messages immediately when opened, so users can con
 
 | File | Changes |
 |------|---------|
-| `src/components/dashboard/ChartCoachChat.tsx` | Import `MessageFormatter`, replace `ReactMarkdown` in `MessageBubble` |
-| `src/hooks/useChartCoach.ts` | Add `localStorage` persistence for messages |
-| `src/components/engineering/EngineeringAIChat.tsx` | Import `MessageFormatter`, replace `ReactMarkdown` in message rendering + streaming, add `localStorage` persistence |
+| `src/hooks/useChartCoach.ts` | Change storage from flat array to multi-session model. Add `sessions`, `activeSessionId`, `switchSession()`, `newChat()`. Export session list for the UI. |
+| `src/components/dashboard/ChartCoachChat.tsx` | Replace right-side controls with History popover + New Chat button. Import `Popover` from radix. Remove standalone `Trash2` button. |
+| `src/components/engineering/EngineeringAIChat.tsx` | Same pattern: multi-session localStorage keyed by calculator type, History popover + New Chat in the controls area. |
 
-**localStorage schema:**
+**History popover design:**
+- Small popover (max 300px tall, scrollable) anchored to the History button
+- Each item shows: truncated title (first message) + relative time ("2h ago", "Yesterday")
+- Active session has amber highlight
+- Empty state: "No previous chats"
+- Clicking a session switches to it, popover closes
 
-```text
-ayn-chart-coach-history:
-  JSON array of { role, content } (no timestamp -- reconstructed on load)
-
-ayn-engineering-chat-{calculatorType}:
-  JSON array of { role, content, structuredData? } (keyed per calculator)
-```
-
-**MessageFormatter usage (replacing ReactMarkdown):**
+**Hook API changes (useChartCoach):**
 
 ```text
-// Before (ChartCoachChat MessageBubble):
-<ReactMarkdown>{msg.content}</ReactMarkdown>
-
-// After:
-<MessageFormatter content={msg.content} />
+return {
+  messages,          // current session messages
+  isLoading,
+  sendMessage,
+  clearChat,         // renamed internally to newChat behavior
+  sessions,          // array of { id, title, updatedAt }
+  activeSessionId,
+  switchSession,     // (id) => void
+  newChat,           // () => void -- saves current, starts fresh
+}
 ```
-
-```text
-// Before (EngineeringAIChat assistant bubble):
-<ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
-
-// After:
-<MessageFormatter content={message.content} />
-```
-
-**localStorage persistence (useChartCoach.ts):**
-
-```text
-const STORAGE_KEY = 'ayn-chart-coach-history';
-
-// Initialize from storage
-const [messages, setMessages] = useState<CoachMessage[]>(() => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch { return []; }
-});
-
-// Persist on change
-useEffect(() => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-}, [messages]);
-
-// Clear also clears storage
-const clearChat = useCallback(() => {
-  setMessages([]);
-  localStorage.removeItem(STORAGE_KEY);
-}, []);
-```
-
-Same pattern for engineering chat, but keyed per calculator type.
 
