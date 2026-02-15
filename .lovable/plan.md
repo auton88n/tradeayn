@@ -1,50 +1,50 @@
 
 
-## Remove Chart Analysis Intent from AYN Chat
+## Redesign Sidebar Tool Buttons
 
 ### Overview
 
-Strip chart analysis handling from AYN so it only works via the standalone Charts tool. AYN will still know about past chart history (system prompt context stays), but will no longer process chart images or detect chart-related keywords as a special intent.
+Restyle the three tool buttons (Engineering, Compliance, Charts) from cramped gradient pills into a clean card-style grid layout. All three buttons stay -- no removals.
 
-### Changes
+### Design
 
-#### 1. Remove chart_analysis intent detection
-**File: `supabase/functions/ayn-unified/intentDetector.ts`** (lines 82-92, 107-108)
+A 3-item grid layout (1 column on narrow sidebar, adapts naturally). Each button becomes a mini card with:
 
-- Delete the entire `chartPatterns` block and its `if` check (lines 82-92)
-- Change the image fallback on line 108 from `return 'chart_analysis'` to `return 'chat'`
+- Subtle themed background with border (no heavy gradient fills)
+- Icon in a soft gradient circle
+- Title + short subtitle
+- Hover lift/glow effect
 
-#### 2. Remove chart_analysis handler from edge function
-**File: `supabase/functions/ayn-unified/index.ts`** (lines 987-1083)
+```text
++------------------+------------------+------------------+
+|  [icon]          |  [icon]          |  [icon]          |
+|  Engineering     |  Compliance      |  Charts          |
+|  Design Tools    |  Code Check      |  Analysis        |
++------------------+------------------+------------------+
+```
 
-- Delete the entire `if (intent === 'chart_analysis') { ... }` block (lines 987-1083)
+### Technical Details
 
-#### 3. Remove inline chart results from ResponseCard
-**File: `src/components/eye/ResponseCard.tsx`**
+**File: `src/components/dashboard/Sidebar.tsx`** (lines 390-468)
 
-- Remove the `ChartAnalyzerResultsLazy` import (line 41)
-- Remove the `chartAnalysis` prop from the `ResponseBubbleProps` interface (line 54)
-- Remove the inline chart results rendering block (lines 554-561)
+Replace the current `flex gap-2` row with a `grid grid-cols-3 gap-2` layout. Each button changes from a gradient pill to:
 
-#### 4. Remove inline chart results from TranscriptMessage
-**File: `src/components/transcript/TranscriptMessage.tsx`**
+```text
+className="flex-1 flex flex-col items-center gap-1.5 h-auto py-3 px-2 rounded-xl 
+  bg-card/60 border border-border/50 hover:border-[color]/40 hover:bg-card/80
+  hover:shadow-lg text-foreground transition-all duration-200 backdrop-blur-sm"
+```
 
-- Remove the `ChartAnalyzerResults` lazy import (line 14) and the `ChartAnalysisResult` type import (line 12)
-- Remove `chartAnalysis` from the props interface
-- Remove the chart results rendering block (lines 136-142)
+Each icon gets a soft gradient container:
+- Engineering: `from-cyan-500/15 to-blue-500/15` with cyan icon
+- Compliance: `from-teal-500/15 to-emerald-500/15` with teal icon
+- Charts: `from-amber-500/15 to-orange-500/15` with amber icon
 
-### What Stays
-- AYN's system prompt still includes chart history context (can discuss past analyses)
-- Standalone Chart Analyzer page and tool unchanged
-- `analyze-trading-chart` edge function unchanged
-- All chart components and hooks unchanged
+Title in `text-xs font-semibold`, subtitle in `text-[9px] text-muted-foreground`.
 
-### Files Summary
+### Files
 
 | File | Change |
 |------|--------|
-| `supabase/functions/ayn-unified/intentDetector.ts` | Remove chart patterns + image fallback |
-| `supabase/functions/ayn-unified/index.ts` | Remove chart_analysis handler block |
-| `src/components/eye/ResponseCard.tsx` | Remove chart analysis imports + rendering |
-| `src/components/transcript/TranscriptMessage.tsx` | Remove chart analysis imports + rendering |
+| `src/components/dashboard/Sidebar.tsx` | Restyle 3 buttons as card-style grid items |
 
