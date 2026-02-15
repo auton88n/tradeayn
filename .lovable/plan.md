@@ -1,115 +1,77 @@
 
 
-## Embed Chart Analyzer into AYN Chat
+## Fix Chart Pattern Detection - Enhanced Vision & Prediction
 
-### What's changing
+### Overview
 
-Instead of the Chart Analyzer being a separate dashboard tool, users will be able to attach a chart image in the AYN chat and AYN will automatically detect it as a chart analysis request, run the full pipeline (vision analysis, news fetch, prediction), and render the results inline in the chat -- just like how image generation and document creation already work inside AYN.
+Rewrite the Gemini Vision prompt (Step 1) and prediction prompt (Step 3) in the `analyze-trading-chart` edge function to use a systematic pattern checklist approach with the trading knowledge base. Add a `WAIT` signal for low-confidence setups.
 
-### How it works (user perspective)
+### Changes
 
-1. User attaches a chart screenshot via the existing paperclip button in AYN
-2. User types something like "analyze this chart" or "what do you see?" (or just sends the image)
-3. AYN detects the `chart_analysis` intent
-4. AYN shows a typing/thinking indicator while the pipeline runs
-5. Results appear inline in the chat as a rich message with signal badge, confidence, trade setup, and key observations
-6. History tab in the dashboard still works for browsing past analyses
+**1. `supabase/functions/analyze-trading-chart/index.ts` -- Rewrite `analyzeChartImage()` (Step 1)**
 
-### Technical Changes
+Replace the current generic prompt (lines 26-49) with a structured checklist prompt that:
+- Places `getCompactKnowledge()` at the TOP as primary reference
+- Adds explicit pattern priority order: Chart patterns first, then candlestick patterns, then volume, then S/R and trend
+- Adds visual identification rules for each category (bull flag = sharp rally + tight consolidation, engulfing = large candle covers prior, etc.)
+- Adds volume spike detection rules (2x+ average = spike, note WHERE spikes occur)
+- Adds confidence calibration: HIGH (70-90, textbook + volume confirms), MEDIUM (50-70, present but imperfect), LOW (30-50, questionable)
+- Changes JSON response: `patterns` becomes array of objects with `name`, `type`, `confidence`, `score`, `reasoning`, `location`
+- Adds `trendReasoning`, `currentPrice`, and structured `volume` object
+- Increases `max_tokens` from 2000 to 3000
 
-**1. `supabase/functions/ayn-unified/intentDetector.ts`** -- Add chart analysis intent
+**2. `supabase/functions/analyze-trading-chart/index.ts` -- Rewrite `generatePrediction()` (Step 3)**
 
-Add detection patterns before the "files" intent check:
-- English: `analyze this chart`, `chart analysis`, `trading chart`, `what does this chart show`, `technical analysis`
-- Arabic: `حلل الشارت`, `تحليل فني`, `تحليل الشارت`
-- Combined: when a file attachment is an image AND message mentions chart/trading/analysis
+Replace the current prediction prompt (lines 129-160) with one that:
+- Injects `getFullKnowledgeBase()` for pattern significance context
+- Uses weighted scoring: 60% technical (from HIGH confidence pattern scores), 40% news sentiment
+- Enforces: confidence < 50% forces `WAIT` signal
+- Generates `actionablePlan` with conditional breakout/breakdown scenarios and specific price levels
+- Adds `riskManagement` field
+- Increases `max_tokens` to 2500
+- Adds `WAIT` as valid signal option alongside BULLISH/BEARISH/NEUTRAL
 
-**2. `supabase/functions/ayn-unified/index.ts`** -- Handle `chart_analysis` intent
+**3. `supabase/functions/analyze-trading-chart/index.ts` -- Update Result Builder (Step 5, lines 277-309)**
 
-Add a new intent handler block (similar to the existing `image` and `document` blocks) that:
-- Extracts the attached image URL from the context (`context.fileContext.url`)
-- Calls the `analyze-trading-chart` edge function internally (server-to-server fetch, like document generation does with `generate-document`)
-- Formats the result into a rich markdown response with signal, confidence, trade setup, patterns, and disclaimer
-- Returns it as a non-streaming JSON response with a special `chartAnalysis` field so the frontend can render it richly
+Map the new richer Step 1 response to the frontend format:
+- Extract pattern names from pattern objects array for `technical.patterns` (keeps frontend compatible)
+- Map `technicalSummary` + `trendReasoning` to `keyObservations`
+- Map structured `volume` object to `indicators.volume` as a descriptive string
+- Pass through `actionablePlan` in prediction reasoning
 
-**3. `src/hooks/useMessages.ts`** -- Detect chart intent on frontend
+**4. `src/types/chartAnalyzer.types.ts` -- Add WAIT signal**
 
-Add `chart_analysis` to the `detectIntent()` function:
-- When an image file is attached AND the message matches chart-related keywords, set intent to `chart_analysis`
-- Add `chart_analysis` to `requiresNonStreaming` list (it returns JSON, not streamed text)
-
-**4. `src/components/transcript/TranscriptMessage.tsx`** -- Render chart results inline
-
-When the assistant message contains `chartAnalysis` data:
-- Render the existing `ChartAnalyzerResults` component inline in the chat bubble
-- Show the chart image thumbnail, signal badge, confidence gauge, and trade setup
-- This reuses the component already built in Phase 3
-
-**5. `src/hooks/useMessages.ts`** -- Handle chart response format
-
-After receiving the response, detect the `chartAnalysis` field and:
-- Store the rich data alongside the message
-- Trigger the results rendering in the transcript
-
-### Architecture Flow
-
-```text
-User attaches chart image + types "analyze this"
-  --> useMessages detects intent = "chart_analysis"
-  --> Sends to ayn-unified with intent + fileContext (image URL)
-  --> ayn-unified routes to chart_analysis handler
-  --> Handler calls analyze-trading-chart internally
-  --> Returns formatted result as JSON
-  --> Frontend renders ChartAnalyzerResults inline in chat
+Change line 6:
+```typescript
+export type PredictionSignal = 'BULLISH' | 'BEARISH' | 'NEUTRAL' | 'WAIT';
 ```
+
+**5. `src/components/dashboard/ChartAnalyzerResults.tsx` -- Add WAIT signal styling**
+
+Add to `signalConfig` (line 14):
+```typescript
+WAIT: { icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'WAIT' },
+```
+
+**6. `src/components/dashboard/ChartHistoryStats.tsx` -- Handle WAIT in stats**
+
+Add WAIT to the signal distribution counting logic so it appears in the performance insights bar.
 
 ### What stays the same
 
-- The standalone Chart Analyzer dashboard tool remains available (power users may prefer it)
-- The History tab continues to work (analyses are still saved to `chart_analyses` table by the edge function)
-- The `analyze-trading-chart` edge function is unchanged -- ayn-unified calls it as a service
+- Pipeline flow (Step 1 -> 2 -> 3 -> 4 -> 5) unchanged
+- `tradingKnowledge.ts` unchanged (we just use its exports more effectively)
+- News fetching (Step 2) unchanged
+- Database storage (Step 4) unchanged
+- `ChartAnalysisResult` response shape stays compatible -- patterns remain `string[]` in the frontend type (extracted from the richer objects on the backend)
+- AYN chat integration unchanged
 
-### Technical Details
+### Expected outcome
 
-**Server-to-server call pattern** (already used for document generation):
-```typescript
-const chartResponse = await fetch(`${supabaseUrl}/functions/v1/analyze-trading-chart`, {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({ imageBase64: null, imageUrl: fileContext.url, sessionId })
-});
-```
+A chart with a clear bull flag will produce:
+- Patterns detected with reasoning: "bull_flag (HIGH, 75) - Sharp rally formed flagpole, tight downward consolidation with decreasing volume"
+- Volume analysis confirming patterns
+- Signal: BULLISH or WAIT (conditional on breakout) instead of generic NEUTRAL
+- Confidence: 70%+ for clear patterns instead of 40%
+- Actionable plan with specific entry/SL/TP levels
 
-Note: The `analyze-trading-chart` function currently expects `imageBase64`. We will add support for accepting a direct `imageUrl` to skip the re-upload step when the image is already in storage (since the user already uploaded it via the chat attachment flow).
-
-**Response format from ayn-unified:**
-```json
-{
-  "content": "Here's my analysis of **AAPL** on the **4H** timeframe...",
-  "chartAnalysis": { /* full ChartAnalysisResult object */ },
-  "intent": "chart_analysis"
-}
-```
-
-The `content` field contains a markdown summary for the chat bubble, while `chartAnalysis` contains the structured data for rendering the rich results component.
-
-### Files Modified Summary
-
-| File | Change |
-|------|--------|
-| `supabase/functions/ayn-unified/intentDetector.ts` | Add chart analysis patterns |
-| `supabase/functions/ayn-unified/index.ts` | Add chart_analysis handler block |
-| `supabase/functions/analyze-trading-chart/index.ts` | Accept `imageUrl` as alternative to `imageBase64` |
-| `src/hooks/useMessages.ts` | Add chart intent detection + response handling |
-| `src/components/transcript/TranscriptMessage.tsx` | Render ChartAnalyzerResults inline |
-
-### Success Criteria
-
-1. User attaches a chart image and says "analyze this chart" -- AYN runs the full pipeline
-2. Results appear inline in the chat with signal badge, confidence, and trade setup
-3. The analysis is saved to history (accessible from History tab)
-4. The standalone Chart Analyzer tool still works independently
-5. Intent detection correctly distinguishes chart images from regular image attachments
