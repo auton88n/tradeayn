@@ -414,46 +414,34 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
               const isDocUrl = isDocumentStorageUrl(href || '');
               const isSupabaseUrl = isSupabaseStorageUrl(href || '');
               const isSandboxUrl = href?.startsWith('sandbox:') || href?.includes('/mnt/data/');
+              const isDownloadable = isDataURL || isDocUrl || isSupabaseUrl;
               
               const handleClick = (e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
                 // Intercept hallucinated sandbox URLs
                 if (isSandboxUrl) {
-                  e.preventDefault();
                   toast.error('File not available. Try asking again to generate the document.');
                   return;
                 }
-                if (isDataURL && href) {
-                  e.preventDefault();
-                  openDocumentUrl(href);
-                } else if ((isDocUrl || isSupabaseUrl) && href) {
-                  e.preventDefault();
+                if (isDownloadable && href) {
                   const urlFilename = href.split('/').pop()?.split('?')[0] || 'download';
                   openDocumentUrl(href, urlFilename);
+                  return;
+                }
+                // Regular external link - open in new tab
+                if (href) {
+                  window.open(href, '_blank', 'noopener,noreferrer');
                 }
               };
               
-              // For supabase storage URLs, show as a download button instead of a link
-              if (isSupabaseUrl && href) {
-                return (
-                  <button
-                    onClick={handleClick}
-                    className="inline-flex items-center gap-1 text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
-                  >
-                    {children}
-                  </button>
-                );
-              }
-              
               return (
-                <a 
-                  href={isDataURL ? '#' : href} 
-                  target={isDataURL ? undefined : '_blank'} 
-                  rel={isDataURL ? undefined : 'noopener noreferrer'}
+                <button
                   onClick={handleClick}
-                  className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
+                  className="inline text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
                 >
                   {children}
-                </a>
+                </button>
               );
             },
             // Images with click-to-zoom and persistence
