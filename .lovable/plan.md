@@ -1,51 +1,48 @@
 
+## Fix: Excel Sheet Download Navigates Away
 
-## Fix: Inline Images and Direct Downloads in Response Card
+### Root Cause
+The user typed "create a **exel** sheet" (misspelling). The intent detection regex requires the exact word "excel", so it falls through to regular `chat` intent. The LLM then hallucinates a fake download link (`sandbox:/mnt/data/5_Day_Schedule.xlsx`) instead of using the proper document generation pipeline. When clicked, the browser navigates to that invalid URL, landing on the homepage.
 
-### Problem 1: Image shows as a link instead of inline
-The image URL (`https://...supabase.co/storage/...`) is embedded as `![Generated Image](url)` in the markdown content. Ad-blockers or CORS may block loading images from the Supabase domain, causing the image to show as a broken link instead of rendering inline. The user then clicks the link text and gets navigated to the raw Supabase URL.
+### Two-Part Fix
 
-### Problem 2: Document download link navigates away
-The download link in the response content navigates the browser to the Supabase URL (or falls back to the landing page when blocked), instead of downloading the file in-place.
+**1. Add fuzzy spelling tolerance to intent detection (both frontend and backend)**
 
----
+Add common misspellings of "excel" to the document intent patterns:
+- "exel", "excell", "exsel", "ecxel", "exl"
 
-### Solution
+Files to update:
+- `src/hooks/useMessages.ts` (line 380) -- frontend intent detection regex
+- `supabase/functions/ayn-unified/intentDetector.ts` (lines 39-42) -- backend intent detection
 
-**1. Fix image rendering in MessageFormatter (`src/components/shared/MessageFormatter.tsx`)**
+**2. Intercept `sandbox:` URLs in MessageFormatter as a safety net**
 
-Update the `img` component to handle blocked images gracefully:
-- Add an `onError` fallback that fetches the image as a blob and re-renders it using a local `blob:` URL (same fetch-as-blob pattern used for documents)
-- This bypasses ad-blockers since the image data is fetched via JavaScript, not by the browser's image loader
-- Remove the click-to-navigate behavior -- keep only the lightbox (click to zoom)
+Even with better intent detection, the LLM may still sometimes hallucinate `sandbox:` URLs. The link handler in `MessageFormatter.tsx` should treat any `sandbox:` URL as invalid and prevent navigation. Instead, show a toast saying the file isn't available and suggesting the user try again.
 
-**2. Fix all links to Supabase storage in MessageFormatter (`src/components/shared/MessageFormatter.tsx`)**
-
-Update the `a` component to intercept ALL Supabase storage URLs (not just ones with `.pdf`/`.xlsx` extensions):
-- Add detection for `supabase.co/storage` URLs in the link handler
-- When clicked, use `openDocumentUrl` (fetch-as-blob) instead of navigating
-- This ensures clicking "Download your 5-Day Schedule here" triggers a proper download
-
-**3. Update `isDocumentUrl` in `documentUrlUtils.ts`**
-
-Expand the URL detection to also match Supabase storage URLs:
-- Add check for URLs containing `supabase.co/storage/v1/object`
-- This ensures the link handler in MessageFormatter correctly intercepts these URLs
+File to update:
+- `src/components/shared/MessageFormatter.tsx` (lines 411-451) -- add `sandbox:` URL interception in the `a` component
 
 ### Technical Details
 
-**File: `src/lib/documentUrlUtils.ts`**
-- Update `isDocumentUrl` to also match `supabase.co/storage` URLs
+**Intent detection fix (both files):**
+Replace patterns like `/create\s+(an?\s+)?excel/` with `/create\s+(an?\s+)?e?xc?e?ll?/` or more readably, add alternate spellings:
+```
+/create\s+(an?\s+)?(excel|exel|excell)/
+/make\s+(an?\s+)?(excel|exel|excell)/
+/(excel|exel|excell)\s+(sheet|about|for|of)/
+```
 
-**File: `src/components/shared/MessageFormatter.tsx`**
-- `img` component: Add `onError` handler that fetches the image as a blob and sets `src` to a blob URL, with a state to track blob-converted URLs
-- `a` component: Also check if `href` contains `supabase.co/storage` to intercept those links for download
+**Sandbox URL interception (MessageFormatter.tsx):**
+In the `a` component handler, detect `sandbox:` URLs and block navigation:
+```
+if (href?.startsWith('sandbox:')) {
+  e.preventDefault();
+  toast({ title: 'File not available', description: 'Try asking again to generate the document.' });
+  return;
+}
+```
 
-**File: `src/components/eye/ResponseCard.tsx`**
-- `detectedImageUrl`: No changes needed -- it already extracts image URLs from markdown
-
-### What the user will see after the fix
-
-- **Images**: Render inline in the response card. If the browser blocks the direct load, the image auto-fetches via JavaScript and displays anyway. Clicking opens a zoom lightbox (no navigation).
-- **Documents**: Clicking "Download your 5-Day Schedule here" triggers a direct file download. No page navigation, no visible Supabase URL.
-
+### What This Does NOT Change
+- PDF and image generation (already working)
+- The document generation pipeline itself (already correct when triggered)
+- The DocumentDownloadButton component (already works with proper attachments)
