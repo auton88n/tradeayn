@@ -600,6 +600,57 @@ export type Database = {
           },
         ]
       }
+      chart_analyses: {
+        Row: {
+          asset_type: string | null
+          confidence: number | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          news_data: Json | null
+          prediction_details: Json | null
+          prediction_signal: string | null
+          sentiment_score: number | null
+          session_id: string | null
+          technical_analysis: Json | null
+          ticker: string | null
+          timeframe: string | null
+          user_id: string
+        }
+        Insert: {
+          asset_type?: string | null
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          news_data?: Json | null
+          prediction_details?: Json | null
+          prediction_signal?: string | null
+          sentiment_score?: number | null
+          session_id?: string | null
+          technical_analysis?: Json | null
+          ticker?: string | null
+          timeframe?: string | null
+          user_id: string
+        }
+        Update: {
+          asset_type?: string | null
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          news_data?: Json | null
+          prediction_details?: Json | null
+          prediction_signal?: string | null
+          sentiment_score?: number | null
+          session_id?: string | null
+          technical_analysis?: Json | null
+          ticker?: string | null
+          timeframe?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_sessions: {
         Row: {
           created_at: string | null
