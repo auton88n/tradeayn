@@ -56,20 +56,37 @@ const unwrapCodeFences = (text: string): string => {
 };
 
 // Detect JSON responses with image URLs and convert to markdown image syntax
+// Also strips raw LLM action/tool-call JSON that leaked through
 const detectImageJsonResponse = (text: string): string => {
   if (!text) return text;
   
   const trimmed = text.trim();
   
-  // Check if content looks like JSON with image URL
+  // Check if content looks like JSON with image URL or raw action payload
   if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
     try {
       const parsed = JSON.parse(trimmed);
       
+      // Strip raw LLM action/tool-call JSON (e.g. { action: "dalle.text2im", action_input: "..." })
+      if (parsed.action && parsed.action_input) {
+        // Extract the prompt from the action_input for a friendly message
+        let prompt = '';
+        try {
+          const actionData = typeof parsed.action_input === 'string' 
+            ? JSON.parse(parsed.action_input) 
+            : parsed.action_input;
+          prompt = actionData?.prompt || '';
+        } catch { /* ignore */ }
+        const thought = parsed.thought || '';
+        const friendlyMsg = prompt 
+          ? `🎨 generating image: *${prompt.substring(0, 120)}${prompt.length > 120 ? '...' : ''}*`
+          : (thought || 'processing your request...');
+        return friendlyMsg;
+      }
+      
       // Check for common image response patterns (from n8n, DALL-E, etc.)
       if (parsed.url && typeof parsed.url === 'string') {
         const url = parsed.url;
-        // Check if it's likely an image URL
         const isImageUrl = url.includes('.png') || 
                           url.includes('.jpg') || 
                           url.includes('.jpeg') || 
@@ -80,7 +97,6 @@ const detectImageJsonResponse = (text: string): string => {
                           url.includes('oaidalleapiprodscus');
         
         if (isImageUrl) {
-          // Convert to markdown image with caption
           const caption = parsed.revised_prompt || parsed.description || parsed.prompt || 'Generated Image';
           return `![${caption}](${url})\n\n**${caption}**`;
         }
@@ -88,6 +104,14 @@ const detectImageJsonResponse = (text: string): string => {
     } catch {
       // Not valid JSON, return original
     }
+  }
+  
+  // Also handle raw JSON embedded within other text
+  const actionJsonMatch = trimmed.match(/\{\s*"action"\s*:\s*"[^"]*"\s*,\s*"action_input"\s*:/);
+  if (actionJsonMatch) {
+    // Strip the raw JSON and keep only non-JSON text around it
+    const cleaned = trimmed.replace(/\{[^{}]*"action"\s*:\s*"[^"]*"[^{}]*(?:\{[^{}]*\}[^{}]*)?\}/g, '').trim();
+    return cleaned || 'processing your request...';
   }
   
   return text;
