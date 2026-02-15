@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect, useCallback, memo, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { cn } from "@/lib/utils";
 import { StreamingMarkdown } from "@/components/eye/StreamingMarkdown";
 import { MessageFormatter } from "@/components/shared/MessageFormatter";
@@ -15,7 +15,7 @@ import {
   Brain,
   X,
   ChevronDown,
-  Palette,
+  
   Maximize2,
   Download,
 } from "lucide-react";
@@ -31,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { persistDalleImage } from "@/hooks/useImagePersistence";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { extractBestDocumentLink, openDocumentUrl } from "@/lib/documentUrlUtils";
@@ -79,7 +79,7 @@ const ResponseCardComponent = ({
   onHistoryClear,
   onReply,
 }: ResponseCardProps) => {
-  const navigate = useNavigate();
+  
   const { orchestrateEmotionChange } = useEmotionOrchestrator();
 
   const contentRef = useRef<HTMLDivElement>(null);
@@ -150,17 +150,6 @@ const ResponseCardComponent = ({
     return indexed.map(x => x.m);
   }, [transcriptMessages]);
 
-  const handleDesignThis = useCallback(async () => {
-    if (detectedImageUrl) {
-      hapticFeedback("light");
-      try {
-        const permanentUrl = await persistDalleImage(detectedImageUrl);
-        navigate(`/design-lab?image=${encodeURIComponent(permanentUrl)}`);
-      } catch {
-        navigate(`/design-lab?image=${encodeURIComponent(detectedImageUrl)}`);
-      }
-    }
-  }, [detectedImageUrl, navigate]);
 
   useEffect(() => {
     if (currentResponseId && currentResponseId !== lastResponseId) {
@@ -575,7 +564,7 @@ const ResponseCardComponent = ({
                     const docLink = documentAttachment 
                       ? { url: documentAttachment.url, title: documentAttachment.name, type: documentAttachment.type === 'excel' || documentAttachment.type?.includes('spreadsheet') ? 'excel' as const : 'pdf' as const }
                       : extractBestDocumentLink(combinedContent);
-                    const hasDoc = !!docLink;
+                    const hasDoc = !!docLink && docLink.url !== detectedImageUrl;
                     const hasImg = !!detectedImageUrl;
                     if (!hasDoc && !hasImg) return null;
                     const hasBoth = hasDoc && hasImg;
@@ -672,16 +661,6 @@ const ResponseCardComponent = ({
                   >
                     <Maximize2 size={16} />
                   </button>
-                  {detectedImageUrl && (
-                    <button
-                      onClick={handleDesignThis}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      title="Edit in Design LAB"
-                    >
-                      <Palette size={16} />
-                      <span>Design</span>
-                    </button>
-                  )}
                 </div>
               </div>
             </>
