@@ -111,7 +111,7 @@ export default function ChartAnalyzerResults({ result }: Props) {
               <span className="text-muted-foreground">Patterns:</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {result.technical.patterns.map((p, i) => (
-                  <Badge key={i} variant="outline" className="text-xs">{p}</Badge>
+                  <Badge key={i} variant="outline" className="text-xs">{typeof p === 'string' ? p : (p as any)?.name || JSON.stringify(p)}</Badge>
                 ))}
               </div>
             </div>
