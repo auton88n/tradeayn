@@ -184,6 +184,7 @@ export const ChatHistoryCollapsible = ({ messages, isOpen, onToggle, onClear, on
                         status={msg.status}
                         compact
                         shouldAnimate={index >= newMessageStartIndex}
+                        chartAnalysis={msg.chartAnalysis}
                       />
                     ))}
                     <div className="h-4" />

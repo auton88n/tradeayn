@@ -79,6 +79,18 @@ export function detectIntent(message: string): string {
   
   if (documentPatterns.some(rx => rx.test(lower))) return 'document';
 
+  // === CHART ANALYSIS detection ===
+  const chartPatterns = [
+    /analyze\s+(this\s+)?chart/, /chart\s+analysis/, /trading\s+chart/,
+    /what\s+does\s+this\s+chart\s+show/, /technical\s+analysis/,
+    /analyze\s+(this\s+)?(stock|crypto|forex)/, /what\s+do\s+you\s+see.*chart/,
+    /read\s+(this\s+)?chart/, /chart\s+prediction/, /trading\s+signal/,
+    /حلل\s*الشارت/, /تحليل\s*فني/, /تحليل\s*الشارت/, /حلل\s*الرسم/,
+    /analyse\s+(ce\s+)?graphique/, /analyse\s+technique/,
+  ];
+  
+  if (chartPatterns.some(rx => rx.test(lower))) return 'chart_analysis';
+
   // === Other intents ===
   const engineeringKeywords = [
     'beam', 'column', 'foundation', 'slab', 'retaining wall', 'grading',

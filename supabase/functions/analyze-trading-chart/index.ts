@@ -249,15 +249,15 @@ Deno.serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    // Parse request
-    const { imageBase64, sessionId } = await req.json();
-    if (!imageBase64) {
-      return new Response(JSON.stringify({ error: 'imageBase64 is required' }), { status: 400, headers: corsHeaders });
+    // Parse request - accept either imageBase64 or imageUrl
+    const { imageBase64, imageUrl: directImageUrl, sessionId } = await req.json();
+    if (!imageBase64 && !directImageUrl) {
+      return new Response(JSON.stringify({ error: 'imageBase64 or imageUrl is required' }), { status: 400, headers: corsHeaders });
     }
 
-    // Upload image to storage
-    console.log('[chart-analyzer] Uploading chart image to storage...');
-    const imageUrl = await uploadImageToStorage(imageBase64, userId);
+    // Upload image to storage (skip if direct URL provided)
+    console.log('[chart-analyzer] Preparing chart image...');
+    const imageUrl = directImageUrl || await uploadImageToStorage(imageBase64, userId);
 
     // Step 1: Vision analysis
     const technical = await analyzeChartImage(imageUrl, LOVABLE_API_KEY);

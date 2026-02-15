@@ -393,6 +393,9 @@ export const useMessages = (
         // Floor plan detection (disabled - rebuilding)
         // if (/floor plan|house plan|home layout|design a house|design me a|مخطط|تصميم بيت|تصميم منزل|plan de maison/.test(lower)) return 'floor_plan';
         
+        // Chart analysis detection (when image is attached + chart-related keywords)
+        if (attachment && attachment.type.startsWith('image/') && /chart|trading|signal|technical\s+analysis|analyze|شارت|تحليل\s*فني|graphique|analyse\s+technique/.test(lower)) return 'chart_analysis';
+        
         // Other intent detection
         if (/search|find|look up|latest|news/.test(lower)) return 'search';
         if (/beam|column|foundation|slab|calculate|structural/.test(lower)) return 'engineering';
@@ -402,7 +405,7 @@ export const useMessages = (
       const detectedIntent = detectIntent();
       
       // Intents that require non-streaming (return JSON with URLs)
-      const requiresNonStreaming = ['document', 'image'].includes(detectedIntent);
+      const requiresNonStreaming = ['document', 'image', 'chart_analysis'].includes(detectedIntent);
       
       // Set document generation state for visual indicator
       if (detectedIntent === 'document') {
@@ -688,6 +691,9 @@ export const useMessages = (
           type: webhookData.documentType || 'pdf'
         } : undefined;
 
+        // Extract chart analysis data if present
+        const chartAnalysisData = webhookData?.chartAnalysis || undefined;
+
         const aynMessage: Message = {
           id: crypto.randomUUID(),
           content: response,
@@ -696,7 +702,8 @@ export const useMessages = (
           isTyping: false,
           status: 'sent',
           ...(labData ? { labData } : {}),
-          ...(documentAttachment ? { attachment: documentAttachment } : {})
+          ...(documentAttachment ? { attachment: documentAttachment } : {}),
+          ...(chartAnalysisData ? { chartAnalysis: chartAnalysisData } : {})
         };
 
         // Add AYN message with duplicate prevention
