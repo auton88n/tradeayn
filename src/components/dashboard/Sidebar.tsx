@@ -446,6 +446,22 @@ export const Sidebar = ({
                 <ClipboardCheck className="w-4 h-4" />
                 Compliance
               </Button>
+
+              {/* Charts Button */}
+              <Button 
+                onClick={() => navigate('/chart-analyzer')}
+                className={cn(
+                  "flex-1 h-9 rounded-lg gap-1.5",
+                  "bg-gradient-to-r from-amber-600 to-orange-600",
+                  "hover:from-amber-500 hover:to-orange-500",
+                  "text-white text-sm font-medium",
+                  "transition-colors duration-150",
+                  "border-0"
+                )}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Charts
+              </Button>
               
             </div>
           </SidebarGroupContent>

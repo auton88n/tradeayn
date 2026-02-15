@@ -653,9 +653,14 @@ serve(async (req) => {
     }
 
     // PARALLEL DB OPERATIONS - Critical for 30K user scale (saves 200-300ms)
-    const [limitCheck, userContext] = await Promise.all([
+    const [limitCheck, userContext, chartHistory] = await Promise.all([
       isInternalCall ? Promise.resolve({ allowed: true }) : checkUserLimit(supabase, userId, intent),
-      isInternalCall ? Promise.resolve({}) : getUserContext(supabase, userId)
+      isInternalCall ? Promise.resolve({}) : getUserContext(supabase, userId),
+      supabase.from('chart_analyses')
+        .select('ticker, asset_type, timeframe, prediction_signal, confidence, sentiment_score, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(5)
     ]);
 
     // Check user limits
@@ -679,8 +684,15 @@ serve(async (req) => {
       );
     }
 
+    // Build chart history context for AYN
+    const chartSection = chartHistory?.data?.length
+      ? `\n\nUSER'S RECENT CHART ANALYSES (reference when they ask about their trading history):\n${chartHistory.data.map((c: Record<string, unknown>) =>
+          `- ${c.ticker || 'Unknown'} (${c.asset_type || 'N/A'}): ${c.prediction_signal} signal, ${c.confidence}% confidence, ${c.timeframe} timeframe (${new Date(c.created_at as string).toLocaleDateString()})`
+        ).join('\n')}`
+      : '';
+
     // Build system prompt with user message for language detection AND user memories
-    const systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + INJECTION_GUARD;
+    const systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + INJECTION_GUARD;
 
     // Handle image generation intent (LAB mode)
     if (intent === 'image') {
