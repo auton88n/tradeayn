@@ -1,195 +1,1398 @@
 /**
- * Trading Knowledge Base
- * Expert-level patterns, indicators, and context injected into AI prompts
- * for more accurate chart analysis and predictions.
+ * Complete Trading Knowledge Base
+ * For Gemini Vision Chart Analysis
+ * 100+ patterns, indicators, fundamentals, and risk management rules.
  */
 
-// ─── Chart Patterns ───
-export const CHART_PATTERNS = {
-  bullish: [
-    { name: 'Ascending Triangle', reliability: 'high', signal: 'Breakout above resistance', description: 'Higher lows converging toward flat resistance. Volume typically decreases during formation and spikes on breakout.' },
-    { name: 'Inverse Head & Shoulders', reliability: 'high', signal: 'Reversal from downtrend', description: 'Three troughs with the middle being deepest. Neckline break confirms reversal. Volume increases on right shoulder and breakout.' },
-    { name: 'Bull Flag', reliability: 'high', signal: 'Continuation after strong move up', description: 'Sharp upward move (pole) followed by slight downward consolidation (flag). Breakout continues the prior trend.' },
-    { name: 'Cup and Handle', reliability: 'high', signal: 'Bullish continuation', description: 'U-shaped cup followed by a small downward drift (handle). Breakout above handle resistance triggers buy signal.' },
-    { name: 'Double Bottom', reliability: 'high', signal: 'Reversal at support', description: 'Two roughly equal lows forming a "W" shape. Neckline break confirms reversal. Higher volume on second bottom is ideal.' },
-    { name: 'Falling Wedge', reliability: 'medium', signal: 'Bullish reversal or continuation', description: 'Converging trendlines both sloping downward. Breakout above upper trendline signals upside move.' },
-    { name: 'Morning Star', reliability: 'medium', signal: 'Bullish reversal (3-candle)', description: 'Long bearish candle, small-bodied candle (gap down), then long bullish candle closing above midpoint of first.' },
-    { name: 'Bullish Engulfing', reliability: 'medium', signal: 'Reversal at support', description: 'Small bearish candle followed by large bullish candle that completely engulfs the prior body.' },
-    { name: 'Three White Soldiers', reliability: 'medium', signal: 'Strong bullish momentum', description: 'Three consecutive long bullish candles with small wicks, each opening within the prior candle body.' },
-  ],
-  bearish: [
-    { name: 'Descending Triangle', reliability: 'high', signal: 'Breakdown below support', description: 'Lower highs converging toward flat support. Breakdown with volume confirms bearish move.' },
-    { name: 'Head & Shoulders', reliability: 'high', signal: 'Reversal from uptrend', description: 'Three peaks with middle being highest. Neckline break with volume confirms downside target equal to pattern height.' },
-    { name: 'Bear Flag', reliability: 'high', signal: 'Continuation after strong move down', description: 'Sharp downward move (pole) followed by slight upward consolidation (flag). Breakdown continues the prior downtrend.' },
-    { name: 'Double Top', reliability: 'high', signal: 'Reversal at resistance', description: 'Two roughly equal highs forming an "M" shape. Neckline break confirms reversal.' },
-    { name: 'Rising Wedge', reliability: 'medium', signal: 'Bearish reversal or continuation', description: 'Converging trendlines both sloping upward. Breakdown below lower trendline signals downside.' },
-    { name: 'Evening Star', reliability: 'medium', signal: 'Bearish reversal (3-candle)', description: 'Long bullish candle, small-bodied candle (gap up), then long bearish candle closing below midpoint of first.' },
-    { name: 'Bearish Engulfing', reliability: 'medium', signal: 'Reversal at resistance', description: 'Small bullish candle followed by large bearish candle that completely engulfs the prior body.' },
-    { name: 'Three Black Crows', reliability: 'medium', signal: 'Strong bearish momentum', description: 'Three consecutive long bearish candles with small wicks, each opening within the prior candle body.' },
-  ],
-  neutral: [
-    { name: 'Symmetrical Triangle', reliability: 'medium', signal: 'Breakout in either direction', description: 'Converging trendlines with lower highs and higher lows. Direction of breakout determines signal.' },
-    { name: 'Rectangle/Range', reliability: 'medium', signal: 'Breakout from consolidation', description: 'Price bouncing between horizontal support and resistance. Trade the range or wait for breakout.' },
-    { name: 'Doji', reliability: 'low', signal: 'Indecision / potential reversal', description: 'Open and close nearly equal. Context matters: at key levels it signals reversal, mid-trend it signals pause.' },
-  ],
+// ============================================
+// INTERFACES
+// ============================================
+
+export interface Pattern {
+  name: string;
+  description: string;
+  type: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+  rules: string[] | Record<string, any>;
+  reliability: 'HIGH' | 'MEDIUM' | 'LOW';
+  assetType: 'stock' | 'crypto' | 'both';
+  confirmation?: string;
+  examples?: Record<string, string>;
+}
+
+export interface Indicator {
+  name: string;
+  description: string;
+  range?: string;
+  signals: Record<string, any>;
+  assetType: 'stock' | 'crypto' | 'both';
+}
+
+export interface Fundamental {
+  name: string;
+  description: string;
+  formula?: string;
+  interpretation: Record<string, string>;
+  assetType: 'stock' | 'crypto';
+}
+
+// ============================================
+// CANDLESTICK PATTERNS (BOTH ASSETS)
+// ============================================
+
+export const CANDLESTICK_PATTERNS: Record<string, Pattern> = {
+
+  // === SINGLE CANDLE PATTERNS ===
+
+  hammer: {
+    name: 'Hammer',
+    description: 'Bullish reversal - small body at top, long lower wick (2-3x body size)',
+    type: 'BULLISH',
+    rules: [
+      'Appears after downtrend',
+      'Lower wick at least 2x the body size',
+      'Little to no upper wick',
+      'Body at the upper end of range',
+      'Color less important (green slightly better)'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Next candle closes above hammer high'
+  },
+
+  shooting_star: {
+    name: 'Shooting Star',
+    description: 'Bearish reversal - small body at bottom, long upper wick',
+    type: 'BEARISH',
+    rules: [
+      'Appears after uptrend',
+      'Upper wick at least 2x the body size',
+      'Little to no lower wick',
+      'Body at the lower end of range',
+      'Red body preferred but not required'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Next candle closes below shooting star low'
+  },
+
+  inverted_hammer: {
+    name: 'Inverted Hammer',
+    description: 'Bullish reversal - small body at bottom, long upper wick',
+    type: 'BULLISH',
+    rules: [
+      'Appears after downtrend',
+      'Upper wick at least 2x the body',
+      'Little to no lower wick',
+      'Requires strong confirmation'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Next candle must close above inverted hammer high with volume'
+  },
+
+  hanging_man: {
+    name: 'Hanging Man',
+    description: 'Bearish reversal - looks like hammer but appears after uptrend',
+    type: 'BEARISH',
+    rules: [
+      'Appears after uptrend (critical difference from hammer)',
+      'Long lower wick (2-3x body)',
+      'Small body at top',
+      'Red body more bearish'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Next candle closes below hanging man body'
+  },
+
+  doji: {
+    name: 'Doji',
+    description: 'Indecision - open and close nearly equal',
+    type: 'NEUTRAL',
+    rules: [
+      'Open and close at same price (or very close)',
+      'Can have wicks of any length',
+      'Signals indecision and potential reversal',
+      'Context determines direction'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Direction depends on next candle and trend context'
+  },
+
+  dragonfly_doji: {
+    name: 'Dragonfly Doji',
+    description: 'Bullish reversal - T-shaped, long lower wick, no upper wick',
+    type: 'BULLISH',
+    rules: [
+      'Open, high, and close at same level',
+      'Long lower wick',
+      'Appears at support or after downtrend',
+      'Shows strong rejection of lower prices'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Next candle closes above dragonfly high'
+  },
+
+  gravestone_doji: {
+    name: 'Gravestone Doji',
+    description: 'Bearish reversal - inverted T, long upper wick, no lower wick',
+    type: 'BEARISH',
+    rules: [
+      'Open, low, and close at same level',
+      'Long upper wick',
+      'Appears at resistance or after uptrend',
+      'Shows strong rejection of higher prices'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Next candle closes below gravestone low'
+  },
+
+  spinning_top: {
+    name: 'Spinning Top',
+    description: 'Indecision - small body, long wicks both sides',
+    type: 'NEUTRAL',
+    rules: [
+      'Small body (red or green)',
+      'Upper and lower wicks roughly equal and long',
+      'Signals market indecision',
+      'After strong trend = potential reversal'
+    ],
+    reliability: 'LOW',
+    assetType: 'both',
+    confirmation: 'Wait for directional confirmation'
+  },
+
+  marubozu_bullish: {
+    name: 'Bullish Marubozu',
+    description: 'Strong bullish - opens at low, closes at high, no wicks',
+    type: 'BULLISH',
+    rules: [
+      'Large green body',
+      'Little to no wicks on either end',
+      'Opens at low, closes at high',
+      'Shows extreme buying pressure'
+    ],
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Strong continuation signal, especially on high volume'
+  },
+
+  marubozu_bearish: {
+    name: 'Bearish Marubozu',
+    description: 'Strong bearish - opens at high, closes at low, no wicks',
+    type: 'BEARISH',
+    rules: [
+      'Large red body',
+      'Little to no wicks',
+      'Opens at high, closes at low',
+      'Shows extreme selling pressure'
+    ],
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Strong continuation signal, especially on high volume'
+  },
+
+  // === TWO CANDLE PATTERNS ===
+
+  bullish_engulfing: {
+    name: 'Bullish Engulfing',
+    description: 'Strong bullish reversal - large green candle completely engulfs prior red candle',
+    type: 'BULLISH',
+    rules: [
+      'Appears in downtrend or at support',
+      'First candle is bearish (red)',
+      'Second candle is bullish (green) and larger',
+      'Second candle body completely covers first candle body',
+      'Higher volume on engulfing candle increases reliability'
+    ],
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Third candle closes above engulfing candle high'
+  },
+
+  bearish_engulfing: {
+    name: 'Bearish Engulfing',
+    description: 'Strong bearish reversal - large red candle engulfs prior green candle',
+    type: 'BEARISH',
+    rules: [
+      'Appears in uptrend or at resistance',
+      'First candle is bullish (green)',
+      'Second candle is bearish (red) and larger',
+      'Second candle body completely covers first candle body',
+      'Higher volume confirms'
+    ],
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Third candle closes below engulfing candle low'
+  },
+
+  piercing_line: {
+    name: 'Piercing Line',
+    description: 'Bullish reversal - green candle opens below prior red, closes above midpoint',
+    type: 'BULLISH',
+    rules: [
+      'Appears in downtrend',
+      'First candle is bearish',
+      'Second candle gaps down but closes above midpoint of first candle',
+      'Second candle closes in upper half of prior candle',
+      'Volume should increase on second candle'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Next candle continues upward'
+  },
+
+  dark_cloud_cover: {
+    name: 'Dark Cloud Cover',
+    description: 'Bearish reversal - red candle opens above prior green, closes below midpoint',
+    type: 'BEARISH',
+    rules: [
+      'Appears in uptrend',
+      'First candle is bullish',
+      'Second candle gaps up but closes below midpoint of first',
+      'Second candle closes in lower half of prior candle',
+      'Volume increase confirms'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Next candle continues downward'
+  },
+
+  tweezer_top: {
+    name: 'Tweezer Top',
+    description: 'Bearish reversal - two candles with matching highs',
+    type: 'BEARISH',
+    rules: [
+      'Appears at resistance or after uptrend',
+      'Two consecutive candles with nearly identical highs',
+      'First candle bullish, second bearish (typical)',
+      'Shows rejection at resistance level'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Next candle breaks below pattern low'
+  },
+
+  tweezer_bottom: {
+    name: 'Tweezer Bottom',
+    description: 'Bullish reversal - two candles with matching lows',
+    type: 'BULLISH',
+    rules: [
+      'Appears at support or after downtrend',
+      'Two consecutive candles with nearly identical lows',
+      'First candle bearish, second bullish (typical)',
+      'Shows support holding'
+    ],
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Next candle breaks above pattern high'
+  },
+
+  // === THREE CANDLE PATTERNS ===
+
+  morning_star: {
+    name: 'Morning Star',
+    description: 'Strong bullish reversal - three candle pattern signaling bottom',
+    type: 'BULLISH',
+    rules: [
+      'Appears after downtrend',
+      'First candle: Large bearish',
+      'Second candle: Small body (any color), gaps down',
+      'Third candle: Large bullish, closes above midpoint of first',
+      'Gaps between candles confirm strength'
+    ],
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Fourth candle continues upward'
+  },
+
+  evening_star: {
+    name: 'Evening Star',
+    description: 'Strong bearish reversal - three candle top pattern',
+    type: 'BEARISH',
+    rules: [
+      'Appears after uptrend',
+      'First candle: Large bullish',
+      'Second candle: Small body, gaps up',
+      'Third candle: Large bearish, closes below midpoint of first',
+      'Gaps confirm reversal strength'
+    ],
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Fourth candle continues downward'
+  },
+
+  three_white_soldiers: {
+    name: 'Three White Soldiers',
+    description: 'Strong bullish continuation - three consecutive large green candles',
+    type: 'BULLISH',
+    rules: [
+      'Three consecutive bullish candles',
+      'Each opens within prior body',
+      'Each closes near its high',
+      'Steady progression higher',
+      'Moderate to high volume'
+    ],
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Strong continuation signal'
+  },
+
+  three_black_crows: {
+    name: 'Three Black Crows',
+    description: 'Strong bearish continuation - three consecutive large red candles',
+    type: 'BEARISH',
+    rules: [
+      'Three consecutive bearish candles',
+      'Each opens within prior body',
+      'Each closes near its low',
+      'Steady decline',
+      'Increasing volume confirms'
+    ],
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Strong continuation signal'
+  },
+
+  three_inside_up: {
+    name: 'Three Inside Up',
+    description: 'Bullish reversal - harami followed by confirmation',
+    type: 'BULLISH',
+    rules: [
+      'First candle: Large bearish',
+      'Second candle: Small bullish inside first',
+      'Third candle: Bullish, closes above first candle high',
+      'Progressive strengthening'
+    ],
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Third candle is the confirmation'
+  },
+
+  three_inside_down: {
+    name: 'Three Inside Down',
+    description: 'Bearish reversal - bearish harami with confirmation',
+    type: 'BEARISH',
+    rules: [
+      'First candle: Large bullish',
+      'Second candle: Small bearish inside first',
+      'Third candle: Bearish, closes below first candle low',
+      'Progressive weakening'
+    ],
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Third candle confirms reversal'
+  },
 };
 
-// ─── Technical Indicators Guide ───
-export const INDICATOR_GUIDE = {
+// ============================================
+// CHART PATTERNS
+// ============================================
+
+export const CHART_PATTERNS: Record<string, Pattern> = {
+
+  // === CONTINUATION PATTERNS ===
+
+  bull_flag: {
+    name: 'Bull Flag',
+    description: 'Bullish continuation - strong move up, consolidation, breakout',
+    type: 'BULLISH',
+    rules: {
+      flagpole: 'Sharp price increase on volume',
+      flag: 'Tight consolidation or slight downward drift (parallel lines)',
+      volume: 'Decreases during flag, spikes on breakout',
+      duration: 'Flag typically 1-4 weeks',
+      breakout: 'Above flag resistance on volume'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Breakout above upper flag line with volume surge'
+  },
+
+  bear_flag: {
+    name: 'Bear Flag',
+    description: 'Bearish continuation - sharp drop, consolidation, breakdown',
+    type: 'BEARISH',
+    rules: {
+      flagpole: 'Sharp price decrease',
+      flag: 'Tight upward drift (parallel lines)',
+      volume: 'Decreases during flag, increases on breakdown',
+      duration: '1-4 weeks typical',
+      breakdown: 'Below flag support'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Breakdown below lower flag line on volume'
+  },
+
+  bull_pennant: {
+    name: 'Bull Pennant',
+    description: 'Bullish continuation - sharp rise, converging triangle, breakout',
+    type: 'BULLISH',
+    rules: {
+      pole: 'Strong upward move',
+      pennant: 'Converging trendlines (triangle)',
+      volume: 'Decreases during pennant',
+      duration: '1-3 weeks',
+      breakout: 'Above resistance on volume'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Breakout with volume increase'
+  },
+
+  bear_pennant: {
+    name: 'Bear Pennant',
+    description: 'Bearish continuation - sharp drop, converging triangle, breakdown',
+    type: 'BEARISH',
+    rules: {
+      pole: 'Strong downward move',
+      pennant: 'Converging trendlines',
+      volume: 'Decreases during formation',
+      duration: '1-3 weeks',
+      breakdown: 'Below support on volume'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Breakdown with volume'
+  },
+
+  ascending_triangle: {
+    name: 'Ascending Triangle',
+    description: 'Bullish - flat resistance with rising support',
+    type: 'BULLISH',
+    rules: {
+      structure: 'Horizontal resistance + ascending support line',
+      touches: 'Minimum 3-4 touches on each line',
+      volume: 'Decreases during formation, spikes on breakout',
+      breakout: 'Above resistance',
+      target: 'Height of triangle projected upward from breakout'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Breakout above resistance on volume'
+  },
+
+  descending_triangle: {
+    name: 'Descending Triangle',
+    description: 'Bearish - flat support with declining resistance',
+    type: 'BEARISH',
+    rules: {
+      structure: 'Horizontal support + descending resistance',
+      touches: 'Minimum 3-4 on each line',
+      volume: 'Decreases during formation',
+      breakdown: 'Below support',
+      target: 'Height projected downward'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Breakdown below support on volume'
+  },
+
+  symmetrical_triangle: {
+    name: 'Symmetrical Triangle',
+    description: 'Neutral - converging trendlines, breakout determines direction',
+    type: 'NEUTRAL',
+    rules: {
+      structure: 'Lower highs and higher lows converging',
+      touches: '4-6 touches minimum',
+      volume: 'Decreases during formation',
+      breakout: 'Direction depends on trend before triangle',
+      target: 'Widest part of triangle projected from breakout'
+    },
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Breakout in either direction with volume'
+  },
+
+  rectangle: {
+    name: 'Rectangle (Trading Range)',
+    description: 'Continuation - horizontal consolidation between support and resistance',
+    type: 'NEUTRAL',
+    rules: {
+      structure: 'Parallel horizontal lines',
+      touches: 'Multiple tests of each level',
+      volume: 'Low during range, spikes on breakout',
+      breakout: 'Direction typically continues prior trend',
+      target: 'Height of rectangle projected from breakout'
+    },
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Breakout with volume increase'
+  },
+
+  // === REVERSAL PATTERNS ===
+
+  head_and_shoulders: {
+    name: 'Head and Shoulders',
+    description: 'Bearish reversal - left shoulder, head (higher), right shoulder',
+    type: 'BEARISH',
+    rules: {
+      leftShoulder: 'Peak with pullback',
+      head: 'Higher peak',
+      rightShoulder: 'Lower peak (similar to left shoulder)',
+      neckline: 'Support line connecting lows',
+      volume: 'Highest on left shoulder, decreases through pattern',
+      breakdown: 'Below neckline on volume'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Close below neckline, retest as resistance'
+  },
+
+  inverse_head_and_shoulders: {
+    name: 'Inverse Head and Shoulders',
+    description: 'Bullish reversal - inverted H&S at bottom',
+    type: 'BULLISH',
+    rules: {
+      leftShoulder: 'Low with bounce',
+      head: 'Lower low',
+      rightShoulder: 'Higher low (similar to left)',
+      neckline: 'Resistance connecting highs',
+      volume: 'Increases through pattern, spikes on breakout',
+      breakout: 'Above neckline'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Close above neckline, retest as support'
+  },
+
+  double_top: {
+    name: 'Double Top',
+    description: 'Bearish reversal - two peaks at resistance, M-shape',
+    type: 'BEARISH',
+    rules: {
+      peaks: 'Two peaks at approximately same level',
+      valley: 'Support between peaks',
+      volume: 'Lower on second peak (divergence)',
+      breakdown: 'Below valley support',
+      target: 'Height from peaks to valley, projected down'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Break below valley on volume'
+  },
+
+  double_bottom: {
+    name: 'Double Bottom',
+    description: 'Bullish reversal - two lows at support, W-shape',
+    type: 'BULLISH',
+    rules: {
+      lows: 'Two lows at approximately same level',
+      peak: 'Resistance between lows',
+      volume: 'Higher on second low (often)',
+      breakout: 'Above peak resistance',
+      target: 'Height from lows to peak, projected up'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Break above peak on volume'
+  },
+
+  triple_top: {
+    name: 'Triple Top',
+    description: 'Bearish reversal - three peaks at resistance',
+    type: 'BEARISH',
+    rules: {
+      peaks: 'Three peaks at similar level',
+      support: 'Neckline connecting lows',
+      volume: 'Decreasing with each peak',
+      breakdown: 'Below neckline',
+      target: 'Height projected down'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Close below neckline support'
+  },
+
+  triple_bottom: {
+    name: 'Triple Bottom',
+    description: 'Bullish reversal - three lows at support',
+    type: 'BULLISH',
+    rules: {
+      lows: 'Three lows at similar level',
+      resistance: 'Neckline connecting peaks',
+      volume: 'Increasing with each low',
+      breakout: 'Above neckline',
+      target: 'Height projected up'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Close above neckline resistance'
+  },
+
+  rising_wedge: {
+    name: 'Rising Wedge',
+    description: 'Bearish - upward sloping converging lines (usually reversal)',
+    type: 'BEARISH',
+    rules: {
+      structure: 'Both support and resistance rising, converging',
+      volume: 'Decreases as pattern develops',
+      breakdown: 'Below support line',
+      context: 'More reliable as reversal at top',
+      target: 'Back to start of wedge'
+    },
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Breakdown with volume increase'
+  },
+
+  falling_wedge: {
+    name: 'Falling Wedge',
+    description: 'Bullish - downward sloping converging lines (usually reversal)',
+    type: 'BULLISH',
+    rules: {
+      structure: 'Both support and resistance falling, converging',
+      volume: 'Decreases during formation',
+      breakout: 'Above resistance',
+      context: 'More reliable as reversal at bottom',
+      target: 'Back to start of wedge'
+    },
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Breakout with volume'
+  },
+
+  rounding_bottom: {
+    name: 'Rounding Bottom (Cup)',
+    description: 'Bullish reversal - U-shaped gradual bottom formation',
+    type: 'BULLISH',
+    rules: {
+      shape: 'Smooth U-shape (not V)',
+      duration: 'Several weeks to months',
+      volume: 'Decreases during bottom, increases on rise',
+      breakout: 'Above resistance (rim)',
+      target: 'Depth of cup projected up'
+    },
+    reliability: 'HIGH',
+    assetType: 'both',
+    confirmation: 'Breakout above rim on volume'
+  },
+
+  rounding_top: {
+    name: 'Rounding Top',
+    description: 'Bearish reversal - inverted U-shape at top',
+    type: 'BEARISH',
+    rules: {
+      shape: 'Smooth inverted U',
+      duration: 'Weeks to months',
+      volume: 'Increases at beginning, decreases at end',
+      breakdown: 'Below support (neckline)',
+      target: 'Height projected down'
+    },
+    reliability: 'MEDIUM',
+    assetType: 'both',
+    confirmation: 'Break below neckline'
+  },
+
+  // === STOCK-SPECIFIC PATTERNS ===
+
+  cup_and_handle: {
+    name: 'Cup and Handle',
+    description: 'Bullish - U-shaped cup followed by small handle, common in stocks',
+    type: 'BULLISH',
+    rules: {
+      cup: {
+        shape: 'U-shaped (not V-shaped)',
+        depth: '12-33% from left rim to bottom',
+        duration: '7-65 weeks (stocks) or equivalent days (crypto)'
+      },
+      handle: {
+        duration: '1-2 weeks',
+        depth: 'Should not retrace more than 50% of cup depth',
+        volume: 'Volume dries up during handle'
+      },
+      breakout: {
+        trigger: 'Break above left rim (resistance) on high volume',
+        volume: '40-50% above average',
+        target: 'Cup depth projected from breakout'
+      }
+    },
+    reliability: 'HIGH',
+    assetType: 'stock',
+    confirmation: 'Breakout above handle high with volume surge'
+  },
+
+  flat_base: {
+    name: 'Flat Base',
+    description: 'Bullish continuation - tight consolidation near highs (stocks)',
+    type: 'BULLISH',
+    rules: {
+      range: 'Price consolidates within ~15% range for 5+ weeks',
+      volume: 'Contracts during base, spikes on breakout',
+      prior: 'Must form after at least 20% advance',
+      breakout: 'Above base high on volume'
+    },
+    reliability: 'HIGH',
+    assetType: 'stock',
+    confirmation: 'Volume expansion on breakout'
+  },
+
+  vcp: {
+    name: 'VCP (Volatility Contraction Pattern)',
+    description: 'Bullish - Mark Minervini pattern, each pullback smaller than last',
+    type: 'BULLISH',
+    rules: {
+      contractions: 'Minimum 2-3 contractions, each smaller',
+      volume: 'Dries up with each contraction',
+      tightness: 'Final contraction very tight (1-2%)',
+      pivot: 'Final contraction high = buy point',
+      breakout: 'Above pivot on increased volume'
+    },
+    reliability: 'HIGH',
+    assetType: 'stock',
+    confirmation: 'Tight stop below last contraction low'
+  },
+};
+
+// ============================================
+// TECHNICAL INDICATORS
+// ============================================
+
+export const INDICATORS: Record<string, Indicator> = {
+
   rsi: {
     name: 'RSI (Relative Strength Index)',
+    description: 'Momentum oscillator measuring speed and magnitude of price changes',
     range: '0-100',
-    overbought: 70,
-    oversold: 30,
-    interpretation: [
-      'Above 70: Overbought — potential pullback or reversal',
-      'Below 30: Oversold — potential bounce or reversal',
-      '50 level: Acts as dynamic support/resistance for trend direction',
-      'Divergence: Price makes new high but RSI doesn\'t = bearish divergence (and vice versa)',
-      'Hidden divergence: Confirms trend continuation',
-    ],
+    signals: {
+      overbought: 'Above 70 - potential reversal down',
+      oversold: 'Below 30 - potential reversal up',
+      bullish_divergence: 'Price makes lower low, RSI makes higher low',
+      bearish_divergence: 'Price makes higher high, RSI makes lower high',
+      centerline_cross: {
+        bullish: 'RSI crosses above 50',
+        bearish: 'RSI crosses below 50'
+      },
+      extreme_readings: {
+        very_overbought: 'Above 80',
+        very_oversold: 'Below 20'
+      }
+    },
+    assetType: 'both'
   },
+
   macd: {
     name: 'MACD (Moving Average Convergence Divergence)',
-    interpretation: [
-      'MACD line crosses above signal line: Bullish crossover (buy signal)',
-      'MACD line crosses below signal line: Bearish crossover (sell signal)',
-      'Histogram increasing: Momentum strengthening in current direction',
-      'Zero line cross: Confirms trend direction change',
-      'Divergence from price: Strong reversal signal',
-    ],
+    description: 'Trend-following momentum indicator showing relationship between two EMAs',
+    signals: {
+      bullish_cross: 'MACD line crosses above signal line',
+      bearish_cross: 'MACD line crosses below signal line',
+      histogram: {
+        expanding_positive: 'Bullish momentum increasing',
+        expanding_negative: 'Bearish momentum increasing',
+        contracting: 'Momentum weakening'
+      },
+      centerline_cross: {
+        bullish: 'MACD crosses above zero',
+        bearish: 'MACD crosses below zero'
+      },
+      divergence: {
+        bullish: 'Price lower low, MACD higher low',
+        bearish: 'Price higher high, MACD lower high'
+      }
+    },
+    assetType: 'both'
   },
-  movingAverages: {
+
+  moving_averages: {
     name: 'Moving Averages',
-    key_periods: [9, 20, 50, 100, 200],
-    interpretation: [
-      'Golden Cross (50 MA crosses above 200 MA): Strong long-term bullish signal',
-      'Death Cross (50 MA crosses below 200 MA): Strong long-term bearish signal',
-      'Price above all MAs: Strong uptrend',
-      'Price below all MAs: Strong downtrend',
-      'MAs acting as dynamic support/resistance',
-      'EMA 9/21 crossover: Short-term trend changes',
-    ],
+    description: 'Average price over specified period, smooths price action',
+    signals: {
+      golden_cross: '50 MA crosses above 200 MA (bullish)',
+      death_cross: '50 MA crosses below 200 MA (bearish)',
+      price_above_ma: 'Price above MA = support, uptrend',
+      price_below_ma: 'Price below MA = resistance, downtrend',
+      ma_slope: {
+        rising: 'Uptrend',
+        falling: 'Downtrend',
+        flat: 'Consolidation'
+      },
+      common_periods: {
+        short_term: '9, 20, 21 (EMA)',
+        medium_term: '50 (SMA/EMA)',
+        long_term: '200 (SMA)'
+      }
+    },
+    assetType: 'both'
   },
+
+  bollinger_bands: {
+    name: 'Bollinger Bands',
+    description: 'Volatility bands - middle (20 SMA), upper/lower (2 std dev)',
+    signals: {
+      squeeze: 'Bands narrow = low volatility, breakout coming',
+      expansion: 'Bands widen = high volatility, trending',
+      walking_the_band: {
+        upper: 'Price riding upper band = strong uptrend',
+        lower: 'Price riding lower band = strong downtrend'
+      },
+      reversals: {
+        tag_lower_bounce: 'Touch lower band + bounce = buy signal',
+        tag_upper_reject: 'Touch upper band + reject = sell signal'
+      },
+      m_top: 'Price makes high outside upper band, then lower high inside = bearish',
+      w_bottom: 'Price makes low outside lower band, then higher low inside = bullish'
+    },
+    assetType: 'both'
+  },
+
   volume: {
     name: 'Volume Analysis',
-    interpretation: [
-      'Rising price + rising volume: Healthy trend, likely to continue',
-      'Rising price + falling volume: Weakening trend, potential reversal',
-      'Falling price + rising volume: Strong selling pressure, bearish',
-      'Volume spike at key level: Confirms breakout/breakdown validity',
-      'Low volume consolidation before breakout: Coiled spring effect',
-    ],
+    description: 'Number of shares/contracts traded',
+    signals: {
+      confirmation: 'Volume should increase in direction of trend',
+      breakout: 'Breakout on high volume more reliable',
+      climax: {
+        buying: 'Extreme volume spike after rise = potential top',
+        selling: 'Extreme volume spike after decline = potential bottom'
+      },
+      divergence: {
+        bullish: 'Price declining on decreasing volume',
+        bearish: 'Price rising on decreasing volume'
+      },
+      accumulation: 'Rising volume on up days, falling on down days',
+      distribution: 'Rising volume on down days, falling on up days'
+    },
+    assetType: 'both'
   },
-  bollinger: {
-    name: 'Bollinger Bands',
-    interpretation: [
-      'Price touching upper band: May be overextended, watch for reversal',
-      'Price touching lower band: May be oversold, watch for bounce',
-      'Band squeeze (narrow): Low volatility, big move incoming',
-      'Band expansion: High volatility breakout in progress',
-      'Walking the bands: Strong trend confirmation',
-    ],
+
+  stochastic: {
+    name: 'Stochastic Oscillator',
+    description: 'Momentum indicator comparing closing price to price range',
+    range: '0-100',
+    signals: {
+      overbought: 'Above 80',
+      oversold: 'Below 20',
+      bullish_cross: '%K crosses above %D',
+      bearish_cross: '%K crosses below %D',
+      divergence: {
+        bullish: 'Price lower low, Stoch higher low',
+        bearish: 'Price higher high, Stoch lower high'
+      }
+    },
+    assetType: 'both'
   },
+
+  atr: {
+    name: 'ATR (Average True Range)',
+    description: 'Volatility indicator, not directional',
+    signals: {
+      high_atr: 'High volatility - wider stops needed',
+      low_atr: 'Low volatility - potential breakout coming',
+      expanding: 'Volatility increasing',
+      contracting: 'Volatility decreasing (squeeze)',
+      usage: 'Use for position sizing and stop placement'
+    },
+    assetType: 'both'
+  },
+
+  vwap: {
+    name: 'VWAP (Volume Weighted Average Price)',
+    description: 'Institutional benchmark - average price weighted by volume',
+    signals: {
+      above_vwap: 'Buyers in control, bullish',
+      below_vwap: 'Sellers in control, bearish',
+      pullback_entry: 'In uptrend, buy pullback to VWAP',
+      standard_deviations: 'VWAP bands act as support/resistance',
+      reset: 'Resets each trading day'
+    },
+    assetType: 'stock'
+  },
+
+  obv: {
+    name: 'OBV (On-Balance Volume)',
+    description: 'Cumulative volume indicator',
+    signals: {
+      bullish_divergence: 'OBV rising while price flat/falling = accumulation',
+      bearish_divergence: 'OBV falling while price flat/rising = distribution',
+      confirmation: 'OBV breaking to new high before price = bullish',
+      trendline_break: 'OBV trendline breaks signal price trend changes'
+    },
+    assetType: 'both'
+  },
+
   fibonacci: {
     name: 'Fibonacci Retracement',
-    key_levels: [0.236, 0.382, 0.5, 0.618, 0.786],
-    interpretation: [
-      '0.382: Shallow pullback in strong trends',
-      '0.5: Psychological midpoint, common bounce level',
-      '0.618: Golden ratio, strongest retracement level',
-      '0.786: Deep pullback, last defense before trend reversal',
-      'Extensions (1.272, 1.618): Profit target levels',
-    ],
+    description: 'Support/resistance levels based on Fibonacci ratios',
+    signals: {
+      key_levels: {
+        '23.6%': 'Shallow retracement',
+        '38.2%': 'Moderate retracement',
+        '50%': 'Mid-point (not Fibonacci but commonly used)',
+        '61.8%': 'Golden ratio - strong support/resistance',
+        '78.6%': 'Deep retracement'
+      },
+      usage: 'Draw from swing low to swing high (uptrend) or high to low (downtrend)',
+      confluence: 'Fib levels + other support/resistance = high probability'
+    },
+    assetType: 'both'
   },
 };
 
-// ─── Asset-Specific Knowledge ───
-export const ASSET_CONTEXT = {
-  stock: {
-    factors: ['Earnings reports', 'Sector rotation', 'Market cap / institutional ownership', 'Dividend schedule', 'FDA approvals (biotech)', 'Options expiry (OpEx)'],
-    timing: 'Pre-market (4-9:30 AM ET), Regular (9:30 AM-4 PM ET), After-hours (4-8 PM ET)',
-    volatility_note: 'Highest volatility at market open (first 30 min) and close (last 15 min)',
+// ============================================
+// STOCK FUNDAMENTALS
+// ============================================
+
+export const STOCK_FUNDAMENTALS: Record<string, Fundamental> = {
+
+  pe_ratio: {
+    name: 'P/E Ratio (Price-to-Earnings)',
+    description: 'Valuation metric comparing stock price to earnings',
+    formula: 'Stock Price / Earnings Per Share',
+    interpretation: {
+      low: '< 15 - Potentially undervalued or slow growth',
+      average: '15-25 - Fair for moderate growth',
+      high: '> 25 - Growth premium or overvalued',
+      very_high: '> 50 - Hypergrowth expectations',
+      negative: 'Company losing money'
+    },
+    assetType: 'stock'
   },
-  crypto: {
-    factors: ['Bitcoin dominance', 'On-chain metrics', 'Funding rates', 'Exchange inflows/outflows', 'Whale wallet movements', 'DeFi TVL changes', 'Regulatory news'],
-    timing: '24/7 market — Sunday open and Friday close often see volatility',
-    volatility_note: 'Crypto is 3-5x more volatile than stocks. Wider stop losses needed.',
+
+  peg_ratio: {
+    name: 'PEG Ratio (P/E to Growth)',
+    description: 'P/E ratio adjusted for earnings growth',
+    formula: 'P/E Ratio / Annual EPS Growth Rate',
+    interpretation: {
+      undervalued: '< 1 - Undervalued relative to growth',
+      fair: '= 1 - Fairly valued',
+      overvalued: '> 1 - Overvalued relative to growth',
+      very_overvalued: '> 2 - Significantly overvalued'
+    },
+    assetType: 'stock'
   },
-  forex: {
-    factors: ['Central bank interest rates', 'GDP data', 'Employment (NFP)', 'CPI/inflation', 'Trade balance', 'Geopolitical events'],
-    timing: 'London (3-12 PM UTC), New York (1-10 PM UTC), Asian (12-9 AM UTC)',
-    volatility_note: 'Most volatile during London-New York overlap (1-5 PM UTC)',
+
+  ps_ratio: {
+    name: 'P/S Ratio (Price-to-Sales)',
+    description: 'Valuation for unprofitable companies',
+    formula: 'Market Cap / Total Revenue',
+    interpretation: {
+      low: '< 1 - Deep value or distressed',
+      moderate: '1-5 - Reasonable for many industries',
+      high: '5-10 - High growth expectations',
+      very_high: '> 10 - Extreme growth expectations (SaaS, tech)'
+    },
+    assetType: 'stock'
   },
-  commodity: {
-    factors: ['Supply/demand reports', 'Weather events', 'OPEC decisions (oil)', 'USD strength', 'Seasonal patterns', 'Inventory data'],
-    timing: 'Follows specific exchange hours, seasonal cycles matter greatly',
-    volatility_note: 'Commodities trend strongly — breakout strategies work well',
+
+  roe: {
+    name: 'ROE (Return on Equity)',
+    description: 'How efficiently equity generates profit',
+    formula: 'Net Income / Shareholders Equity × 100',
+    interpretation: {
+      good: '> 15% consistently',
+      excellent: '> 25%',
+      caution: 'Very high ROE can be from high debt leverage'
+    },
+    assetType: 'stock'
   },
-  index: {
-    factors: ['Broad economic data', 'Sector earnings', 'Fed decisions', 'Yield curve', 'VIX (fear index)', 'Put/call ratio'],
-    timing: 'Regular market hours, futures trade nearly 24/5',
-    volatility_note: 'Indices tend to trend up over time (survivorship bias). Mean-reversion works on short timeframes.',
+
+  debt_to_equity: {
+    name: 'Debt-to-Equity Ratio',
+    description: 'Financial leverage measurement',
+    formula: 'Total Debt / Shareholders Equity',
+    interpretation: {
+      conservative: '< 0.5 - Low leverage',
+      moderate: '0.5-1.0 - Moderate leverage',
+      high: '> 1.0 - Aggressive leverage',
+      very_high: '> 2.0 - Heavily leveraged (risky)'
+    },
+    assetType: 'stock'
+  },
+
+  free_cash_flow: {
+    name: 'Free Cash Flow',
+    description: 'Cash available after capital expenditures',
+    formula: 'Operating Cash Flow - Capital Expenditures',
+    interpretation: {
+      positive_growing: 'Healthy, sustainable business',
+      positive_stable: 'Mature, stable cash generation',
+      negative: 'May indicate growth investment or trouble',
+      fcf_yield: 'FCF / Market Cap > 8% = potentially undervalued'
+    },
+    assetType: 'stock'
+  },
+
+  eps_growth: {
+    name: 'EPS Growth',
+    description: 'Earnings per share growth rate',
+    interpretation: {
+      strong: '> 25% YoY',
+      moderate: '10-25% YoY',
+      slow: '< 10% YoY',
+      acceleration: 'Each quarter growing faster than previous = very bullish'
+    },
+    assetType: 'stock'
+  },
+
+  revenue_growth: {
+    name: 'Revenue Growth',
+    description: 'Top-line growth rate',
+    interpretation: {
+      strong: '> 20% YoY',
+      moderate: '10-20% YoY',
+      slow: '< 10% YoY',
+      priority: 'Revenue growth more important than EPS for growth stocks'
+    },
+    assetType: 'stock'
   },
 };
 
-// ─── Timeframe Context ───
-export const TIMEFRAME_CONTEXT: Record<string, { 
-  holdingPeriod: string; 
-  noiseLevel: string; 
-  bestIndicators: string[];
-  tradingStyle: string;
-}> = {
-  '1m': { holdingPeriod: 'Seconds to minutes', noiseLevel: 'Very high', bestIndicators: ['VWAP', 'EMA 9/21', 'Volume'], tradingStyle: 'Scalping' },
-  '5m': { holdingPeriod: 'Minutes to hours', noiseLevel: 'High', bestIndicators: ['EMA 9/21', 'RSI', 'VWAP'], tradingStyle: 'Scalping / Day trading' },
-  '15m': { holdingPeriod: 'Hours', noiseLevel: 'Moderate', bestIndicators: ['EMA 20/50', 'RSI', 'MACD'], tradingStyle: 'Day trading' },
-  '1H': { holdingPeriod: 'Hours to days', noiseLevel: 'Low-moderate', bestIndicators: ['EMA 20/50', 'RSI', 'MACD', 'Bollinger'], tradingStyle: 'Day / Swing trading' },
-  '4H': { holdingPeriod: 'Days to weeks', noiseLevel: 'Low', bestIndicators: ['EMA 50/200', 'RSI', 'MACD', 'Fibonacci'], tradingStyle: 'Swing trading' },
-  'Daily': { holdingPeriod: 'Weeks to months', noiseLevel: 'Very low', bestIndicators: ['SMA 50/200', 'RSI', 'MACD', 'Volume profile'], tradingStyle: 'Swing / Position trading' },
-  'Weekly': { holdingPeriod: 'Months', noiseLevel: 'Minimal', bestIndicators: ['SMA 50/200', 'RSI monthly', 'Long-term trendlines'], tradingStyle: 'Position trading / Investing' },
-  'Monthly': { holdingPeriod: 'Months to years', noiseLevel: 'Minimal', bestIndicators: ['Long-term MAs', 'Secular trends'], tradingStyle: 'Long-term investing' },
+// ============================================
+// CRYPTO-SPECIFIC INDICATORS
+// ============================================
+
+export const CRYPTO_INDICATORS: Record<string, Indicator> = {
+
+  funding_rate: {
+    name: 'Funding Rate',
+    description: 'Fee paid between long and short traders in perpetual futures',
+    signals: {
+      positive: 'Longs paying shorts = bullish sentiment',
+      negative: 'Shorts paying longs = bearish sentiment',
+      extreme_positive: '> 0.1% = overheated longs, potential correction',
+      extreme_negative: '< -0.1% = excessive shorts, potential squeeze',
+      neutral: 'Near 0% = balanced market'
+    },
+    assetType: 'crypto'
+  },
+
+  exchange_netflow: {
+    name: 'Exchange Net Flow',
+    description: 'Net BTC/crypto flowing into or out of exchanges',
+    signals: {
+      large_inflows: 'Potential selling pressure coming',
+      large_outflows: 'Accumulation, moving to cold storage',
+      whale_movements: 'Track large transfers (> 1000 BTC)',
+      timing: 'Inflows often precede sell-offs by hours/days'
+    },
+    assetType: 'crypto'
+  },
+
+  fear_greed_index: {
+    name: 'Crypto Fear & Greed Index',
+    description: 'Sentiment indicator 0-100',
+    range: '0 (Extreme Fear) to 100 (Extreme Greed)',
+    signals: {
+      extreme_fear: '0-25 - Potential buy opportunity',
+      fear: '25-45 - Market nervous',
+      neutral: '45-55',
+      greed: '55-75 - Market optimistic',
+      extreme_greed: '75-100 - Potential top, caution'
+    },
+    assetType: 'crypto'
+  },
+
+  open_interest: {
+    name: 'Open Interest',
+    description: 'Total open futures/options contracts',
+    signals: {
+      rising_oi_rising_price: 'New money entering, bullish',
+      rising_oi_falling_price: 'New shorts entering, bearish',
+      falling_oi_rising_price: 'Short covering, may be exhausting',
+      falling_oi_falling_price: 'Long liquidation, bearish',
+      all_time_high_oi: 'High leverage in system, potential volatility'
+    },
+    assetType: 'crypto'
+  },
+
+  long_short_ratio: {
+    name: 'Long/Short Ratio',
+    description: 'Ratio of long to short positions',
+    signals: {
+      high_ratio: '> 2.0 - Too many longs, contrarian bearish',
+      low_ratio: '< 0.5 - Too many shorts, contrarian bullish',
+      balanced: '0.8-1.2 - Neutral market',
+      extreme_imbalance: 'Potential for liquidation cascade'
+    },
+    assetType: 'crypto'
+  },
+
+  mvrv_ratio: {
+    name: 'MVRV Ratio',
+    description: 'Market Value to Realized Value ratio',
+    signals: {
+      high: '> 3.5 - Historically marks tops',
+      low: '< 1.0 - Historically marks bottoms',
+      moderate: '1.0-3.5 - Normal range',
+      usage: 'Long-term indicator, not for short-term trading'
+    },
+    assetType: 'crypto'
+  },
 };
 
-// ─── Risk Management Rules ───
-export const RISK_RULES = [
-  'Never risk more than 1-2% of total capital per trade',
-  'Always set a stop loss before entering a trade',
-  'Risk/reward ratio should be at least 1:2 (ideally 1:3)',
-  'Don\'t add to losing positions (no averaging down without a plan)',
-  'Take partial profits at key levels (scale out)',
-  'Respect the trend — counter-trend trades need higher conviction',
-  'Volume confirms price action — low volume moves are suspect',
-  'Multiple timeframe alignment increases trade probability',
-  'News can invalidate technical setups — always check the calendar',
-  'Correlation: Don\'t stack correlated positions (e.g., multiple tech stocks)',
-];
+// ============================================
+// MARKET STRUCTURE CONCEPTS
+// ============================================
 
-/**
- * Build a context string for the AI prompt based on detected asset and timeframe
- */
-export function buildTradingContext(assetType: string, timeframe: string): string {
-  const asset = ASSET_CONTEXT[assetType as keyof typeof ASSET_CONTEXT];
-  const tf = TIMEFRAME_CONTEXT[timeframe];
-  
-  let context = '## Trading Knowledge Context\n\n';
-  
-  if (tf) {
-    context += `### Timeframe: ${timeframe}\n`;
-    context += `- Trading Style: ${tf.tradingStyle}\n`;
-    context += `- Typical Holding Period: ${tf.holdingPeriod}\n`;
-    context += `- Noise Level: ${tf.noiseLevel}\n`;
-    context += `- Best Indicators: ${tf.bestIndicators.join(', ')}\n\n`;
+export const MARKET_STRUCTURE = {
+
+  uptrend: {
+    definition: 'Series of higher highs (HH) and higher lows (HL)',
+    confirmation: 'Each swing high exceeds previous, each low above previous low',
+    breakage: 'When price makes lower low, uptrend is broken'
+  },
+
+  downtrend: {
+    definition: 'Series of lower highs (LH) and lower lows (LL)',
+    confirmation: 'Each swing high below previous, each low below previous',
+    breakage: 'When price makes higher high, downtrend is broken'
+  },
+
+  sideways: {
+    definition: 'Price oscillates between horizontal support and resistance',
+    characteristics: 'No clear higher highs or lower lows',
+    breakout: 'Wait for break and close outside range'
+  },
+
+  support: {
+    definition: 'Price level where buying interest stops decline',
+    types: ['Horizontal', 'Trendline', 'Moving average', 'Fibonacci level'],
+    strength: 'More touches and longer timeframe = stronger support',
+    broken_support: 'Becomes resistance after break'
+  },
+
+  resistance: {
+    definition: 'Price level where selling interest stops advance',
+    types: ['Horizontal', 'Trendline', 'Moving average', 'Prior highs'],
+    strength: 'More touches and longer timeframe = stronger',
+    broken_resistance: 'Becomes support after break'
+  },
+
+  breakout: {
+    definition: 'Price moves beyond defined support or resistance',
+    volume: 'Should increase 50%+ on breakout',
+    retest: 'Often price returns to test broken level as new support/resistance',
+    false_breakout: 'Quickly reverses back into range'
+  },
+
+  consolidation: {
+    definition: 'Period of sideways movement after a trend',
+    types: ['Rectangle', 'Triangle', 'Flag', 'Pennant'],
+    purpose: 'Allows market to digest gains/losses before next move',
+    duration: 'Longer consolidation often leads to bigger breakout'
+  },
+};
+
+// ============================================
+// RISK MANAGEMENT RULES
+// ============================================
+
+export const RISK_MANAGEMENT = {
+
+  position_sizing: {
+    rule: 'Risk 1-2% of account per trade maximum',
+    formula: 'Position Size = (Account × Risk%) / (Entry Price - Stop Loss)',
+    example: '$10,000 account, 1% risk, $50 entry, $48 stop = $10,000 × 0.01 / 2 = $50 = 25 shares'
+  },
+
+  stop_loss: {
+    placement: {
+      technical: 'Below support (longs) or above resistance (shorts)',
+      atr_based: 'Entry ± (2 × ATR)',
+      percentage: '5-10% from entry (depends on volatility)',
+      pattern: 'Below pattern low (cup, flag, etc.)'
+    },
+    rule: 'Always use stops, never hope and pray'
+  },
+
+  take_profit: {
+    targets: {
+      first: 'R:R 1:1.5 to 1:2 minimum',
+      second: 'R:R 1:3 to 1:5',
+      runner: 'Trail remaining with stop'
+    },
+    scaling: 'Take partial profits at targets, trail remainder'
+  },
+
+  risk_reward: {
+    minimum: '1:2 (risk $1 to make $2)',
+    ideal: '1:3 or better',
+    calculation: '(Target - Entry) / (Entry - Stop)'
+  },
+};
+
+// ============================================
+// KNOWLEDGE RETRIEVAL FUNCTIONS
+// ============================================
+
+export function getCandlestickKnowledge(): string {
+  return Object.entries(CANDLESTICK_PATTERNS)
+    .map(([_key, pattern]) => `
+### ${pattern.name} (${pattern.type})
+${pattern.description}
+**Reliability:** ${pattern.reliability}
+**Asset Type:** ${pattern.assetType}
+
+**Rules:**
+${Array.isArray(pattern.rules)
+    ? pattern.rules.map(r => `- ${r}`).join('\n')
+    : JSON.stringify(pattern.rules, null, 2)
   }
-  
-  if (asset) {
-    context += `### Asset Type: ${assetType}\n`;
-    context += `- Key Factors: ${asset.factors.join(', ')}\n`;
-    context += `- Active Hours: ${asset.timing}\n`;
-    context += `- Note: ${asset.volatility_note}\n\n`;
+
+${pattern.confirmation ? `**Confirmation:** ${pattern.confirmation}` : ''}
+    `).join('\n---\n');
+}
+
+export function getChartPatternKnowledge(assetType?: 'stock' | 'crypto' | 'both'): string {
+  const filtered = assetType
+    ? Object.entries(CHART_PATTERNS).filter(([_, p]) => p.assetType === assetType || p.assetType === 'both')
+    : Object.entries(CHART_PATTERNS);
+
+  return filtered
+    .map(([_key, pattern]) => `
+### ${pattern.name} (${pattern.type})
+${pattern.description}
+**Reliability:** ${pattern.reliability}
+**Asset Type:** ${pattern.assetType}
+
+**Rules:**
+${typeof pattern.rules === 'object' && !Array.isArray(pattern.rules)
+    ? Object.entries(pattern.rules).map(([k, v]) => `- **${k}:** ${typeof v === 'object' ? JSON.stringify(v) : v}`).join('\n')
+    : Array.isArray(pattern.rules)
+      ? pattern.rules.map(r => `- ${r}`).join('\n')
+      : pattern.rules
   }
-  
-  context += '### Risk Management\n';
-  context += RISK_RULES.slice(0, 5).map(r => `- ${r}`).join('\n');
-  
-  return context;
+
+${pattern.confirmation ? `**Confirmation:** ${pattern.confirmation}` : ''}
+    `).join('\n---\n');
+}
+
+export function getIndicatorKnowledge(assetType?: 'stock' | 'crypto' | 'both'): string {
+  const indicators = { ...INDICATORS, ...CRYPTO_INDICATORS };
+  const filtered = assetType
+    ? Object.entries(indicators).filter(([_, i]) => i.assetType === assetType || i.assetType === 'both')
+    : Object.entries(indicators);
+
+  return filtered
+    .map(([_key, indicator]) => `
+### ${indicator.name}
+${indicator.description}
+${indicator.range ? `**Range:** ${indicator.range}` : ''}
+
+**Signals:**
+${JSON.stringify(indicator.signals, null, 2)}
+    `).join('\n---\n');
+}
+
+export function getFundamentalKnowledge(): string {
+  return Object.entries(STOCK_FUNDAMENTALS)
+    .map(([_key, metric]) => `
+### ${metric.name}
+${metric.description}
+${metric.formula ? `**Formula:** ${metric.formula}` : ''}
+
+**Interpretation:**
+${Object.entries(metric.interpretation).map(([k, v]) => `- **${k}:** ${v}`).join('\n')}
+    `).join('\n---\n');
+}
+
+export function getMarketStructureKnowledge(): string {
+  return Object.entries(MARKET_STRUCTURE)
+    .map(([key, concept]) => `
+### ${key.toUpperCase().replace('_', ' ')}
+${typeof concept === 'object' && 'definition' in concept ? `**Definition:** ${(concept as any).definition}` : ''}
+${typeof concept === 'object' ? Object.entries(concept)
+      .filter(([k]) => k !== 'definition')
+      .map(([k, v]) => `**${k}:** ${Array.isArray(v) ? v.join(', ') : v}`)
+      .join('\n') : ''}
+    `).join('\n---\n');
+}
+
+export function getRiskManagementKnowledge(): string {
+  return Object.entries(RISK_MANAGEMENT)
+    .map(([key, rule]) => `
+### ${key.toUpperCase().replace('_', ' ')}
+${typeof rule === 'object' ? Object.entries(rule)
+      .map(([k, v]) => `**${k}:** ${typeof v === 'object' ? JSON.stringify(v, null, 2) : v}`)
+      .join('\n') : rule}
+    `).join('\n---\n');
+}
+
+// ============================================
+// MAIN FUNCTION: GET FULL KNOWLEDGE BASE
+// ============================================
+
+export function getFullKnowledgeBase(assetType: 'stock' | 'crypto' | 'both' = 'both'): string {
+  return `
+# 📚 PROFESSIONAL TRADING KNOWLEDGE BASE
+
+You are a professional trading analyst with deep expertise in technical analysis.
+Use ONLY the patterns, indicators, and concepts defined below.
+Be conservative - only identify patterns you can clearly see with HIGH confidence.
+
+---
+
+## 📊 CANDLESTICK PATTERNS
+
+${getCandlestickKnowledge()}
+
+---
+
+## 📈 CHART PATTERNS
+
+${getChartPatternKnowledge(assetType)}
+
+---
+
+## 🔧 TECHNICAL INDICATORS
+
+${getIndicatorKnowledge(assetType)}
+
+${assetType === 'stock' || assetType === 'both' ? `
+---
+
+## 💰 FUNDAMENTAL ANALYSIS (STOCKS)
+
+${getFundamentalKnowledge()}
+` : ''}
+
+---
+
+## 🏗️ MARKET STRUCTURE
+
+${getMarketStructureKnowledge()}
+
+---
+
+## ⚠️ RISK MANAGEMENT
+
+${getRiskManagementKnowledge()}
+
+---
+
+## CRITICAL RULES:
+1. Only identify patterns from this knowledge base
+2. Be conservative with confidence levels
+3. Always consider volume confirmation
+4. Multiple timeframe alignment increases reliability
+5. Patterns near support/resistance are more significant
+6. Always mention risk management (stop loss, position sizing)
+
+  `.trim();
+}
+
+// ============================================
+// HELPER: GET COMPACT KNOWLEDGE (FOR PROMPTS)
+// ============================================
+
+export function getCompactKnowledge(assetType: 'stock' | 'crypto' | 'both' = 'both'): string {
+  const patterns = Object.entries(CANDLESTICK_PATTERNS)
+    .concat(Object.entries(CHART_PATTERNS).filter(([_, p]) => p.assetType === assetType || p.assetType === 'both'))
+    .map(([_, p]) => `${p.name} (${p.type}, ${p.reliability})`)
+    .join(', ');
+
+  const indicators = Object.keys(INDICATORS).concat(
+    assetType === 'crypto' || assetType === 'both' ? Object.keys(CRYPTO_INDICATORS) : []
+  ).join(', ');
+
+  return `
+Known Patterns: ${patterns}
+Known Indicators: ${indicators}
+Asset Type: ${assetType}
+  `.trim();
 }
