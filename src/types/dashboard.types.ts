@@ -340,6 +340,4 @@ export interface SidebarProps {
   isTutorialProfileStep?: boolean;
   onOpenFeedback?: () => void;
   betaFeedbackReward?: number;
-  onChartAnalyzerClick?: () => void;
-  isChartAnalyzerActive?: boolean;
 }
