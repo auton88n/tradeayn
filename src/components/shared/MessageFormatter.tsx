@@ -419,6 +419,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
               const handleClick = (e: React.MouseEvent) => {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('[MessageFormatter] Link clicked:', href?.substring(0, 80));
                 // Intercept hallucinated sandbox URLs
                 if (isSandboxUrl) {
                   toast.error('File not available. Try asking again to generate the document.');
@@ -426,7 +427,11 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                 }
                 if (isDownloadable && href) {
                   const urlFilename = href.split('/').pop()?.split('?')[0] || 'download';
-                  openDocumentUrl(href, urlFilename);
+                  console.log('[MessageFormatter] Downloading:', urlFilename);
+                  openDocumentUrl(href, urlFilename).catch(err => {
+                    console.error('[MessageFormatter] Download failed:', err);
+                    toast.error('Download failed. Please try the Download button below.');
+                  });
                   return;
                 }
                 // Regular external link - open in new tab
@@ -435,13 +440,17 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                 }
               };
               
+              // Use <span> instead of <button> to avoid invalid nesting inside <p>
               return (
-                <button
+                <span
+                  role="link"
+                  tabIndex={0}
                   onClick={handleClick}
+                  onKeyDown={(e) => e.key === 'Enter' && handleClick(e as any)}
                   className="inline text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
                 >
                   {children}
-                </button>
+                </span>
               );
             },
             // Images with click-to-zoom and persistence
