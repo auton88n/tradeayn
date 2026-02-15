@@ -17,22 +17,93 @@ function getServiceClient() {
   );
 }
 
-// ─── Step 1: Vision Analysis ───
+// ─── Step 1: Vision Analysis (Enhanced with Knowledge Base Checklist) ───
 async function analyzeChartImage(imageUrl: string, apiKey: string) {
-  console.log('[chart-analyzer] Step 1: Gemini Vision analysis');
+  console.log('[chart-analyzer] Step 1: Gemini Vision analysis with knowledge base checklist');
 
   const compactKnowledge = getCompactKnowledge('both');
 
-  const prompt = `You are an expert technical analyst. Analyze this trading chart screenshot and return ONLY valid JSON (no markdown, no code fences) with exactly this structure:
+  const prompt = `## TRADING KNOWLEDGE BASE (PRIMARY REFERENCE)
+${compactKnowledge}
 
+---
+
+You are a professional technical analyst. Analyze this trading chart image using ONLY the patterns and indicators listed above in the knowledge base.
+
+**CHECK PATTERNS IN THIS PRIORITY ORDER:**
+
+**FIRST: Chart Patterns** (these show overall structure)
+- Bull flag = sharp upward move (pole) + tight downward/sideways consolidation (flag body)
+- Bear flag = sharp downward move + tight upward consolidation
+- Ascending triangle = flat resistance + rising support (minimum 3 touches each)
+- Descending triangle = flat support + falling resistance
+- Symmetrical triangle = converging trendlines (lower highs + higher lows)
+- Head and shoulders = left shoulder, head (higher peak), right shoulder (similar to left)
+- Inverse H&S = left trough, head (lower trough), right trough
+- Bull/Bear pennant = sharp move + converging triangle consolidation
+- Wedge = both trendlines sloping same direction but converging
+- Double top/bottom = two peaks/troughs at similar levels
+- Cup and handle = rounded bottom + small consolidation at resistance
+
+**THEN: Candlestick Patterns** (analyze last 5-10 candles for entry/exit signals)
+- Bullish engulfing = large green candle completely covers prior red candle body
+- Bearish engulfing = large red candle completely covers prior green candle body
+- Hammer = small body at top, long lower wick (2-3x body size), appears after downtrend
+- Shooting star = small body at bottom, long upper wick, appears after uptrend
+- Doji = open ≈ close (indecision candle)
+- Morning star = large red → small body → large green (three candle reversal)
+- Evening star = large green → small body → large red
+
+**THEN: Volume Behavior**
+- Is volume increasing or decreasing over recent candles?
+- Volume spike = 2x+ average volume bar height
+- Spikes often mark: reversals (capitulation), breakouts (confirmation), or false moves
+- Note WHERE spikes occur (at support, resistance, or breakout point)
+- Does volume confirm the pattern? (e.g., decreasing volume during flag = bullish confirmation)
+
+**FINALLY: Support/Resistance and Trend**
+- Support = horizontal levels where price bounced up (minimum 2 touches)
+- Resistance = horizontal levels where price was rejected down (minimum 2 touches)
+- Bullish trend = higher highs AND higher lows
+- Bearish trend = lower highs AND lower lows
+- Sideways = ranging between horizontal levels
+
+**CONFIDENCE CALIBRATION:**
+- HIGH (score 70-90): Textbook pattern, all rules met, volume confirms
+- MEDIUM (score 50-70): Pattern present but not perfect (e.g., flag too steep, weak volume)
+- LOW (score 30-50): Questionable pattern or mixed signals
+
+**CRITICAL RULES:**
+- Only identify patterns that exist in the knowledge base above
+- Use exact pattern names from the knowledge base (e.g., "bull_flag", "bullish_engulfing", "ascending_triangle")
+- If no clear pattern matches knowledge base, say "no clear patterns detected" but still analyze trend and levels
+- **Describe WHY you identified each pattern** (cite specific visual evidence from the chart)
+
+Return ONLY valid JSON (no markdown, no code fences) with exactly this structure:
 {
   "ticker": "the asset symbol visible on chart (e.g. AAPL, BTC/USDT, EUR/USD). If unclear, use UNKNOWN",
   "assetType": "one of: stock, crypto, forex, commodity, index",
   "timeframe": "detected chart timeframe e.g. 1m, 5m, 15m, 1H, 4H, Daily, Weekly, Monthly. If unclear, use unknown",
+  "currentPrice": null,
   "trend": "bullish, bearish, or sideways",
-  "patterns": ["array of detected chart patterns e.g. ascending triangle, head and shoulders, double top, flag, wedge"],
+  "trendReasoning": "explain the HH/HL or LH/LL structure you see, or why sideways",
+  "patterns": [
+    {
+      "name": "exact_pattern_name_from_knowledge_base",
+      "type": "BULLISH" | "BEARISH" | "NEUTRAL",
+      "confidence": "HIGH" | "MEDIUM" | "LOW",
+      "score": 70,
+      "reasoning": "describe what you see in the chart that matches this pattern",
+      "location": "where on chart (e.g., 'forming at current resistance', 'at support level')"
+    }
+  ],
   "support": [0.0],
   "resistance": [0.0],
+  "volume": {
+    "trend": "increasing" | "decreasing" | "stable",
+    "spikes": "describe any volume spikes and their locations relative to price action",
+    "significance": "does volume confirm patterns? explain how"
+  },
   "indicators": {
     "rsi": null,
     "macd": null,
@@ -40,11 +111,8 @@ async function analyzeChartImage(imageUrl: string, apiKey: string) {
     "volume": null,
     "other": null
   },
-  "keyObservations": "brief summary of what you see on the chart"
+  "technicalSummary": "2-3 sentences describing what the chart shows overall"
 }
-
-## Known Patterns & Indicators (only use these)
-${compactKnowledge}
 
 Be specific with price levels. If you can see indicator values, include them. If not visible, set to null.`;
 
@@ -60,7 +128,7 @@ Be specific with price levels. If you can see indicator values, include them. If
           { type: 'image_url', image_url: { url: imageUrl } }
         ]
       }],
-      max_tokens: 2000,
+      max_tokens: 3000,
       temperature: 0.2,
     }),
   });
@@ -73,7 +141,6 @@ Be specific with price levels. If you can see indicator values, include them. If
   const data = await res.json();
   const content = data.choices?.[0]?.message?.content || '';
   
-  // Parse JSON from response (handle potential markdown fences)
   const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   try {
     return JSON.parse(jsonStr);
@@ -111,52 +178,91 @@ async function fetchTickerNews(ticker: string, assetType: string) {
   };
 }
 
-// ─── Step 3: Sentiment + Prediction ───
+// ─── Step 3: Sentiment + Prediction (Enhanced with Weighted Scoring) ───
 async function generatePrediction(
   technical: Record<string, unknown>,
   news: { headlines: string[]; raw: Array<{ title: string; url: string; description: string }> },
   apiKey: string
 ) {
-  console.log('[chart-analyzer] Step 3: Generating sentiment + prediction');
+  console.log('[chart-analyzer] Step 3: Generating sentiment + prediction with weighted scoring');
 
-  // Inject full trading knowledge context based on detected asset type
   const detectedAssetType = (technical as any).assetType || 'stock';
   const mappedAssetType: 'stock' | 'crypto' | 'both' = 
     detectedAssetType === 'crypto' ? 'crypto' : 
     detectedAssetType === 'stock' ? 'stock' : 'both';
   const tradingContext = getFullKnowledgeBase(mappedAssetType);
 
-  const prompt = `You are an expert trading analyst combining technical and fundamental analysis. Given the following data, produce a trading prediction.
+  // Calculate technical score from pattern data
+  const patterns = (technical as any).patterns || [];
+  const highConfPatterns = Array.isArray(patterns) 
+    ? patterns.filter((p: any) => typeof p === 'object' && p.confidence === 'HIGH')
+    : [];
+  const technicalScore = highConfPatterns.length > 0
+    ? Math.round(highConfPatterns.reduce((sum: number, p: any) => sum + (p.score || 50), 0) / highConfPatterns.length)
+    : 40;
 
+  console.log(`[chart-analyzer] Technical score from ${highConfPatterns.length} HIGH confidence patterns: ${technicalScore}`);
+
+  const prompt = `## TRADING KNOWLEDGE BASE
 ${tradingContext}
 
-## Technical Analysis
+---
+
+You are an expert trading analyst combining technical and fundamental analysis. Generate a comprehensive trading prediction using WEIGHTED SCORING.
+
+## Technical Analysis (from chart vision - weight: 60%)
 ${JSON.stringify(technical, null, 2)}
 
-## Recent News Headlines
+**Pre-calculated technical score: ${technicalScore}** (based on HIGH confidence pattern scores)
+
+## Recent News Headlines (weight: 40%)
 ${news.headlines.length > 0 ? news.headlines.map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No recent news found.'}
 
-Analyze the data and return ONLY valid JSON (no markdown, no code fences):
+---
 
+## SCORING RULES:
+1. Combined score = (technicalScore × 0.6) + (newsSentimentScore × 0.4)
+   - newsSentimentScore: map overallSentiment (-1 to +1) to (0 to 100) scale
+2. Signal determination:
+   - BULLISH: combinedScore > 55 AND technicalScore >= 60
+   - BEARISH: combinedScore < 45 AND technicalScore <= 40
+   - WAIT: everything else (including when confidence < 50%)
+3. If confidence < 50% → signal MUST be "WAIT" regardless of other factors
+4. If technical and news conflict, technical takes priority (60% weight)
+
+## ACTIONABLE PLAN RULES:
+- For WAIT signal: provide conditional scenarios (IF breaks above X → BULLISH setup, IF breaks below Y → BEARISH setup)
+- For BULLISH/BEARISH: provide specific entry, stop loss, and take profit levels
+- Always calculate risk/reward ratio
+- Reference pattern reliability from knowledge base
+
+Return ONLY valid JSON (no markdown, no code fences):
 {
   "newsSentiment": [
     {"headline": "...", "sentiment": 0.0, "impact": "high/medium/low"}
   ],
   "overallSentiment": 0.0,
-  "signal": "BULLISH or BEARISH or NEUTRAL",
+  "signal": "BULLISH" | "BEARISH" | "WAIT",
   "confidence": 0,
-  "reasoning": "On the ${(technical as any).timeframe || 'unknown'} timeframe, ${(technical as any).ticker || 'this asset'} shows... (2-4 sentences explaining the combined technical + sentiment picture)",
-  "entry_zone": "price range or 'N/A'",
-  "stop_loss": "price or 'N/A'",
-  "take_profit": "price range or 'N/A'",
-  "risk_reward": "ratio or 'N/A'"
+  "technicalScore": ${technicalScore},
+  "reasoning": "On the ${(technical as any).timeframe || 'unknown'} timeframe, ${(technical as any).ticker || 'this asset'} shows... (1) What patterns were detected and their significance from the knowledge base, (2) How technical and news align or conflict, (3) Why this signal and confidence level. 3-5 sentences.",
+  "entry_zone": "specific price range or 'N/A' for WAIT",
+  "stop_loss": "specific price or 'N/A' for WAIT",
+  "take_profit": "specific price range or 'N/A' for WAIT",
+  "risk_reward": "ratio like '1:1.5' or 'N/A' for WAIT",
+  "actionablePlan": {
+    "current": "What to do right now",
+    "ifBullishBreakout": "IF price breaks above [resistance] → entry, stop, targets",
+    "ifBearishBreakdown": "IF price breaks below [support] → entry, stop, targets"
+  },
+  "riskManagement": "Position sizing recommendation (1-2% account risk per trade)"
 }
 
 Rules:
 - Sentiment scores: -1.0 (very bearish) to +1.0 (very bullish)
 - Confidence: 0-100 (higher = more conviction)
 - Always reference the timeframe and asset type in reasoning
-- Be specific with price levels when possible
+- Reference specific patterns by name and their knowledge base reliability rating
 - If no news, base prediction purely on technicals and note that`;
 
   const res = await fetch(AI_GATEWAY, {
@@ -165,7 +271,7 @@ Rules:
     body: JSON.stringify({
       model: 'google/gemini-2.5-flash',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 2000,
+      max_tokens: 2500,
       temperature: 0.3,
     }),
   });
@@ -249,23 +355,23 @@ Deno.serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    // Parse request - accept either imageBase64 or imageUrl
+    // Parse request
     const { imageBase64, imageUrl: directImageUrl, sessionId } = await req.json();
     if (!imageBase64 && !directImageUrl) {
       return new Response(JSON.stringify({ error: 'imageBase64 or imageUrl is required' }), { status: 400, headers: corsHeaders });
     }
 
-    // Upload image to storage (skip if direct URL provided)
+    // Upload image to storage
     console.log('[chart-analyzer] Preparing chart image...');
     const imageUrl = directImageUrl || await uploadImageToStorage(imageBase64, userId);
 
-    // Step 1: Vision analysis
+    // Step 1: Vision analysis (enhanced with knowledge base checklist)
     const technical = await analyzeChartImage(imageUrl, LOVABLE_API_KEY);
 
     // Step 2: News fetch
     const news = await fetchTickerNews(technical.ticker, technical.assetType);
 
-    // Step 3: Sentiment + Prediction
+    // Step 3: Sentiment + Prediction (enhanced with weighted scoring)
     const prediction = await generatePrediction(technical, news, LOVABLE_API_KEY);
 
     // Step 4: Store in DB
@@ -273,18 +379,60 @@ Deno.serve(async (req) => {
       userId, sessionId || null, imageUrl, technical, news.raw, prediction
     );
 
-    // Step 5: Return result
+    // Step 5: Build result (map rich pattern objects to frontend-compatible format)
+    const rawPatterns = technical.patterns || [];
+    const patternNames: string[] = Array.isArray(rawPatterns)
+      ? rawPatterns.map((p: any) => {
+          if (typeof p === 'string') return p;
+          if (typeof p === 'object' && p.name) {
+            const conf = p.confidence ? ` (${p.confidence})` : '';
+            return `${p.name}${conf}`;
+          }
+          return String(p);
+        })
+      : [];
+
+    // Build volume description from structured volume object
+    const volumeObj = (technical as any).volume;
+    const volumeDesc = volumeObj && typeof volumeObj === 'object'
+      ? `${volumeObj.trend || 'unknown'} volume. ${volumeObj.significance || ''} ${volumeObj.spikes || ''}`.trim()
+      : (technical as any).indicators?.volume || null;
+
+    // Build key observations from technical summary + trend reasoning
+    const keyObs = [
+      (technical as any).technicalSummary,
+      (technical as any).trendReasoning ? `Trend: ${(technical as any).trendReasoning}` : null,
+    ].filter(Boolean).join(' ');
+
+    // Build reasoning with actionable plan
+    let reasoning = prediction.reasoning || '';
+    if (prediction.actionablePlan) {
+      const plan = prediction.actionablePlan;
+      const planParts = [
+        plan.current ? `\n\n📋 ${plan.current}` : '',
+        plan.ifBullishBreakout ? `\n🟢 ${plan.ifBullishBreakout}` : '',
+        plan.ifBearishBreakdown ? `\n🔴 ${plan.ifBearishBreakdown}` : '',
+      ].filter(Boolean).join('');
+      if (planParts) reasoning += planParts;
+    }
+    if (prediction.riskManagement) {
+      reasoning += `\n\n⚠️ Risk: ${prediction.riskManagement}`;
+    }
+
     const result = {
       ticker: technical.ticker,
       assetType: technical.assetType,
       timeframe: technical.timeframe,
       technical: {
         trend: technical.trend,
-        patterns: technical.patterns || [],
+        patterns: patternNames,
         support: technical.support || [],
         resistance: technical.resistance || [],
-        indicators: technical.indicators || {},
-        keyObservations: technical.keyObservations || '',
+        indicators: {
+          ...(technical.indicators || {}),
+          volume: volumeDesc,
+        },
+        keyObservations: keyObs || (technical as any).keyObservations || '',
       },
       news: news.raw.map((n, i) => ({
         ...n,
@@ -296,7 +444,7 @@ Deno.serve(async (req) => {
         confidence: prediction.confidence,
         timeframe: technical.timeframe,
         assetType: technical.assetType,
-        reasoning: prediction.reasoning,
+        reasoning,
         entry_zone: prediction.entry_zone,
         stop_loss: prediction.stop_loss,
         take_profit: prediction.take_profit,
@@ -308,7 +456,7 @@ Deno.serve(async (req) => {
       disclaimer: 'This analysis is for educational purposes only. Not financial advice. Always do your own research before making investment decisions.',
     };
 
-    console.log('[chart-analyzer] ✅ Analysis complete for', technical.ticker);
+    console.log('[chart-analyzer] ✅ Analysis complete for', technical.ticker, '| Signal:', prediction.signal, '| Confidence:', prediction.confidence);
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

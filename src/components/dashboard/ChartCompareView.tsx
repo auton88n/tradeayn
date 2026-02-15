@@ -1,4 +1,4 @@
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Target } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Clock, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ const signalConfig = {
   BULLISH: { icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10' },
   BEARISH: { icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-500/10' },
   NEUTRAL: { icon: Minus, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+  WAIT: { icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10' },
 };
 
 function CompareColumn({ item }: { item: ChartHistoryItem }) {
