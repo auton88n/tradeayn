@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useChartCoach } from '@/hooks/useChartCoach';
-import ReactMarkdown from 'react-markdown';
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
 
@@ -63,9 +63,7 @@ const MessageBubble = memo(({ msg, index }: { msg: { role: string; content: stri
       )}
     >
       {msg.role === 'assistant' ? (
-        <div className="prose prose-sm dark:prose-invert max-w-none">
-          <ReactMarkdown>{msg.content}</ReactMarkdown>
-        </div>
+        <MessageFormatter content={msg.content} className="prose prose-sm dark:prose-invert max-w-none" />
       ) : (
         <p className="text-sm">{msg.content}</p>
       )}

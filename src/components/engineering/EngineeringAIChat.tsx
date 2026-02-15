@@ -28,8 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
 import { toast } from '@/hooks/use-toast';
 import { CalculatorType } from '@/lib/engineeringKnowledge';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -118,7 +117,22 @@ export const EngineeringAIChat = ({
   isOpen,
   onClose
 }: EngineeringAIChatProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const storageKey = `ayn-engineering-chat-${calculatorType}`;
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+    } catch { return []; }
+  });
+
+  // Persist messages to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+    } catch { /* storage full, ignore */ }
+  }, [messages, storageKey]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -310,6 +324,7 @@ export const EngineeringAIChat = ({
   const clearConversation = () => {
     setMessages([]);
     setStreamingContent('');
+    localStorage.removeItem(storageKey);
   };
 
   if (!isOpen) return null;
@@ -462,11 +477,7 @@ export const EngineeringAIChat = ({
                   <Bot className="h-4 w-4 text-primary" />
                 </div>
                 <div className="bg-muted/50 rounded-2xl rounded-tl-md px-4 py-3 flex-1 max-w-[90%]">
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {streamingContent}
-                    </ReactMarkdown>
-                  </div>
+                  <MessageFormatter content={streamingContent} className="prose prose-sm dark:prose-invert max-w-none" />
                   <div className="flex items-center gap-1 mt-2">
                     <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -569,11 +580,7 @@ const MessageBubble = ({
       <div className="space-y-3 flex-1 max-w-[90%]">
         {/* Main Content */}
         <div className="bg-muted/50 rounded-2xl rounded-tl-md px-4 py-3">
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {message.content}
-            </ReactMarkdown>
-          </div>
+          <MessageFormatter content={message.content} className="prose prose-sm dark:prose-invert max-w-none" />
         </div>
 
         {/* Structured Data Cards */}

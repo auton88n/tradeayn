@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
 
@@ -91,11 +91,24 @@ User Emotional State: ${emotionalState}`;
 }
 
 const MAX_MESSAGES = 50;
+const STORAGE_KEY = 'ayn-chart-coach-history';
 
 export function useChartCoach(result?: ChartAnalysisResult) {
-  const [messages, setMessages] = useState<CoachMessage[]>([]);
+  const [messages, setMessages] = useState<CoachMessage[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Persist messages to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    } catch { /* storage full, ignore */ }
+  }, [messages]);
 
   const sendMessage = useCallback(async (userMessage: string) => {
     const trimmed = userMessage.trim();
@@ -168,6 +181,7 @@ export function useChartCoach(result?: ChartAnalysisResult) {
 
   const clearChat = useCallback(() => {
     setMessages([]);
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   return { messages, isLoading, sendMessage, clearChat };
