@@ -40,13 +40,19 @@ const ChartAnalyzerPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto pt-6 px-4">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Subtle ambient gradient */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,_hsl(36_80%_50%_/_0.06)_0%,_transparent_70%)]" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,_hsl(25_80%_45%_/_0.04)_0%,_transparent_70%)]" />
+      </div>
+
+      <div className="relative max-w-3xl mx-auto pt-6 px-4">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate('/')}
-          className="mb-4 gap-2"
+          className="mb-4 gap-2 bg-muted/50 backdrop-blur-sm rounded-full px-4 hover:bg-muted"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Dashboard
