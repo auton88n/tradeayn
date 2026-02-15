@@ -11,6 +11,7 @@ import ChartHistoryList from './ChartHistoryList';
 import ChartHistoryDetail from './ChartHistoryDetail';
 import ChartHistoryStats from './ChartHistoryStats';
 import ChartCompareView from './ChartCompareView';
+import ChartCoachChat from './ChartCoachChat';
 import type { ChartHistoryItem } from '@/types/chartAnalyzer.types';
 
 const STEPS = [
@@ -196,6 +197,7 @@ export default function ChartAnalyzer() {
             {result && step === 'done' && (
               <>
                 <ChartAnalyzerResults result={result} />
+                <ChartCoachChat result={result} />
                 <div className="text-center">
                   <Button variant="outline" onClick={handleAnalyzeComplete} className="gap-2">
                     <X className="h-4 w-4" /> Analyze Another Chart

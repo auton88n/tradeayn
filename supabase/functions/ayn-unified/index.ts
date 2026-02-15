@@ -48,6 +48,11 @@ const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
   image: [
     { id: 'lovable-gemini-image', provider: 'lovable', model_id: 'google/gemini-2.5-flash-image', display_name: 'Gemini Image' }
   ],
+  'trading-coach': [
+    { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' },
+    { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini 2.5 Flash' },
+    { id: 'lovable-gemini-flash-lite', provider: 'lovable', model_id: 'google/gemini-2.5-flash-lite', display_name: 'Gemini 2.5 Flash Lite' }
+  ],
 };
 
 // Generate image using Lovable AI (DALL-E 3 primary, Gemini fallback)
