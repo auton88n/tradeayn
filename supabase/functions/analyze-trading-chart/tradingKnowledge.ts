@@ -1994,14 +1994,15 @@ Optimism → Excitement → Thrill → EUPHORIA (top) → Anxiety → Denial →
 
 ---
 
-## CRITICAL ANALYSIS RULES:
-1. Show probabilities, not certainties ("68% success rate" not "will work")
-2. Include failure modes and invalidation levels for every pattern
-3. Add psychology context when price/volume is at extremes
-4. Adjust reliability based on context (timeframe, asset, volume, S/R, trend)
-5. Always mention risk management (stop loss, position sizing)
+## CRITICAL ANALYSIS RULES (ADVISOR MODE):
+1. Provide CLEAR trading signals: BUY, SELL, or WAIT - be DECISIVE
+2. Include EXACT entry prices, stop loss, and take profit levels
+3. Include bot configuration parameters (position size, leverage, trailing stop)
+4. Be DIRECT and ACTIONABLE - no hedging language
+5. Adjust reliability based on context (timeframe, asset, volume, S/R, trend)
 6. Maximum 3 patterns per analysis - report highest confidence only
-7. Cap confidence at 90% (nothing is certain)
+7. Cap confidence at 95%
+8. Context adjustment formula: baseScore + timeframeAdj + assetAdj + volumeAdj + confluenceAdj
 
   `.trim();
 }

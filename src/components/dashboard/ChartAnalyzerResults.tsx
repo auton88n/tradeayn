@@ -1,20 +1,23 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, Minus, Clock, BarChart3, Newspaper, Target, Shield, Award, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Volume2, Brain, Crosshair, Bell } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Clock, BarChart3, Newspaper, Target, Shield, Award, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Volume2, Brain, Crosshair, Bell, Bot, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import type { ChartAnalysisResult, ChartPattern, PatternBreakdown, PsychologyWarnings, DisciplineReminders, ConfidenceBreakdown } from '@/types/chartAnalyzer.types';
+import { toast } from '@/hooks/use-toast';
+import type { ChartAnalysisResult, ChartPattern, PatternBreakdown, PsychologyWarnings, DisciplineReminders, ConfidenceBreakdown, TradingSignal } from '@/types/chartAnalyzer.types';
 
 interface Props {
   result: ChartAnalysisResult;
 }
 
-const signalConfig = {
+const signalConfig: Record<string, { icon: typeof TrendingUp; color: string; bg: string; label: string }> = {
   BULLISH: { icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10', label: 'BULLISH' },
   BEARISH: { icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-500/10', label: 'BEARISH' },
   NEUTRAL: { icon: Minus, color: 'text-yellow-500', bg: 'bg-yellow-500/10', label: 'NEUTRAL' },
   WAIT: { icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'WAIT' },
+  BUY: { icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10', label: 'BUY' },
+  SELL: { icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-500/10', label: 'SELL' },
 };
 
 const assetIcons: Record<string, string> = {
@@ -26,6 +29,27 @@ const confidenceColors: Record<string, string> = {
   MEDIUM: 'bg-yellow-500/15 text-yellow-500 border-yellow-500/30',
   LOW: 'bg-red-500/15 text-red-500 border-red-500/30',
 };
+
+// ─── Copy Bot Config ───
+function copyBotConfig(ts: TradingSignal) {
+  const trailing = ts.botConfig.trailingStop.enabled
+    ? `Trailing: ${ts.botConfig.trailingStop.trailPercent}% after ${ts.botConfig.trailingStop.activateAt}`
+    : 'Trailing: Off';
+  const config = `SIGNAL: ${ts.action}
+ENTRY: ${ts.entry.price} (${ts.entry.orderType})
+STOP: ${ts.stopLoss.price} (-${ts.stopLoss.percentage}%)
+TP1: ${ts.takeProfits[0]?.price} (+${ts.takeProfits[0]?.percentage}%) - Close ${ts.takeProfits[0]?.closePercent}%
+TP2: ${ts.takeProfits[1]?.price} (+${ts.takeProfits[1]?.percentage}%) - Close ${ts.takeProfits[1]?.closePercent}%
+BOT CONFIG:
+Position: ${ts.botConfig.positionSize}%
+Leverage: ${ts.botConfig.leverage}x
+R:R: 1:${ts.riskReward}
+${trailing}
+INVALIDATION: ${ts.invalidation.price} - ${ts.invalidation.condition}`.trim();
+
+  navigator.clipboard.writeText(config);
+  toast({ title: 'Copied!', description: 'Bot configuration copied to clipboard' });
+}
 
 // ─── Collapsible Section Wrapper ───
 function Section({ id, title, icon: Icon, expanded, onToggle, children, badge }: {
@@ -189,6 +213,91 @@ function parseRiskReward(rr: string): { ratio: number | null; label: string; col
   return { ratio, label: '⚠️ Below minimum (need 1:1.5)', color: 'text-amber-500' };
 }
 
+// ─── Bot Configuration Card ───
+function BotConfigCard({ tradingSignal }: { tradingSignal: TradingSignal }) {
+  const actionColor = tradingSignal.action === 'BUY' ? 'text-green-500 bg-green-500/10 border-green-500/30'
+    : tradingSignal.action === 'SELL' ? 'text-red-500 bg-red-500/10 border-red-500/30'
+    : 'text-blue-500 bg-blue-500/10 border-blue-500/30';
+
+  return (
+    <Card className="border border-border/50">
+      <CardContent className="pt-4 pb-4 space-y-4">
+        {/* Action Badge */}
+        <div className="flex items-center justify-between">
+          <div className={`px-4 py-2 rounded-lg border text-lg font-bold ${actionColor}`}>
+            {tradingSignal.action}
+          </div>
+          <button
+            onClick={() => copyBotConfig(tradingSignal)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium transition-colors"
+          >
+            <Copy className="h-3.5 w-3.5" /> Copy Bot Config
+          </button>
+        </div>
+
+        {/* Entry + Order Type */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+          <div className="p-2 rounded-lg bg-muted/50">
+            <p className="text-muted-foreground text-xs">Entry Price</p>
+            <p className="font-semibold">{tradingSignal.entry.price}</p>
+            <p className="text-[10px] text-muted-foreground">{tradingSignal.entry.orderType} • {tradingSignal.entry.timeInForce}</p>
+          </div>
+          <div className="p-2 rounded-lg bg-red-500/5">
+            <p className="text-muted-foreground text-xs">Stop Loss</p>
+            <p className="font-semibold text-red-500">{tradingSignal.stopLoss.price}</p>
+            <p className="text-[10px] text-red-400">-{tradingSignal.stopLoss.percentage}%</p>
+          </div>
+          <div className="p-2 rounded-lg bg-muted/50">
+            <p className="text-muted-foreground text-xs">Risk/Reward</p>
+            <p className="font-semibold">1:{tradingSignal.riskReward}</p>
+          </div>
+        </div>
+
+        {/* Take Profits */}
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          {tradingSignal.takeProfits.map((tp) => (
+            <div key={tp.level} className="p-2 rounded-lg bg-green-500/5">
+              <p className="text-muted-foreground text-xs">Take Profit {tp.level}</p>
+              <p className="font-semibold text-green-500">{tp.price}</p>
+              <p className="text-[10px] text-green-400">+{tp.percentage}% • Close {tp.closePercent}%</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Bot Parameters */}
+        <div className="grid grid-cols-3 gap-3 text-sm">
+          <div className="p-2 rounded-lg bg-muted/30 text-center">
+            <p className="text-muted-foreground text-[10px]">Position</p>
+            <p className="font-semibold text-sm">{tradingSignal.botConfig.positionSize}%</p>
+          </div>
+          <div className="p-2 rounded-lg bg-muted/30 text-center">
+            <p className="text-muted-foreground text-[10px]">Leverage</p>
+            <p className="font-semibold text-sm">{tradingSignal.botConfig.leverage}x</p>
+          </div>
+          <div className="p-2 rounded-lg bg-muted/30 text-center">
+            <p className="text-muted-foreground text-[10px]">Trailing Stop</p>
+            <p className="font-semibold text-sm">
+              {tradingSignal.botConfig.trailingStop.enabled
+                ? `${tradingSignal.botConfig.trailingStop.trailPercent}% @ ${tradingSignal.botConfig.trailingStop.activateAt}`
+                : 'Off'}
+            </p>
+          </div>
+        </div>
+
+        {/* Invalidation */}
+        <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30">
+          <div className="flex items-center gap-1.5 text-red-500 text-xs font-semibold mb-0.5">
+            <AlertTriangle className="h-3.5 w-3.5" /> Invalidation
+          </div>
+          <p className="text-xs text-red-400">
+            Below {tradingSignal.invalidation.price} — {tradingSignal.invalidation.condition}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function NextStepsCard({ result }: Props) {
   const { prediction, technical } = result;
   const isWait = prediction.signal === 'WAIT';
@@ -262,7 +371,7 @@ export default function ChartAnalyzerResults({ result }: Props) {
 
   const signal = signalConfig[result.prediction.signal] || signalConfig.NEUTRAL;
   const SignalIcon = signal.icon;
-  const { entryTiming, patternBreakdown, psychologyWarnings, disciplineReminders, confidenceBreakdown } = result.prediction;
+  const { entryTiming, patternBreakdown, psychologyWarnings, disciplineReminders, confidenceBreakdown, tradingSignal } = result.prediction;
   const volumeAnalysis = result.technical.volumeAnalysis;
   const rrParsed = parseRiskReward(result.prediction.risk_reward || '');
 
@@ -307,6 +416,19 @@ export default function ChartAnalyzerResults({ result }: Props) {
           {confidenceBreakdown && <ConfidenceBreakdownDisplay breakdown={confidenceBreakdown} />}
         </CardContent>
       </Card>
+
+      {/* ─── Bot Configuration (NEW) ─── */}
+      {tradingSignal && (
+        <Section id="botconfig" title="Bot Configuration" icon={Bot} expanded={expanded} onToggle={toggleSection}
+          badge={<Badge variant="outline" className={`text-[10px] ml-2 ${
+            tradingSignal.action === 'BUY' ? 'text-green-500 border-green-500/30' :
+            tradingSignal.action === 'SELL' ? 'text-red-500 border-red-500/30' :
+            'text-blue-500 border-blue-500/30'
+          }`}>{tradingSignal.action}</Badge>}
+        >
+          <BotConfigCard tradingSignal={tradingSignal} />
+        </Section>
+      )}
 
       {/* ─── Collapsible Sections ─── */}
 
@@ -484,10 +606,19 @@ export default function ChartAnalyzerResults({ result }: Props) {
         <NextStepsCard result={result} />
       </Section>
 
-      {/* Disclaimer */}
-      <p className="text-xs text-muted-foreground text-center px-4">
-        ⚠️ {result.disclaimer}
-      </p>
+      {/* Testing Mode Disclaimer */}
+      <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-4">
+        <div className="flex items-center gap-2 text-red-500 font-semibold text-sm mb-2">
+          <AlertTriangle className="h-4 w-4" /> TESTING MODE — HIGH RISK
+        </div>
+        <ul className="text-xs text-red-400 space-y-0.5">
+          <li>• Experimental AI advisor in testing</li>
+          <li>• Signals may be inaccurate</li>
+          <li>• Trading carries risk of loss</li>
+          <li>• Use paper trading only</li>
+          <li>• Not financial advice</li>
+        </ul>
+      </div>
     </div>
   );
 }

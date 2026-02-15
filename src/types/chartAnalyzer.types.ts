@@ -3,7 +3,39 @@
 // ============================================
 
 export type AssetType = 'stock' | 'crypto' | 'forex' | 'commodity' | 'index';
-export type PredictionSignal = 'BULLISH' | 'BEARISH' | 'NEUTRAL' | 'WAIT';
+export type PredictionSignal = 'BULLISH' | 'BEARISH' | 'NEUTRAL' | 'WAIT' | 'BUY' | 'SELL';
+
+export interface TradingSignalEntry {
+  price: number;
+  orderType: 'LIMIT' | 'MARKET';
+  timeInForce: 'GTC';
+}
+
+export interface TradingSignalTP {
+  level: number;
+  price: number;
+  percentage: number;
+  closePercent: number;
+}
+
+export interface TradingSignal {
+  action: 'BUY' | 'SELL' | 'WAIT';
+  reasoning: string;
+  entry: TradingSignalEntry;
+  stopLoss: { price: number; percentage: number };
+  takeProfits: TradingSignalTP[];
+  riskReward: number;
+  botConfig: {
+    positionSize: number;
+    leverage: number;
+    trailingStop: {
+      enabled: boolean;
+      activateAt: 'TP1' | 'TP2';
+      trailPercent: number;
+    };
+  };
+  invalidation: { price: number; condition: string };
+}
 export type ChartTimeframe = '1m' | '5m' | '15m' | '1H' | '4H' | 'Daily' | 'Weekly' | 'Monthly' | 'unknown';
 
 export interface ChartPattern {
@@ -101,6 +133,7 @@ export interface ChartPrediction {
   psychologyWarnings?: PsychologyWarnings;
   disciplineReminders?: DisciplineReminders;
   confidenceBreakdown?: ConfidenceBreakdown;
+  tradingSignal?: TradingSignal;
 }
 
 export interface ChartAnalysisResult {
