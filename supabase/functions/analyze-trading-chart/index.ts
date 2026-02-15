@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { searchWeb } from "../_shared/firecrawlHelper.ts";
 import { uploadImageToStorage } from "../_shared/storageUpload.ts";
-import { buildTradingContext } from "./tradingKnowledge.ts";
+import { getFullKnowledgeBase, getCompactKnowledge } from "./tradingKnowledge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,6 +20,8 @@ function getServiceClient() {
 // ─── Step 1: Vision Analysis ───
 async function analyzeChartImage(imageUrl: string, apiKey: string) {
   console.log('[chart-analyzer] Step 1: Gemini Vision analysis');
+
+  const compactKnowledge = getCompactKnowledge('both');
 
   const prompt = `You are an expert technical analyst. Analyze this trading chart screenshot and return ONLY valid JSON (no markdown, no code fences) with exactly this structure:
 
@@ -40,6 +42,9 @@ async function analyzeChartImage(imageUrl: string, apiKey: string) {
   },
   "keyObservations": "brief summary of what you see on the chart"
 }
+
+## Known Patterns & Indicators (only use these)
+${compactKnowledge}
 
 Be specific with price levels. If you can see indicator values, include them. If not visible, set to null.`;
 
@@ -114,11 +119,12 @@ async function generatePrediction(
 ) {
   console.log('[chart-analyzer] Step 3: Generating sentiment + prediction');
 
-  // Inject trading knowledge context
-  const tradingContext = buildTradingContext(
-    (technical as any).assetType || 'stock',
-    (technical as any).timeframe || 'Daily'
-  );
+  // Inject full trading knowledge context based on detected asset type
+  const detectedAssetType = (technical as any).assetType || 'stock';
+  const mappedAssetType: 'stock' | 'crypto' | 'both' = 
+    detectedAssetType === 'crypto' ? 'crypto' : 
+    detectedAssetType === 'stock' ? 'stock' : 'both';
+  const tradingContext = getFullKnowledgeBase(mappedAssetType);
 
   const prompt = `You are an expert trading analyst combining technical and fundamental analysis. Given the following data, produce a trading prediction.
 
