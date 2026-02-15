@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { AYN_BRAND, getEmployeeSystemPrompt } from "../_shared/aynBrand.ts";
 import { scrapeUrl, searchWeb } from "../_shared/firecrawlHelper.ts";
+import { sanitizeForPrompt, FIRECRAWL_CONTENT_GUARD } from "../_shared/sanitizeFirecrawl.ts";
+import { sanitizeUserPrompt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { notifyFounder } from "../_shared/proactiveAlert.ts";
 
@@ -274,10 +276,10 @@ async function handlePositioning(supabase: any, body: any, apiKey: string) {
   const scraped = await scrapeUrl(url);
 
   const competitorContent = scraped.success
-    ? `COMPETITOR WEBSITE CONTENT:\nTitle: ${scraped.metadata?.title || 'Unknown'}\nURL: ${scraped.metadata?.sourceURL || url}\n\n${(scraped.markdown || '').substring(0, 3000)}`
+    ? `COMPETITOR WEBSITE CONTENT:\nTitle: ${scraped.metadata?.title || 'Unknown'}\nURL: ${scraped.metadata?.sourceURL || url}\n\n${sanitizeForPrompt((scraped.markdown || ''), 3000)}`
     : `Could not scrape ${url}. Analyzing based on URL alone.`;
 
-  const systemPrompt = buildMarketingSystem(`MODE: Competitive Positioning\nAnalyze a competitor and recommend how AYN should position against them.`);
+  const systemPrompt = buildMarketingSystem(`MODE: Competitive Positioning\nAnalyze a competitor and recommend how AYN should position against them.\n${FIRECRAWL_CONTENT_GUARD}`) + INJECTION_GUARD;
 
   const userPrompt = `Analyze this competitor and tell me how we beat them:
 

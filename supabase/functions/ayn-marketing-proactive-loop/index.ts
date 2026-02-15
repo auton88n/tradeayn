@@ -4,6 +4,7 @@ import { analyzeOurTweets, analyzeCompetitorData, generateTweetDrafts } from "..
 import { logAynActivity } from "../_shared/aynLogger.ts";
 import { sendTelegramMessage } from "../_shared/telegramHelper.ts";
 import { scrapeUrl, searchWeb } from "../_shared/firecrawlHelper.ts";
+import { sanitizeForPrompt } from "../_shared/sanitizeFirecrawl.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -241,7 +242,8 @@ serve(async (req) => {
       if (searchResult.success && searchResult.data?.length) {
         report.push(`\n🔍 market pulse:`);
         for (const r of searchResult.data.slice(0, 3)) {
-          report.push(`  • ${r.title?.slice(0, 60)} — ${r.url}`);
+          const safeTitle = sanitizeForPrompt(r.title || '', 60);
+          report.push(`  • ${safeTitle} — ${r.url}`);
         }
       }
     } catch (e) {

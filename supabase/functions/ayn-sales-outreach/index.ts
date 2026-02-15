@@ -5,6 +5,8 @@ import { logAynActivity } from "../_shared/aynLogger.ts";
 import { AYN_BRAND, getEmployeeSystemPrompt, formatNatural } from "../_shared/aynBrand.ts";
 import { logReflection } from "../_shared/employeeState.ts";
 import { scrapeUrl } from "../_shared/firecrawlHelper.ts";
+import { sanitizeForPrompt, FIRECRAWL_CONTENT_GUARD } from "../_shared/sanitizeFirecrawl.ts";
+import { sanitizeUserPrompt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 import { notifyFounder } from "../_shared/proactiveAlert.ts";
 
 const EMPLOYEE_ID = 'sales';
@@ -100,7 +102,7 @@ async function handleProspect(supabase: any, url: string) {
 7. Which of our services would help them most?
 
 Our services: ${SERVICES.map(s => `${s.name}: ${s.desc}`).join('\n')}
-
+${FIRECRAWL_CONTENT_GUARD}
 Respond in JSON format:
 {
   "company_name": "...",
@@ -111,10 +113,10 @@ Respond in JSON format:
   "website_quality": 7,
   "recommended_services": ["AI Employees", "Smart Ticketing Systems"],
   "notes": "Brief assessment of opportunity"
-}`,
+}` + INJECTION_GUARD,
       }, {
         role: 'user',
-        content: `Website URL: ${formattedUrl}\nTitle: ${metadata.title || 'Unknown'}\n\nContent:\n${websiteContent.slice(0, 8000)}`,
+        content: `Website URL: ${formattedUrl}\nTitle: ${metadata.title || 'Unknown'}\n\nContent:\n${sanitizeForPrompt(websiteContent, 8000)}`,
       }],
     }),
   });

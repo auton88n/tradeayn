@@ -2338,6 +2338,24 @@ export type Database = {
         }
         Relationships: []
       }
+      news_cache: {
+        Row: {
+          created_at: string
+          news_data: Json
+          ticker: string
+        }
+        Insert: {
+          created_at?: string
+          news_data?: Json
+          ticker: string
+        }
+        Update: {
+          created_at?: string
+          news_data?: Json
+          ticker?: string
+        }
+        Relationships: []
+      }
       pending_pin_changes: {
         Row: {
           approval_token: string
