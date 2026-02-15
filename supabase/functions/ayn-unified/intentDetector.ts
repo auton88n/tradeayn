@@ -24,6 +24,9 @@ export function detectIntent(message: string): string {
     /visualize/,
     /صورة/, /ارسم/, /ارسم لي/, /اعطني صورة/,
     /image\s+de/, /dessine/, /montre\s+moi/, /genere\s+une\s+image/,
+    // Retry patterns specific to images
+    /try\s+again.*image/, /retry.*image/, /another\s+image/, /new\s+image/, /new\s+picture/,
+    /أعد.*صورة/, /صورة.*مرة/, /réessayer.*image/,
   ];
   
   if (imagePatterns.some(rx => rx.test(lower))) return 'image';
