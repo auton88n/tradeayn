@@ -330,69 +330,47 @@ function addFooter(
   doc.text(pageText, pageWidth / 2, footerY, { align: 'center' });
 }
 
-// Generate Excel using SheetJS
-async function generateExcel(data: DocumentRequest): Promise<Uint8Array> {
-  const XLSX = await import("https://esm.sh/xlsx@0.20.1");
-  
+// Generate Excel-compatible CSV (no external dependencies)
+function generateExcel(data: DocumentRequest): Uint8Array {
   const isRTL = data.language === 'ar';
-  const wb = XLSX.utils.book_new();
-  
-  // Create main data sheet
-  const allRows: (string | number)[][] = [];
-  
-  // Add title row
-  allRows.push([data.title]);
-  allRows.push([formatDate(new Date(), data.language)]);
-  allRows.push([]); // Empty row
-  
-  for (const section of data.sections) {
-    // Section heading
-    allRows.push([section.heading]);
-    
-    // Section content as wrapped text
-    if (section.content) {
-      allRows.push([section.content]);
+  const rows: string[][] = [];
+
+  // BOM for UTF-8 Excel compatibility
+  const escapeCell = (val: string | number) => {
+    const s = String(val ?? '');
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return `"${s.replace(/"/g, '""')}"`;
     }
-    
-    // Section table
+    return s;
+  };
+
+  // Title row
+  rows.push([escapeCell(data.title)]);
+  rows.push([escapeCell(formatDate(new Date(), data.language))]);
+  rows.push([]);
+
+  for (const section of data.sections) {
+    rows.push([escapeCell(section.heading)]);
+
+    if (section.content) {
+      rows.push([escapeCell(section.content)]);
+    }
+
     if (section.table && section.table.headers) {
       const headers = isRTL ? [...section.table.headers].reverse() : section.table.headers;
-      allRows.push(headers);
-      
+      rows.push(headers.map(escapeCell));
+
       for (const row of section.table.rows || []) {
         const rowData = isRTL ? [...row].reverse() : row;
-        allRows.push(rowData);
+        rows.push(rowData.map(escapeCell));
       }
     }
-    
-    allRows.push([]); // Empty row between sections
+
+    rows.push([]);
   }
-  
-  // No branding footer in Excel - cleaner output
-  
-  const ws = XLSX.utils.aoa_to_sheet(allRows);
-  
-  // Set RTL for Arabic
-  if (isRTL) {
-    ws['!RTL'] = true;
-  }
-  
-  // Auto-size columns (approximate)
-  const colWidths = allRows.reduce((acc, row) => {
-    row.forEach((cell, i) => {
-      const len = String(cell || '').length;
-      acc[i] = Math.max(acc[i] || 10, Math.min(len + 2, 50));
-    });
-    return acc;
-  }, [] as number[]);
-  
-  ws['!cols'] = colWidths.map(w => ({ wch: w }));
-  
-  XLSX.utils.book_append_sheet(wb, ws, data.language === 'ar' ? 'التقرير' : 
-                                       data.language === 'fr' ? 'Rapport' : 'Report');
-  
-  const buffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-  return new Uint8Array(buffer);
+
+  const csvContent = '\uFEFF' + rows.map(r => r.join(',')).join('\r\n');
+  return new TextEncoder().encode(csvContent);
 }
 
 // toDataUrl removed - files are now uploaded to Supabase Storage
@@ -451,9 +429,9 @@ serve(async (req) => {
       filename = `${safeTitle}_${timestamp}.pdf`;
       contentType = 'application/pdf';
     } else if (body.type === 'excel') {
-      fileData = await generateExcel({ ...body, language, sections: limitedSections });
-      filename = `${safeTitle}_${timestamp}.xlsx`;
-      contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      fileData = generateExcel({ ...body, language, sections: limitedSections });
+      filename = `${safeTitle}_${timestamp}.csv`;
+      contentType = 'text/csv; charset=utf-8';
     } else {
       return new Response(JSON.stringify({ 
         error: 'Invalid type. Must be "pdf" or "excel"' 
