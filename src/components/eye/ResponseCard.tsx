@@ -149,7 +149,11 @@ const ResponseCardComponent = ({
       const timeA = a.m.timestamp instanceof Date ? a.m.timestamp.getTime() : new Date(a.m.timestamp).getTime();
       const timeB = b.m.timestamp instanceof Date ? b.m.timestamp.getTime() : new Date(b.m.timestamp).getTime();
       const diff = timeA - timeB;
-      return diff !== 0 ? diff : a.i - b.i;
+      if (diff !== 0) return diff;
+      // Same timestamp: user messages come before ayn
+      if (a.m.sender === 'user' && b.m.sender === 'ayn') return -1;
+      if (a.m.sender === 'ayn' && b.m.sender === 'user') return 1;
+      return a.i - b.i;
     });
     return indexed.map(x => x.m);
   }, [transcriptMessages]);
@@ -277,25 +281,31 @@ const ResponseCardComponent = ({
     historyScrollRef.current?.scrollTo({ top: historyScrollRef.current.scrollHeight, behavior: "smooth" });
   }, []);
 
-  // Auto-scroll history to bottom on new messages
+  // Auto-scroll history to bottom on new messages (multi-stage for Framer Motion)
   useEffect(() => {
     if (!transcriptOpen) return;
-    if (historyScrollRef.current) {
-      requestAnimationFrame(() => {
-        const el = historyScrollRef.current;
-        if (el) {
-          el.scrollTop = el.scrollHeight;
-          setTimeout(() => {
-            if (el) {
-              setShowHistoryScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 50);
-            }
-          }, 100);
-        }
-      });
-    }
+    if (!historyScrollRef.current) return;
+
+    const scrollToEnd = () => {
+      const el = historyScrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    };
+
+    // Stage 1: Immediate
+    scrollToEnd();
+
+    // Stage 2: After paint (nested RAF)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => scrollToEnd());
+    });
+
+    // Stage 3: After Framer Motion animation completes
+    const timer = setTimeout(scrollToEnd, 350);
+
+    return () => clearTimeout(timer);
   }, [transcriptMessages.length, transcriptOpen]);
 
-  // ResizeObserver for history scroll arrow
+  // ResizeObserver for history scroll arrow (with delayed re-check for animation)
   useEffect(() => {
     if (!transcriptOpen) return;
     const el = historyScrollRef.current;
@@ -307,9 +317,12 @@ const ResponseCardComponent = ({
     el.addEventListener("scroll", checkScroll, { passive: true });
     const observer = new ResizeObserver(checkScroll);
     observer.observe(el);
+    // Delayed re-check after Framer Motion animation completes
+    const timer = setTimeout(checkScroll, 350);
     return () => {
       el.removeEventListener("scroll", checkScroll);
       observer.disconnect();
+      clearTimeout(timer);
     };
   }, [transcriptOpen]);
 
