@@ -70,6 +70,11 @@ export function detectIntent(message: string): string {
     /créer\s+(un\s+)?pdf/, /faire\s+(un\s+)?pdf/, /rapport\s+pdf/, /document\s+pdf/, /générer\s+(un\s+)?pdf/,
     /créer\s+(un\s+)?excel/, /feuille\s+excel/, /tableur/, /rapport\s+sur/, /faire\s+un\s+rapport/,
     /excel\s+sur/, /excel\s+de/, /tableau\s+de/, /données\s+sur/,
+    // "make it excel", "put it in pdf", "convert it to xlsx", etc.
+    /(?:make|put|convert|turn)\s+(?:it|this|that)\s+(?:in(?:to)?|to|as)?\s*(?:an?\s+)?(?:pdf|excel|exel|excell|exsel|ecxel|exl|xlsx)/,
+    /(?:make|put|convert|turn)\s+(?:it|this|that)\s+(?:in(?:to)?|to|as)?\s*(?:an?\s+)?(?:report|document|table|spreadsheet)/,
+    // Ultra-short: "exel", "in excel", "pdf"
+    /^(?:in\s+)?(?:excel|exel|excell|exsel|exl|pdf|xlsx)\s*$/,
   ];
   
   if (documentPatterns.some(rx => rx.test(lower))) return 'document';

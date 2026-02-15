@@ -386,6 +386,9 @@ export const useMessages = (
         if (/ابي\s*(?:pdf|اكسل|ملف)|اعطني\s*(?:تقرير|ملف|جدول)|سوي\s*(?:pdf|اكسل|ملف)/.test(lower)) return 'document';
         if (/créer\s+(un\s+)?pdf|faire\s+(un\s+)?pdf|rapport\s+pdf|document\s+pdf|créer\s+(un\s+)?excel|excel\s+sur|excel\s+de|tableau\s+de|données\s+sur/.test(lower)) return 'document';
         if (/document\s+about|create\s+(an?\s+)?document/.test(lower)) return 'document';
+        if (/(?:make|put|convert|turn)\s+(?:it|this|that)\s+(?:in(?:to)?|to|as)?\s*(?:an?\s+)?(?:pdf|excel|exel|excell|exsel|exl|xlsx)/.test(lower)) return 'document';
+        if (/(?:make|put|convert|turn)\s+(?:it|this|that)\s+(?:in(?:to)?|to|as)?\s*(?:an?\s+)?(?:report|document|table|spreadsheet)/.test(lower)) return 'document';
+        if (/^(?:in\s+)?(?:excel|exel|excell|exsel|exl|pdf|xlsx)\s*$/.test(lower.trim())) return 'document';
         
         // Floor plan detection (disabled - rebuilding)
         // if (/floor plan|house plan|home layout|design a house|design me a|مخطط|تصميم بيت|تصميم منزل|plan de maison/.test(lower)) return 'floor_plan';
