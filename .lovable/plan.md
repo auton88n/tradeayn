@@ -1,46 +1,64 @@
 
+## Fix: Download Button Missing for PDF/Excel/Image
 
-## Fix Download Dropdown and Remove Design Button
+### What's Happening
 
-### Problem 1: Download dropdown shows "PDF (.pdf)" for image-only responses
-When the user asks AYN to generate an image, the LLM response sometimes includes a markdown link to a PDF (or the image URL gets falsely matched as a document URL). This makes `hasBoth` true, showing a confusing dropdown with "PDF (.pdf)" and "Image (.png)" options -- but the PDF option either fails or downloads the wrong thing.
+When you ask AYN to create a PDF, Excel, or image, the intent detection is classifying your request as regular "chat" instead of "document" or "image". This causes:
+- The response gets **streamed as plain text** instead of triggering the document/image generation pipeline
+- AYN describes what it *would* do ("The user wants to create a PDF...") instead of actually generating the file
+- No file is generated, so no Download button appears
 
-**Fix**: When the detected "document link" URL is the same as the detected image URL (or when the doc link points to an image file, not an actual PDF/Excel), skip showing it as a document. This ensures only the "Download" button (single-click for the image) appears instead of the misleading dropdown.
+### Why It's Happening
 
-### Problem 2: "Design" button should be removed
-The bottom-right "Design" button (which opens Design LAB) is not needed. The user explicitly asked to remove it.
+Both the frontend and backend have regex-based intent detection that only matches specific phrasings. If your message uses slightly different wording (e.g., "pdf about Riyadh" without "create/make/generate" before it, or Arabic phrasing not covered), it falls through to "chat".
 
-**Fix**: Remove the Design button and its associated `handleDesignThis` callback from `ResponseCard.tsx`.
+### Fix (3 changes)
 
-### Changes
+**1. Broaden intent detection patterns (frontend + backend)**
 
-**File: `src/components/eye/ResponseCard.tsx`**
+Add more flexible patterns to catch variations:
+- "I want a PDF", "I need a PDF", "can you make a PDF", "pdf about X" (without verb prefix)
+- Same for Excel and images
+- Arabic: "سوي pdf", "ابي pdf", "اعطني تقرير", "اعطني ملف"
+- Handle "about" keyword better: "pdf about X", "excel about X", "image about X"
 
-1. Remove the "Design" button block (lines 675-684) that renders the Palette icon and "Design" text
-2. Remove the `handleDesignThis` callback (lines 153-163) and the `Palette` import since they are no longer used
-3. Fix the download logic: when determining `hasDoc`, add a check that the doc link URL is NOT the same as the `detectedImageUrl` -- this prevents images from being falsely offered as "PDF" downloads
-4. Remove the `useNavigate` import and `navigate` variable if only used by handleDesignThis
-5. Remove the `persistDalleImage` import if only used by handleDesignThis
+Files: `src/hooks/useMessages.ts` (frontend detection, ~line 374-382) and `supabase/functions/ayn-unified/intentDetector.ts` (backend detection)
 
-### Technical Detail
+**2. Add safety net in chat system prompt**
 
-```text
-// Line 574-577: Add guard so image URLs aren't treated as doc links
-const docLink = documentAttachment 
-  ? { ... }
-  : extractBestDocumentLink(combinedContent);
-// NEW: If the "doc" link is actually the image URL, ignore it
-const hasDoc = !!docLink && docLink.url !== detectedImageUrl;
+Update the chat system prompt so that if a document/image request slips through to chat mode, the LLM gives a helpful response instead of raw reasoning. Add a line like:
+> "If the user asks you to create a PDF, Excel, or image, respond naturally -- do NOT narrate your intent (never say 'The user wants...')"
 
-// Lines 675-684: Remove Design button entirely
-// Lines 153-163: Remove handleDesignThis callback
-// Line 18: Remove Palette import
-// Line 34: Remove persistDalleImage import (if unused elsewhere)
+File: `supabase/functions/ayn-unified/systemPrompts.ts`
+
+**3. Redeploy edge function**
+
+Deploy the updated `ayn-unified` function with the improved backend intent detection and system prompt.
+
+### Technical Details
+
+**Frontend intent detection (`useMessages.ts` ~line 378-382) -- add patterns:**
+```
+// Broader PDF detection
+/(?:i\s+(?:want|need)\s+(?:an?\s+)?)?pdf\s+(?:about|for|on)/
+/(?:can\s+you\s+)?(?:make|create|get)\s+(?:me\s+)?(?:an?\s+)?pdf/
+
+// Broader Excel detection  
+/(?:i\s+(?:want|need)\s+(?:an?\s+)?)?(?:excel|spreadsheet)\s+(?:about|for|on)/
+
+// Broader image detection
+/(?:i\s+(?:want|need)\s+(?:an?\s+)?)?(?:image|picture|photo)\s+(?:about|of|for)/
+
+// Arabic additions
+/ابي\s*(?:pdf|صورة|اكسل|ملف)/
+/اعطني\s*(?:تقرير|ملف|جدول)/
+/سوي\s*(?:pdf|اكسل|ملف)/
 ```
 
-| Area | Change |
-|------|--------|
-| Download logic | Skip doc link when it matches the image URL |
-| Design button | Remove entirely |
-| Cleanup | Remove unused imports (Palette, persistDalleImage, useNavigate if unused) |
+**Backend intent detection (`intentDetector.ts`) -- mirror the same patterns**
 
+**System prompt safety (`systemPrompts.ts` base prompt) -- add:**
+```
+CRITICAL: Never narrate your intent. Never say "The user wants..." or "I will generate...". 
+Just respond naturally or do the task directly.
+```
