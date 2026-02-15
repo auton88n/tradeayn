@@ -77,6 +77,14 @@ export interface DisciplineReminders {
   invalidation: string;
 }
 
+export interface ConfidenceBreakdown {
+  technicalScore: number;
+  newsScore: number;
+  conflictPenalty: number;
+  calculation: string;
+  explanation: string;
+}
+
 export interface ChartPrediction {
   signal: PredictionSignal;
   confidence: number;
@@ -92,6 +100,7 @@ export interface ChartPrediction {
   patternBreakdown?: PatternBreakdown[];
   psychologyWarnings?: PsychologyWarnings;
   disciplineReminders?: DisciplineReminders;
+  confidenceBreakdown?: ConfidenceBreakdown;
 }
 
 export interface ChartAnalysisResult {

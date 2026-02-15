@@ -207,10 +207,14 @@ async function fetchTickerNews(ticker: string, assetType: string) {
     const isNonNewsDomain = (url.includes('coinmarketcap.com') || url.includes('coingecko.com')) &&
       !url.includes('/news') && !url.includes('/article');
     
-    // Filter very short titles (usually generic pages)
-    const isTooShort = (d.title || '').length < 15;
+    // Filter generic news aggregator titles
+    const isGenericNews = title.includes('latest stock news') || title.includes('latest news update') ||
+      title.includes('price today') || title.includes('live price');
     
-    return !isChartPage && !isPriceTracker && !isGenericPage && !isNonNewsDomain && !isTooShort;
+    // Filter very short titles (usually generic pages)
+    const isTooShort = (d.title || '').length < 20;
+    
+    return !isChartPage && !isPriceTracker && !isGenericPage && !isGenericNews && !isNonNewsDomain && !isTooShort;
   });
 
   console.log(`[chart-analyzer] Filtered ${result.data.length - filtered.length} non-news results`);
@@ -383,10 +387,17 @@ Return ONLY valid JSON (no markdown, no code fences):
   "stop_loss": "specific price or 'N/A' for WAIT",
   "take_profit": "specific price range or 'N/A' for WAIT",
   "risk_reward": "ratio like '1:1.5' or 'N/A' for WAIT",
+  "confidenceBreakdown": {
+    "technicalScore": ${technicalScore},
+    "newsScore": 0,
+    "conflictPenalty": 0,
+    "calculation": "Technical (X) × 60% + News (Y) × 40% + penalties = Z%",
+    "explanation": "Explain why pattern scores led to this confidence. If patterns conflict (BULLISH and BEARISH both present with scores within 30 points), apply -35% conflict penalty."
+  },
   "entryTiming": {
     "status": "READY" | "WAIT",
     "reason": "Why now is or isn't a good time to enter. Reference specific price levels.",
-    "aggressive": "Enter now plan with specific price, stop, target",
+    "aggressive": "If signal is WAIT: explain WHY aggressive entry is NOT recommended (e.g. 'Not recommended - conflicting signals at support give 60%+ stop-out probability. If you must enter, use 0.5% risk with tight stop.'). If signal is BULLISH/BEARISH: provide specific entry plan with price, stop, target.",
     "conservative": "Wait for retest plan with specific trigger, entry, stop, target"
   },
   "actionablePlan": {
@@ -636,6 +647,7 @@ Deno.serve(async (req) => {
         ...(prediction.patternBreakdown ? { patternBreakdown: prediction.patternBreakdown } : {}),
         ...(prediction.psychologyWarnings ? { psychologyWarnings: prediction.psychologyWarnings } : {}),
         ...(prediction.disciplineReminders ? { disciplineReminders: prediction.disciplineReminders } : {}),
+        ...(prediction.confidenceBreakdown ? { confidenceBreakdown: prediction.confidenceBreakdown } : {}),
       },
       imageUrl,
       analysisId: analysisId || null,
