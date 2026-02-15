@@ -1,10 +1,21 @@
-import { useState, useRef, useEffect } from 'react';
-import { Brain, Send, X, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowUp,
+  Brain,
+  X,
+  Loader2,
+  Minimize2,
+  ChevronUp,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import ReactMarkdown from 'react-markdown';
+import { cn } from '@/lib/utils';
 import { useChartCoach } from '@/hooks/useChartCoach';
+import ReactMarkdown from 'react-markdown';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
 
 const QUICK_ACTIONS_WITH_RESULT = [
@@ -22,151 +33,432 @@ const QUICK_ACTIONS_GENERAL = [
   "Am I being emotional?",
 ];
 
+const placeholders = [
+  "Should I take this trade?",
+  "What's my biggest risk here?",
+  "Help me stay disciplined...",
+  "Explain the chart patterns...",
+  "Am I being emotional about this?",
+];
+
+// Memoized message bubble
+const MessageBubble = memo(({ msg, index }: { msg: { role: string; content: string }; index: number }) => (
+  <div
+    className={cn(
+      "flex flex-col gap-2",
+      msg.role === 'user' ? 'items-end' : 'items-start'
+    )}
+    style={{ contain: 'content' }}
+  >
+    <div
+      className={cn(
+        "max-w-[85%] rounded-2xl px-4 py-2.5",
+        msg.role === 'user'
+          ? "bg-amber-500/15 text-foreground"
+          : "bg-muted"
+      )}
+    >
+      {msg.role === 'assistant' ? (
+        <div className="prose prose-sm dark:prose-invert max-w-none">
+          <ReactMarkdown>{msg.content}</ReactMarkdown>
+        </div>
+      ) : (
+        <p className="text-sm">{msg.content}</p>
+      )}
+    </div>
+  </div>
+));
+MessageBubble.displayName = 'MessageBubble';
+
 interface ChartCoachChatProps {
   result?: ChartAnalysisResult | null;
 }
 
 export default function ChartCoachChat({ result }: ChartCoachChatProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
+  const [showPlaceholder, setShowPlaceholder] = useState(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const { messages, isLoading, sendMessage, clearChat } = useChartCoach(result ?? undefined);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const quickActions = result ? QUICK_ACTIONS_WITH_RESULT : QUICK_ACTIONS_GENERAL;
 
+  // Smart auto-scroll
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(0);
+
+  const handleScroll = useCallback(() => {
+    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+    const { scrollTop, scrollHeight, clientHeight } = viewport;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setShouldAutoScroll(isNearBottom);
+  }, []);
+
+  // Rotate placeholders
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const interval = setInterval(() => {
+      setShowPlaceholder(false);
+      setTimeout(() => {
+        setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
+        setShowPlaceholder(true);
+      }, 200);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
     }
-  }, [messages]);
+  }, [input]);
 
+  // Bind scroll listener
   useEffect(() => {
-    if (isOpen) inputRef.current?.focus();
-  }, [isOpen]);
+    if (!isExpanded) return;
+    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    if (!viewport) return;
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [handleScroll, isExpanded]);
 
-  const handleSend = () => {
+  // Smart auto-scroll on new messages
+  useEffect(() => {
+    if (!isExpanded) {
+      prevMessageCountRef.current = messages.length;
+      return;
+    }
+    const newMessageAdded = messages.length > prevMessageCountRef.current;
+    if (newMessageAdded && shouldAutoScroll) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevMessageCountRef.current = messages.length;
+  }, [messages.length, shouldAutoScroll, isExpanded]);
+
+  // Auto-expand when messages arrive
+  useEffect(() => {
+    if (messages.length > 0 && !isExpanded) {
+      setIsExpanded(true);
+    }
+  }, [messages.length]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isCollapsed) {
+        setIsCollapsed(true);
+      }
+      if (e.key === '/' && isCollapsed &&
+        !(document.activeElement instanceof HTMLInputElement ||
+          document.activeElement instanceof HTMLTextAreaElement)) {
+        e.preventDefault();
+        setIsCollapsed(false);
+        setTimeout(() => textareaRef.current?.focus(), 100);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isCollapsed]);
+
+  const handleSubmit = useCallback(() => {
     if (!input.trim() || isLoading) return;
     sendMessage(input);
     setInput('');
+    setIsExpanded(true);
+  }, [input, isLoading, sendMessage]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
 
-  return (
-    <>
-      {/* Floating trigger button */}
-      <button
-        onClick={() => setIsOpen((o) => !o)}
-        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${
-          isOpen
-            ? 'bg-muted text-foreground hover:bg-muted/80'
-            : 'bg-amber-500 text-white hover:bg-amber-600'
-        }`}
-      >
-        {isOpen ? <X className="h-5 w-5" /> : <Brain className="h-5 w-5" />}
-        {!isOpen && result && (
-          <span className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background animate-pulse" />
-        )}
-      </button>
+  // Collapsed state - floating button
+  if (isCollapsed) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <motion.button
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: "spring", duration: 0.4 }}
+              onClick={() => {
+                setIsCollapsed(false);
+                setTimeout(() => textareaRef.current?.focus(), 100);
+              }}
+              className={cn(
+                "fixed bottom-6 right-6 w-14 h-14 rounded-full z-50",
+                "bg-background/95 backdrop-blur-xl",
+                "border border-amber-500/30",
+                "shadow-lg hover:shadow-xl",
+                "flex items-center justify-center",
+                "transition-all duration-200",
+                "hover:scale-110 hover:border-amber-500/50",
+                "group"
+              )}
+            >
+              <Brain className="w-6 h-6 text-amber-500 group-hover:scale-110 transition-transform" />
 
-      {/* Floating chat panel */}
-      {isOpen && (
-        <div className="fixed bottom-20 right-6 z-50 w-80 h-[400px] rounded-2xl shadow-2xl border border-amber-500/20 bg-background flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-muted/30">
-            <div className="flex items-center gap-2">
-              <Brain className="h-4 w-4 text-amber-500" />
-              <span className="text-sm font-semibold">AYN Coach</span>
+              {messages.length > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-medium flex items-center justify-center"
+                >
+                  {messages.length > 9 ? '9+' : messages.length}
+                </motion.span>
+              )}
+
+              {isLoading && (
+                <motion.div
+                  className="absolute inset-0 rounded-full border-2 border-amber-500"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+              )}
+
+              {result && !messages.length && (
+                <span className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background animate-pulse" />
+              )}
+            </motion.button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="text-xs">
+            <p>Open AYN Coach <kbd className="ml-1 px-1 py-0.5 rounded bg-muted text-muted-foreground">/</kbd></p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Expanded state - bottom bar
+  return (
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 100, opacity: 0 }}
+      transition={{ duration: 0.3, delay: 0.1 }}
+      className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
+    >
+      <div className="mx-auto max-w-2xl">
+        {/* Expandable Messages Area */}
+        <AnimatePresence>
+          {isExpanded && messages.length > 0 && (
+            <motion.div
+              initial={{ height: 0, opacity: 0, y: 20 }}
+              animate={{ height: 'auto', opacity: 1, y: 0 }}
+              exit={{ height: 0, opacity: 0, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="mb-3"
+            >
+              <div className={cn(
+                "rounded-2xl overflow-hidden",
+                "bg-background/95 backdrop-blur-xl",
+                "border border-amber-500/20",
+                "shadow-lg shadow-black/5"
+              )}>
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/30">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Brain className="w-4 h-4 text-amber-500" />
+                    <span className="font-medium">AYN Coach</span>
+                    {result && (
+                      <span className="text-xs text-amber-500/70">· {result.ticker}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={clearChat}
+                    >
+                      Clear
+                    </button>
+                    <button
+                      className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors"
+                      onClick={() => setIsExpanded(false)}
+                    >
+                      <X className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+                <ScrollArea ref={scrollAreaRef} className="h-[280px]" style={{ contain: 'strict' }}>
+                  <div
+                    className="p-4 space-y-4 flex flex-col"
+                    style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}
+                  >
+                    {messages.map((msg, i) => (
+                      <MessageBubble key={`${msg.role}-${i}`} msg={msg} index={i} />
+                    ))}
+                    {isLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-muted rounded-2xl px-4 py-2.5">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Sparkles className="w-4 h-4 animate-pulse text-amber-500" />
+                            <span>AYN is thinking...</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Input Container */}
+        <div
+          className={cn(
+            "relative rounded-2xl overflow-hidden",
+            "bg-background/95 backdrop-blur-xl",
+            "border border-amber-500/20",
+            "shadow-lg shadow-black/5",
+            "transition-all duration-300",
+            "hover:border-amber-500/30 hover:shadow-xl"
+          )}
+        >
+          {/* Row 1: Input Area */}
+          <div className="flex items-end gap-2 px-4 pt-3 pb-2">
+            <div className="flex-1 relative">
+              <Textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                placeholder=""
+                disabled={isLoading}
+                unstyled
+                className={cn(
+                  "resize-none pl-0.5 pr-0 py-3 min-h-[44px] max-h-[120px]",
+                  "text-base placeholder:text-muted-foreground/60"
+                )}
+                rows={1}
+              />
+
+              {/* Animated placeholder */}
+              {!input && !isFocused && (
+                <div
+                  className={cn(
+                    "absolute top-3 left-0.5 pointer-events-none text-muted-foreground/50",
+                    "transition-opacity duration-200",
+                    showPlaceholder ? "opacity-100" : "opacity-0"
+                  )}
+                >
+                  {placeholders[currentPlaceholder]}
+                </div>
+              )}
             </div>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(false)}>
-              <X className="h-3.5 w-3.5" />
-            </Button>
+
+            {/* Send Button */}
+            <AnimatePresence>
+              {input.trim() && (
+                <motion.button
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  onClick={handleSubmit}
+                  disabled={isLoading}
+                  className={cn(
+                    "flex-shrink-0 w-9 h-9 rounded-xl",
+                    "flex items-center justify-center",
+                    "bg-amber-500 text-white",
+                    "transition-all duration-200",
+                    "hover:scale-105 hover:shadow-lg hover:bg-amber-600",
+                    "active:scale-95",
+                    "disabled:opacity-50"
+                  )}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+                  )}
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-3" ref={scrollRef}>
-            {messages.length === 0 ? (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground text-center pt-2">
-                  {result
-                    ? `Ask AYN anything about your ${result.ticker} analysis`
-                    : 'Upload a chart first for personalized coaching'}
-                </p>
-                <div className="flex flex-wrap gap-1.5 justify-center">
-                  {quickActions.map((action) => (
-                    <button
-                      key={action}
-                      onClick={() => sendMessage(action)}
-                      disabled={isLoading}
-                      className="text-[11px] px-2.5 py-1.5 rounded-full border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors disabled:opacity-50"
-                    >
-                      {action}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {messages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-                      msg.role === 'user'
-                        ? 'bg-amber-500/15 text-foreground'
-                        : 'bg-muted/60 text-foreground'
-                    }`}>
-                      {msg.role === 'assistant' ? (
-                        <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-1.5 [&>ul]:mb-1.5 [&>ol]:mb-1.5">
-                          <ReactMarkdown>{msg.content}</ReactMarkdown>
-                        </div>
-                      ) : (
-                        <span>{msg.content}</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted/60 rounded-xl px-3 py-2 text-sm text-muted-foreground">
-                      <span className="animate-pulse">AYN is thinking...</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </ScrollArea>
+          {/* Row 2: Quick Actions + Controls */}
+          <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
+            {/* Left: Quick action chips */}
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+              {quickActions.map((action) => (
+                <button
+                  key={action}
+                  onClick={() => sendMessage(action)}
+                  disabled={isLoading}
+                  className="shrink-0 text-[11px] px-2.5 py-1 rounded-full border border-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  {action}
+                </button>
+              ))}
+            </div>
 
-          {/* Input */}
-          <div className="border-t border-border/50 p-2 flex gap-2 items-center">
-            {messages.length > 0 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                onClick={clearChat}
-                title="Clear chat"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            )}
-            <Input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask about trading..."
-              className="h-8 text-sm border-amber-500/20 focus-visible:ring-amber-500/30"
-              disabled={isLoading}
-            />
-            <Button
-              size="icon"
-              className="h-8 w-8 shrink-0 bg-amber-500 hover:bg-amber-600 text-white"
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-            >
-              <Send className="h-3.5 w-3.5" />
-            </Button>
+            {/* Right: Controls */}
+            <div className="flex items-center gap-1 shrink-0 ml-2">
+              {messages.length > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={clearChat}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">Clear chat</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setIsCollapsed(true)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+                    >
+                      <Minimize2 className="w-4 h-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    <p>Minimize <kbd className="ml-1 px-1 py-0.5 rounded bg-muted text-muted-foreground">Esc</kbd></p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {messages.length > 0 && !isExpanded && (
+                <button
+                  onClick={() => setIsExpanded(true)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors"
+                >
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                </button>
+              )}
+
+              <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm text-muted-foreground">
+                <Brain className="w-4 h-4 text-amber-500" />
+                <span className="text-xs">AYN</span>
+              </div>
+            </div>
           </div>
         </div>
-      )}
-    </>
+      </div>
+    </motion.div>
   );
 }
