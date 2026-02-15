@@ -1,41 +1,51 @@
 
 
-## Simplify Download Button: Only Show for Documents and Images
+## Fix Excel Detection + Remove Inline Download Links
 
-### What Changes
-The Download button in the response card action bar currently always shows with Markdown (.md) and Plain Text (.txt) options. We will:
+### Problem 1: Excel download not detected
+The `extractBestDocumentLink` regex only matches `[Download]` or `[Download here]` as link text. But the LLM generates links like `[Download Riyadh_Weather_Report.xlsx](url)` -- the word "Download" is followed by more text, so the regex fails and the Download button never appears for Excel files.
 
-1. **Remove** the Markdown and Plain Text download options entirely
-2. **Only show** the Download button when there is a generated document (PDF/Excel) or image
-3. **Single-click download** -- since there will usually be only one file, clicking the button downloads it directly (no dropdown menu needed). If both a document and image exist, show a dropdown with both options.
+### Problem 2: Inline download text still visible
+The response card shows both the inline markdown link ("Click here to download your PDF" / "Download Riyadh_Weather_Report.xlsx") AND the Download button at the bottom. Since the Download button is the intended way to download, the inline text should be hidden.
 
 ### Changes
 
-**File: `src/components/eye/ResponseCard.tsx`**
+**File 1: `src/lib/documentUrlUtils.ts`**
+- Broaden the `downloadRegex` to match any link text starting with "Download" (not just "Download" or "Download here")
+- Also add a general catch-all regex for any markdown link pointing to a document URL (Supabase storage, `.pdf`, `.xlsx`, `.xls`, or data URLs for documents)
+- This ensures Excel links like `[Download Riyadh_Weather_Report.xlsx](url)` are properly detected
 
-- Add imports: `extractBestDocumentLink` and `openDocumentUrl` from `@/lib/documentUrlUtils`
-- Add a `documentLink` memo that checks `documentAttachment` first, then falls back to scanning `combinedContent` with `extractBestDocumentLink`
-- Determine if there is a downloadable file: `hasDocument = !!documentLink`, `hasImage = !!detectedImageUrl`
-- **If neither exists**: hide the Download button entirely
-- **If only one exists** (document or image): clicking Download triggers the download directly via `openDocumentUrl` (no dropdown)
-- **If both exist**: show a dropdown with two options (e.g., "Excel (.xls)" and "Image (.png)")
-- Remove the old Markdown/Plain Text dropdown options
-- Remove `DocumentDownloadButton` import (no longer used anywhere in this file)
-- Remove `showDownloadMenu` state if single-click is sufficient, or keep it only for the rare both-exist case
+**File 2: `src/components/shared/MessageFormatter.tsx`**
+- In the `preprocessContent` or as a new step, strip inline document download links from the rendered markdown content
+- Remove lines matching patterns like `📄 [Click here to download...](url)` or `[Download ...](url)` when the URL points to a document
+- This hides the inline text since users will use the Download button instead
+- Keep non-document links (regular external links) untouched
 
 ### Technical Detail
 
-```text
-Before:
-  [Download v]
-    -> Markdown (.md)
-    -> Plain Text (.txt)
-  (always visible)
+**documentUrlUtils.ts -- broader regex:**
+```
+// Before: only matches "[Download]" or "[Download here]"
+/\[([Dd]ownload(?:\s+here)?)\]\((url)\)/g
 
-After:
-  [Download]  (only visible when document or image exists)
-    -> single click = download the file
-    -> if both doc + image: dropdown with 2 options
+// After: matches any link text starting with "Download" or "Click here"
+/\[([Dd]ownload[^\]]*|[Cc]lick here[^\]]*)\]\((url)\)/g
 ```
 
-The button label will reflect the file type when there is only one: "Download" with an appropriate icon. The `openDocumentUrl` utility handles both Supabase HTTPS URLs (fetch-as-blob) and data URLs (direct anchor download).
+Also add a generic document URL matcher as a final fallback -- any markdown link `[title](url)` where the URL contains `.pdf`, `.xlsx`, `.xls`, or is a Supabase storage URL or document data URL.
+
+**MessageFormatter.tsx -- strip document links from display:**
+Add a content preprocessing step that removes lines containing document download links (emoji + markdown link patterns, or "Download ..." links pointing to document URLs). This runs before the markdown is rendered, so users only see the clean text and use the Download button.
+
+```
+// Remove lines like: 📄 [Click here to download your PDF](https://...)
+// Remove lines like: [Download Riyadh_Weather_Report.xlsx](https://...)
+// Keep the surrounding text content intact
+```
+
+### Summary
+
+| File | Change |
+|------|--------|
+| `src/lib/documentUrlUtils.ts` | Broaden download link regex + add generic document URL fallback |
+| `src/components/shared/MessageFormatter.tsx` | Strip inline document download links from rendered content |
