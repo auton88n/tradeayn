@@ -1,59 +1,38 @@
 
 
-## Update Tutorial: New Tool Cards Illustration + Add Chart Analyzer Step
+## Fix Tutorial: Separate Charts from Engineering Tools
 
-### Overview
-
-Two changes: (1) update the Engineering tutorial illustration to show the new card-style sidebar buttons (Engineering, Compliance, Charts) as they now appear, and (2) add a new "Chart Analyzer" tutorial step so users learn about the standalone charts tool.
+### Problem
+The Engineering tutorial step currently shows all 3 sidebar tools together (Engineering, Compliance, Charts). But Charts is **not** an engineering tool -- it's for stock and crypto trading analysis. They need to be presented separately with proper context.
 
 ### Changes
 
-#### 1. Add Chart Analyzer tutorial step
+#### 1. Update Engineering illustration -- remove Charts card
+**File: `src/components/tutorial/TutorialIllustrations.tsx`** (lines 543-590)
 
-**File: `src/types/tutorial.types.ts`**
+- Change the grid from `grid-cols-3` to `grid-cols-2` 
+- Remove the Charts card from the array (keep only Engineering and Compliance)
+- Update the title from "Your Tool Suite" to "Engineering Suite" or similar
+- Update the hint text to match
 
-Add a new step after the `compliance` step:
+#### 2. Update Chart Analyzer tutorial step description
+**File: `src/types/tutorial.types.ts`** (lines 71-75)
 
-```
-{
-  id: 'chart-analyzer',
-  title: 'Chart Analyzer',
-  description: 'Upload trading charts for AI-powered technical analysis with pattern detection, support/resistance levels, and trade signals.',
-  icon: 'BarChart3',
-}
-```
+- Change the description to better explain it's for stocks and crypto trading, not engineering:
+  - Current: "Upload trading charts for AI-powered technical analysis with pattern detection, support/resistance levels, and trade signals."
+  - New: "Analyze stock and crypto charts with AI-powered pattern detection, support/resistance levels, entry/exit signals, and market sentiment scoring."
 
-This brings the tutorial from 11 to 12 steps.
+#### 3. Enhance Chart Analyzer illustration
+**File: `src/components/tutorial/TutorialIllustrations.tsx`** (lines 714-795)
 
-#### 2. Create ChartAnalyzerIllustration component
-
-**File: `src/components/tutorial/TutorialIllustrations.tsx`**
-
-Add a new `ChartAnalyzerIllustration` export showing a mockup of chart analysis -- a mini chart card with candlestick-style bars, indicator labels (RSI, MACD), and a signal badge (BULLISH/BEARISH). Uses amber/orange color theme consistent with the Charts sidebar button.
-
-#### 3. Update EngineeringIllustration to show the 3 tool cards
-
-**File: `src/components/tutorial/TutorialIllustrations.tsx`**
-
-Replace the current `EngineeringIllustration` (which shows a detailed calculator list) with an illustration that mirrors the new sidebar layout -- three card-style buttons in a row:
-- Engineering (cyan icon, "Design Tools" subtitle)
-- Compliance (teal icon, "Code Check" subtitle)
-- Charts (amber icon, "Analysis" subtitle)
-
-This matches what the user sees in the actual sidebar.
-
-#### 4. Register the new illustration
-
-**File: `src/components/tutorial/TutorialPage.tsx`**
-
-- Import `ChartAnalyzerIllustration`
-- Add `'chart-analyzer': ChartAnalyzerIllustration` to the illustrations map
+- Add a ticker label (e.g., "BTC/USDT" or "AAPL") to the header to make it clear this is for trading
+- Add asset type badges (Stock, Crypto, Forex) below the header to show supported markets
+- Keep the existing candlestick chart, indicators, and signal badge (they already look good)
 
 ### Files Summary
 
 | File | Change |
 |------|--------|
-| `src/types/tutorial.types.ts` | Add chart-analyzer step (12 steps total) |
-| `src/components/tutorial/TutorialIllustrations.tsx` | Add ChartAnalyzerIllustration, update EngineeringIllustration to show 3 tool cards |
-| `src/components/tutorial/TutorialPage.tsx` | Register chart-analyzer illustration |
+| `src/types/tutorial.types.ts` | Update chart-analyzer description to emphasize stocks/crypto |
+| `src/components/tutorial/TutorialIllustrations.tsx` | Remove Charts from Engineering illustration; enhance Chart Analyzer illustration with ticker + asset badges |
 
