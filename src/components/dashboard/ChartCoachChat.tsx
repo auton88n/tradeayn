@@ -8,8 +8,9 @@ import {
   Minimize2,
   ChevronUp,
   Sparkles,
-  Trash2,
   Globe,
+  Clock,
+  Plus,
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -17,7 +18,9 @@ import { cn } from '@/lib/utils';
 import { useChartCoach } from '@/hooks/useChartCoach';
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
+import { formatDistanceToNow } from 'date-fns';
 
 const QUICK_ACTIONS_WITH_RESULT = [
   "Should I take this trade?",
@@ -83,10 +86,11 @@ export default function ChartCoachChat({ result }: ChartCoachChatProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, isLoading, sendMessage, clearChat } = useChartCoach(result ?? undefined);
+  const { messages, isLoading, sendMessage, clearChat, sessions, activeSessionId, switchSession, newChat } = useChartCoach(result ?? undefined);
 
   const quickActions = result ? QUICK_ACTIONS_WITH_RESULT : QUICK_ACTIONS_GENERAL;
 
@@ -322,7 +326,7 @@ export default function ChartCoachChat({ result }: ChartCoachChatProps) {
         {/* Main Input Container */}
         <div
           className={cn(
-            "relative rounded-2xl overflow-hidden",
+            "relative rounded-2xl overflow-visible",
             "bg-background/95 backdrop-blur-xl",
             "border border-amber-500/20",
             "shadow-lg shadow-black/5",
@@ -398,7 +402,6 @@ export default function ChartCoachChat({ result }: ChartCoachChatProps) {
           <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
             {/* Left: Quick action chips */}
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-              {/* News chip when ticker available */}
               {result?.ticker && getNewsChip(result.ticker) && (
                 <button
                   onClick={() => sendMessage(getNewsChip(result.ticker)!)}
@@ -421,24 +424,88 @@ export default function ChartCoachChat({ result }: ChartCoachChatProps) {
               ))}
             </div>
 
-            {/* Right: Controls */}
+            {/* Right: History + New Chat + Minimize + AYN */}
             <div className="flex items-center gap-1 shrink-0 ml-2">
-              {messages.length > 0 && (
+              {/* History Button */}
+              <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={clearChat}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">Clear chat</TooltipContent>
+                    <PopoverTrigger asChild>
+                      <TooltipTrigger asChild>
+                        <button
+                          className="h-7 rounded-lg flex items-center gap-1 px-2 hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground text-[11px]"
+                        >
+                          <Clock className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">History</span>
+                        </button>
+                      </TooltipTrigger>
+                    </PopoverTrigger>
+                    <TooltipContent side="top" className="text-xs">Chat history</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              )}
+                <PopoverContent
+                  side="top"
+                  align="end"
+                  className="w-72 p-0 max-h-[300px] overflow-hidden"
+                  sideOffset={8}
+                >
+                  <div className="px-3 py-2 border-b border-border/50 text-xs font-medium text-muted-foreground">
+                    Chat History
+                  </div>
+                  <ScrollArea className="max-h-[260px]">
+                    {sessions.length === 0 ? (
+                      <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                        No previous chats
+                      </div>
+                    ) : (
+                      <div className="py-1">
+                        {sessions.map((session) => (
+                          <button
+                            key={session.id}
+                            onClick={() => {
+                              switchSession(session.id);
+                              setHistoryOpen(false);
+                              setIsExpanded(true);
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors flex items-start gap-2",
+                              session.id === activeSessionId && "bg-amber-500/10 border-l-2 border-amber-500"
+                            )}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">{session.title}</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {formatDistanceToNow(session.updatedAt, { addSuffix: true })}
+                              </p>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground shrink-0">
+                              {session.messages.length} msgs
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
 
+              {/* New Chat Button */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={newChat}
+                      className="h-7 rounded-lg flex items-center gap-1 px-2 hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground text-[11px]"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">New</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">New chat</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* Minimize */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
