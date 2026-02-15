@@ -33,8 +33,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { persistDalleImage } from "@/hooks/useImagePersistence";
 import { supabase } from "@/integrations/supabase/client";
-import { DocumentDownloadButton } from "./DocumentDownloadButton";
 import { toast } from "sonner";
+import { extractBestDocumentLink, openDocumentUrl } from "@/lib/documentUrlUtils";
 import type { Message } from "@/types/dashboard.types";
 
 interface ResponseBubbleAttachment {
@@ -571,46 +571,74 @@ const ResponseCardComponent = ({
                       </>
                     )}
                   </button>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Download size={14} />
-                      <span>Download</span>
-                    </button>
-                    {showDownloadMenu && (
-                      <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
+              {(() => {
+                    const docLink = documentAttachment 
+                      ? { url: documentAttachment.url, title: documentAttachment.name, type: documentAttachment.type === 'excel' || documentAttachment.type?.includes('spreadsheet') ? 'excel' as const : 'pdf' as const }
+                      : extractBestDocumentLink(combinedContent);
+                    const hasDoc = !!docLink;
+                    const hasImg = !!detectedImageUrl;
+                    if (!hasDoc && !hasImg) return null;
+                    const hasBoth = hasDoc && hasImg;
+                    
+                    if (!hasBoth) {
+                      // Single-click download
+                      return (
                         <button
-                          onClick={() => {
-                            const blob = new Blob([combinedContent], { type: "text/markdown" });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url; a.download = "ayn-response.md"; a.click();
-                            URL.revokeObjectURL(url);
-                            setShowDownloadMenu(false);
+                          onClick={async () => {
+                            hapticFeedback("success");
+                            try {
+                              if (hasDoc) {
+                                await openDocumentUrl(docLink!.url, docLink!.title || 'document');
+                              } else {
+                                await openDocumentUrl(detectedImageUrl!, 'ayn-image.png');
+                              }
+                            } catch {
+                              toast.error("Download failed");
+                            }
                           }}
-                          className="w-full px-3 py-1.5 text-xs text-left hover:bg-muted transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          Markdown (.md)
+                          <Download size={14} />
+                          <span>Download</span>
                         </button>
+                      );
+                    }
+                    
+                    // Both doc + image: dropdown
+                    return (
+                      <div className="relative">
                         <button
-                          onClick={() => {
-                            const plain = markdownToPlainText(combinedContent);
-                            const blob = new Blob([plain], { type: "text/plain" });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url; a.download = "ayn-response.txt"; a.click();
-                            URL.revokeObjectURL(url);
-                            setShowDownloadMenu(false);
-                          }}
-                          className="w-full px-3 py-1.5 text-xs text-left hover:bg-muted transition-colors"
+                          onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          Plain Text (.txt)
+                          <Download size={14} />
+                          <span>Download</span>
                         </button>
+                        {showDownloadMenu && (
+                          <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
+                            <button
+                              onClick={async () => {
+                                await openDocumentUrl(docLink!.url, docLink!.title || 'document');
+                                setShowDownloadMenu(false);
+                              }}
+                              className="w-full px-3 py-1.5 text-xs text-left hover:bg-muted transition-colors"
+                            >
+                              {docLink!.type === 'excel' ? 'Excel (.xls)' : 'PDF (.pdf)'}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                await openDocumentUrl(detectedImageUrl!, 'ayn-image.png');
+                                setShowDownloadMenu(false);
+                              }}
+                              className="w-full px-3 py-1.5 text-xs text-left hover:bg-muted transition-colors"
+                            >
+                              Image (.png)
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
