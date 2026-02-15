@@ -1,7 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { searchWeb } from "../_shared/firecrawlHelper.ts";
 import { uploadImageToStorage } from "../_shared/storageUpload.ts";
-import { getFullKnowledgeBase, getCompactKnowledge } from "./tradingKnowledge.ts";
+import {
+  getFullKnowledgeBase,
+  getCompactKnowledge,
+  calculatePatternReliability,
+  CHART_PATTERNS,
+  CANDLESTICK_PATTERNS,
+  TRADING_PSYCHOLOGY,
+} from "./tradingKnowledge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,6 +64,7 @@ You are a professional technical analyst. Analyze this trading chart image using
 **THEN: Volume Behavior**
 - Is volume increasing or decreasing over recent candles?
 - Volume spike = 2x+ average volume bar height
+- Calculate approximate volume ratio: current volume / recent average
 - Spikes often mark: reversals (capitulation), breakouts (confirmation), or false moves
 - Note WHERE spikes occur (at support, resistance, or breakout point)
 - Does volume confirm the pattern? (e.g., decreasing volume during flag = bullish confirmation)
@@ -68,10 +76,20 @@ You are a professional technical analyst. Analyze this trading chart image using
 - Bearish trend = lower highs AND lower lows
 - Sideways = ranging between horizontal levels
 
-**CONFIDENCE CALIBRATION:**
+**CONFIDENCE CALIBRATION (MANDATORY):**
 - HIGH (score 70-90): Textbook pattern, all rules met, volume confirms
-- MEDIUM (score 50-70): Pattern present but not perfect (e.g., flag too steep, weak volume)
-- LOW (score 30-50): Questionable pattern or mixed signals
+- MEDIUM (score 50-69): Pattern present but not perfect (e.g., flag too steep, weak volume)
+- LOW (score 30-49): Questionable pattern or mixed signals
+
+**STRICT RULES:**
+- If score < 70, confidence MUST be "MEDIUM" or "LOW" (NEVER "HIGH")
+- If score >= 70, confidence MUST be "HIGH"
+- If score < 50, confidence MUST be "LOW"
+- If volume confirms pattern, add +10 to base score (may promote MEDIUM to HIGH)
+
+**PATTERN LIMIT: Maximum 3 patterns per analysis.**
+If you identify 4+ patterns, only report the 3 with HIGHEST confidence.
+Reason: Too many patterns causes confusion and contradictory signals.
 
 **CRITICAL RULES:**
 - Only identify patterns that exist in the knowledge base above
@@ -101,6 +119,7 @@ Return ONLY valid JSON (no markdown, no code fences) with exactly this structure
   "resistance": [0.0],
   "volume": {
     "trend": "increasing" | "decreasing" | "stable",
+    "currentRatio": 1.0,
     "spikes": "describe any volume spikes and their locations relative to price action",
     "significance": "does volume confirm patterns? explain how"
   },
@@ -168,22 +187,37 @@ async function fetchTickerNews(ticker: string, assetType: string) {
     return { headlines: [], raw: [] };
   }
 
-  // Filter out chart/price index pages (not actual news)
-  const filtered = result.data.filter(d => {
+  // Filter out chart/price index pages and generic non-news pages
+  const filtered = result.data.filter((d: any) => {
     const title = (d.title || '').toLowerCase();
+    const url = (d.url || '').toLowerCase();
+    
+    // Filter chart/price pages
     const isChartPage = title.includes('price chart') || title.includes('price index') || 
       title.includes('to usd chart') || title.includes('live chart');
     const isPriceTracker = /^[\w\/]+ price/i.test(d.title || '') && 
       !title.includes('surges') && !title.includes('drops') && 
       !title.includes('crashes') && !title.includes('jumps') && !title.includes('falls');
-    return !isChartPage && !isPriceTracker;
+    
+    // Filter generic non-news pages
+    const isGenericPage = title.includes('converter') || title.includes('calculator') || 
+      title.includes('market cap') || title.includes('token info') || title.includes('coin info');
+    
+    // Filter known non-news domains (unless path contains /news or /article)
+    const isNonNewsDomain = (url.includes('coinmarketcap.com') || url.includes('coingecko.com')) &&
+      !url.includes('/news') && !url.includes('/article');
+    
+    // Filter very short titles (usually generic pages)
+    const isTooShort = (d.title || '').length < 15;
+    
+    return !isChartPage && !isPriceTracker && !isGenericPage && !isNonNewsDomain && !isTooShort;
   });
 
   console.log(`[chart-analyzer] Filtered ${result.data.length - filtered.length} non-news results`);
 
   return {
-    headlines: filtered.map(d => d.title).filter(Boolean),
-    raw: filtered.map(d => ({
+    headlines: filtered.map((d: any) => d.title).filter(Boolean),
+    raw: filtered.map((d: any) => ({
       title: d.title,
       url: d.url,
       description: d.description || '',
@@ -191,13 +225,13 @@ async function fetchTickerNews(ticker: string, assetType: string) {
   };
 }
 
-// ─── Step 3: Sentiment + Prediction (Enhanced with Weighted Scoring) ───
+// ─── Step 3: Sentiment + Prediction (Enhanced with Psychology & Context) ───
 async function generatePrediction(
   technical: Record<string, unknown>,
   news: { headlines: string[]; raw: Array<{ title: string; url: string; description: string }> },
   apiKey: string
 ) {
-  console.log('[chart-analyzer] Step 3: Generating sentiment + prediction with weighted scoring');
+  console.log('[chart-analyzer] Step 3: Generating prediction with psychology & context-adjusted scoring');
 
   const detectedAssetType = (technical as any).assetType || 'stock';
   const mappedAssetType: 'stock' | 'crypto' | 'both' = 
@@ -205,39 +239,104 @@ async function generatePrediction(
     detectedAssetType === 'stock' ? 'stock' : 'both';
   const tradingContext = getFullKnowledgeBase(mappedAssetType);
 
-  // Calculate technical score from pattern data
+  // Calculate context-adjusted scores for each pattern
   const patterns = (technical as any).patterns || [];
-  const highConfPatterns = Array.isArray(patterns) 
-    ? patterns.filter((p: any) => typeof p === 'object' && p.confidence === 'HIGH')
-    : [];
-  const technicalScore = highConfPatterns.length > 0
-    ? Math.round(highConfPatterns.reduce((sum: number, p: any) => sum + (p.score || 50), 0) / highConfPatterns.length)
-    : 40;
-
-  console.log(`[chart-analyzer] Technical score from ${highConfPatterns.length} HIGH confidence patterns: ${technicalScore}`);
-
   const currentPrice = (technical as any).currentPrice;
   const support = (technical as any).support || [];
   const resistance = (technical as any).resistance || [];
+  const volumeObj = (technical as any).volume;
+  const volumeRatio = (volumeObj && typeof volumeObj === 'object') ? (volumeObj.currentRatio || 1.0) : 1.0;
+  const timeframe = (technical as any).timeframe || 'unknown';
+  const trend = (technical as any).trend || 'sideways';
+
+  const adjustedPatterns = Array.isArray(patterns)
+    ? patterns.map((p: any) => {
+        if (typeof p !== 'object' || !p.name) return p;
+        
+        const patternDef = CHART_PATTERNS[p.name] || CANDLESTICK_PATTERNS[p.name];
+        const assetCtx: 'stock' | 'crypto' = mappedAssetType === 'both' ? 'stock' : mappedAssetType;
+        
+        const isNearSupport = currentPrice && support.length > 0 && 
+          support.some((s: number) => Math.abs(currentPrice - s) / currentPrice < 0.02);
+        const isNearResistance = currentPrice && resistance.length > 0 && 
+          resistance.some((r: number) => Math.abs(currentPrice - r) / currentPrice < 0.02);
+
+        if (patternDef && patternDef.successRate) {
+          const adjusted = calculatePatternReliability(patternDef, {
+            timeframe,
+            assetType: assetCtx,
+            volumeRatio,
+            atSupport: isNearSupport,
+            atResistance: isNearResistance,
+            inTrend: trend !== 'sideways'
+          });
+          
+          return {
+            ...p,
+            adjustedScore: adjusted.adjustedScore,
+            adjustedReliability: adjusted.adjustedReliability,
+            adjustments: adjusted.breakdown,
+            baseSuccessRate: patternDef.successRate.overall,
+            failureMode: patternDef.failureMode || null,
+            invalidationLevel: patternDef.invalidation || null,
+            source: patternDef.successRate.source,
+          };
+        }
+        
+        return p;
+      })
+    : [];
+
+  // Calculate technical score from adjusted pattern data
+  const scoredPatterns = adjustedPatterns.filter((p: any) => typeof p === 'object' && (p.adjustedScore || p.score));
+  const technicalScore = scoredPatterns.length > 0
+    ? Math.round(scoredPatterns.reduce((sum: number, p: any) => sum + (p.adjustedScore || p.score || 50), 0) / scoredPatterns.length)
+    : 40;
+
+  console.log(`[chart-analyzer] Technical score from ${scoredPatterns.length} patterns: ${technicalScore}`);
+
+  // Determine if psychology warnings should be included
+  const shouldIncludePsychology = volumeRatio >= 2.0 || 
+    (currentPrice && (
+      support.some((s: number) => Math.abs(currentPrice - s) / currentPrice < 0.02) ||
+      resistance.some((r: number) => Math.abs(currentPrice - r) / currentPrice < 0.02)
+    ));
+
+  const psychologyContext = shouldIncludePsychology ? `
+
+## 🧠 PSYCHOLOGY CONTEXT (Include psychologyWarnings in response)
+Market cycle emotions: ${JSON.stringify(TRADING_PSYCHOLOGY.market_psychology.market_cycle_emotions)}
+Common biases: Confirmation bias, FOMO, Loss aversion, Gamblers fallacy, Recency bias
+Why retail loses: ${JSON.stringify(TRADING_PSYCHOLOGY.market_psychology.why_retail_loses)}
+
+Assess: What stage of the market cycle? What emotions are driving price? What mistakes will traders make?
+` : `
+
+## Psychology: Skip psychologyWarnings (normal price action, no extremes detected). Set psychologyWarnings to null.
+`;
 
   const prompt = `## TRADING KNOWLEDGE BASE
 ${tradingContext}
 
 ---
 
-You are an expert trading analyst combining technical and fundamental analysis. Generate a comprehensive trading prediction using WEIGHTED SCORING.
+You are an expert trading analyst combining technical and fundamental analysis. Generate a comprehensive trading prediction using WEIGHTED SCORING and CONTEXT-ADJUSTED pattern reliability.
 
 ## Technical Analysis (from chart vision - weight: 60%)
 ${JSON.stringify(technical, null, 2)}
 
-**Pre-calculated technical score: ${technicalScore}** (based on HIGH confidence pattern scores)
+## Context-Adjusted Pattern Scores
+${JSON.stringify(adjustedPatterns, null, 2)}
+
+**Pre-calculated technical score: ${technicalScore}** (based on context-adjusted pattern scores)
 **Current Price: ${currentPrice || 'unknown'}**
 **Support Levels: ${JSON.stringify(support)}**
 **Resistance Levels: ${JSON.stringify(resistance)}**
+**Volume Ratio: ${volumeRatio}x average**
 
 ## Recent News Headlines (weight: 40%)
 ${news.headlines.length > 0 ? news.headlines.map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No recent news found.'}
-
+${psychologyContext}
 ---
 
 ## SCORING RULES:
@@ -249,20 +348,26 @@ ${news.headlines.length > 0 ? news.headlines.map((h, i) => `${i + 1}. ${h}`).joi
    - WAIT: everything else (including when confidence < 50%)
 3. If confidence < 50% → signal MUST be "WAIT" regardless of other factors
 4. If technical and news conflict, technical takes priority (60% weight)
+5. **HARD CAP: confidence MUST NOT exceed 90.** Nothing is certain.
 
 ## ENTRY TIMING RULES:
-Determine if NOW is a good time to enter, based on price location:
 - If signal is BEARISH and currentPrice is near a support level → status "WAIT", risk of bounce
 - If signal is BULLISH and currentPrice is near a resistance level → status "WAIT", risk of rejection
 - If price is at ideal entry zone away from conflicting levels → status "READY"
 - "Near" means within 1-2% of the level
-- Always provide both aggressive (enter now) and conservative (wait for retest) options
+- Always provide both aggressive and conservative options
+
+## CONSISTENCY RULES (CRITICAL):
+- entry_zone, entryTiming.aggressive, entryTiming.conservative, and actionablePlan MUST all reference the SAME price levels
+- If signal is BEARISH and entryTiming.status is WAIT: entry_zone must match the conservative plan's entry price
+- If entryTiming.status is READY: entry_zone should be near current price
+- stop_loss and take_profit must be consistent across all sections
 
 ## ACTIONABLE PLAN RULES:
 - For WAIT signal: provide conditional scenarios (IF breaks above X → BULLISH setup, IF breaks below Y → BEARISH setup)
 - For BULLISH/BEARISH: provide specific entry, stop loss, and take profit levels
 - Always calculate risk/reward ratio
-- Reference pattern reliability from knowledge base
+- Reference pattern success rates from knowledge base
 
 Return ONLY valid JSON (no markdown, no code fences):
 {
@@ -273,7 +378,7 @@ Return ONLY valid JSON (no markdown, no code fences):
   "signal": "BULLISH" | "BEARISH" | "WAIT",
   "confidence": 0,
   "technicalScore": ${technicalScore},
-  "reasoning": "On the ${(technical as any).timeframe || 'unknown'} timeframe, ${(technical as any).ticker || 'this asset'} shows... (1) What patterns were detected and their significance from the knowledge base, (2) How technical and news align or conflict, (3) Why this signal and confidence level. 3-5 sentences.",
+  "reasoning": "On the ${timeframe} timeframe, ${(technical as any).ticker || 'this asset'} shows... (1) Pattern reliability with context adjustments and success rates, (2) How technical and news align or conflict, (3) Psychology/emotion stage if relevant. 3-5 sentences.",
   "entry_zone": "specific price range or 'N/A' for WAIT",
   "stop_loss": "specific price or 'N/A' for WAIT",
   "take_profit": "specific price range or 'N/A' for WAIT",
@@ -289,14 +394,42 @@ Return ONLY valid JSON (no markdown, no code fences):
     "ifBullishBreakout": "IF price breaks above [resistance] → entry, stop, targets",
     "ifBearishBreakdown": "IF price breaks below [support] → entry, stop, targets"
   },
-  "riskManagement": "Position sizing recommendation (1-2% account risk per trade)"
+  "riskManagement": "Position sizing recommendation (1-2% account risk per trade)",
+  "patternBreakdown": [
+    {
+      "name": "pattern_name",
+      "baseScore": 68,
+      "adjustments": ["Timeframe 15m: -5%", "At support: +20%"],
+      "finalScore": 78,
+      "historicalSuccess": "68% overall, 78% with current context (Bulkowski, 10K+ patterns)",
+      "failureMode": "Breaks below support (32% of cases)",
+      "invalidation": "Close below 0.044"
+    }
+  ],
+  "psychologyWarnings": ${shouldIncludePsychology ? `{
+    "marketStage": "optimism | excitement | thrill | euphoria | anxiety | denial | panic | capitulation",
+    "crowdPosition": "early adopters | early majority | late majority | laggards",
+    "emotionalDrivers": ["FOMO", "fear", "greed"],
+    "commonMistakes": [
+      "Many traders will [do wrong thing] due to [bias]",
+      "If you feel [emotion], that's [bias] - do [correct action] instead"
+    ],
+    "contrarian_insight": "Smart money is likely [doing opposite of crowd]"
+  }` : 'null'},
+  "disciplineReminders": {
+    "positionSizing": "Risk 1-2% of account maximum on this trade",
+    "stopLoss": "Set at [specific level] BEFORE entering, NEVER move wider",
+    "emotionalCheck": "If you feel strong emotion (FOMO/fear), wait 10 minutes before entering",
+    "invalidation": "If [specific level] breaks, accept you were wrong and exit"
+  }
 }
 
 Rules:
 - Sentiment scores: -1.0 (very bearish) to +1.0 (very bullish)
-- Confidence: 0-100 (higher = more conviction)
+- Confidence: 0-90 (HARD CAP at 90, nothing is certain)
 - Always reference the timeframe and asset type in reasoning
-- Reference specific patterns by name and their knowledge base reliability rating
+- Reference specific patterns by name and their research-backed success rates
+- Include pattern success rates in reasoning (e.g., "bull flag has 68% success rate, adjusted to 78% given current context")
 - If no news, base prediction purely on technicals and note that`;
 
   const res = await fetch(AI_GATEWAY, {
@@ -305,7 +438,7 @@ Rules:
     body: JSON.stringify({
       model: 'google/gemini-2.5-flash',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 2500,
+      max_tokens: 3500,
       temperature: 0.3,
     }),
   });
@@ -405,7 +538,7 @@ Deno.serve(async (req) => {
     // Step 2: News fetch
     const news = await fetchTickerNews(technical.ticker, technical.assetType);
 
-    // Step 3: Sentiment + Prediction (enhanced with weighted scoring)
+    // Step 3: Sentiment + Prediction (enhanced with psychology & context)
     const prediction = await generatePrediction(technical, news, LOVABLE_API_KEY);
 
     // Step 4: Store in DB
@@ -463,6 +596,10 @@ Deno.serve(async (req) => {
       reasoning += `\n\n⚠️ Risk: ${prediction.riskManagement}`;
     }
 
+    // Build enhanced disclaimer with success rate
+    const topPattern = prediction.patternBreakdown?.[0];
+    const disclaimerRate = topPattern ? ` Top pattern success rate: ${topPattern.historicalSuccess || topPattern.finalScore + '%'}.` : '';
+
     const result = {
       ticker: technical.ticker,
       assetType: technical.assetType,
@@ -486,7 +623,7 @@ Deno.serve(async (req) => {
       })),
       prediction: {
         signal: prediction.signal,
-        confidence: prediction.confidence,
+        confidence: Math.min(prediction.confidence || 0, 90), // Hard cap
         timeframe: technical.timeframe,
         assetType: technical.assetType,
         reasoning,
@@ -496,13 +633,16 @@ Deno.serve(async (req) => {
         risk_reward: prediction.risk_reward,
         overallSentiment: prediction.overallSentiment,
         ...(prediction.entryTiming ? { entryTiming: prediction.entryTiming } : {}),
+        ...(prediction.patternBreakdown ? { patternBreakdown: prediction.patternBreakdown } : {}),
+        ...(prediction.psychologyWarnings ? { psychologyWarnings: prediction.psychologyWarnings } : {}),
+        ...(prediction.disciplineReminders ? { disciplineReminders: prediction.disciplineReminders } : {}),
       },
       imageUrl,
       analysisId: analysisId || null,
-      disclaimer: 'This analysis is for educational purposes only. Not financial advice. Always do your own research before making investment decisions.',
+      disclaimer: `This analysis is for educational purposes only. Not financial advice.${disclaimerRate} Always do your own research and use stop losses.`,
     };
 
-    console.log('[chart-analyzer] ✅ Analysis complete for', technical.ticker, '| Signal:', prediction.signal, '| Confidence:', prediction.confidence);
+    console.log('[chart-analyzer] ✅ Analysis complete for', technical.ticker, '| Signal:', prediction.signal, '| Confidence:', result.prediction.confidence);
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

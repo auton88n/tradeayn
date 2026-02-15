@@ -52,6 +52,31 @@ export interface ChartNewsItem {
   impact: 'high' | 'medium' | 'low';
 }
 
+export interface PatternBreakdown {
+  name: string;
+  baseScore: number;
+  adjustments: string[];
+  finalScore: number;
+  historicalSuccess: string;
+  failureMode: string;
+  invalidation: string;
+}
+
+export interface PsychologyWarnings {
+  marketStage: string;
+  crowdPosition: string;
+  emotionalDrivers: string[];
+  commonMistakes: string[];
+  contrarian_insight?: string;
+}
+
+export interface DisciplineReminders {
+  positionSizing: string;
+  stopLoss: string;
+  emotionalCheck: string;
+  invalidation: string;
+}
+
 export interface ChartPrediction {
   signal: PredictionSignal;
   confidence: number;
@@ -64,6 +89,9 @@ export interface ChartPrediction {
   risk_reward: string;
   overallSentiment: number;
   entryTiming?: EntryTiming;
+  patternBreakdown?: PatternBreakdown[];
+  psychologyWarnings?: PsychologyWarnings;
+  disciplineReminders?: DisciplineReminders;
 }
 
 export interface ChartAnalysisResult {
