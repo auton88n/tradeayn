@@ -3,7 +3,7 @@
 // ============================================
 
 export type AssetType = 'stock' | 'crypto' | 'forex' | 'commodity' | 'index';
-export type PredictionSignal = 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+export type PredictionSignal = 'BULLISH' | 'BEARISH' | 'NEUTRAL' | 'WAIT';
 export type ChartTimeframe = '1m' | '5m' | '15m' | '1H' | '4H' | 'Daily' | 'Weekly' | 'Monthly' | 'unknown';
 
 export interface ChartTechnicalAnalysis {

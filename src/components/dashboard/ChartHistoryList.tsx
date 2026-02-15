@@ -12,6 +12,7 @@ const signalConfig = {
   BULLISH: { icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10' },
   BEARISH: { icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-500/10' },
   NEUTRAL: { icon: Minus, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+  WAIT: { icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10' },
 };
 
 const assetIcons: Record<string, string> = {
@@ -30,7 +31,7 @@ interface Props {
 }
 
 export default function ChartHistoryList({ items, loading, hasMore, filter, onFilterChange, onSelect, onLoadMore, onCompare }: Props) {
-  const signals: (PredictionSignal | '')[] = ['', 'BULLISH', 'BEARISH', 'NEUTRAL'];
+  const signals: (PredictionSignal | '')[] = ['', 'BULLISH', 'BEARISH', 'NEUTRAL', 'WAIT'];
   const assetTypes: (AssetType | '')[] = ['', 'stock', 'crypto', 'forex', 'commodity', 'index'];
 
   const [compareMode, setCompareMode] = useState(false);

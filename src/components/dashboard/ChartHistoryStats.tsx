@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, BarChart3, TrendingUp, TrendingDown, Minus, Hash, Target } from 'lucide-react';
+import { ChevronDown, ChevronUp, BarChart3, TrendingUp, TrendingDown, Minus, Hash, Target, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,13 +16,14 @@ export default function ChartHistoryStats({ items }: Props) {
   const stats = useMemo(() => {
     if (items.length === 0) return null;
 
-    let bullish = 0, bearish = 0, neutral = 0, confSum = 0;
+    let bullish = 0, bearish = 0, neutral = 0, wait = 0, confSum = 0;
     const tickerMap: Record<string, number> = {};
     const patternMap: Record<string, number> = {};
 
     for (const item of items) {
       if (item.prediction.signal === 'BULLISH') bullish++;
       else if (item.prediction.signal === 'BEARISH') bearish++;
+      else if (item.prediction.signal === 'WAIT') wait++;
       else neutral++;
 
       confSum += item.prediction.confidence || 0;
@@ -41,7 +42,7 @@ export default function ChartHistoryStats({ items }: Props) {
 
     return {
       total,
-      bullish, bearish, neutral,
+      bullish, bearish, neutral, wait,
       avgConfidence: Math.round(confSum / total),
       topTicker: topTicker ? topTicker[0] : null,
       topPattern: topPattern ? topPattern[0] : null,
@@ -52,7 +53,8 @@ export default function ChartHistoryStats({ items }: Props) {
 
   const pctB = Math.round((stats.bullish / stats.total) * 100);
   const pctBear = Math.round((stats.bearish / stats.total) * 100);
-  const pctN = 100 - pctB - pctBear;
+  const pctW = Math.round((stats.wait / stats.total) * 100);
+  const pctN = 100 - pctB - pctBear - pctW;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -73,13 +75,15 @@ export default function ChartHistoryStats({ items }: Props) {
               <p className="text-xs text-muted-foreground">Signal Distribution</p>
               <div className="flex h-3 rounded-full overflow-hidden">
                 {pctB > 0 && <div className="bg-green-500" style={{ width: `${pctB}%` }} />}
+                {pctW > 0 && <div className="bg-blue-500" style={{ width: `${pctW}%` }} />}
                 {pctN > 0 && <div className="bg-yellow-500" style={{ width: `${pctN}%` }} />}
                 {pctBear > 0 && <div className="bg-red-500" style={{ width: `${pctBear}%` }} />}
               </div>
-              <div className="flex justify-between text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3 text-green-500" /> {pctB}% Bullish</span>
-                <span className="flex items-center gap-1"><Minus className="h-3 w-3 text-yellow-500" /> {pctN}% Neutral</span>
-                <span className="flex items-center gap-1"><TrendingDown className="h-3 w-3 text-red-500" /> {pctBear}% Bearish</span>
+              <div className="flex justify-between text-[10px] text-muted-foreground flex-wrap gap-1">
+                <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3 text-green-500" /> {pctB}%</span>
+                <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-blue-500" /> {pctW}%</span>
+                <span className="flex items-center gap-1"><Minus className="h-3 w-3 text-yellow-500" /> {pctN}%</span>
+                <span className="flex items-center gap-1"><TrendingDown className="h-3 w-3 text-red-500" /> {pctBear}%</span>
               </div>
             </div>
 
