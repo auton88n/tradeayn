@@ -4,7 +4,6 @@ import {
   Bot, 
   Send, 
   X, 
-  Trash2, 
   Sparkles, 
   HelpCircle, 
   Lightbulb,
@@ -18,7 +17,9 @@ import {
   AlertTriangle,
   Zap,
   FileText,
-  Calculator
+  Calculator,
+  Clock,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,10 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config';
 import { toast } from '@/hooks/use-toast';
 import { CalculatorType } from '@/lib/engineeringKnowledge';
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -61,12 +66,47 @@ interface Message {
   };
 }
 
+interface EngSession {
+  id: string;
+  title: string;
+  messages: Message[];
+  updatedAt: number;
+}
+
 interface EngineeringAIChatProps {
   calculatorType: CalculatorType;
   currentInputs: Record<string, unknown>;
   currentOutputs: Record<string, unknown> | null;
   isOpen: boolean;
   onClose: () => void;
+}
+
+const MAX_SESSIONS = 20;
+
+function generateId(): string {
+  return crypto.randomUUID?.() || Math.random().toString(36).slice(2, 10);
+}
+
+function getSessionsKey(calcType: string) {
+  return `ayn-engineering-chat-sessions-${calcType}`;
+}
+
+function loadSessions(calcType: string): EngSession[] {
+  try {
+    const stored = localStorage.getItem(getSessionsKey(calcType));
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return parsed.map((s: any) => ({
+      ...s,
+      messages: s.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })),
+    }));
+  } catch { return []; }
+}
+
+function saveSessions(calcType: string, sessions: EngSession[]) {
+  try {
+    localStorage.setItem(getSessionsKey(calcType), JSON.stringify(sessions.slice(0, MAX_SESSIONS)));
+  } catch { /* storage full */ }
 }
 
 const QUICK_ACTIONS: Record<CalculatorType, { label: string; icon: typeof HelpCircle; question: string }[]> = {
@@ -117,22 +157,53 @@ export const EngineeringAIChat = ({
   isOpen,
   onClose
 }: EngineeringAIChatProps) => {
-  const storageKey = `ayn-engineering-chat-${calculatorType}`;
-  const [messages, setMessages] = useState<Message[]>(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (!stored) return [];
-      const parsed = JSON.parse(stored);
-      return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
-    } catch { return []; }
+  const [allSessions, setAllSessions] = useState<EngSession[]>(() => loadSessions(calculatorType));
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
+    const s = loadSessions(calculatorType);
+    return s.length > 0 ? s[0].id : null;
   });
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const s = loadSessions(calculatorType);
+    return s.length > 0 ? s[0].messages : [];
+  });
+  const [historyOpen, setHistoryOpen] = useState(false);
 
-  // Persist messages to localStorage
+  // Persist sessions
   useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(messages));
-    } catch { /* storage full, ignore */ }
-  }, [messages, storageKey]);
+    if (activeSessionId && messages.length > 0) {
+      setAllSessions(prev => {
+        const idx = prev.findIndex(s => s.id === activeSessionId);
+        const title = messages.find(m => m.role === 'user')?.content.slice(0, 40) || 'New Chat';
+        const updated: EngSession = { id: activeSessionId, title, messages, updatedAt: Date.now() };
+        let next: EngSession[];
+        if (idx >= 0) {
+          next = [...prev];
+          next[idx] = updated;
+        } else {
+          next = [updated, ...prev];
+        }
+        next.sort((a, b) => b.updatedAt - a.updatedAt);
+        saveSessions(calculatorType, next);
+        return next;
+      });
+    }
+  }, [messages, activeSessionId, calculatorType]);
+
+  const switchSession = useCallback((id: string) => {
+    const s = allSessions.find(s => s.id === id);
+    if (s) {
+      setActiveSessionId(s.id);
+      setMessages(s.messages);
+    }
+  }, [allSessions]);
+
+  const startNewChat = useCallback(() => {
+    const id = generateId();
+    setActiveSessionId(id);
+    setMessages([]);
+    setStreamingContent('');
+  }, []);
+
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -155,7 +226,7 @@ export const EngineeringAIChat = ({
     setShouldAutoScroll(isNearBottom);
   }, []);
 
-  // Smart auto-scroll: only when NEW messages are added and user is near bottom
+  // Smart auto-scroll
   useEffect(() => {
     const newMessageAdded = messages.length > prevMessageCountRef.current;
     const isStreaming = streamingContent.length > 0;
@@ -175,10 +246,14 @@ export const EngineeringAIChat = ({
   const sendMessage = useCallback(async (question: string) => {
     if (!question.trim() || isLoading) return;
 
+    if (!activeSessionId) {
+      const id = generateId();
+      setActiveSessionId(id);
+    }
+
     setIsLoading(true);
     setStreamingContent('');
 
-    // Add user message
     const userMessage: Message = {
       role: 'user',
       content: question,
@@ -188,7 +263,6 @@ export const EngineeringAIChat = ({
     setInputValue('');
 
     try {
-      // Build conversation history
       const conversationHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -223,7 +297,6 @@ export const EngineeringAIChat = ({
         throw new Error('Failed to get AI response');
       }
 
-      // Handle streaming response
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let fullContent = '';
@@ -238,7 +311,6 @@ export const EngineeringAIChat = ({
           
           buffer += decoder.decode(value, { stream: true });
           
-          // Process complete lines
           let newlineIndex: number;
           while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
             const line = buffer.slice(0, newlineIndex).trim();
@@ -253,19 +325,16 @@ export const EngineeringAIChat = ({
             try {
               const parsed = JSON.parse(jsonStr);
               
-              // Handle structured data
               if (parsed.structuredData) {
                 structuredData = parsed.structuredData;
               }
               
-              // Handle streaming content
               const content = parsed.choices?.[0]?.delta?.content;
               if (content) {
                 fullContent += content;
                 setStreamingContent(fullContent);
               }
             } catch {
-              // Incomplete JSON, wait for more data
               buffer = line + '\n' + buffer;
               break;
             }
@@ -273,7 +342,6 @@ export const EngineeringAIChat = ({
         }
       }
 
-      // Add assistant message
       const assistantMessage: Message = {
         role: 'assistant',
         content: fullContent || 'I apologize, but I could not generate a response. Please try again.',
@@ -305,7 +373,7 @@ export const EngineeringAIChat = ({
     } finally {
       setIsLoading(false);
     }
-  }, [calculatorType, currentInputs, currentOutputs, messages, isLoading]);
+  }, [calculatorType, currentInputs, currentOutputs, messages, isLoading, activeSessionId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,12 +387,6 @@ export const EngineeringAIChat = ({
       e.preventDefault();
       handleSubmit(e);
     }
-  };
-
-  const clearConversation = () => {
-    setMessages([]);
-    setStreamingContent('');
-    localStorage.removeItem(storageKey);
   };
 
   if (!isOpen) return null;
@@ -354,6 +416,77 @@ export const EngineeringAIChat = ({
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {/* History */}
+          <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
+            <TooltipProvider>
+              <Tooltip>
+                <PopoverTrigger asChild>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Clock className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                </PopoverTrigger>
+                <TooltipContent side="bottom" className="text-xs">Chat history</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <PopoverContent
+              side="bottom"
+              align="end"
+              className="w-72 p-0 max-h-[300px] overflow-hidden"
+              sideOffset={8}
+            >
+              <div className="px-3 py-2 border-b border-border/50 text-xs font-medium text-muted-foreground">
+                Chat History
+              </div>
+              <ScrollArea className="max-h-[260px]">
+                {allSessions.length === 0 ? (
+                  <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                    No previous chats
+                  </div>
+                ) : (
+                  <div className="py-1">
+                    {allSessions.map((session) => (
+                      <button
+                        key={session.id}
+                        onClick={() => {
+                          switchSession(session.id);
+                          setHistoryOpen(false);
+                        }}
+                        className={cn(
+                          "w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors flex items-start gap-2",
+                          session.id === activeSessionId && "bg-primary/10 border-l-2 border-primary"
+                        )}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{session.title}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {formatDistanceToNow(session.updatedAt, { addSuffix: true })}
+                          </p>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground shrink-0">
+                          {session.messages.length} msgs
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+
+          {/* New Chat */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={startNewChat}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">New chat</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <Button
             variant="ghost"
             size="icon"
@@ -363,17 +496,6 @@ export const EngineeringAIChat = ({
           >
             {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
-          {messages.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={clearConversation}
-              className="h-8 w-8"
-              title="Clear conversation"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
           <Button
             variant="ghost"
             size="icon"
@@ -586,7 +708,6 @@ const MessageBubble = ({
         {/* Structured Data Cards */}
         {message.structuredData && (
           <div className="space-y-2">
-            {/* Warning */}
             {message.structuredData.warning && (
               <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                 <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
@@ -594,7 +715,6 @@ const MessageBubble = ({
               </div>
             )}
 
-            {/* Formula */}
             {message.structuredData.formula && (
               <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
@@ -618,7 +738,6 @@ const MessageBubble = ({
               </div>
             )}
 
-            {/* Calculation Steps */}
             {message.structuredData.calculation && (
               <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
@@ -636,7 +755,6 @@ const MessageBubble = ({
               </div>
             )}
 
-            {/* Code Reference */}
             {message.structuredData.codeReference && (
               <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
@@ -649,7 +767,6 @@ const MessageBubble = ({
               </div>
             )}
 
-            {/* Quick Replies */}
             {message.structuredData.quickReplies && message.structuredData.quickReplies.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {message.structuredData.quickReplies.slice(0, 3).map((reply, i) => (

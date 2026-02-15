@@ -7,6 +7,13 @@ interface CoachMessage {
   content: string;
 }
 
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: CoachMessage[];
+  updatedAt: number;
+}
+
 // === SECURITY LAYER 1: Input Validation ===
 const FORBIDDEN_PATTERNS = [
   /system prompt/i, /show.*prompt/i, /api key/i,
@@ -30,7 +37,6 @@ function validateInput(message: string): boolean {
 function detectSearchIntent(message: string, ticker?: string): string | null {
   if (!NEWS_PATTERNS.test(message)) return null;
   if (ticker) return `${ticker} trading news today`;
-  // Try to extract a subject from the message
   const subjectMatch = message.match(/(?:news|latest|update|headlines)\s+(?:on|about|for)\s+(\w+)/i);
   if (subjectMatch) return `${subjectMatch[1]} trading news today`;
   return 'stock market news today';
@@ -91,28 +97,86 @@ User Emotional State: ${emotionalState}`;
 }
 
 const MAX_MESSAGES = 50;
-const STORAGE_KEY = 'ayn-chart-coach-history';
+const MAX_SESSIONS = 20;
+const SESSIONS_KEY = 'ayn-chart-coach-sessions';
+
+function generateId(): string {
+  return crypto.randomUUID?.() || Math.random().toString(36).slice(2, 10);
+}
+
+function loadSessions(): ChatSession[] {
+  try {
+    const stored = localStorage.getItem(SESSIONS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch { return []; }
+}
+
+function saveSessions(sessions: ChatSession[]) {
+  try {
+    const pruned = sessions.slice(0, MAX_SESSIONS);
+    localStorage.setItem(SESSIONS_KEY, JSON.stringify(pruned));
+  } catch { /* storage full */ }
+}
 
 export function useChartCoach(result?: ChartAnalysisResult) {
+  const [sessions, setSessions] = useState<ChatSession[]>(loadSessions);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
+    const s = loadSessions();
+    return s.length > 0 ? s[0].id : null;
+  });
   const [messages, setMessages] = useState<CoachMessage[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
+    const s = loadSessions();
+    if (s.length > 0) return s[0].messages;
+    return [];
   });
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Persist messages to localStorage
+  // Persist sessions whenever messages or sessions change
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    } catch { /* storage full, ignore */ }
-  }, [messages]);
+    if (activeSessionId && messages.length > 0) {
+      setSessions(prev => {
+        const idx = prev.findIndex(s => s.id === activeSessionId);
+        const title = messages.find(m => m.role === 'user')?.content.slice(0, 40) || 'New Chat';
+        const updated: ChatSession = { id: activeSessionId, title, messages, updatedAt: Date.now() };
+        let next: ChatSession[];
+        if (idx >= 0) {
+          next = [...prev];
+          next[idx] = updated;
+        } else {
+          next = [updated, ...prev];
+        }
+        next.sort((a, b) => b.updatedAt - a.updatedAt);
+        saveSessions(next);
+        return next;
+      });
+    }
+  }, [messages, activeSessionId]);
+
+  const switchSession = useCallback((id: string) => {
+    const s = sessions.find(s => s.id === id);
+    if (s) {
+      setActiveSessionId(s.id);
+      setMessages(s.messages);
+    }
+  }, [sessions]);
+
+  const newChat = useCallback(() => {
+    // Just start fresh — current session is already persisted
+    const id = generateId();
+    setActiveSessionId(id);
+    setMessages([]);
+  }, []);
 
   const sendMessage = useCallback(async (userMessage: string) => {
     const trimmed = userMessage.trim();
     if (!trimmed || isLoading) return;
+
+    // Ensure we have a session id
+    if (!activeSessionId) {
+      const id = generateId();
+      setActiveSessionId(id);
+    }
 
     // Security Layer 1: Block probing questions
     if (!validateInput(trimmed)) {
@@ -127,7 +191,6 @@ export function useChartCoach(result?: ChartAnalysisResult) {
     const emotionalState = detectEmotionalState(trimmed);
     const fileContext = result ? buildFileContext(result, emotionalState) : `No chart analyzed yet.\nUser Emotional State: ${emotionalState}`;
 
-    // Detect URLs and search intent for Firecrawl
     const urls = trimmed.match(URL_REGEX);
     const searchQuery = detectSearchIntent(trimmed, result?.ticker);
 
@@ -162,8 +225,6 @@ export function useChartCoach(result?: ChartAnalysisResult) {
       if (error) throw error;
 
       const rawContent = data?.content || "I couldn't process that. Try asking about your chart setup.";
-      
-      // Security Layer 2: Sanitize response
       const safeContent = sanitizeResponse(rawContent);
 
       setMessages(prev => [...prev, { role: 'assistant', content: safeContent }]);
@@ -177,12 +238,22 @@ export function useChartCoach(result?: ChartAnalysisResult) {
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [messages, result, isLoading]);
+  }, [messages, result, isLoading, activeSessionId]);
 
   const clearChat = useCallback(() => {
-    setMessages([]);
-    localStorage.removeItem(STORAGE_KEY);
-  }, []);
+    newChat();
+  }, [newChat]);
 
-  return { messages, isLoading, sendMessage, clearChat };
+  const deleteSession = useCallback((id: string) => {
+    setSessions(prev => {
+      const next = prev.filter(s => s.id !== id);
+      saveSessions(next);
+      return next;
+    });
+    if (activeSessionId === id) {
+      newChat();
+    }
+  }, [activeSessionId, newChat]);
+
+  return { messages, isLoading, sendMessage, clearChat, sessions, activeSessionId, switchSession, newChat, deleteSession };
 }
