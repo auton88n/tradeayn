@@ -68,7 +68,7 @@ function CompareColumn({ item }: { item: ChartHistoryItem }) {
       {item.technical.patterns.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {item.technical.patterns.map((p, i) => (
-            <Badge key={i} variant="outline" className="text-[10px]">{p}</Badge>
+            <Badge key={i} variant="outline" className="text-[10px]">{typeof p === 'string' ? p : (p as any)?.name || JSON.stringify(p)}</Badge>
           ))}
         </div>
       )}
