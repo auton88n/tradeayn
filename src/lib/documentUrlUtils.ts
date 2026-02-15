@@ -92,7 +92,7 @@ export const extractBestDocumentLink = (content: string): {
   // Match document links in these formats:
   // 1. 📄 [Title](url) or 📊 [Title](url) - with emojis
   // 2. [Download here](url) or [Download](url) - simple download links
-  const emojiRegex = /[📄📊]\s*\[([^\]]+)\]\(((?:https?:\/\/[^\s)]+|data:[^\s)]+))\)/g;
+  const emojiRegex = /[📄📊📥]\s*\[([^\]]+)\]\(((?:https?:\/\/[^\s)]+|data:[^\s)]+))\)/g;
   const downloadRegex = /\[([Dd]ownload[^\]]*|[Cc]lick here[^\]]*)\]\(((?:https?:\/\/[^\s)]+|data:[^\s)]+))\)/g;
   // Generic fallback: any markdown link pointing to a document URL
   const genericDocRegex = /\[([^\]]+)\]\(((?:https?:\/\/[^\s)]*(?:\.pdf|\.xlsx|\.xls|supabase\.co\/storage\/v1\/object)[^\s)]*|data:application\/(?:pdf|vnd\.openxmlformats[^\s)]+)[^\s)]*))\)/g;

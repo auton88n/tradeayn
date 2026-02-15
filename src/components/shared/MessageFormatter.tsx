@@ -234,9 +234,9 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   // Step 4: Strip inline document download links (users use the Download button instead)
   const strippedContent = decodedContent
     // Remove lines like: 📄 [Click here to download...](url) or 📊 [Download ...](url)
-    .replace(/^[\s]*[📄📊]\s*\[[^\]]*\]\((?:https?:\/\/[^\s)]+|data:[^\s)]+)\)\s*$/gm, '')
+    .replace(/^[\s]*[📄📊📥]\s*\[[^\]]*\]\((?:https?:\/\/[^\s)]+|data:[^\s)]+)\)\s*$/gm, '')
     // Remove lines like: [Download filename.xlsx](url) or [Click here to download](url)
-    .replace(/^[\s]*\[(?:[Dd]ownload[^\]]*|[Cc]lick here[^\]]*)\]\((?:https?:\/\/[^\s)]+|data:[^\s)]+)\)\s*$/gm, '')
+    .replace(/^[\s]*\[(?:[Dd]ownload[^\]]*|[Cc]lick here[^\]]*|[Cc]liquez ici[^\]]*|اضغط[^\]]*|تحميل[^\]]*)\]\((?:https?:\/\/[^\s)]+|data:[^\s)]+)\)\s*$/gm, '')
     // Clean up resulting empty lines
     .replace(/\n{3,}/g, '\n\n')
     .trim();
