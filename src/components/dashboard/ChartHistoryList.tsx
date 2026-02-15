@@ -1,8 +1,10 @@
-import { TrendingUp, TrendingDown, Minus, Clock, Search, History, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, TrendingDown, Minus, Clock, Search, History, Loader2, GitCompare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { formatDistanceToNow } from 'date-fns';
 import type { ChartHistoryItem, ChartHistoryFilter, AssetType, PredictionSignal } from '@/types/chartAnalyzer.types';
 
@@ -24,11 +26,34 @@ interface Props {
   onFilterChange: (f: ChartHistoryFilter) => void;
   onSelect: (item: ChartHistoryItem) => void;
   onLoadMore: () => void;
+  onCompare: (items: [ChartHistoryItem, ChartHistoryItem]) => void;
 }
 
-export default function ChartHistoryList({ items, loading, hasMore, filter, onFilterChange, onSelect, onLoadMore }: Props) {
+export default function ChartHistoryList({ items, loading, hasMore, filter, onFilterChange, onSelect, onLoadMore, onCompare }: Props) {
   const signals: (PredictionSignal | '')[] = ['', 'BULLISH', 'BEARISH', 'NEUTRAL'];
   const assetTypes: (AssetType | '')[] = ['', 'stock', 'crypto', 'forex', 'commodity', 'index'];
+
+  const [compareMode, setCompareMode] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const toggleCompareMode = () => {
+    setCompareMode(prev => !prev);
+    setSelected([]);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
+      if (prev.length >= 2) return prev;
+      return [...prev, id];
+    });
+  };
+
+  const handleCompare = () => {
+    if (selected.length !== 2) return;
+    const pair = selected.map(id => items.find(i => i.id === id)!).filter(Boolean) as [ChartHistoryItem, ChartHistoryItem];
+    if (pair.length === 2) onCompare(pair);
+  };
 
   return (
     <div className="space-y-3">
@@ -63,7 +88,28 @@ export default function ChartHistoryList({ items, loading, hasMore, filter, onFi
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
+        <Button
+          variant={compareMode ? 'default' : 'outline'}
+          size="sm"
+          className="h-9 gap-1.5"
+          onClick={toggleCompareMode}
+        >
+          <GitCompare className="h-3.5 w-3.5" />
+          {compareMode ? 'Cancel' : 'Compare'}
+        </Button>
       </div>
+
+      {/* Compare Action */}
+      {compareMode && (
+        <div className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
+          <p className="text-xs text-muted-foreground">
+            Select 2 analyses to compare ({selected.length}/2)
+          </p>
+          <Button size="sm" disabled={selected.length !== 2} onClick={handleCompare} className="gap-1.5">
+            <GitCompare className="h-3.5 w-3.5" /> Compare Selected
+          </Button>
+        </div>
+      )}
 
       {/* Empty State */}
       {!loading && items.length === 0 && (
@@ -82,13 +128,26 @@ export default function ChartHistoryList({ items, loading, hasMore, filter, onFi
       {items.map(item => {
         const sig = signalConfig[item.prediction.signal] || signalConfig.NEUTRAL;
         const SigIcon = sig.icon;
+        const isSelected = selected.includes(item.id);
         return (
           <Card
             key={item.id}
-            className="cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all"
-            onClick={() => onSelect(item)}
+            className={`cursor-pointer transition-all ${
+              isSelected ? 'ring-2 ring-primary' : 'hover:ring-1 hover:ring-primary/30'
+            }`}
+            onClick={() => compareMode ? toggleSelect(item.id) : onSelect(item)}
           >
             <CardContent className="p-3 flex items-center gap-3">
+              {/* Checkbox in compare mode */}
+              {compareMode && (
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => toggleSelect(item.id)}
+                  onClick={e => e.stopPropagation()}
+                  disabled={!isSelected && selected.length >= 2}
+                />
+              )}
+
               {/* Thumbnail */}
               {item.imageUrl && (
                 <img
