@@ -377,7 +377,7 @@ export const useMessages = (
         
         // Document generation detection (English, Arabic, French) - with flexible articles
         if (/create\s+(an?\s+)?pdf|make\s+(an?\s+)?pdf|generate\s+(an?\s+)?pdf|give\s+me\s+(an?\s+)?pdf|export\s+as\s+pdf|pdf\s+(report|document|about|for|of)/.test(lower)) return 'document';
-        if (/create\s+(an?\s+)?excel|make\s+(an?\s+)?excel|give\s+me\s+(an?\s+)?excel|excel\s+(sheet|about|for|of)|spreadsheet|xlsx|table\s+(about|of)|data\s+(about|overview)|create\s+(an?\s+)?table|create\s+(an?\s+)?report|make\s+(an?\s+)?report|generate\s+(an?\s+)?report/.test(lower)) return 'document';
+        if (/create\s+(an?\s+)?(excel|exel|excell|exsel|ecxel|exl)|make\s+(an?\s+)?(excel|exel|excell|exsel|ecxel|exl)|give\s+me\s+(an?\s+)?(excel|exel|excell|exsel|ecxel|exl)|(excel|exel|excell|exsel|ecxel|exl)\s+(sheet|about|for|of)|spreadsheet|xlsx|table\s+(about|of)|data\s+(about|overview)|create\s+(an?\s+)?table|create\s+(an?\s+)?report|make\s+(an?\s+)?report|generate\s+(an?\s+)?report/.test(lower)) return 'document';
         if (/اعمل\s*pdf|انشئ\s*pdf|ملف\s*pdf|تقرير\s*pdf|اعمل\s*(اكسل|لي)|سوي\s*لي|جدول\s*عن|بيانات\s*عن|اكسل\s*عن/.test(lower)) return 'document';
         if (/créer\s+(un\s+)?pdf|faire\s+(un\s+)?pdf|rapport\s+pdf|document\s+pdf|créer\s+(un\s+)?excel|excel\s+sur|excel\s+de|tableau\s+de|données\s+sur/.test(lower)) return 'document';
         
