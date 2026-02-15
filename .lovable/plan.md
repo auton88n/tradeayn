@@ -1,40 +1,46 @@
 
 
-## Fix Inline Download Text and Excel Detection
+## Fix Download Dropdown and Remove Design Button
 
-### Problems Identified
+### Problem 1: Download dropdown shows "PDF (.pdf)" for image-only responses
+When the user asks AYN to generate an image, the LLM response sometimes includes a markdown link to a PDF (or the image URL gets falsely matched as a document URL). This makes `hasBoth` true, showing a confusing dropdown with "PDF (.pdf)" and "Image (.png)" options -- but the PDF option either fails or downloads the wrong thing.
 
-1. **Inline download links still showing** -- The edge function returns content with the `📥` emoji (e.g., `📥 [Click here to download your PDF](url)`), but the stripping code only looks for `📄` and `📊` emojis.
+**Fix**: When the detected "document link" URL is the same as the detected image URL (or when the doc link points to an image file, not an actual PDF/Excel), skip showing it as a document. This ensures only the "Download" button (single-click for the image) appears instead of the misleading dropdown.
 
-2. **Excel download button not appearing** -- Same root cause: the `extractBestDocumentLink` function scans for `📄` and `📊` emoji links but not `📥`, so Excel download links returned by the backend are never detected.
+### Problem 2: "Design" button should be removed
+The bottom-right "Design" button (which opens Design LAB) is not needed. The user explicitly asked to remove it.
 
-3. **Arabic download links not stripped** -- Lines like `📥 [اضغط هنا لتحميل الملف](url)` are also missed because the Arabic text doesn't match "Download" or "Click here" patterns.
+**Fix**: Remove the Design button and its associated `handleDesignThis` callback from `ResponseCard.tsx`.
 
 ### Changes
 
-**File 1: `src/lib/documentUrlUtils.ts`**
-- Add `📥` to the `emojiRegex` character class: change `[📄📊]` to `[📄📊📥]`
-- This ensures document links using the `📥` emoji are detected and the Download button appears
+**File: `src/components/eye/ResponseCard.tsx`**
 
-**File 2: `src/components/shared/MessageFormatter.tsx`**
-- Add `📥` to the emoji stripping regex: change `[📄📊]` to `[📄📊📥]`
-- Add a broader stripping regex for Arabic download link text (`اضغط` / `تحميل` patterns) and French (`Cliquez ici`)
-- This removes inline download text for all supported languages
+1. Remove the "Design" button block (lines 675-684) that renders the Palette icon and "Design" text
+2. Remove the `handleDesignThis` callback (lines 153-163) and the `Palette` import since they are no longer used
+3. Fix the download logic: when determining `hasDoc`, add a check that the doc link URL is NOT the same as the `detectedImageUrl` -- this prevents images from being falsely offered as "PDF" downloads
+4. Remove the `useNavigate` import and `navigate` variable if only used by handleDesignThis
+5. Remove the `persistDalleImage` import if only used by handleDesignThis
 
 ### Technical Detail
 
 ```text
-documentUrlUtils.ts (line 95):
-  Before: /[📄📊]\s*\[...
-  After:  /[📄📊📥]\s*\[...
+// Line 574-577: Add guard so image URLs aren't treated as doc links
+const docLink = documentAttachment 
+  ? { ... }
+  : extractBestDocumentLink(combinedContent);
+// NEW: If the "doc" link is actually the image URL, ignore it
+const hasDoc = !!docLink && docLink.url !== detectedImageUrl;
 
-MessageFormatter.tsx (line 237):
-  Before: /^[\s]*[📄📊]\s*\[...
-  After:  /^[\s]*[📄📊📥]\s*\[...
-
-MessageFormatter.tsx (line 239) -- add Arabic/French patterns:
-  Before: /^[\s]*\[(?:[Dd]ownload[^\]]*|[Cc]lick here[^\]]*)\]...
-  After:  /^[\s]*\[(?:[Dd]ownload[^\]]*|[Cc]lick here[^\]]*|[Cc]liquez ici[^\]]*|اضغط[^\]]*|تحميل[^\]]*)\]...
+// Lines 675-684: Remove Design button entirely
+// Lines 153-163: Remove handleDesignThis callback
+// Line 18: Remove Palette import
+// Line 34: Remove persistDalleImage import (if unused elsewhere)
 ```
 
-These are two small regex tweaks -- no structural changes needed.
+| Area | Change |
+|------|--------|
+| Download logic | Skip doc link when it matches the image URL |
+| Design button | Remove entirely |
+| Cleanup | Remove unused imports (Palette, persistDalleImage, useNavigate if unused) |
+
