@@ -1,83 +1,101 @@
 
 
-## Upgrade AYN Trading Coach to Professional Trade Advisor
+## Make Analysis Output Concise and Scannable
 
 ### Problem
 
-The trading coach still uses cautious "coach mode" language -- it says "Never say buy or sell definitively" and hedges with "the setup suggests." It also doesn't pass the new `tradingSignal` data (exact entry, stop loss, take profits, bot config) to the chat AI, and the quick action buttons are psychology-focused instead of actionable trading queries. The knowledge base patterns are listed but the AI isn't told to use them to build concrete strategies.
+The analysis report is too long and wordy. Users want quick, actionable info -- not an essay. The current output has verbose reasoning paragraphs, redundant sections (Trade Setup duplicates Bot Config data), and long "What To Do Next" / discipline text that buries the actual signal.
 
 ### Changes
 
-#### 1. Rewrite System Prompt to Advisor Mode with Strategy Building
+#### 1. Shorten AI Reasoning Output
 
-**File:** `supabase/functions/ayn-unified/systemPrompts.ts` (lines 154-226)
+**File:** `supabase/functions/analyze-trading-chart/index.ts` (line 439)
 
-Replace the entire `trading-coach` block:
+Change the reasoning instruction from:
+- `"Direct analysis with exact levels. 3-5 sentences."`
 
-- Remove "Never say buy or sell definitively" and all hedging instructions
-- New role: "You are a direct, professional trading advisor. Give CLEAR actionable signals."
-- Expand the knowledge base section with strategy-building instructions:
-  - "Use pattern knowledge to BUILD COMPLETE STRATEGIES: combine patterns with S/R levels, volume, and timeframe to recommend specific trade plans"
-  - "Cross-reference detected patterns against reliability data to determine signal strength"
-  - "When multiple patterns align at key levels, increase conviction and say so"
-  - "When patterns conflict, be honest and recommend WAIT"
-- Add strategy templates the AI should use:
-  - Breakout Strategy (triangle/flag patterns at resistance)
-  - Reversal Strategy (engulfing/hammer at strong support)
-  - Trend Continuation (flag/pennant in established trend)
-  - Scalping Setup (short timeframe with volume confirmation)
-- Keep security rules (never reveal internals)
-- Keep emotional state detection but frame as "professional risk awareness"
-- Add: "Be honest about bad setups -- tell users NOT to trade when the setup is weak"
-- Add testing mode disclaimer at the end of strategy responses
+To:
+- `"2 sentences max. State the signal and the key reason. No fluff."`
 
-#### 2. Pass TradingSignal Data to Coach Context
+Also shorten these fields in the JSON schema:
+- `entryTiming.reason`: "One sentence." (was open-ended)
+- `entryTiming.aggressive` / `conservative`: "One line with price levels only"
+- `actionablePlan` fields: "One line each"
+- `confidenceBreakdown.explanation`: "One sentence."
+- `riskManagement`: "One sentence."
+- `disciplineReminders` fields: Shorten instructions to "Max 10 words each"
 
-**File:** `src/hooks/useChartCoach.ts` (function `buildFileContext`, lines 71-97)
+Redeploy `analyze-trading-chart` edge function.
 
-After the existing context string, append the `tradingSignal` data when available:
+#### 2. Restructure Results UI for Scannability
 
-- Action (BUY/SELL/WAIT)
-- Entry price and order type
-- Stop loss price and percentage
-- TP1 and TP2 with prices, percentages, close percentages
-- Bot config (position size, leverage, trailing stop)
-- Invalidation price and condition
-- Reasoning from the analyzer
+**File:** `src/components/dashboard/ChartAnalyzerResults.tsx`
 
-#### 3. Update Quick Actions and UI Labels
+**Quick View card (lines 379-418):**
+- Keep signal badge, ticker, timeframe, confidence -- these are good
+- Truncate reasoning display to 2 lines with a "Show more" toggle instead of showing the full paragraph
+- Move confidence breakdown into its own collapsible section instead of always showing inline
 
-**File:** `src/components/dashboard/ChartCoachChat.tsx`
+**Remove "Trade Setup" section (lines 469-498):**
+- This is now redundant with the Bot Configuration card which shows the same entry/SL/TP data in a better format
+- Delete the entire Trade Setup section
 
-Quick actions with result (lines 25-31):
-- "Should I buy or sell?"
-- "Build me a strategy"
-- "What's my exact entry?"
-- "Risk analysis"
-- "Set my stop loss"
+**Simplify "What To Do Next" (lines 301-361):**
+- For WAIT: show just the alert prices as a compact 2-column row, drop the "Don't Watch the Chart" essay
+- For BUY/SELL: show just 2 steps (Review Setup + Set Stop Loss) instead of 4
 
-Quick actions general (lines 33-38):
-- "How to build a trading plan?"
-- "Explain position sizing"
-- "Best entry strategies"
-- "Risk management rules"
+**Collapse "Trading Discipline" into the Bot Config card:**
+- Instead of a separate section, add a single-line risk reminder at the bottom of BotConfigCard
+- Remove the standalone discipline section
 
-Placeholders (lines 43-49):
-- "Should I buy or sell this?"
-- "Build me a trading strategy..."
-- "What's my risk here?"
-- "Where should I enter?"
-- "Help me plan this trade..."
+**Keep these sections as-is (they're already collapsible):**
+- Bot Configuration -- core value
+- Entry Timing -- useful
+- Pattern Analysis -- useful for deeper dives
+- Technical Analysis -- useful for deeper dives
+- News Sentiment -- useful
+- Psychology Check -- useful
 
-Header label (around line 280): Change "AYN Coach" to "AYN Trade Advisor"
+#### 3. Default-Expand Bot Config
 
-### Technical Details
+**File:** `src/components/dashboard/ChartAnalyzerResults.tsx` (line 366)
+
+Change initial expanded state to auto-open Bot Configuration:
+- `useState<Record<string, boolean>>({ botconfig: true })`
+
+This ensures the most actionable section (signal + entry + SL + TP) is visible immediately without clicking.
+
+### Summary of UI Changes
+
+**Before (10 sections, verbose):**
+1. Quick View (with long reasoning + inline confidence breakdown)
+2. Bot Configuration (collapsed)
+3. Entry Timing (collapsed)
+4. Psychology Check (collapsed)
+5. Trade Setup (collapsed) -- REDUNDANT
+6. Pattern Analysis (collapsed)
+7. Technical Analysis (collapsed)
+8. News Sentiment (collapsed)
+9. Trading Discipline (collapsed) -- LOW VALUE standalone
+10. What To Do Next (collapsed) -- TOO WORDY
+
+**After (8 sections, concise):**
+1. Quick View (2-line reasoning, confidence breakdown moved to collapsible)
+2. Bot Configuration (AUTO-EXPANDED -- the main value)
+3. Entry Timing (collapsed)
+4. Psychology Check (collapsed)
+5. Pattern Analysis (collapsed)
+6. Technical Analysis (collapsed)
+7. News Sentiment (collapsed)
+8. What To Do Next (compact, 2-3 lines max)
+
+Trade Setup removed (redundant). Discipline merged into Bot Config as one-liner.
+
+### Files
 
 | File | Change |
 |------|--------|
-| `supabase/functions/ayn-unified/systemPrompts.ts` | Rewrite trading-coach prompt: advisor mode, strategy building from knowledge base, remove hedging |
-| `src/hooks/useChartCoach.ts` | Add tradingSignal (entry, SL, TP1, TP2, bot config, invalidation) to buildFileContext |
-| `src/components/dashboard/ChartCoachChat.tsx` | Update quick actions, placeholders, header to "AYN Trade Advisor" |
-
-Edge function `ayn-unified` will need redeployment after the prompt change.
+| `supabase/functions/analyze-trading-chart/index.ts` | Shorten reasoning to 2 sentences, compress all text fields |
+| `src/components/dashboard/ChartAnalyzerResults.tsx` | Remove Trade Setup section, simplify NextSteps, merge discipline into BotConfig, auto-expand botconfig, truncate reasoning |
 
