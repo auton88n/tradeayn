@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -412,14 +413,20 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
               const isDataURL = href?.startsWith('data:');
               const isDocUrl = isDocumentStorageUrl(href || '');
               const isSupabaseUrl = isSupabaseStorageUrl(href || '');
+              const isSandboxUrl = href?.startsWith('sandbox:') || href?.includes('/mnt/data/');
               
               const handleClick = (e: React.MouseEvent) => {
+                // Intercept hallucinated sandbox URLs
+                if (isSandboxUrl) {
+                  e.preventDefault();
+                  toast.error('File not available. Try asking again to generate the document.');
+                  return;
+                }
                 if (isDataURL && href) {
                   e.preventDefault();
                   openDocumentUrl(href);
                 } else if ((isDocUrl || isSupabaseUrl) && href) {
                   e.preventDefault();
-                  // Extract filename from URL path
                   const urlFilename = href.split('/').pop()?.split('?')[0] || 'download';
                   openDocumentUrl(href, urlFilename);
                 }
