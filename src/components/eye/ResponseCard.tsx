@@ -542,15 +542,7 @@ const ResponseCardComponent = ({
                   </div>
                 )}
 
-                {documentAttachment && (
-                  <div className="px-3 pb-2">
-                    <DocumentDownloadButton
-                      url={documentAttachment.url}
-                      name={documentAttachment.name}
-                      type={documentAttachment.type}
-                    />
-                  </div>
-                )}
+                {/* Document downloads handled inline via markdown links */}
               </div>
 
               {isScrollable && !isAtBottom && (
