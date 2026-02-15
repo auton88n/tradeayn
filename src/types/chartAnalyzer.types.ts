@@ -6,9 +6,31 @@ export type AssetType = 'stock' | 'crypto' | 'forex' | 'commodity' | 'index';
 export type PredictionSignal = 'BULLISH' | 'BEARISH' | 'NEUTRAL' | 'WAIT';
 export type ChartTimeframe = '1m' | '5m' | '15m' | '1H' | '4H' | 'Daily' | 'Weekly' | 'Monthly' | 'unknown';
 
+export interface ChartPattern {
+  name: string;
+  type: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  score: number;
+  reasoning: string;
+  location: string;
+}
+
+export interface VolumeAnalysis {
+  trend: string;
+  spikes: string;
+  significance: string;
+}
+
+export interface EntryTiming {
+  status: 'READY' | 'WAIT';
+  reason: string;
+  aggressive: string;
+  conservative: string;
+}
+
 export interface ChartTechnicalAnalysis {
   trend: string;
-  patterns: string[];
+  patterns: (string | ChartPattern)[];
   support: number[];
   resistance: number[];
   indicators: {
@@ -19,6 +41,7 @@ export interface ChartTechnicalAnalysis {
     other?: string | null;
   };
   keyObservations: string;
+  volumeAnalysis?: VolumeAnalysis;
 }
 
 export interface ChartNewsItem {
@@ -40,6 +63,7 @@ export interface ChartPrediction {
   take_profit: string;
   risk_reward: string;
   overallSentiment: number;
+  entryTiming?: EntryTiming;
 }
 
 export interface ChartAnalysisResult {

@@ -1,8 +1,10 @@
-import { TrendingUp, TrendingDown, Minus, Clock, BarChart3, Newspaper, Target, Shield, Award } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, TrendingDown, Minus, Clock, BarChart3, Newspaper, Target, Shield, Award, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Volume2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import type { ChartAnalysisResult, ChartPattern } from '@/types/chartAnalyzer.types';
 
 interface Props {
   result: ChartAnalysisResult;
@@ -19,9 +21,53 @@ const assetIcons: Record<string, string> = {
   stock: '📈', crypto: '₿', forex: '💱', commodity: '🏗️', index: '📊',
 };
 
+const confidenceColors: Record<string, string> = {
+  HIGH: 'bg-green-500/15 text-green-500 border-green-500/30',
+  MEDIUM: 'bg-yellow-500/15 text-yellow-500 border-yellow-500/30',
+  LOW: 'bg-red-500/15 text-red-500 border-red-500/30',
+};
+
+function PatternCard({ pattern }: { pattern: ChartPattern }) {
+  const [open, setOpen] = useState(false);
+  const confClass = confidenceColors[pattern.confidence] || confidenceColors.MEDIUM;
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full">
+        <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-left">
+          <div className="flex items-center gap-2 min-w-0">
+            <Badge variant="outline" className={`text-[10px] shrink-0 ${confClass}`}>
+              {pattern.confidence}
+            </Badge>
+            <span className="text-sm font-medium truncate">{pattern.name.replace(/_/g, ' ')}</span>
+            <span className="text-xs text-muted-foreground shrink-0">({pattern.score})</span>
+          </div>
+          {(pattern.reasoning || pattern.location) && (
+            open ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          )}
+        </div>
+      </CollapsibleTrigger>
+      {(pattern.reasoning || pattern.location) && (
+        <CollapsibleContent>
+          <div className="px-3 py-2 text-xs space-y-1 border-l-2 border-muted ml-3 mt-1">
+            {pattern.location && (
+              <p className="text-muted-foreground">📍 {pattern.location}</p>
+            )}
+            {pattern.reasoning && (
+              <p className="text-muted-foreground">{pattern.reasoning}</p>
+            )}
+          </div>
+        </CollapsibleContent>
+      )}
+    </Collapsible>
+  );
+}
+
 export default function ChartAnalyzerResults({ result }: Props) {
   const signal = signalConfig[result.prediction.signal] || signalConfig.NEUTRAL;
   const SignalIcon = signal.icon;
+  const entryTiming = result.prediction.entryTiming;
+  const volumeAnalysis = result.technical.volumeAnalysis;
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
@@ -56,11 +102,44 @@ export default function ChartAnalyzerResults({ result }: Props) {
             </div>
           </div>
 
-          <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+          <p className="mt-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
             {result.prediction.reasoning}
           </p>
         </CardContent>
       </Card>
+
+      {/* Entry Timing Alert */}
+      {entryTiming && (
+        <Card className={`border ${entryTiming.status === 'READY' ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5'}`}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-start gap-3">
+              {entryTiming.status === 'READY' ? (
+                <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              )}
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-semibold ${entryTiming.status === 'READY' ? 'text-green-500' : 'text-amber-500'}`}>
+                    Entry Timing: {entryTiming.status}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">{entryTiming.reason}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                  <div className="p-2.5 rounded-lg bg-muted/40 text-xs">
+                    <p className="font-semibold text-muted-foreground mb-1">🔥 Aggressive</p>
+                    <p>{entryTiming.aggressive}</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-muted/40 text-xs">
+                    <p className="font-semibold text-muted-foreground mb-1">🛡️ Conservative</p>
+                    <p>{entryTiming.conservative}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Trade Setup */}
       {result.prediction.entry_zone !== 'N/A' && (
@@ -106,13 +185,17 @@ export default function ChartAnalyzerResults({ result }: Props) {
             <Badge variant="secondary" className="capitalize">{result.technical.trend}</Badge>
           </div>
 
+          {/* Rich Patterns */}
           {result.technical.patterns.length > 0 && (
-            <div>
-              <span className="text-muted-foreground">Patterns:</span>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {result.technical.patterns.map((p, i) => (
-                  <Badge key={i} variant="outline" className="text-xs">{typeof p === 'string' ? p : (p as any)?.name || JSON.stringify(p)}</Badge>
-                ))}
+            <div className="space-y-1.5">
+              <span className="text-muted-foreground text-xs font-medium">Patterns Detected:</span>
+              <div className="space-y-1.5">
+                {result.technical.patterns.map((p, i) => {
+                  if (typeof p === 'string') {
+                    return <Badge key={i} variant="outline" className="text-xs mr-1">{p}</Badge>;
+                  }
+                  return <PatternCard key={i} pattern={p as ChartPattern} />;
+                })}
               </div>
             </div>
           )}
@@ -130,6 +213,23 @@ export default function ChartAnalyzerResults({ result }: Props) {
               <Shield className="h-3 w-3 text-red-500" />
               <span className="text-muted-foreground">Resistance:</span>
               <span>{result.technical.resistance.join(', ')}</span>
+            </div>
+          )}
+
+          {/* Volume Analysis Section */}
+          {volumeAnalysis && (
+            <div className="mt-3 p-3 rounded-lg bg-muted/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Volume Analysis</span>
+                <Badge variant="outline" className="text-[10px] capitalize">{volumeAnalysis.trend}</Badge>
+              </div>
+              {volumeAnalysis.spikes && (
+                <p className="text-xs text-muted-foreground">📊 {volumeAnalysis.spikes}</p>
+              )}
+              {volumeAnalysis.significance && (
+                <p className="text-xs text-muted-foreground">✅ {volumeAnalysis.significance}</p>
+              )}
             </div>
           )}
 

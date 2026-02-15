@@ -150,7 +150,7 @@ Be specific with price levels. If you can see indicator values, include them. If
   }
 }
 
-// ─── Step 2: News Fetch via Firecrawl ───
+// ─── Step 2: News Fetch via Firecrawl (with filtering) ───
 async function fetchTickerNews(ticker: string, assetType: string) {
   console.log(`[chart-analyzer] Step 2: Fetching news for ${ticker} (${assetType})`);
   
@@ -168,9 +168,22 @@ async function fetchTickerNews(ticker: string, assetType: string) {
     return { headlines: [], raw: [] };
   }
 
+  // Filter out chart/price index pages (not actual news)
+  const filtered = result.data.filter(d => {
+    const title = (d.title || '').toLowerCase();
+    const isChartPage = title.includes('price chart') || title.includes('price index') || 
+      title.includes('to usd chart') || title.includes('live chart');
+    const isPriceTracker = /^[\w\/]+ price/i.test(d.title || '') && 
+      !title.includes('surges') && !title.includes('drops') && 
+      !title.includes('crashes') && !title.includes('jumps') && !title.includes('falls');
+    return !isChartPage && !isPriceTracker;
+  });
+
+  console.log(`[chart-analyzer] Filtered ${result.data.length - filtered.length} non-news results`);
+
   return {
-    headlines: result.data.map(d => d.title).filter(Boolean),
-    raw: result.data.map(d => ({
+    headlines: filtered.map(d => d.title).filter(Boolean),
+    raw: filtered.map(d => ({
       title: d.title,
       url: d.url,
       description: d.description || '',
@@ -203,6 +216,10 @@ async function generatePrediction(
 
   console.log(`[chart-analyzer] Technical score from ${highConfPatterns.length} HIGH confidence patterns: ${technicalScore}`);
 
+  const currentPrice = (technical as any).currentPrice;
+  const support = (technical as any).support || [];
+  const resistance = (technical as any).resistance || [];
+
   const prompt = `## TRADING KNOWLEDGE BASE
 ${tradingContext}
 
@@ -214,6 +231,9 @@ You are an expert trading analyst combining technical and fundamental analysis. 
 ${JSON.stringify(technical, null, 2)}
 
 **Pre-calculated technical score: ${technicalScore}** (based on HIGH confidence pattern scores)
+**Current Price: ${currentPrice || 'unknown'}**
+**Support Levels: ${JSON.stringify(support)}**
+**Resistance Levels: ${JSON.stringify(resistance)}**
 
 ## Recent News Headlines (weight: 40%)
 ${news.headlines.length > 0 ? news.headlines.map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No recent news found.'}
@@ -229,6 +249,14 @@ ${news.headlines.length > 0 ? news.headlines.map((h, i) => `${i + 1}. ${h}`).joi
    - WAIT: everything else (including when confidence < 50%)
 3. If confidence < 50% → signal MUST be "WAIT" regardless of other factors
 4. If technical and news conflict, technical takes priority (60% weight)
+
+## ENTRY TIMING RULES:
+Determine if NOW is a good time to enter, based on price location:
+- If signal is BEARISH and currentPrice is near a support level → status "WAIT", risk of bounce
+- If signal is BULLISH and currentPrice is near a resistance level → status "WAIT", risk of rejection
+- If price is at ideal entry zone away from conflicting levels → status "READY"
+- "Near" means within 1-2% of the level
+- Always provide both aggressive (enter now) and conservative (wait for retest) options
 
 ## ACTIONABLE PLAN RULES:
 - For WAIT signal: provide conditional scenarios (IF breaks above X → BULLISH setup, IF breaks below Y → BEARISH setup)
@@ -250,6 +278,12 @@ Return ONLY valid JSON (no markdown, no code fences):
   "stop_loss": "specific price or 'N/A' for WAIT",
   "take_profit": "specific price range or 'N/A' for WAIT",
   "risk_reward": "ratio like '1:1.5' or 'N/A' for WAIT",
+  "entryTiming": {
+    "status": "READY" | "WAIT",
+    "reason": "Why now is or isn't a good time to enter. Reference specific price levels.",
+    "aggressive": "Enter now plan with specific price, stop, target",
+    "conservative": "Wait for retest plan with specific trigger, entry, stop, target"
+  },
   "actionablePlan": {
     "current": "What to do right now",
     "ifBullishBreakout": "IF price breaks above [resistance] → entry, stop, targets",
@@ -379,24 +413,34 @@ Deno.serve(async (req) => {
       userId, sessionId || null, imageUrl, technical, news.raw, prediction
     );
 
-    // Step 5: Build result (map rich pattern objects to frontend-compatible format)
+    // Step 5: Build result (preserve rich pattern objects for frontend)
     const rawPatterns = technical.patterns || [];
-    const patternNames: string[] = Array.isArray(rawPatterns)
+    const richPatterns = Array.isArray(rawPatterns)
       ? rawPatterns.map((p: any) => {
-          if (typeof p === 'string') return p;
           if (typeof p === 'object' && p.name) {
-            const conf = p.confidence ? ` (${p.confidence})` : '';
-            return `${p.name}${conf}`;
+            return {
+              name: p.name,
+              type: p.type || 'NEUTRAL',
+              confidence: p.confidence || 'MEDIUM',
+              score: p.score || 50,
+              reasoning: p.reasoning || '',
+              location: p.location || '',
+            };
           }
-          return String(p);
+          return { name: String(p), type: 'NEUTRAL', confidence: 'MEDIUM', score: 50, reasoning: '', location: '' };
         })
       : [];
 
-    // Build volume description from structured volume object
+    // Build volume description from structured volume object (backward compat string)
     const volumeObj = (technical as any).volume;
     const volumeDesc = volumeObj && typeof volumeObj === 'object'
       ? `${volumeObj.trend || 'unknown'} volume. ${volumeObj.significance || ''} ${volumeObj.spikes || ''}`.trim()
       : (technical as any).indicators?.volume || null;
+
+    // Structured volume analysis for frontend
+    const volumeAnalysis = volumeObj && typeof volumeObj === 'object'
+      ? { trend: volumeObj.trend || 'unknown', spikes: volumeObj.spikes || '', significance: volumeObj.significance || '' }
+      : null;
 
     // Build key observations from technical summary + trend reasoning
     const keyObs = [
@@ -425,7 +469,7 @@ Deno.serve(async (req) => {
       timeframe: technical.timeframe,
       technical: {
         trend: technical.trend,
-        patterns: patternNames,
+        patterns: richPatterns,
         support: technical.support || [],
         resistance: technical.resistance || [],
         indicators: {
@@ -433,6 +477,7 @@ Deno.serve(async (req) => {
           volume: volumeDesc,
         },
         keyObservations: keyObs || (technical as any).keyObservations || '',
+        ...(volumeAnalysis ? { volumeAnalysis } : {}),
       },
       news: news.raw.map((n, i) => ({
         ...n,
@@ -450,6 +495,7 @@ Deno.serve(async (req) => {
         take_profit: prediction.take_profit,
         risk_reward: prediction.risk_reward,
         overallSentiment: prediction.overallSentiment,
+        ...(prediction.entryTiming ? { entryTiming: prediction.entryTiming } : {}),
       },
       imageUrl,
       analysisId: analysisId || null,
