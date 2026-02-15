@@ -40,8 +40,18 @@ export function useChartAnalyzer() {
       });
 
       if (res.error) {
+        // supabase.functions.invoke may put the parsed body in res.data even on error
         const bodyError = res.data?.error;
-        throw new Error(bodyError || res.error.message || 'Analysis failed');
+        // Also try to parse from the error context
+        let contextError: string | undefined;
+        try {
+          const ctx = (res.error as any)?.context;
+          if (ctx instanceof Response) {
+            const body = await ctx.json();
+            contextError = body?.error;
+          }
+        } catch {}
+        throw new Error(bodyError || contextError || res.error.message || 'Analysis failed');
       }
 
       setResult(res.data as ChartAnalysisResult);
