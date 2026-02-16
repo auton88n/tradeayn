@@ -1,91 +1,107 @@
 
 
-## Integrate Pionex Market Data into Chart Analysis
+## Redesign: Claude-Style Unified Chat + Upload Interface
 
-### What This Does
+### The Idea
 
-When AYN analyzes a chart screenshot, it currently only has the image to work with. By adding Pionex market data, AYN will also get **real price data** (candles, volume, 24h stats) for the detected ticker -- giving it precise numbers to cross-reference against the visual patterns.
+Instead of two separate components (an upload zone at the top + a floating chat bar at the bottom), everything merges into **one conversational interface** -- just like Claude. You see a single input bar at the bottom where you can type AND attach a chart image. The analysis results, chart previews, and follow-up conversations all appear as messages in one scrollable thread.
 
-### How to Get Your Pionex API Keys
+### How It Works
 
-1. Go to [pionex.com](https://pionex.com) and log in
-2. Click your profile icon (top right) and go to **API Management**
-3. Click **Create API Key**
-4. Set permissions to **Read Only** (we only need market data, not trading)
-5. Copy the **API Key** and **API Secret** -- you'll paste them into Lovable when prompted
-
-### Technical Changes
-
-#### 1. Store Pionex Credentials as Secrets
-
-Two new secrets will be added:
-- `PIONEX_API_KEY`
-- `PIONEX_API_SECRET`
-
-#### 2. New Pionex Data Fetcher (inside the edge function)
-
-**File:** `supabase/functions/analyze-trading-chart/index.ts`
-
-Add a `fetchPionexData()` function that:
-- Takes the detected ticker + timeframe from Step 1 (vision analysis)
-- Maps the ticker to Pionex symbol format (e.g., `BTC` to `BTC_USDT`)
-- Calls two Pionex endpoints (public, no auth needed for market data):
-  - `GET /api/v1/market/klines` -- last 100 candles matching the chart timeframe
-  - `GET /api/v1/market/tickers` -- 24h stats (open, close, high, low, volume)
-- Signs requests with HMAC-SHA256 using the API secret (required by Pionex for all endpoints)
-- Returns structured OHLCV data + 24h stats
-
-#### 3. Inject Pionex Data into AI Prediction Prompt
-
-**File:** `supabase/functions/analyze-trading-chart/index.ts`
-
-After Step 1 (vision) and Step 2 (news), add a new Step 2.5:
-- Call `fetchPionexData(ticker, timeframe)`
-- Pass the kline data into the Step 3 prediction prompt as a new section:
-
-```
-## Live Market Data (from Pionex API)
-Current Price: 0.04532
-24h Change: -2.11%
-24h High/Low: 0.0489 / 0.0421
-24h Volume: 1,234,567 USDT
-Last 10 candles (1H): [OHLCV array]
+```text
++----------------------------------+
+|  AYN Chart Analyzer   [History]  |  <-- Minimal top bar
++----------------------------------+
+|                                  |
+|  Welcome message / empty state   |  <-- When no messages yet
+|                                  |
+|  [User]: (attached chart.png)    |  <-- User uploads a chart
+|          preview thumbnail       |
+|                                  |
+|  [AYN]: Analyzing...             |  <-- Step indicators inline
+|         Uploading... done        |
+|         Analyzing... done        |
+|         Fetching news...         |
+|                                  |
+|  [AYN]: (Full analysis result)   |  <-- BotConfig, signals, etc.
+|         rendered inline          |
+|                                  |
+|  [User]: Should I buy?           |  <-- Follow-up question
+|  [AYN]: Based on the analysis... |
+|                                  |
++----------------------------------+
+|  [+] Type a message or drop a    |  <-- Unified input bar
+|      chart...              [->]  |
++----------------------------------+
 ```
 
-This gives the AI exact numbers to validate the visual patterns against real data.
+### What Changes
 
-#### 4. Graceful Fallback
+#### 1. New unified component: `src/components/dashboard/ChartUnifiedChat.tsx`
 
-If Pionex API fails (ticker not listed, rate limit, network error):
-- Log the error
-- Continue analysis without market data (same as current behavior)
-- No user-facing error -- just less data for the AI
+This replaces both `ChartAnalyzer` and `ChartCoachChat` with a single component:
 
-### Timeframe Mapping
+- **Full-page chat layout**: Scrollable message area + fixed bottom input bar
+- **Input bar** (bottom-anchored, Claude-style):
+  - A `[+]` button to attach an image (opens file picker)
+  - A textarea that auto-resizes
+  - A send button that appears when there's text or an attached file
+  - Drag-and-drop support on the entire page (using the existing dragCounter pattern)
+  - When an image is attached, show a small thumbnail preview above the input with an X to remove it
+- **Message types** in the thread:
+  - **User text**: Simple text bubble (right-aligned)
+  - **User image**: Chart thumbnail with optional text (right-aligned)
+  - **AYN analysis**: The full `ChartAnalyzerResults` component rendered as a message bubble (left-aligned)
+  - **AYN loading**: Step indicators (uploading, analyzing, fetching news, predicting) shown inline as a message
+  - **AYN text response**: Regular chat responses using `MessageFormatter` (left-aligned)
+- **Flow when user attaches a chart**:
+  1. Image preview appears above input bar
+  2. User can optionally type context (e.g., "1H timeframe BTC") or just hit send
+  3. Image + text sent as a user message (shown in thread)
+  4. AYN loading message appears with step indicators
+  5. Analysis result renders inline as an AYN message
+  6. User can then ask follow-up questions in the same thread
+- **History access**: Small history button in the top bar opens a popover (reuses existing `ChartHistoryList`)
 
-| Chart Timeframe | Pionex Interval |
-|----------------|-----------------|
-| 1m | 1m |
-| 5m | 5m |
-| 15m | 15m |
-| 1H | 1H |
-| 4H | 4H |
-| Daily | 1D |
-| Weekly | 1W |
+#### 2. Update `src/pages/ChartAnalyzerPage.tsx`
 
-### Files Changed
+- Remove separate `ChartAnalyzer` and `ChartCoachChat` imports
+- Render the new `ChartUnifiedChat` as the single component
+- The page becomes just an auth wrapper + the unified chat
 
-| File | Change |
+#### 3. Reuse existing components
+
+- `ChartAnalyzerResults` -- rendered inline as a message bubble (no changes needed)
+- `useChartAnalyzer` hook -- used for the analysis logic (no changes)
+- `useChartCoach` hook -- used for follow-up chat (no changes)
+- `useChartHistory` hook -- used for history popover (no changes)
+- `MessageFormatter` -- used for AI text responses (no changes)
+- Drag counter pattern -- reused from the existing implementation
+
+#### 4. Remove old components (no longer needed)
+
+- The old `ChartAnalyzer.tsx` component becomes unused (replaced by unified chat)
+- The old `ChartCoachChat.tsx` component becomes unused (merged into unified chat)
+
+### Technical Details
+
+| File | Action |
 |------|--------|
-| `supabase/functions/analyze-trading-chart/index.ts` | Add Pionex data fetcher, inject market data into prediction prompt, add Step 2.5 |
-| Secrets | Add `PIONEX_API_KEY` and `PIONEX_API_SECRET` |
-| `supabase/config.toml` | No change needed (function already exists) |
+| `src/components/dashboard/ChartUnifiedChat.tsx` | **New** -- Claude-style unified chat with upload, analysis results inline, and follow-up chat all in one thread |
+| `src/pages/ChartAnalyzerPage.tsx` | **Modify** -- Replace ChartAnalyzer + ChartCoachChat with single ChartUnifiedChat |
+| `src/components/dashboard/ChartAnalyzer.tsx` | **Keep** (but no longer imported by page) |
+| `src/components/dashboard/ChartCoachChat.tsx` | **Keep** (but no longer imported by page) |
+| `src/components/dashboard/ChartAnalyzerResults.tsx` | **No change** -- rendered as a message bubble |
+| `src/hooks/useChartAnalyzer.ts` | **No change** |
+| `src/hooks/useChartCoach.ts` | **No change** |
+| `src/hooks/useChartHistory.ts` | **No change** |
 
-### What AYN Gets With This
+### Empty State
 
-- **Exact current price** instead of estimating from the chart image
-- **Real volume data** to validate volume analysis from the screenshot
-- **24h high/low** to confirm support/resistance levels
-- **Recent candle data** to verify patterns the vision model detected
-- **Better confidence scores** because the AI has hard data to cross-check against visual patterns
+When the user first opens the page (no messages), show a centered welcome:
+- AYN icon
+- "Drop a chart or type a question"
+- Quick action chips below (same ones from ChartCoachChat)
+
+This disappears as soon as the first message is sent.
 
