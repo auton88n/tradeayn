@@ -185,6 +185,134 @@ Be specific with price levels. If you can see indicator values, include them. If
   }
 }
 
+// ─── Step 1.5: Fetch Pionex Market Data ───
+async function fetchPionexData(ticker: string, timeframe: string, assetType: string) {
+  console.log(`[chart-analyzer] Step 1.5: Fetching Pionex market data for ${ticker} (${timeframe})`);
+
+  // Only fetch for crypto assets — Pionex is a crypto exchange
+  if (assetType !== 'crypto' || ticker === 'UNKNOWN') {
+    console.log('[chart-analyzer] Skipping Pionex: not crypto or unknown ticker');
+    return null;
+  }
+
+  const apiKey = Deno.env.get('PIONEX_API_KEY');
+  const apiSecret = Deno.env.get('PIONEX_API_SECRET');
+  if (!apiKey || !apiSecret) {
+    console.log('[chart-analyzer] Skipping Pionex: API keys not configured');
+    return null;
+  }
+
+  // Map ticker to Pionex symbol format
+  const cleanTicker = ticker.replace(/\/USDT|\/USD|\/BUSD/i, '').toUpperCase();
+  const symbol = `${cleanTicker}_USDT`;
+
+  // Map timeframe to Pionex interval
+  const intervalMap: Record<string, string> = {
+    '1m': '1M', '5m': '5M', '15m': '15M',
+    '1H': '1H', '4H': '4H',
+    'Daily': '1D', 'Weekly': '1W', 'Monthly': '1D',
+    'unknown': '1H',
+  };
+  const interval = intervalMap[timeframe] || '1H';
+
+  // HMAC-SHA256 signing helper
+  async function signRequest(queryString: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw', encoder.encode(apiSecret!),
+      { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(queryString));
+    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  try {
+    const baseUrl = 'https://api.pionex.com';
+    const timestamp = Date.now().toString();
+
+    // Fetch klines (last 100 candles)
+    const klinesParams = `symbol=${symbol}&interval=${interval}&limit=100`;
+    const klinesPath = `/api/v1/market/klines?${klinesParams}&timestamp=${timestamp}`;
+    const klinesSignature = await signRequest(klinesPath);
+
+    const klinesRes = await fetch(`${baseUrl}${klinesPath}`, {
+      headers: {
+        'PIONEX-KEY': apiKey,
+        'PIONEX-SIGNATURE': klinesSignature,
+      },
+    });
+
+    if (!klinesRes.ok) {
+      const errText = await klinesRes.text();
+      console.warn(`[chart-analyzer] Pionex klines failed [${klinesRes.status}]: ${errText}`);
+      return null;
+    }
+
+    const klinesData = await klinesRes.json();
+
+    // Fetch ticker (24h stats)
+    const tickerParams = `symbol=${symbol}`;
+    const tickerPath = `/api/v1/market/tickers?${tickerParams}&timestamp=${timestamp}`;
+    const tickerSignature = await signRequest(tickerPath);
+
+    const tickerRes = await fetch(`${baseUrl}${tickerPath}`, {
+      headers: {
+        'PIONEX-KEY': apiKey,
+        'PIONEX-SIGNATURE': tickerSignature,
+      },
+    });
+
+    let tickerInfo: any = null;
+    if (tickerRes.ok) {
+      const tickerData = await tickerRes.json();
+      const tickers = tickerData?.data?.tickers || [];
+      tickerInfo = tickers.find((t: any) => t.symbol === symbol) || tickers[0] || null;
+    } else {
+      const errText = await tickerRes.text();
+      console.warn(`[chart-analyzer] Pionex ticker failed [${tickerRes.status}]: ${errText}`);
+    }
+
+    // Parse klines into OHLCV array
+    const klines = klinesData?.data?.klines || [];
+    const lastCandles = klines.slice(-10).map((k: any) => ({
+      time: k.time,
+      open: parseFloat(k.open),
+      high: parseFloat(k.high),
+      low: parseFloat(k.low),
+      close: parseFloat(k.close),
+      volume: parseFloat(k.volume),
+    }));
+
+    const latestCandle = klines.length > 0 ? klines[klines.length - 1] : null;
+    const currentPrice = latestCandle ? parseFloat(latestCandle.close) : null;
+
+    // Calculate 24h change from ticker data
+    const open24h = tickerInfo ? parseFloat(tickerInfo.open) : null;
+    const change24h = (currentPrice && open24h && open24h > 0)
+      ? ((currentPrice - open24h) / open24h * 100).toFixed(2) + '%'
+      : null;
+
+    const result = {
+      symbol,
+      currentPrice,
+      change24h,
+      high24h: tickerInfo ? parseFloat(tickerInfo.high) : null,
+      low24h: tickerInfo ? parseFloat(tickerInfo.low) : null,
+      volume24h: tickerInfo ? parseFloat(tickerInfo.volume) : null,
+      quoteVolume24h: tickerInfo ? parseFloat(tickerInfo.amount) : null,
+      lastCandles,
+      totalKlines: klines.length,
+      interval,
+    };
+
+    console.log(`[chart-analyzer] Pionex data: ${symbol} @ ${currentPrice}, 24h: ${change24h}, ${klines.length} candles`);
+    return result;
+  } catch (err) {
+    console.warn('[chart-analyzer] Pionex fetch error:', err);
+    return null;
+  }
+}
+
 // ─── Step 2: News Fetch via Firecrawl (with caching + filtering) ───
 async function fetchTickerNews(ticker: string, assetType: string) {
   console.log(`[chart-analyzer] Step 2: Fetching news for ${ticker} (${assetType})`);
@@ -289,7 +417,8 @@ async function fetchTickerNews(ticker: string, assetType: string) {
 async function generatePrediction(
   technical: Record<string, unknown>,
   news: { headlines: string[]; raw: Array<{ title: string; url: string; description: string }> },
-  apiKey: string
+  apiKey: string,
+  pionexData?: any
 ) {
   console.log('[chart-analyzer] Step 3: Generating prediction with psychology & context-adjusted scoring');
 
@@ -393,6 +522,19 @@ ${JSON.stringify(adjustedPatterns, null, 2)}
 **Support Levels: ${JSON.stringify(support)}**
 **Resistance Levels: ${JSON.stringify(resistance)}**
 **Volume Ratio: ${volumeRatio}x average**
+${pionexData ? `
+## 📊 Live Market Data (from Pionex API)
+**Current Price: ${pionexData.currentPrice}**
+**24h Change: ${pionexData.change24h || 'N/A'}**
+**24h High/Low: ${pionexData.high24h || 'N/A'} / ${pionexData.low24h || 'N/A'}**
+**24h Volume: ${pionexData.quoteVolume24h ? pionexData.quoteVolume24h.toLocaleString() + ' USDT' : 'N/A'}**
+**Last ${pionexData.lastCandles?.length || 0} candles (${pionexData.interval}): ${JSON.stringify(pionexData.lastCandles)}**
+
+IMPORTANT: Use the Pionex live data to CROSS-REFERENCE the visual patterns from the chart image.
+- If Pionex price differs significantly from chart, note the discrepancy
+- Use exact Pionex prices for entry/stop/TP levels instead of estimated chart values
+- Volume from Pionex should validate or invalidate the volume analysis from the image
+` : ''}
 
 ## Recent News Headlines (weight: 40%)
 ${news.headlines.length > 0 ? news.headlines.map((h: string, i: number) => `${i + 1}. ${h}`).join('\n') : 'No recent news found.'}
@@ -631,8 +773,11 @@ Deno.serve(async (req) => {
     // Step 2: News fetch
     const news = await fetchTickerNews(technical.ticker, technical.assetType);
 
-    // Step 3: Sentiment + Prediction (enhanced with psychology & context)
-    const prediction = await generatePrediction(technical, news, LOVABLE_API_KEY);
+    // Step 2.5: Pionex market data (crypto only, graceful fallback)
+    const pionexData = await fetchPionexData(technical.ticker, technical.timeframe, technical.assetType);
+
+    // Step 3: Sentiment + Prediction (enhanced with psychology & context + market data)
+    const prediction = await generatePrediction(technical, news, LOVABLE_API_KEY, pionexData);
 
     // Step 4: Store in DB
     const analysisId = await storeAnalysis(
