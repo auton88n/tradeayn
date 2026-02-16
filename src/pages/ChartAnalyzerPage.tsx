@@ -3,15 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart3, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import ChartAnalyzer from '@/components/dashboard/ChartAnalyzer';
-import ChartCoachChat from '@/components/dashboard/ChartCoachChat';
-import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
+import ChartUnifiedChat from '@/components/dashboard/ChartUnifiedChat';
 
 const ChartAnalyzerPage = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [analysisResult, setAnalysisResult] = useState<ChartAnalysisResult | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -50,20 +47,20 @@ const ChartAnalyzerPage = () => {
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,_hsl(25_80%_45%_/_0.04)_0%,_transparent_70%)]" />
       </div>
 
-      <div className="relative max-w-3xl mx-auto pt-6 px-4">
+      <div className="relative max-w-3xl mx-auto pt-4 px-4 h-screen flex flex-col">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate('/')}
-          className="mb-4 gap-2 bg-muted/50 backdrop-blur-sm rounded-full px-4 hover:bg-muted"
+          className="mb-2 gap-2 bg-muted/50 backdrop-blur-sm rounded-full px-4 hover:bg-muted self-start shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
+          Back
         </Button>
-        <ChartAnalyzer onResult={setAnalysisResult} />
+        <div className="flex-1 min-h-0">
+          <ChartUnifiedChat />
+        </div>
       </div>
-
-      <ChartCoachChat result={analysisResult} />
     </div>
   );
 };
