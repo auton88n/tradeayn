@@ -17,6 +17,16 @@ const TIER_LIMITS = {
   unlimited: { monthlyCredits: -1, monthlyEngineering: -1 },
 };
 
+// Mapping for access_grants.monthly_limit
+const TIER_ACCESS_LIMITS: Record<string, number> = {
+  free: 5,
+  starter: 500,
+  pro: 1000,
+  business: 3000,
+  enterprise: 999999,
+  unlimited: 999999,
+};
+
 const PRODUCT_TO_TIER: Record<string, keyof typeof TIER_LIMITS> = {
   "prod_TpuCGCGKRjz1QR": "starter",
   "prod_TpuDZjjDGHOFfO": "pro",
@@ -91,6 +101,18 @@ serve(async (req) => {
         user_id: user.id,
         monthly_messages: TIER_LIMITS.free.dailyCredits,
         monthly_engineering: TIER_LIMITS.free.dailyEngineering,
+      }, { onConflict: 'user_id' });
+
+    // Sync access_grants for free tier
+    await supabaseClient
+      .from('access_grants')
+      .upsert({
+        user_id: user.id,
+        is_active: true,
+        monthly_limit: TIER_ACCESS_LIMITS.free,
+        requires_approval: false,
+        granted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
       return new Response(JSON.stringify({ 
@@ -191,7 +213,20 @@ serve(async (req) => {
         }, { onConflict: 'user_id' });
     }
 
-    logStep("Database updated", { tier, limits });
+    // Sync access_grants with tier
+    const accessLimit = TIER_ACCESS_LIMITS[tier] ?? TIER_ACCESS_LIMITS.free;
+    await supabaseClient
+      .from('access_grants')
+      .upsert({
+        user_id: user.id,
+        is_active: true,
+        monthly_limit: accessLimit,
+        requires_approval: false,
+        granted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+
+    logStep("Database updated", { tier, limits, accessLimit });
 
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
