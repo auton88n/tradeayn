@@ -1,64 +1,82 @@
 
 
-## Fix: Coach Chat Fetching Wrong Ticker + Hallucinated Prices
+## Fix: Make Firecrawl Web Search Work for All Coach Questions
 
 ### The Problem
 
-When you asked "what's the price of Solana?" in the coach chat, the system:
+Firecrawl web search only triggers when the user's message contains specific news keywords ("news", "latest", "headlines", "sentiment", "outlook"). For any other question -- "what's happening with Solana?", "why did BTC dump?", "is ETH a good buy?" -- no web search happens, so the AI has no external context and may hallucinate.
 
-1. Only fetched live Pionex data for **USDC/USD** (the chart you analyzed), not SOL
-2. The AI then **made up** the SOL price ($186.23) instead of the real price (~$86.70)
-
-This happens because the coach only fetches live data for the ticker passed in `context.ticker` (from the analyzed chart), and ignores what the user is actually asking about.
+The bottleneck is in the **frontend** (`src/hooks/useChartCoach.ts`), where `detectSearchIntent()` only returns a search query if `NEWS_PATTERNS` matches. The backend (`ayn-unified`) already handles whatever `searchQuery` it receives -- it just never gets one for non-news questions.
 
 ### The Fix
 
-**In `supabase/functions/ayn-unified/index.ts`:**
+**1. Broaden search intent detection (`src/hooks/useChartCoach.ts`)**
 
-1. **Detect ticker from user message**: Before the Pionex fetch, scan the user's last message for known crypto names/symbols (e.g., "solana" -> SOL, "bitcoin" -> BTC, "ethereum" -> ETH). If found, use THAT ticker for the Pionex fetch instead of (or in addition to) the chart's ticker.
+Replace the narrow `NEWS_PATTERNS` regex with a much broader pattern that triggers a Firecrawl web search for any trading/market/price question -- essentially any question where external data would help.
 
-2. **Fetch both tickers if different**: If the user asks about a different coin than the analyzed chart, fetch live data for BOTH -- the chart ticker (for context) and the asked-about ticker (for the answer).
+New patterns to trigger web search:
+- Price questions: "what's the price", "how much is", "current price"
+- Market questions: "why did X dump/pump", "what's happening with", "is X going up/down"
+- Analysis questions: "should I buy/sell", "is X a good buy", "what do you think about"
+- News (existing): "news", "latest", "headlines", "sentiment", "outlook"
+- General crypto questions: "tell me about", "what is", when paired with a crypto name
 
-3. **Add anti-hallucination guard**: Add an explicit instruction in the system prompt: "If the user asks about a ticker you do NOT have live data for, say 'I don't have live data for that coin right now' instead of guessing a price."
+Build the search query intelligently based on the detected ticker + question context.
 
-### Ticker Detection Logic
+**2. Also detect search intent on the backend (`supabase/functions/ayn-unified/index.ts`)**
 
-```text
-Common crypto mappings:
-  "solana", "sol" -> SOL_USDT
-  "bitcoin", "btc" -> BTC_USDT
-  "ethereum", "eth" -> ETH_USDT
-  "xrp", "ripple" -> XRP_USDT
-  "dogecoin", "doge" -> DOGE_USDT
-  "cardano", "ada" -> ADA_USDT
-  ... (30+ common mappings)
-
-Scan the user's last message for these terms.
-If found and different from ctxTicker, fetch that symbol too.
-```
+As a safety net, if the frontend didn't send a `searchQuery` but the user's message clearly asks about market conditions or a specific coin, the backend should generate a search query itself using the already-detected `mentionedSymbol` and the user's message. This way even if the frontend detection misses something, the backend catches it.
 
 ### Technical Details
 
 | File | Change |
 |------|--------|
-| `supabase/functions/ayn-unified/index.ts` | Add `detectTickerFromMessage()` function that maps common crypto names to Pionex symbols. In the trading-coach block, if the user mentions a different ticker, fetch live Pionex data for that ticker too. Add anti-hallucination instruction to system prompt: "Never fabricate prices. If you lack live data for a coin, say so." |
+| `src/hooks/useChartCoach.ts` | Broaden `NEWS_PATTERNS` and `detectSearchIntent()` to cover price questions, market analysis, "why" questions, buy/sell questions, and general crypto inquiries. Any message mentioning a crypto name/ticker or asking about market conditions triggers a search query. |
+| `supabase/functions/ayn-unified/index.ts` | Add backend fallback: if no `searchQuery` was sent from frontend but `mentionedSymbol` exists or the message asks a market question, generate a search query server-side (e.g., `"${mentionedSymbol} crypto trading analysis today"`) and run Firecrawl search. |
+
+### Updated Search Intent Logic
+
+```text
+Frontend (useChartCoach.ts):
+  Triggers on:
+  - news/latest/headlines/sentiment/outlook (existing)
+  - price/how much/current value/worth
+  - why did/dump/pump/crash/surge/rally/moon
+  - should I buy/sell/hold/enter/exit
+  - what's happening/going on with
+  - is X bullish/bearish/good/bad
+  - tell me about/what is [crypto name]
+  - any message containing a known crypto name + question mark
+
+Backend (ayn-unified, fallback):
+  If no searchQuery from frontend BUT mentionedSymbol detected:
+    -> searchQuery = "{SYMBOL} crypto latest price analysis today"
+  If message contains "why" + crypto name:
+    -> searchQuery = "{SYMBOL} crypto why price movement today"
+```
 
 ### After the Fix
 
 ```text
-User: "What's the price of Solana?"
-  -> detectTickerFromMessage("solana") -> "SOL"
-  -> Fetch SOL_USDT from Pionex -> real price ~$86.70
-  -> AI responds with accurate data
+User: "What's happening with Solana?"
+  -> Frontend detects: "what's happening" + "solana"
+  -> searchQuery = "Solana trading news analysis today"
+  -> Firecrawl searches -> AI gets real context
+  -> Pionex also fetches live SOL price
+  -> AI responds with accurate, sourced info
 
-User: "Is my BTC chart still valid?"
-  -> Chart context: BTC/USDT (already correct)
-  -> Fetch BTC_USDT from Pionex
-  -> AI responds with live BTC data
+User: "Why did BTC dump?"
+  -> Frontend detects: "why did" + "BTC"
+  -> searchQuery = "BTC why price drop today"
+  -> Firecrawl + Pionex both fire
+  -> AI explains with real data
 
-User: "What about some random altcoin?"
-  -> No match found
-  -> AI says "I don't have live data for that coin"
-  -> No hallucinated price
+User: "Should I buy ETH?"
+  -> Frontend detects: "should I buy" + "ETH"
+  -> searchQuery = "ETH buy analysis today"
+  -> AI responds with web-sourced analysis + live price
+
+User: "Tell me a joke"
+  -> No crypto name, no market pattern
+  -> No search triggered (correct behavior)
 ```
-
