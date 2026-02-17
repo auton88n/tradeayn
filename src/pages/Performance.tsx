@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import AIDecisionLog from '@/components/trading/AIDecisionLog';
 
 // Types
 interface AccountState {
@@ -45,6 +46,7 @@ interface PaperTrade {
   confidence_score: number | null;
   setup_type: string | null;
   reasoning: string | null;
+  market_context: any;
   created_at: string;
 }
 
@@ -84,7 +86,6 @@ function StatsCard({ title, value, subtitle, positive }: {
 // ─── Open Position Card ───
 function OpenPositionCard({ trade }: { trade: PaperTrade }) {
   const entryPrice = Number(trade.entry_price);
-  // Use entry as fallback since we don't have live price client-side
   const unrealizedPnl = Number(trade.pnl_dollars);
   const unrealizedPercent = trade.position_size_dollars > 0
     ? (unrealizedPnl / Number(trade.position_size_dollars)) * 100 : 0;
@@ -154,17 +155,20 @@ export default function Performance() {
   const [account, setAccount] = useState<AccountState | null>(null);
   const [openTrades, setOpenTrades] = useState<PaperTrade[]>([]);
   const [closedTrades, setClosedTrades] = useState<PaperTrade[]>([]);
+  const [allTrades, setAllTrades] = useState<PaperTrade[]>([]);
   const [snapshots, setSnapshots] = useState<DailySnapshot[]>([]);
   const [setupPerf, setSetupPerf] = useState<SetupPerf[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLive, setIsLive] = useState(false);
 
   const loadData = useCallback(async () => {
-    const [acctRes, openRes, closedRes, snapRes, setupRes] = await Promise.all([
+    const [acctRes, openRes, closedRes, snapRes, setupRes, allTradesRes] = await Promise.all([
       supabase.from('ayn_account_state').select('*').eq('id', '00000000-0000-0000-0000-000000000001').single(),
       supabase.from('ayn_paper_trades').select('*').in('status', ['OPEN', 'PARTIAL_CLOSE']).order('entry_time', { ascending: false }),
       supabase.from('ayn_paper_trades').select('*').in('status', ['CLOSED_WIN', 'CLOSED_LOSS', 'STOPPED_OUT']).order('exit_time', { ascending: false }).limit(20),
       supabase.from('ayn_daily_snapshots').select('*').order('snapshot_date', { ascending: true }).limit(90),
       supabase.from('ayn_setup_performance').select('*').order('total_trades', { ascending: false }),
+      supabase.from('ayn_paper_trades').select('*').order('created_at', { ascending: false }).limit(50),
     ]);
 
     if (acctRes.data) setAccount(acctRes.data as any);
@@ -172,13 +176,36 @@ export default function Performance() {
     if (closedRes.data) setClosedTrades(closedRes.data as any);
     if (snapRes.data) setSnapshots(snapRes.data as any);
     if (setupRes.data) setSetupPerf(setupRes.data as any);
+    if (allTradesRes.data) setAllTrades(allTradesRes.data as any);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
+
+    // Realtime subscriptions
+    const tradesChannel = supabase
+      .channel('trades-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ayn_paper_trades' }, () => {
+        loadData();
+      })
+      .subscribe((status) => {
+        setIsLive(status === 'SUBSCRIBED');
+      });
+
+    const accountChannel = supabase
+      .channel('account-realtime')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ayn_account_state' }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(tradesChannel);
+      supabase.removeChannel(accountChannel);
+    };
   }, [loadData]);
 
   if (loading) {
@@ -217,9 +244,15 @@ export default function Performance() {
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Activity className="h-7 w-7 text-primary" />
             AYN's Trading Performance
+            {isLive && (
+              <span className="relative flex h-2.5 w-2.5 ml-1">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+              </span>
+            )}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Live paper trading account — full transparency • Updates every 30s
+            Live paper trading account — full transparency • {isLive ? 'Real-time updates' : 'Updates every 30s'}
           </p>
         </div>
 
@@ -288,6 +321,12 @@ export default function Performance() {
               <Target className="h-4 w-4 text-primary" />
               Open Positions
               <Badge variant="secondary" className="text-[10px]">{openTrades.length}/3</Badge>
+              {isLive && (
+                <span className="relative flex h-2 w-2 ml-1">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -329,6 +368,9 @@ export default function Performance() {
             )}
           </CardContent>
         </Card>
+
+        {/* AI Decision Log */}
+        <AIDecisionLog trades={allTrades} />
 
         {/* Setup Performance */}
         {setupPerf.length > 0 && (

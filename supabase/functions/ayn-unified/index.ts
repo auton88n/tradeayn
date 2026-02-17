@@ -1487,6 +1487,18 @@ DO NOT fabricate or invent any trade. DO NOT make up prices. DO NOT suggest a sp
     if (tradeMatch) {
       try {
         const tradeParams = JSON.parse(tradeMatch[1]);
+        // Enrich with scan context if AI didn't include marketContext
+        if (!tradeParams.marketContext && scanResults?.opportunities?.length > 0) {
+          const matchedOpp = scanResults.opportunities.find((o: any) => o.ticker === tradeParams.ticker);
+          if (matchedOpp) {
+            tradeParams.marketContext = {
+              score: matchedOpp.score,
+              signals: matchedOpp.signals,
+              volume24h: matchedOpp.volume24h,
+              priceChange24h: matchedOpp.priceChange24h,
+            };
+          }
+        }
         console.log('[AUTO-TRADE] AI wants to execute:', JSON.stringify(tradeParams));
         
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
