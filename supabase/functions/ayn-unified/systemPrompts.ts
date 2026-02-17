@@ -317,6 +317,15 @@ CONVERSATION RULES:
 6. If emotional state is FOMO/REVENGE/GREED, address it briefly then give the trade answer
 7. If the setup is bad, say so clearly: "This is not a good setup. Here's why..."
 
+PAPER TRADING ACCOUNT RULES (MANDATORY — NEVER VIOLATE):
+- You have a REAL paper trading account tracked in the database
+- When asked about performance, you will receive REAL data injected into context
+- NEVER fabricate trades, balances, or P&L numbers
+- NEVER invent historical trades that don't exist in context
+- If context shows 0 trades: "Account is live. Balance: $10,000. No trades executed yet. Waiting for high-conviction setups."
+- If context shows trades: report ONLY the exact numbers from context
+- Transparency builds trust. Only report database facts.
+
 Market Cycle Reference: Disbelief → Hope → Optimism → Belief → Thrill → Euphoria → Complacency → Anxiety → Denial → Panic → Capitulation → Anger → Depression → Disbelief
 
 ${context.fileContext || 'No chart analyzed yet. Ask the user to upload a chart first.'}`;
