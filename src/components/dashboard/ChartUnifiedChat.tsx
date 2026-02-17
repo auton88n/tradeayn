@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useChartAnalyzer } from '@/hooks/useChartAnalyzer';
 import { useChartCoach } from '@/hooks/useChartCoach';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
@@ -167,6 +169,38 @@ export default function ChartUnifiedChat() {
         const withoutLoading = prev.filter(m => m.type !== 'ayn-loading');
         return [...withoutLoading, { type: 'ayn-text', content: text }];
       });
+
+      // Frontend backup: record paper trade if actionable signal
+      const r = analyzer.result;
+      const sig = r.prediction;
+      const action = sig.signal;
+      const conf = sig.confidence;
+      const ts = sig.tradingSignal;
+      if ((action === 'BUY' || action === 'SELL' || action === 'BULLISH' || action === 'BEARISH') && conf >= 60 && ts) {
+        const entryPrice = ts.entry?.price;
+        const stopLoss = ts.stopLoss?.price;
+        if (entryPrice && stopLoss && entryPrice > 0 && stopLoss > 0) {
+          supabase.functions.invoke('ayn-open-trade', {
+            body: {
+              ticker: r.ticker,
+              timeframe: r.timeframe,
+              signal: action === 'BULLISH' ? 'BUY' : action === 'BEARISH' ? 'SELL' : action,
+              entryPrice,
+              stopLoss,
+              takeProfit1: ts.takeProfits?.[0]?.price || null,
+              takeProfit2: ts.takeProfits?.[1]?.price || null,
+              confidence: conf,
+              setupType: sig.patternBreakdown?.[0]?.name || null,
+              reasoning: sig.reasoning || '',
+              chartImageUrl: r.imageUrl || null,
+            },
+          }).then(res => {
+            if (res.data?.opened) {
+              toast.success('Trade recorded in paper account');
+            }
+          }).catch(() => {});
+        }
+      }
     }
   }, [analyzer.result, analyzer.step]);
 

@@ -1032,8 +1032,8 @@ Deno.serve(async (req) => {
           const serviceClient = getServiceClient();
           const tradeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/ayn-open-trade`;
           
-          // Fire-and-forget: don't await, don't block response
-          fetch(tradeUrl, {
+          console.log('[chart-analyzer] Opening paper trade:', JSON.stringify({ ticker: technical.ticker, signal: actionSignal, entryPrice, stopLoss, tp1, tp2, confidence: conf }));
+          const tradeRes = await fetch(tradeUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1053,11 +1053,9 @@ Deno.serve(async (req) => {
               marketContext: result.marketContext || null,
               chartImageUrl: imageUrl || null,
             }),
-          }).then(r => r.text()).then(t => {
-            console.log('[chart-analyzer] Paper trade result:', t);
-          }).catch(e => {
-            console.warn('[chart-analyzer] Paper trade fire-and-forget error:', e);
           });
+          const tradeResult = await tradeRes.text();
+          console.log('[chart-analyzer] Paper trade result:', tradeRes.status, tradeResult);
         } else {
           console.log('[chart-analyzer] Skipping paper trade: missing entry/stop prices');
         }
