@@ -658,14 +658,41 @@ serve(async (req) => {
     }
 
     // PARALLEL DB OPERATIONS - Critical for 30K user scale (saves 200-300ms)
-    const [limitCheck, userContext, chartHistory] = await Promise.all([
+    // Performance keywords to detect if user is asking about paper trading account
+    const performanceKeywords = [
+      'performance', 'win rate', 'balance', 'trades', 'p&l', 'profit', 'loss',
+      'portfolio', 'how are you doing', "how's your account", 'paper trading',
+      'track record', 'open positions', 'how many trades', 'account'
+    ];
+    const isPerformanceQuery = intent === 'trading-coach' && 
+      performanceKeywords.some(kw => lastMessage.toLowerCase().includes(kw));
+
+    const [limitCheck, userContext, chartHistory, accountPerformance] = await Promise.all([
       isInternalCall ? Promise.resolve({ allowed: true }) : checkUserLimit(supabase, userId, intent),
       isInternalCall ? Promise.resolve({}) : getUserContext(supabase, userId),
       supabase.from('chart_analyses')
         .select('ticker, asset_type, timeframe, prediction_signal, confidence, sentiment_score, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(5),
+      // Fetch real paper trading data when relevant
+      isPerformanceQuery ? (async () => {
+        try {
+          const [accountRes, openRes, recentRes] = await Promise.all([
+            supabase.from('ayn_account_state').select('*').maybeSingle(),
+            supabase.from('ayn_paper_trades').select('*').in('status', ['OPEN', 'PARTIAL_CLOSE']),
+            supabase.from('ayn_paper_trades').select('*').in('status', ['CLOSED_WIN', 'CLOSED_LOSS', 'STOPPED_OUT']).order('exit_time', { ascending: false }).limit(5),
+          ]);
+          return {
+            account: accountRes.data,
+            openPositions: openRes.data || [],
+            recentTrades: recentRes.data || [],
+          };
+        } catch (err) {
+          console.error('[ayn-unified] Failed to fetch account performance:', err);
+          return null;
+        }
+      })() : Promise.resolve(null)
     ]);
 
     // Check user limits
@@ -696,8 +723,41 @@ serve(async (req) => {
         ).join('\n')}`
       : '';
 
+    // Inject real paper trading performance data into context if available
+    let performanceContext = '';
+    if (accountPerformance?.account) {
+      const acct = accountPerformance.account;
+      const openPos = accountPerformance.openPositions;
+      const recentTrades = accountPerformance.recentTrades;
+      
+      performanceContext = `\n\nREAL PAPER TRADING DATA (FROM DATABASE — USE THIS, DO NOT FABRICATE):
+Balance: $${Number(acct.current_balance).toFixed(2)}
+Starting: $${Number(acct.starting_balance).toFixed(2)}
+Total P&L: $${Number(acct.total_pnl_dollars).toFixed(2)} (${Number(acct.total_pnl_percent).toFixed(2)}%)
+Total Trades: ${acct.total_trades}
+Win Rate: ${Number(acct.win_rate).toFixed(1)}%
+Winning: ${acct.winning_trades} | Losing: ${acct.losing_trades}
+Open Positions: ${openPos.length}${openPos.length > 0 ? '\n' + openPos.map((t: Record<string, unknown>) => `  - ${t.ticker} ${t.signal} @ $${t.entry_price} (size: $${Number(t.position_size_dollars).toFixed(2)})`).join('\n') : ''}
+Recent Closed Trades: ${recentTrades.length}${recentTrades.length > 0 ? '\n' + recentTrades.map((t: Record<string, unknown>) => `  - ${t.ticker} ${t.signal}: entry $${t.entry_price} → exit $${t.exit_price} | P&L: $${Number(t.pnl_dollars as number).toFixed(2)} (${Number(t.pnl_percent as number).toFixed(2)}%) | ${t.status}`).join('\n') : ''}`;
+      
+      console.log('[ayn-unified] Injected real performance data into trading context');
+    } else if (isPerformanceQuery) {
+      // Performance query but no account data found
+      performanceContext = `\n\nREAL PAPER TRADING DATA (FROM DATABASE — USE THIS, DO NOT FABRICATE):
+Balance: $10,000.00
+Starting: $10,000.00
+Total P&L: $0.00 (0.00%)
+Total Trades: 0
+Win Rate: 0.0%
+Open Positions: 0
+Recent Closed Trades: 0
+NOTE: Account just launched. No trades executed yet.`;
+      
+      console.log('[ayn-unified] No account data found, injected default state');
+    }
+
     // Build system prompt with user message for language detection AND user memories
-    let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + INJECTION_GUARD;
+    let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + performanceContext + INJECTION_GUARD;
 
     // === FIRECRAWL + LIVE PIONEX INTEGRATION FOR TRADING COACH ===
     if (intent === 'trading-coach') {
