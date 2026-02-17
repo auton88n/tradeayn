@@ -777,11 +777,11 @@ serve(async (req) => {
             const symbol = `${ticker}_USDT`;
             console.log('[DEBUG ayn-unified] Ticker mapping:', ticker, '->', symbol);
             const intervalMap: Record<string, string> = {
-              '1m': '1M', '5m': '5M', '15m': '15M',
-              '1H': '1H', '4H': '4H',
-              'Daily': '1D', 'Weekly': '1W', 'Monthly': '1D', 'unknown': '1H',
+              '1m': '1M', '5m': '5M', '15m': '15M', '30m': '30M',
+              '1H': '60M', '4H': '4H', '8H': '8H', '12H': '12H',
+              'Daily': '1D', 'Weekly': '1D', 'Monthly': '1D', 'unknown': '60M',
             };
-            const interval = intervalMap[ctxTimeframe || 'unknown'] || '1H';
+            const interval = intervalMap[ctxTimeframe || 'unknown'] || '60M';
 
             async function signReq(qs: string): Promise<string> {
               const enc = new TextEncoder();
