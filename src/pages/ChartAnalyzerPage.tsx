@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, ArrowLeft } from 'lucide-react';
+import { BarChart3, ArrowLeft, MessageSquare, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import ChartUnifiedChat from '@/components/dashboard/ChartUnifiedChat';
+import PerformanceDashboard from '@/components/trading/PerformanceDashboard';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const ChartAnalyzerPage = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [activeTab, setActiveTab] = useState<'chat' | 'performance'>('chat');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -48,17 +52,57 @@ const ChartAnalyzerPage = () => {
       </div>
 
       <div className="relative max-w-3xl mx-auto pt-4 px-4 h-screen flex flex-col">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/')}
-          className="mb-2 gap-2 bg-muted/50 backdrop-blur-sm rounded-full px-4 hover:bg-muted self-start shrink-0"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
+        {/* Top bar: Back + Tabs */}
+        <div className="flex items-center gap-3 mb-2 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="gap-2 bg-muted/50 backdrop-blur-sm rounded-full px-4 hover:bg-muted"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+
+          <div className="flex bg-muted/50 backdrop-blur-sm rounded-full p-1 border border-border/50">
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
+                activeTab === 'chat'
+                  ? "bg-amber-500/90 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Chat
+            </button>
+            <button
+              onClick={() => setActiveTab('performance')}
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
+                activeTab === 'performance'
+                  ? "bg-amber-500/90 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              Performance
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
         <div className="flex-1 min-h-0">
-          <ChartUnifiedChat />
+          {activeTab === 'chat' ? (
+            <ChartUnifiedChat />
+          ) : (
+            <ScrollArea className="h-full">
+              <div className="py-2">
+                <PerformanceDashboard />
+              </div>
+            </ScrollArea>
+          )}
         </div>
       </div>
     </div>

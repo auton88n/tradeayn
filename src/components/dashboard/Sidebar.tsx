@@ -475,25 +475,6 @@ export const Sidebar = ({
                 </div>
               </Button>
 
-              {/* Performance Card */}
-              <Button 
-                variant="ghost"
-                onClick={() => navigate('/performance')}
-                className={cn(
-                  "flex-1 flex flex-col items-center gap-1.5 h-auto py-3 px-2 rounded-xl",
-                  "bg-card/60 border border-border/50 backdrop-blur-sm",
-                  "hover:border-green-500/40 hover:bg-card/80 hover:shadow-lg hover:-translate-y-0.5",
-                  "text-foreground transition-all duration-200"
-                )}
-              >
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-green-500/15 to-emerald-500/15 flex items-center justify-center">
-                  <Activity className="w-3.5 h-3.5 text-green-500" />
-                </div>
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-xs font-semibold">Performance</span>
-                  <span className="text-[9px] text-muted-foreground">Trading</span>
-                </div>
-              </Button>
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
