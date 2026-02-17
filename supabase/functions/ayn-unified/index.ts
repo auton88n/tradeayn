@@ -523,6 +523,94 @@ async function checkUserLimit(supabase: ReturnType<typeof createClient>, userId:
   }
 }
 
+// Scan Pionex market for autonomous trading opportunities
+async function scanMarketOpportunities(): Promise<{ opportunities: any[]; scannedPairs: number } | null> {
+  const apiKey = Deno.env.get('PIONEX_API_KEY');
+  const apiSecret = Deno.env.get('PIONEX_API_SECRET');
+  if (!apiKey || !apiSecret) {
+    console.warn('[SCAN] Pionex credentials not configured');
+    return null;
+  }
+
+  try {
+    const enc = new TextEncoder();
+    async function signReq(qs: string): Promise<string> {
+      const key = await crypto.subtle.importKey('raw', enc.encode(apiSecret!), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+      const sig = await crypto.subtle.sign('HMAC', key, enc.encode(qs));
+      return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    const ts = Date.now().toString();
+    const tickerPath = `/api/v1/market/tickers?timestamp=${ts}`;
+    const tickerSig = await signReq(tickerPath);
+    
+    const res = await fetch(`https://api.pionex.com${tickerPath}`, {
+      headers: { 'PIONEX-KEY': apiKey, 'PIONEX-SIGNATURE': tickerSig },
+    });
+
+    if (!res.ok) {
+      console.error('[SCAN] Pionex tickers fetch failed:', res.status);
+      return null;
+    }
+
+    const data = await res.json();
+    const tickers = data?.data?.tickers || [];
+    console.log(`[SCAN] Fetched ${tickers.length} tickers from Pionex`);
+
+    const opportunities: any[] = [];
+
+    for (const t of tickers) {
+      const symbol = t.symbol || '';
+      if (!symbol.endsWith('_USDT')) continue;
+      if (symbol.startsWith('USDC_') || symbol.startsWith('USDT_') || symbol.startsWith('DAI_') || symbol.startsWith('TUSD_')) continue;
+
+      const volume = parseFloat(t.volume || '0');
+      if (volume < 100000) continue;
+
+      const priceChange = parseFloat(t.priceChangePercent || '0') * 100;
+      const price = parseFloat(t.close || t.last || '0');
+
+      let score = 50;
+      const signals: string[] = [];
+
+      // Momentum
+      if (priceChange > 0 && priceChange <= 5) { score += 10; signals.push(`Positive momentum (+${priceChange.toFixed(1)}%)`); }
+      else if (priceChange > 5 && priceChange <= 15) { score += 15; signals.push(`Strong momentum (+${priceChange.toFixed(1)}%)`); }
+
+      // Volume
+      if (volume > 1000000) { score += 8; signals.push(`High liquidity ($${(volume / 1e6).toFixed(1)}M)`); }
+
+      // Consolidation
+      if (Math.abs(priceChange) < 2) { score += 5; signals.push('Consolidating'); }
+
+      // Deep pullback
+      if (priceChange < -15) { score += 10; signals.push('Deep pullback opportunity'); }
+
+      // Overextended penalty
+      if (priceChange > 20) { score -= 15; signals.push(`⚠️ Overextended (+${priceChange.toFixed(0)}%)`); }
+
+      if (score >= 65) {
+        opportunities.push({
+          ticker: symbol,
+          score,
+          price,
+          volume24h: volume,
+          priceChange24h: priceChange,
+          signals,
+        });
+      }
+    }
+
+    opportunities.sort((a, b) => b.score - a.score);
+    const top = opportunities.slice(0, 3);
+    console.log(`[SCAN] Found ${opportunities.length} opportunities, returning top ${top.length}`);
+    return { opportunities: top, scannedPairs: tickers.length };
+  } catch (err) {
+    console.error('[SCAN] Market scan error:', err);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -667,7 +755,18 @@ serve(async (req) => {
     const isPerformanceQuery = intent === 'trading-coach' && 
       performanceKeywords.some(kw => lastMessage.toLowerCase().includes(kw));
 
-    const [limitCheck, userContext, chartHistory, accountPerformance] = await Promise.all([
+    // Autonomous trading detection
+    const autonomousTradingKeywords = [
+      'find best token', 'scan market', 'look for trade', 'find opportunity',
+      'paper testing', 'start trading', 'trade for me', 'what should i buy',
+      'find best setup', 'hunt for trades', 'scan for opportunities',
+      'do paper testing', 'find winning trade', 'find me a trade',
+      'scan pairs', 'best crypto', 'what to buy', 'ابحث عن', 'تداول لي',
+    ];
+    const wantsAutonomousTrading = intent === 'trading-coach' &&
+      autonomousTradingKeywords.some(kw => lastMessage.toLowerCase().includes(kw));
+
+    const [limitCheck, userContext, chartHistory, accountPerformance, scanResults] = await Promise.all([
       isInternalCall ? Promise.resolve({ allowed: true }) : checkUserLimit(supabase, userId, intent),
       isInternalCall ? Promise.resolve({}) : getUserContext(supabase, userId),
       supabase.from('chart_analyses')
@@ -692,7 +791,9 @@ serve(async (req) => {
           console.error('[ayn-unified] Failed to fetch account performance:', err);
           return null;
         }
-      })() : Promise.resolve(null)
+      })() : Promise.resolve(null),
+      // Scan market for autonomous trading
+      wantsAutonomousTrading ? scanMarketOpportunities() : Promise.resolve(null)
     ]);
 
     // Check user limits
@@ -757,7 +858,7 @@ NOTE: Account just launched. No trades executed yet.`;
     }
 
     // Build system prompt with user message for language detection AND user memories
-    let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + performanceContext + INJECTION_GUARD;
+    let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + performanceContext + scanContext + INJECTION_GUARD;
 
     // === FIRECRAWL + LIVE PIONEX INTEGRATION FOR TRADING COACH ===
     if (intent === 'trading-coach') {
@@ -1260,6 +1361,27 @@ NOTE: Account just launched. No trades executed yet.`;
       systemPrompt = buildSystemPrompt('chat', language, context, userMessage, userContext);
     }
 
+    // Inject market scan results for autonomous trading
+    let scanContext = '';
+    if (scanResults && scanResults.opportunities.length > 0) {
+      scanContext = `\n\nMARKET SCAN RESULTS (LIVE FROM PIONEX API — USE THIS DATA):
+Scanned: ${scanResults.scannedPairs} pairs
+Top Opportunities: ${scanResults.opportunities.length}
+
+${scanResults.opportunities.map((opp: any, i: number) => `${i + 1}. ${opp.ticker}
+   Score: ${opp.score}/100
+   Price: $${opp.price}
+   24h Change: ${opp.priceChange24h > 0 ? '+' : ''}${opp.priceChange24h.toFixed(2)}%
+   Volume: $${(opp.volume24h / 1e6).toFixed(1)}M
+   Signals: ${opp.signals.join(', ')}`).join('\n\n')}
+
+You are AUTHORIZED to pick the best one and open a trade. Include EXECUTE_TRADE JSON at the end of your response.`;
+      console.log(`[ayn-unified] Injected scan results: ${scanResults.opportunities.length} opportunities from ${scanResults.scannedPairs} pairs`);
+    } else if (wantsAutonomousTrading) {
+      scanContext = `\n\nMARKET SCAN RESULTS: Scan complete but no opportunities scored above 65. Tell the user: "Scanned the market — no high-conviction setups right now. I'll wait for better conditions."`;
+      console.log('[ayn-unified] Market scan found no qualifying opportunities');
+    }
+
 
     // Sanitize user messages before passing to LLM
     const sanitizedMessages = messages.map((msg: { role: string; content: any }) => ({
@@ -1327,16 +1449,17 @@ NOTE: Account just launched. No trades executed yet.`;
       }
     }
 
-    // Call with fallback
+    // Call with fallback — force non-streaming for autonomous trading (need to parse EXECUTE_TRADE)
+    const effectiveStream = wantsAutonomousTrading ? false : stream;
     const { response, modelUsed, wasFallback } = await callWithFallback(
       intent,
       fullMessages,
-      stream,
+      effectiveStream,
       supabase,
       userId
     );
 
-    if (stream && response instanceof Response) {
+    if (effectiveStream && response instanceof Response) {
       // Return streaming response
       return new Response(response.body, {
         headers: {
@@ -1349,10 +1472,51 @@ NOTE: Account just launched. No trades executed yet.`;
     }
 
     // Non-streaming response
-    const responseContent = (response as { content: string }).content;
+    let responseContent = (response as { content: string }).content;
     
+    // === AUTO-EXECUTE TRADE: Parse EXECUTE_TRADE from AI response ===
+    const tradeMatch = responseContent.match(/EXECUTE_TRADE:\s*(\{[\s\S]*?\})\s*$/m);
+    let tradeResult = null;
+    if (tradeMatch) {
+      try {
+        const tradeParams = JSON.parse(tradeMatch[1]);
+        console.log('[AUTO-TRADE] AI wants to execute:', JSON.stringify(tradeParams));
+        
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const tradeRes = await fetch(`${supabaseUrl}/functions/v1/ayn-open-trade`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(tradeParams),
+        });
+        
+        if (tradeRes.ok) {
+          tradeResult = await tradeRes.json();
+          if (tradeResult.opened) {
+            // Remove the raw EXECUTE_TRADE line and append confirmation
+            responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
+            responseContent += `\n\n✅ Position opened successfully. Trade ID: ${tradeResult.trade?.id?.substring(0, 8) || 'confirmed'}\nTracking live on Performance tab.`;
+            console.log('[AUTO-TRADE] ✅ Trade opened:', tradeResult.summary);
+          } else {
+            responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
+            responseContent += `\n\n⚠️ Trade not opened: ${tradeResult.reason}`;
+            console.log('[AUTO-TRADE] Trade skipped:', tradeResult.reason);
+          }
+        } else {
+          const errText = await tradeRes.text();
+          console.error('[AUTO-TRADE] Trade function error:', errText);
+          responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
+          responseContent += `\n\n⚠️ Could not execute trade right now. Try again.`;
+        }
+      } catch (e) {
+        console.error('[AUTO-TRADE] Failed to parse/execute:', e);
+        responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
+      }
+    }
+
     // === SAFETY NET: Intercept hallucinated tool calls ===
-    // If the LLM hallucinated a generate_image tool call, re-route to actual image generation
     if (responseContent && /["']?action["']?\s*:\s*["']generate_image["']/.test(responseContent)) {
       console.log('[ayn-unified] Safety net: intercepted hallucinated image tool call');
       try {
@@ -1384,7 +1548,9 @@ NOTE: Account just launched. No trades executed yet.`;
       wasFallback,
       intent,
       emotion: detectedEmotion,
-      userEmotion
+      userEmotion,
+      ...(scanResults?.opportunities ? { scanResults: scanResults.opportunities } : {}),
+      ...(tradeResult?.opened ? { tradeOpened: true, tradeId: tradeResult.trade?.id } : {})
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
