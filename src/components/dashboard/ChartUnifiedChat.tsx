@@ -189,7 +189,12 @@ export default function ChartUnifiedChat() {
   }, [analyzer.error, analyzer.step]);
 
   // ─── Sync coach messages ───
-  const prevCoachLenRef = useRef(0);
+  const prevCoachLenRef = useRef(coach.messages.length);
+
+  useEffect(() => {
+    coach.newChat();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (coach.messages.length > prevCoachLenRef.current) {
       const newMsgs = coach.messages.slice(prevCoachLenRef.current);
