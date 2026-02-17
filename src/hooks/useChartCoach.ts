@@ -28,18 +28,49 @@ const BLOCKED_RESPONSE = "I'm here to help you trade better, not discuss technic
 
 const URL_REGEX = /https?:\/\/[^\s]+/gi;
 
-const NEWS_PATTERNS = /\b(news|latest|what.{0,10}happening|market.{0,6}update|headlines|sentiment|outlook)\b/i;
+const SEARCH_PATTERNS = [
+  /\b(news|latest|what.{0,10}happening|market.{0,6}update|headlines|sentiment|outlook)\b/i,
+  /\b(price|how much|current value|worth|trading at)\b/i,
+  /\b(why did|dump|pump|crash|surge|rally|moon|tank|drop|fell|spike)\b/i,
+  /\b(should i|buy|sell|hold|enter|exit|long|short)\b/i,
+  /\b(what.{0,6}happening|going on with|what about)\b/i,
+  /\b(bullish|bearish|good buy|bad buy|oversold|overbought)\b/i,
+  /\b(tell me about|what is|analysis|forecast|prediction|target)\b/i,
+];
+
+const CRYPTO_NAMES = /\b(bitcoin|btc|ethereum|eth|solana|sol|xrp|ripple|doge|dogecoin|cardano|ada|bnb|ton|avax|dot|link|matic|polygon|ltc|uni|shib|trx|atom|near|apt|sui|arb|op|fil|pepe|bonk|render|inj|sei|tia|jup|pol)\b/i;
 
 function validateInput(message: string): boolean {
   return !FORBIDDEN_PATTERNS.some(p => p.test(message));
 }
 
 function detectSearchIntent(message: string, ticker?: string): string | null {
-  if (!NEWS_PATTERNS.test(message)) return null;
-  if (ticker) return `${ticker} trading news today`;
-  const subjectMatch = message.match(/(?:news|latest|update|headlines)\s+(?:on|about|for)\s+(\w+)/i);
-  if (subjectMatch) return `${subjectMatch[1]} trading news today`;
-  return 'stock market news today';
+  const hasSearchPattern = SEARCH_PATTERNS.some(p => p.test(message));
+  const cryptoMatch = message.match(CRYPTO_NAMES);
+  const hasQuestionMark = message.includes('?');
+
+  // Trigger search if: pattern match, or crypto name + question mark
+  if (!hasSearchPattern && !(cryptoMatch && hasQuestionMark)) return null;
+
+  const subject = cryptoMatch?.[1]?.toUpperCase() || ticker || null;
+
+  // Build contextual search query
+  if (/why.{0,10}(dump|drop|crash|fell|tank)/i.test(message) && subject) {
+    return `${subject} crypto why price drop today`;
+  }
+  if (/why.{0,10}(pump|surge|rally|moon|spike)/i.test(message) && subject) {
+    return `${subject} crypto why price pump today`;
+  }
+  if (/should i (buy|sell|hold|long|short)/i.test(message) && subject) {
+    return `${subject} crypto buy sell analysis today`;
+  }
+  if (/\b(price|how much|worth|trading at)\b/i.test(message) && subject) {
+    return `${subject} crypto current price analysis today`;
+  }
+  if (subject) {
+    return `${subject} crypto trading news analysis today`;
+  }
+  return 'crypto market news today';
 }
 
 // === SECURITY LAYER 2: Response Sanitization ===
