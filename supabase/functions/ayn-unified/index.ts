@@ -699,11 +699,87 @@ serve(async (req) => {
     // Build system prompt with user message for language detection AND user memories
     let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + INJECTION_GUARD;
 
-    // === FIRECRAWL INTEGRATION FOR TRADING COACH ===
+    // === FIRECRAWL + LIVE PIONEX INTEGRATION FOR TRADING COACH ===
     if (intent === 'trading-coach') {
-      const { scrapeUrl: urlToScrape, searchQuery } = context;
+      const { scrapeUrl: urlToScrape, searchQuery, ticker: ctxTicker, assetType: ctxAssetType, timeframe: ctxTimeframe } = context;
 
       const firecrawlTasks: Promise<void>[] = [];
+
+      // Fetch live Pionex data if ticker is available (crypto only)
+      if (ctxTicker && ctxAssetType === 'crypto' && ctxTicker !== 'UNKNOWN') {
+        firecrawlTasks.push((async () => {
+          try {
+            const apiKey = Deno.env.get('PIONEX_API_KEY');
+            const apiSecret = Deno.env.get('PIONEX_API_SECRET');
+            if (!apiKey || !apiSecret) return;
+
+            const cleanTicker = ctxTicker.replace(/\/USDT|\/USD|\/BUSD/i, '').toUpperCase();
+            const symbol = `${cleanTicker}_USDT`;
+            const intervalMap: Record<string, string> = {
+              '1m': '1M', '5m': '5M', '15m': '15M',
+              '1H': '1H', '4H': '4H',
+              'Daily': '1D', 'Weekly': '1W', 'Monthly': '1D', 'unknown': '1H',
+            };
+            const interval = intervalMap[ctxTimeframe || 'unknown'] || '1H';
+
+            async function signReq(qs: string): Promise<string> {
+              const enc = new TextEncoder();
+              const key = await crypto.subtle.importKey('raw', enc.encode(apiSecret!), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+              const sig = await crypto.subtle.sign('HMAC', key, enc.encode(qs));
+              return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+
+            const ts = Date.now().toString();
+            const baseUrl = 'https://api.pionex.com';
+
+            // Fetch ticker 24h stats
+            const tickerPath = `/api/v1/market/tickers?symbol=${symbol}&timestamp=${ts}`;
+            const tickerSig = await signReq(tickerPath);
+            const tickerRes = await fetch(`${baseUrl}${tickerPath}`, {
+              headers: { 'PIONEX-KEY': apiKey, 'PIONEX-SIGNATURE': tickerSig },
+            });
+
+            let liveBlock = '';
+            if (tickerRes.ok) {
+              const tickerData = await tickerRes.json();
+              const t = tickerData?.data?.tickers?.[0];
+              if (t) {
+                const price = parseFloat(t.close || t.last || '0');
+                const open = parseFloat(t.open || '0');
+                const change = open > 0 ? ((price - open) / open * 100).toFixed(2) : 'N/A';
+                liveBlock = `\n\n📊 LIVE MARKET DATA (Pionex, just fetched):\nSymbol: ${symbol}\nCurrent Price: ${price}\n24h Change: ${change}%\n24h High: ${t.high || 'N/A'}\n24h Low: ${t.low || 'N/A'}\n24h Volume: ${t.amount ? parseFloat(t.amount).toLocaleString() + ' USDT' : 'N/A'}\n\nUse this live data to give accurate answers. If the user asks about current price or whether a setup is still valid, reference these numbers.`;
+              }
+            } else {
+              await tickerRes.text(); // consume body
+            }
+
+            // Fetch last 10 candles
+            const klinesPath = `/api/v1/market/klines?symbol=${symbol}&interval=${interval}&limit=10&timestamp=${ts}`;
+            const klinesSig = await signReq(klinesPath);
+            const klinesRes = await fetch(`${baseUrl}${klinesPath}`, {
+              headers: { 'PIONEX-KEY': apiKey, 'PIONEX-SIGNATURE': klinesSig },
+            });
+
+            if (klinesRes.ok) {
+              const klinesData = await klinesRes.json();
+              const klines = klinesData?.data?.klines || [];
+              if (klines.length > 0) {
+                const candles = klines.slice(-5).map((k: any) => `O:${k.open} H:${k.high} L:${k.low} C:${k.close}`).join(' | ');
+                liveBlock += `\nRecent ${interval} candles: ${candles}`;
+              }
+            } else {
+              await klinesRes.text();
+            }
+
+            if (liveBlock) {
+              systemPrompt += liveBlock;
+              console.log(`[ayn-unified] Injected live Pionex data for ${symbol}`);
+            }
+          } catch (err) {
+            console.warn('[ayn-unified] Pionex fetch error in coach:', err);
+          }
+        })());
+      }
 
       if (urlToScrape && typeof urlToScrape === 'string') {
         firecrawlTasks.push((async () => {

@@ -141,7 +141,7 @@ Be specific with price levels. If you can see indicator values, include them. If
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-3-flash-preview',
       messages: [{
         role: 'user',
         content: [
@@ -531,9 +531,27 @@ ${pionexData ? `
 **Last ${pionexData.lastCandles?.length || 0} candles (${pionexData.interval}): ${JSON.stringify(pionexData.lastCandles)}**
 
 IMPORTANT: Use the Pionex live data to CROSS-REFERENCE the visual patterns from the chart image.
-- If Pionex price differs significantly from chart, note the discrepancy
 - Use exact Pionex prices for entry/stop/TP levels instead of estimated chart values
 - Volume from Pionex should validate or invalidate the volume analysis from the image
+${(() => {
+  const chartPrice = currentPrice;
+  const livePrice = pionexData.currentPrice;
+  if (chartPrice && livePrice && chartPrice > 0) {
+    const diffPercent = Math.abs(livePrice - chartPrice) / chartPrice * 100;
+    if (diffPercent > 5) {
+      return `
+⚠️ STALE CHART WARNING: The uploaded chart appears OUTDATED.
+- Chart shows: ~${chartPrice}
+- Live price: ${livePrice} (${diffPercent.toFixed(1)}% difference)
+
+DEFAULT BEHAVIOR: Use the LIVE Pionex price (${livePrice}) for ALL entry/SL/TP calculations.
+Tell the user clearly: "Your chart appears outdated (shows ~${chartPrice}, but the live price is ${livePrice}).
+I've based my analysis on the current live price. If you want me to analyze purely based on the chart image, just let me know."
+DO NOT silently use the old chart price. The live price is the truth.`;
+    }
+  }
+  return '';
+})()}
 ` : ''}
 
 ## Recent News Headlines (weight: 40%)
@@ -671,7 +689,7 @@ ${INJECTION_GUARD}`;
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-3-flash-preview',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 3500,
       temperature: 0.3,
