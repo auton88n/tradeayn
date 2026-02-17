@@ -1,114 +1,71 @@
 
-## Expand Trading Knowledge Base + Pionex-Based Market Intelligence
 
-### Overview
+## Transform AYN from Coach to Active Trader
 
-Two upgrades, zero new external APIs:
+### What Changes
 
-1. **9 knowledge modules** added to a new file, with a condensed summary injected into the trading-coach prompt
-2. **Market intelligence extracted from existing Pionex data** (price momentum, volume analysis, session timing, scam flags) injected into the chart analysis prediction prompt
-3. **Basic scam detection** using Pionex data + ticker heuristics
-4. **Market Context UI card** in chart analysis results
+Two updates -- one backend (prompt), one frontend (display). No new pages or paper trading system yet (that requires a database to track positions, which is a separate feature).
 
 ---
 
-### Files
+### 1. System Prompt Update
 
-**NEW: `supabase/functions/analyze-trading-chart/advancedTradingKnowledge.ts`**
+**File: `supabase/functions/ayn-unified/systemPrompts.ts`** (lines 160-329)
 
-9 exported string constants containing the full educational knowledge:
-- `SCAM_DETECTION_RULES` -- liquidity, contract, tokenomics, social, chart red flags, verification checklist
-- `SMART_MONEY_CONCEPTS` -- order blocks, FVGs, liquidity pools, BOS, CHOCH, premium/discount zones, inducement
-- `FUNDING_RATES_KNOWLEDGE` -- funding rates, open interest, liquidation levels, long/short ratio
-- `TOKEN_UNLOCK_KNOWLEDGE` -- vesting schedules, impact sizing, trading around unlocks
-- `WYCKOFF_METHOD` -- accumulation/distribution schematics (Phases A-E), volume analysis
-- `ADVANCED_RISK_MANAGEMENT` -- math of loss, position sizing rules, portfolio heat, Kelly criterion, leverage rules
-- `MARKET_CYCLES_ADVANCED` -- Bitcoin halving cycles, psychology stages, altseason identification, macro factors
-- `SESSION_AND_NEWS_KNOWLEDGE` -- trading sessions, CPI/FOMC/NFP events, crypto events, weekend effects
-- `MULTI_TIMEFRAME_KNOWLEDGE` -- timeframe hierarchy, top-down process, confluence setups
+Replace the trading-coach intent section with the "active trader" mindset:
 
-Also exports `getAdvancedKnowledgeSummary()` returning a condensed version (key decision rules only) for the trading-coach prompt, keeping token usage manageable.
-
----
-
-**UPDATE: `supabase/functions/ayn-unified/systemPrompts.ts`**
-
-In the `trading-coach` intent (line 160-265):
-- Import `getAdvancedKnowledgeSummary` from the analyze-trading-chart function folder (or inline the condensed summary to avoid cross-function imports -- since edge functions can't import across function boundaries, the summary will be inlined directly as a string constant in systemPrompts.ts)
-- Append the condensed advanced knowledge after the existing "Risk Management" section and before "CONVERSATION RULES"
-- Add a "GENIUS TRADING MINDSET" section encouraging creative reasoning: synthesize multiple data points, find contrarian edges, combine concepts for novel strategies, sector rotation awareness
-
-The condensed summary covers key decision rules from all 9 modules (not the full walls of text), roughly 150-200 lines of concise rules.
+- Remove coach/advisor framing ("My recommendation is...", "You might want to consider...")
+- Add first-person trader language ("I'm buying X at Y", "I'm risking $X to make $Y")
+- Add banned phrases list (no "not financial advice", no "testing mode", no "options for you")
+- Add required phrases list (conviction-based language with exact positions)
+- Add position sizing discipline (2-3% risk, max 3 concurrent positions)
+- Add seasonal awareness (weekend/pre-news restraint)
+- Add win/loss ownership language (own losses, celebrate wins with process)
+- Add conviction levels (high = 3% max size, medium = 1.5%, low = no trade)
+- Keep all existing knowledge base sections (patterns, SMC, Wyckoff, etc.) -- only the framing changes
+- Keep the SECURITY section (never reveal internals)
+- Remove line 325: `"Always end strategy responses with: Testing mode -- verify all levels..."` and line 8 from CONVERSATION RULES
 
 ---
 
-**UPDATE: `supabase/functions/analyze-trading-chart/index.ts`**
+### 2. Chart Analysis Results Display Update
 
-Two additions:
+**File: `src/components/dashboard/ChartAnalyzerResults.tsx`**
 
-1. **`extractMarketIntelligence(pionexData)`** function (after line 318, before Step 2):
-   - Extracts 24h price change and momentum signal from existing Pionex ticker data
-   - Volume analysis from Pionex volume data (surge/decline detection)
-   - Session timing (Asian/London/NY) from current UTC time -- no API needed
-   - Weekend warning -- no API needed
-   - Returns a text block for prompt injection
+**Signal card (lines 433-482):** Change from passive "Signal: BUY" to active first-person:
+- "I'M BUYING {ticker}" / "I'M SELLING {ticker}" / "WAITING ON {ticker}"
+- Show "My Entry", "My Stop" instead of just "Entry", "Stop Loss"
+- Add risk/reward in dollar terms ("If wrong: -X% / If right: +Y%")
+- Keep confidence display but frame as conviction
 
-2. **`checkScamSignals(ticker, pionexData)`** function:
-   - Checks volume < $100K (liquidity risk)
-   - Checks price change > 50% in 24h (manipulation pattern)
-   - Checks suspicious ticker patterns (MOON, SAFE, ELON, etc.)
-   - Returns `{ isHighRisk, severity, flags }` object
+**Remove testing disclaimer (lines 630-642):** Delete the entire "TESTING MODE -- HIGH RISK" block at the bottom. Replace with a single subtle line: "Paper trading signals -- track performance over time."
 
-3. In `generatePrediction()` (line 420):
-   - Accept new `marketIntelligence` string parameter
-   - Inject it at the top of the prompt before the technical analysis section
-   - If scam flags detected, append warning to prompt
+**Bot Config card (lines 236-325):** Update labels from neutral to first-person:
+- "Entry Price" becomes "My Entry"
+- "Stop Loss" becomes "My Stop"
+- Add a "Why I'm Taking This Trade" section using `result.prediction.reasoning`
 
-4. In main handler (line 798-802):
-   - After `fetchPionexData`, call `extractMarketIntelligence(pionexData)` and `checkScamSignals(ticker, pionexData)`
-   - Pass `marketIntelligence` to `generatePrediction()`
-   - Include `marketContext` and `scamWarning` in the response object
+**Next Steps card (lines 327-360):** Reframe from educational to action-oriented.
 
 ---
 
-**UPDATE: `src/types/chartAnalyzer.types.ts`**
+### What We're NOT Building Yet
 
-Add:
-```text
-interface MarketContext {
-  priceChange24h: number | null;
-  volume24h: number | null;
-  session: string;
-  isWeekend: boolean;
-  volatility: 'high' | 'normal';
-}
+- Paper trading performance page (requires new database tables for position tracking, P&L calculation, trade history)
+- Live position tracking system
+- Weekly performance summaries
 
-interface ScamWarning {
-  isHighRisk: boolean;
-  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  flags: string[];
-}
-```
-
-Add to `ChartAnalysisResult`:
-```text
-marketContext?: MarketContext;
-scamWarning?: ScamWarning;
-```
+These need a proper database schema (positions table, trades table, P&L tracking) and are a separate feature. The prompt changes will make AYN *talk* like an active trader immediately; the tracking infrastructure can follow.
 
 ---
 
-**UPDATE: `src/components/dashboard/ChartAnalyzerResults.tsx`**
+### Technical Details
 
-Add a "Market Context" card at the top of results (before the signal card) when `result.marketContext` is present:
-- 2x2 grid: 24h Change (color-coded), 24h Volume, Current Session, Volatility
-- Scam warning alert banner if `result.scamWarning?.isHighRisk`
+**Files changed:**
+1. `supabase/functions/ayn-unified/systemPrompts.ts` -- Replace trading-coach intent (lines 160-329) with active trader prompt
+2. `src/components/dashboard/ChartAnalyzerResults.tsx` -- Update signal display, remove testing disclaimer, reframe labels
 
----
+**Edge functions to redeploy:** `ayn-unified`
 
-### Technical Notes
+**No database changes. No new files. No new APIs.**
 
-- **No cross-function imports:** The advanced knowledge file lives in the `analyze-trading-chart` folder but the trading-coach prompt is in `ayn-unified`. Since edge functions can't import across boundaries, the condensed knowledge summary will be inlined as a constant in `systemPrompts.ts`.
-- **Bundle size:** The full 9-module knowledge file is large but only used by the analyze-trading-chart function as reference. The systemPrompts.ts gets only the condensed summary.
-- **No new APIs, no new secrets, no database changes.**
-- **Edge functions to redeploy:** `analyze-trading-chart`, `ayn-unified`
