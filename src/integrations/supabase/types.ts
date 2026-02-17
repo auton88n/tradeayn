@@ -352,6 +352,57 @@ export type Database = {
           },
         ]
       }
+      ayn_account_state: {
+        Row: {
+          created_at: string | null
+          current_balance: number
+          id: string
+          largest_loss_percent: number | null
+          largest_win_percent: number | null
+          losing_trades: number
+          max_drawdown_percent: number | null
+          starting_balance: number
+          total_pnl_dollars: number
+          total_pnl_percent: number
+          total_trades: number
+          updated_at: string | null
+          win_rate: number
+          winning_trades: number
+        }
+        Insert: {
+          created_at?: string | null
+          current_balance?: number
+          id?: string
+          largest_loss_percent?: number | null
+          largest_win_percent?: number | null
+          losing_trades?: number
+          max_drawdown_percent?: number | null
+          starting_balance?: number
+          total_pnl_dollars?: number
+          total_pnl_percent?: number
+          total_trades?: number
+          updated_at?: string | null
+          win_rate?: number
+          winning_trades?: number
+        }
+        Update: {
+          created_at?: string | null
+          current_balance?: number
+          id?: string
+          largest_loss_percent?: number | null
+          largest_win_percent?: number | null
+          losing_trades?: number
+          max_drawdown_percent?: number | null
+          starting_balance?: number
+          total_pnl_dollars?: number
+          total_pnl_percent?: number
+          total_trades?: number
+          updated_at?: string | null
+          win_rate?: number
+          winning_trades?: number
+        }
+        Relationships: []
+      }
       ayn_activity_log: {
         Row: {
           action_type: string
@@ -385,6 +436,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ayn_daily_snapshots: {
+        Row: {
+          balance: number
+          created_at: string | null
+          daily_pnl_dollars: number | null
+          daily_pnl_percent: number | null
+          id: string
+          losses_today: number | null
+          open_positions: number | null
+          snapshot_date: string
+          trades_closed_today: number | null
+          wins_today: number | null
+        }
+        Insert: {
+          balance: number
+          created_at?: string | null
+          daily_pnl_dollars?: number | null
+          daily_pnl_percent?: number | null
+          id?: string
+          losses_today?: number | null
+          open_positions?: number | null
+          snapshot_date: string
+          trades_closed_today?: number | null
+          wins_today?: number | null
+        }
+        Update: {
+          balance?: number
+          created_at?: string | null
+          daily_pnl_dollars?: number | null
+          daily_pnl_percent?: number | null
+          id?: string
+          losses_today?: number | null
+          open_positions?: number | null
+          snapshot_date?: string
+          trades_closed_today?: number | null
+          wins_today?: number | null
+        }
+        Relationships: []
+      }
       ayn_mind: {
         Row: {
           content: string
@@ -409,6 +499,99 @@ export type Database = {
           id?: string
           shared_with_admin?: boolean
           type?: string
+        }
+        Relationships: []
+      }
+      ayn_paper_trades: {
+        Row: {
+          chart_image_url: string | null
+          confidence_score: number | null
+          created_at: string | null
+          entry_price: number
+          entry_time: string
+          exit_price: number | null
+          exit_reason: string | null
+          exit_time: string | null
+          id: string
+          market_context: Json | null
+          partial_exits: Json | null
+          pnl_dollars: number | null
+          pnl_percent: number | null
+          position_size_dollars: number
+          position_size_percent: number
+          reasoning: string | null
+          setup_type: string | null
+          shares_or_coins: number
+          signal: string
+          status: string
+          stop_loss_price: number
+          take_profit_1_percent: number | null
+          take_profit_1_price: number | null
+          take_profit_2_percent: number | null
+          take_profit_2_price: number | null
+          ticker: string
+          timeframe: string
+          updated_at: string | null
+        }
+        Insert: {
+          chart_image_url?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          entry_price: number
+          entry_time?: string
+          exit_price?: number | null
+          exit_reason?: string | null
+          exit_time?: string | null
+          id?: string
+          market_context?: Json | null
+          partial_exits?: Json | null
+          pnl_dollars?: number | null
+          pnl_percent?: number | null
+          position_size_dollars: number
+          position_size_percent: number
+          reasoning?: string | null
+          setup_type?: string | null
+          shares_or_coins: number
+          signal: string
+          status?: string
+          stop_loss_price: number
+          take_profit_1_percent?: number | null
+          take_profit_1_price?: number | null
+          take_profit_2_percent?: number | null
+          take_profit_2_price?: number | null
+          ticker: string
+          timeframe: string
+          updated_at?: string | null
+        }
+        Update: {
+          chart_image_url?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          entry_price?: number
+          entry_time?: string
+          exit_price?: number | null
+          exit_reason?: string | null
+          exit_time?: string | null
+          id?: string
+          market_context?: Json | null
+          partial_exits?: Json | null
+          pnl_dollars?: number | null
+          pnl_percent?: number | null
+          position_size_dollars?: number
+          position_size_percent?: number
+          reasoning?: string | null
+          setup_type?: string | null
+          shares_or_coins?: number
+          signal?: string
+          status?: string
+          stop_loss_price?: number
+          take_profit_1_percent?: number | null
+          take_profit_1_price?: number | null
+          take_profit_2_percent?: number | null
+          take_profit_2_price?: number | null
+          ticker?: string
+          timeframe?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -469,6 +652,114 @@ export type Database = {
           recommended_services?: string[] | null
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      ayn_setup_performance: {
+        Row: {
+          avg_loss_percent: number | null
+          avg_win_percent: number | null
+          id: string
+          losing_trades: number | null
+          profit_factor: number | null
+          setup_type: string
+          total_pnl_percent: number | null
+          total_trades: number | null
+          updated_at: string | null
+          win_rate: number | null
+          winning_trades: number | null
+        }
+        Insert: {
+          avg_loss_percent?: number | null
+          avg_win_percent?: number | null
+          id?: string
+          losing_trades?: number | null
+          profit_factor?: number | null
+          setup_type: string
+          total_pnl_percent?: number | null
+          total_trades?: number | null
+          updated_at?: string | null
+          win_rate?: number | null
+          winning_trades?: number | null
+        }
+        Update: {
+          avg_loss_percent?: number | null
+          avg_win_percent?: number | null
+          id?: string
+          losing_trades?: number | null
+          profit_factor?: number | null
+          setup_type?: string
+          total_pnl_percent?: number | null
+          total_trades?: number | null
+          updated_at?: string | null
+          win_rate?: number | null
+          winning_trades?: number | null
+        }
+        Relationships: []
+      }
+      ayn_weekly_summaries: {
+        Row: {
+          best_setup_type: string | null
+          best_trade_pnl_percent: number | null
+          best_trade_ticker: string | null
+          commentary: string | null
+          created_at: string | null
+          ending_balance: number
+          id: string
+          losing_trades: number | null
+          starting_balance: number
+          total_trades: number | null
+          week_end: string
+          week_start: string
+          weekly_pnl_dollars: number
+          weekly_pnl_percent: number
+          win_rate: number | null
+          winning_trades: number | null
+          worst_setup_type: string | null
+          worst_trade_pnl_percent: number | null
+          worst_trade_ticker: string | null
+        }
+        Insert: {
+          best_setup_type?: string | null
+          best_trade_pnl_percent?: number | null
+          best_trade_ticker?: string | null
+          commentary?: string | null
+          created_at?: string | null
+          ending_balance: number
+          id?: string
+          losing_trades?: number | null
+          starting_balance: number
+          total_trades?: number | null
+          week_end: string
+          week_start: string
+          weekly_pnl_dollars: number
+          weekly_pnl_percent: number
+          win_rate?: number | null
+          winning_trades?: number | null
+          worst_setup_type?: string | null
+          worst_trade_pnl_percent?: number | null
+          worst_trade_ticker?: string | null
+        }
+        Update: {
+          best_setup_type?: string | null
+          best_trade_pnl_percent?: number | null
+          best_trade_ticker?: string | null
+          commentary?: string | null
+          created_at?: string | null
+          ending_balance?: number
+          id?: string
+          losing_trades?: number | null
+          starting_balance?: number
+          total_trades?: number | null
+          week_end?: string
+          week_start?: string
+          weekly_pnl_dollars?: number
+          weekly_pnl_percent?: number
+          win_rate?: number | null
+          winning_trades?: number | null
+          worst_setup_type?: string | null
+          worst_trade_pnl_percent?: number | null
+          worst_trade_ticker?: string | null
         }
         Relationships: []
       }

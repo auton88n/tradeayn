@@ -639,10 +639,16 @@ export default function ChartAnalyzerResults({ result }: Props) {
         <NextStepsCard result={result} />
       </Section>
 
-      {/* Paper Trading Note */}
-      <p className="text-[11px] text-muted-foreground text-center italic">
-        Paper trading signals — track performance over time
-      </p>
+      {/* Paper Trading Link */}
+      <div className="text-center space-y-1">
+        <a href="/performance" className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+          <Activity className="h-3 w-3" />
+          View AYN's live trading performance
+        </a>
+        <p className="text-[11px] text-muted-foreground italic">
+          Paper trading signals — track performance over time
+        </p>
+      </div>
     </div>
   );
 }
