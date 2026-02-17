@@ -759,16 +759,21 @@ serve(async (req) => {
     ];
     const isPerformanceQuery = intent === 'trading-coach';
 
-    // Autonomous trading detection
+    // Autonomous trading detection (with typo-tolerant matching)
     const autonomousTradingKeywords = [
       'find best token', 'scan market', 'look for trade', 'find opportunity',
-      'paper testing', 'start trading', 'trade for me', 'what should i buy',
+      'paper testing', 'pepar testing', 'peper testing', 'papar testing',
+      'start trading', 'trade for me', 'what should i buy',
       'find best setup', 'hunt for trades', 'scan for opportunities',
       'do paper testing', 'find winning trade', 'find me a trade',
-      'scan pairs', 'best crypto', 'what to buy', 'ابحث عن', 'تداول لي',
+      'scan pairs', 'best crypto', 'what to buy', 'best token',
+      'chose the best', 'choose the best', 'pick the best', 'pick a token',
+      'make money', 'making money', 'open a trade', 'execute trade',
+      'ابحث عن', 'تداول لي', 'افضل عملة',
     ];
+    const msgLower = lastMessage.toLowerCase();
     const wantsAutonomousTrading = intent === 'trading-coach' &&
-      autonomousTradingKeywords.some(kw => lastMessage.toLowerCase().includes(kw));
+      autonomousTradingKeywords.some(kw => msgLower.includes(kw));
 
     const [limitCheck, userContext, chartHistory, accountPerformance, scanResults] = await Promise.all([
       isInternalCall ? Promise.resolve({ allowed: true }) : checkUserLimit(supabase, userId, intent),
@@ -882,6 +887,13 @@ You are AUTHORIZED to pick the best one and open a trade. Include EXECUTE_TRADE 
 You MUST tell the user: "I scanned ${scanResults?.scannedPairs || 'the market'} pairs — no high-conviction setups right now. I won't force a trade."
 DO NOT fabricate or invent any trade. DO NOT make up prices. DO NOT suggest a specific coin with a specific price. Just report the scan result honestly.`;
       console.log('[ayn-unified] Market scan found no qualifying opportunities');
+    } else if (intent === 'trading-coach') {
+      // ANTI-FABRICATION: When NOT in autonomous mode, prevent the AI from inventing trades
+      scanContext += `\n\nCRITICAL ANTI-FABRICATION RULE:
+You do NOT have live market data right now. DO NOT invent specific prices, entry points, or trade recommendations with made-up numbers.
+If the user asks you to trade or pick a token, tell them to say "do paper testing" or "find best token" so you can scan real Pionex market data first.
+NEVER say "I'm buying X at $Y" unless you have MARKET SCAN RESULTS above with real prices from Pionex.
+You may discuss trading concepts, strategy, and education freely — just don't fabricate specific prices.`;
     }
 
     // Build system prompt with user message for language detection AND user memories
