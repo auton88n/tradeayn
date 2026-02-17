@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import AIDecisionLog from '@/components/trading/AIDecisionLog';
 
 // Types
 interface AccountState {
@@ -42,6 +43,7 @@ interface PaperTrade {
   confidence_score: number | null;
   setup_type: string | null;
   reasoning: string | null;
+  market_context: any;
   created_at: string;
 }
 
@@ -145,17 +147,20 @@ export default function PerformanceDashboard() {
   const [account, setAccount] = useState<AccountState | null>(null);
   const [openTrades, setOpenTrades] = useState<PaperTrade[]>([]);
   const [closedTrades, setClosedTrades] = useState<PaperTrade[]>([]);
+  const [allTrades, setAllTrades] = useState<PaperTrade[]>([]);
   const [snapshots, setSnapshots] = useState<DailySnapshot[]>([]);
   const [setupPerf, setSetupPerf] = useState<SetupPerf[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLive, setIsLive] = useState(false);
 
   const loadData = useCallback(async () => {
-    const [acctRes, openRes, closedRes, snapRes, setupRes] = await Promise.all([
+    const [acctRes, openRes, closedRes, snapRes, setupRes, allTradesRes] = await Promise.all([
       supabase.from('ayn_account_state').select('*').eq('id', '00000000-0000-0000-0000-000000000001').single(),
       supabase.from('ayn_paper_trades').select('*').in('status', ['OPEN', 'PARTIAL_CLOSE']).order('entry_time', { ascending: false }),
       supabase.from('ayn_paper_trades').select('*').in('status', ['CLOSED_WIN', 'CLOSED_LOSS', 'STOPPED_OUT']).order('exit_time', { ascending: false }).limit(20),
       supabase.from('ayn_daily_snapshots').select('*').order('snapshot_date', { ascending: true }).limit(90),
       supabase.from('ayn_setup_performance').select('*').order('total_trades', { ascending: false }),
+      supabase.from('ayn_paper_trades').select('*').order('created_at', { ascending: false }).limit(50),
     ]);
 
     if (acctRes.data) setAccount(acctRes.data as any);
@@ -163,13 +168,36 @@ export default function PerformanceDashboard() {
     if (closedRes.data) setClosedTrades(closedRes.data as any);
     if (snapRes.data) setSnapshots(snapRes.data as any);
     if (setupRes.data) setSetupPerf(setupRes.data as any);
+    if (allTradesRes.data) setAllTrades(allTradesRes.data as any);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
+
+    // Realtime subscriptions
+    const tradesChannel = supabase
+      .channel('dashboard-trades-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ayn_paper_trades' }, () => {
+        loadData();
+      })
+      .subscribe((status) => {
+        setIsLive(status === 'SUBSCRIBED');
+      });
+
+    const accountChannel = supabase
+      .channel('dashboard-account-realtime')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ayn_account_state' }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(tradesChannel);
+      supabase.removeChannel(accountChannel);
+    };
   }, [loadData]);
 
   if (loading) {
@@ -227,7 +255,7 @@ export default function PerformanceDashboard() {
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={snapshots}>
                 <defs>
-                  <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="dashboardBalanceGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                   </linearGradient>
@@ -238,7 +266,7 @@ export default function PerformanceDashboard() {
                 <Tooltip
                   contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
                 />
-                <Area type="monotone" dataKey="balance" stroke="hsl(var(--primary))" fill="url(#balanceGradient)" strokeWidth={2} />
+                <Area type="monotone" dataKey="balance" stroke="hsl(var(--primary))" fill="url(#dashboardBalanceGradient)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
@@ -252,6 +280,12 @@ export default function PerformanceDashboard() {
             <Target className="h-4 w-4 text-primary" />
             Open Positions
             <Badge variant="secondary" className="text-[10px]">{openTrades.length}/3</Badge>
+            {isLive && (
+              <span className="relative flex h-2 w-2 ml-1">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -294,6 +328,9 @@ export default function PerformanceDashboard() {
         </CardContent>
       </Card>
 
+      {/* AI Decision Log */}
+      <AIDecisionLog trades={allTrades} />
+
       {/* Setup Performance */}
       {setupPerf.length > 0 && (
         <Card>
@@ -321,6 +358,7 @@ export default function PerformanceDashboard() {
 
       <p className="text-[11px] text-muted-foreground text-center italic">
         Paper trading account starting at $10,000. All trades are automatically generated by AYN's chart analysis.
+        {isLive ? ' • Real-time updates active' : ' • Updates every 30s'}
       </p>
     </div>
   );

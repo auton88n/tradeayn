@@ -757,8 +757,7 @@ serve(async (req) => {
       'portfolio', 'how are you doing', "how's your account", 'paper trading',
       'track record', 'open positions', 'how many trades', 'account'
     ];
-    const isPerformanceQuery = intent === 'trading-coach' && 
-      performanceKeywords.some(kw => lastMessage.toLowerCase().includes(kw));
+    const isPerformanceQuery = intent === 'trading-coach';
 
     // Autonomous trading detection
     const autonomousTradingKeywords = [
