@@ -556,6 +556,10 @@ async function scanMarketOpportunities(): Promise<{ opportunities: any[]; scanne
     const data = await res.json();
     const tickers = data?.data?.tickers || [];
     console.log(`[SCAN] Fetched ${tickers.length} tickers from Pionex`);
+    if (tickers.length > 0) {
+      const sample = tickers[0];
+      console.log(`[SCAN] Sample ticker fields: ${JSON.stringify({ symbol: sample.symbol, open: sample.open, close: sample.close, high: sample.high, low: sample.low, volume: sample.volume, amount: sample.amount, count: sample.count, priceChangePercent: sample.priceChangePercent })}`);
+    }
 
     const opportunities: any[] = [];
 
@@ -564,11 +568,12 @@ async function scanMarketOpportunities(): Promise<{ opportunities: any[]; scanne
       if (!symbol.endsWith('_USDT')) continue;
       if (symbol.startsWith('USDC_') || symbol.startsWith('USDT_') || symbol.startsWith('DAI_') || symbol.startsWith('TUSD_')) continue;
 
-      const volume = parseFloat(t.volume || '0');
+      const volume = parseFloat(t.amount || '0'); // amount = USDT volume, not base currency
       if (volume < 100000) continue;
 
-      const priceChange = parseFloat(t.priceChangePercent || '0') * 100;
+      const open = parseFloat(t.open || '0');
       const price = parseFloat(t.close || t.last || '0');
+      const priceChange = open > 0 ? ((price - open) / open) * 100 : 0;
 
       let score = 50;
       const signals: string[] = [];
@@ -874,7 +879,9 @@ ${scanResults.opportunities.map((opp: any, i: number) => `${i + 1}. ${opp.ticker
 You are AUTHORIZED to pick the best one and open a trade. Include EXECUTE_TRADE JSON at the end of your response.`;
       console.log(`[ayn-unified] Injected scan results: ${scanResults.opportunities.length} opportunities from ${scanResults.scannedPairs} pairs`);
     } else if (wantsAutonomousTrading) {
-      scanContext = `\n\nMARKET SCAN RESULTS: Scan complete but no opportunities scored above 65. Tell the user: "Scanned the market — no high-conviction setups right now. I'll wait for better conditions."`;
+      scanContext = `\n\nMARKET SCAN RESULTS: Scanned ${scanResults?.scannedPairs || 'all'} pairs. NO opportunities scored above threshold.
+You MUST tell the user: "I scanned ${scanResults?.scannedPairs || 'the market'} pairs — no high-conviction setups right now. I won't force a trade."
+DO NOT fabricate or invent any trade. DO NOT make up prices. DO NOT suggest a specific coin with a specific price. Just report the scan result honestly.`;
       console.log('[ayn-unified] Market scan found no qualifying opportunities');
     }
 
