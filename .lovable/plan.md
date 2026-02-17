@@ -1,65 +1,58 @@
 
 
-## Add Debug Logging to Pionex API Calls
+## Fix: New Users Not Appearing in Admin Panel
 
-### Goal
-Add detailed debug logging to both edge functions so we can see exactly what the Pionex API returns, what prices get extracted, and whether the symbol mapping is correct. This will pinpoint whether the issue is in the API response, the price extraction, or the symbol mapping.
+### Problem
+New users who sign up are invisible in the admin panel. The root cause is a gap between two systems:
 
-### Changes
+1. The **`handle_new_user` database trigger** creates a `profiles` row and a `user_settings` row when someone signs up -- but does NOT create an `access_grants` row.
+2. The **Admin Panel's User Management** fetches its user list exclusively from the `access_grants` table.
 
-**1. `supabase/functions/analyze-trading-chart/index.ts` -- `fetchPionexData()` function**
+Result: any user without an `access_grants` record (like the newest user KorayG) simply doesn't appear.
 
-Add debug logs after each API call:
+### Solution
 
-- After klines fetch (line ~251): Log the raw klines response JSON
-- After ticker fetch (line ~267): Log the raw ticker response JSON
-- After price extraction (line ~287): Log the extracted `currentPrice` and the raw candle it came from
-- After symbol mapping (line ~207): Log the `cleanTicker` and mapped `symbol`
+**Update the `handle_new_user` database trigger** to also insert a default `access_grants` row for every new user. This ensures all new sign-ups appear in the admin panel immediately.
 
-Specific insertions:
-- After `const klinesData = await klinesRes.json();` add:
-  `console.log('[DEBUG chart-analyzer] Raw klines response:', JSON.stringify(klinesData).slice(0, 500));`
-- After `const tickerData = await tickerRes.json();` add:
-  `console.log('[DEBUG chart-analyzer] Raw ticker response:', JSON.stringify(tickerData).slice(0, 500));`
-- After `const currentPrice = ...` add:
-  `console.log('[DEBUG chart-analyzer] Symbol:', symbol, 'Price extracted:', currentPrice, 'From candle:', JSON.stringify(latestCandle));`
-- After `const symbol = ...` add:
-  `console.log('[DEBUG chart-analyzer] Ticker mapping:', ticker, '->', cleanTicker, '->', symbol);`
+### Technical Details
 
-**2. `supabase/functions/ayn-unified/index.ts` -- Pionex block in trading-coach**
+**1. Alter the `handle_new_user` function (SQL migration)**
 
-Add debug logs:
+Add an `INSERT INTO public.access_grants` statement to the existing trigger function:
 
-- After ticker response (line ~804): Log raw ticker response
-- After price extraction (line ~807): Log extracted price and raw ticker object
-- After klines response (line ~824): Log raw klines response
-- After symbol creation (line ~777): Log symbol mapping
+```sql
+INSERT INTO public.access_grants (user_id, is_active, monthly_limit, requires_approval)
+VALUES (NEW.id, false, 5, false)
+ON CONFLICT (user_id) DO NOTHING;
+```
 
-Specific insertions:
-- After `const tickerData = await tickerRes.json();` add:
-  `console.log('[DEBUG ayn-unified] Raw ticker response for', symbol, ':', JSON.stringify(tickerData).slice(0, 500));`
-- After `const price = parseFloat(...)` add:
-  `console.log('[DEBUG ayn-unified] Price extracted:', price, 'from fields close:', t.close, 'last:', t.last, 'open:', t.open);`
-- After `const klinesData = await klinesRes.json();` add:
-  `console.log('[DEBUG ayn-unified] Raw klines response for', symbol, ':', JSON.stringify(klinesData).slice(0, 500));`
-- After `const symbol = ...` add:
-  `console.log('[DEBUG ayn-unified] Ticker mapping:', ticker, '->', symbol);`
+This gives new users:
+- `is_active = false` (inactive/pending until admin activates)
+- `monthly_limit = 5` (free tier default)
+- No approval required
 
-### After Deployment
+**2. Backfill the missing user (SQL)**
 
-Once deployed, analyze a SOL chart (or ask the coach about SOL). Then check the edge function logs which will show:
+Insert an `access_grants` row for KorayG who already signed up without one:
 
-1. The exact URL/path being signed and called
-2. The complete raw JSON from Pionex (first 500 chars to avoid log overflow)
-3. The exact price value extracted and which field it came from (`close` vs `last`)
-4. Whether the symbol mapping is correct (e.g., `SOL` -> `SOL_USDT`)
+```sql
+INSERT INTO access_grants (user_id, is_active, monthly_limit, requires_approval)
+SELECT p.user_id, false, 5, false
+FROM profiles p
+LEFT JOIN access_grants ag ON p.user_id = ag.user_id
+WHERE ag.user_id IS NULL
+ON CONFLICT (user_id) DO NOTHING;
+```
 
-This will reveal if Pionex is returning unexpected data, if the wrong field is being read, or if the symbol is being mapped incorrectly.
+This catches any existing users who fell through the gap.
 
 ### Files Modified
 
-| File | Change |
-|------|--------|
-| `supabase/functions/analyze-trading-chart/index.ts` | Add 4 debug `console.log` statements in `fetchPionexData()` |
-| `supabase/functions/ayn-unified/index.ts` | Add 4 debug `console.log` statements in the Pionex fetch block |
+| File / Location | Change |
+|---|---|
+| SQL migration (new) | Update `handle_new_user` function to insert `access_grants` row |
+| SQL migration (new) | Backfill missing `access_grants` for existing users |
 
+### Result
+- All future sign-ups will automatically appear in the admin panel as "Pending/Inactive"
+- The one existing user (KorayG) will also appear after the backfill
