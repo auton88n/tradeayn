@@ -1,65 +1,38 @@
 
 
-## Fix Broken Images + Natural Conversational Results
+## Fix: Coach Chat API Sync Bug
 
-### Two Issues to Fix
+### The Problem
 
-**1. Broken chart image in chat**
+The chat API IS working, but there's a sync bug causing confusing behavior:
 
-The uploaded image breaks because `URL.createObjectURL()` creates a temporary blob URL, then `clearAttachment()` revokes it immediately after sending. The image in the chat thread points to a dead URL.
+1. **Stale messages on load**: The `useChartCoach` hook loads old messages from localStorage on mount. But the sync mechanism (`prevCoachLenRef` starts at 0) treats ALL those old messages as "new" and dumps them into the chat thread. This causes old conversations to appear unexpectedly.
 
-**Fix:** Convert the file to a base64 data URL before adding it to the message thread, so the image data is embedded and persists.
+2. **Dual state conflict**: Both `ChartUnifiedChat` and `useChartCoach` maintain separate `messages` arrays. The sync effect tries to bridge them but is fragile -- it can miss messages or create duplicates.
 
-**2. Replace heavy card-based results with natural conversation**
+### The Fix
 
-Currently, analysis results dump the entire `ChartAnalyzerResults` component (signal cards, bot config, patterns, psychology sections, etc.) as a giant structured block. This feels robotic and overwhelming.
+**In `src/components/dashboard/ChartUnifiedChat.tsx`:**
 
-**Fix:** Replace the `ayn-analysis` message type with `ayn-text` containing a clean, concise markdown summary -- the way a real trading advisor would talk. Something like:
+1. **Initialize `prevCoachLenRef` to the coach's current message count** so old localStorage messages are skipped on mount:
 
-```text
-BUY BTC/USDT (4H) -- 74% confidence
-
-Breakout above 68,500 resistance with strong volume confirmation.
-RSI at 62, MACD bullish crossover.
-
-Entry: 68,520 (Limit)
-Stop Loss: 67,200 (-1.9%)
-TP1: 70,100 (+2.3%) -- close 50%
-TP2: 72,400 (+5.7%) -- close 50%
-R:R: 1:2.8 | Position: 2% | Leverage: 3x
-
-Invalidation: Below 67,200
-
-DYOR -- signals require your own verification.
+```typescript
+const prevCoachLenRef = useRef(coach.messages.length);
 ```
 
-Short, scannable, conversational. No cards, no collapsible sections, no headers.
+2. **Start a fresh coach session on mount** so the unified chat always starts clean (no leftover localStorage messages bleeding in):
 
-### Changes in `src/components/dashboard/ChartUnifiedChat.tsx`
+```typescript
+useEffect(() => {
+  coach.newChat();
+}, []);
+```
 
-1. **Image fix**: In `handleSend`, use `FileReader.readAsDataURL()` to convert the file to base64 before adding the user-image message. The blob URL is only used for the input preview thumbnail.
-
-2. **New `formatAnalysisAsText()` function**: Converts `ChartAnalysisResult` into a concise markdown string extracting:
-   - Signal + ticker + timeframe + confidence (one line)
-   - 1-2 sentence reasoning
-   - Entry / SL / TP levels as a compact list
-   - R:R, position size, leverage on one line
-   - Invalidation condition
-   - One-line disclaimer
-
-3. **Remove `AnalysisBubble` component** and the `ayn-analysis` message type. When analysis completes, push an `ayn-text` message with the formatted string instead.
-
-4. **Update `handleHistorySelect`** to also use `formatAnalysisAsText()` when loading a history item into chat.
+This way the unified chat owns the conversation display, and the coach hook is just the API transport layer. Old sessions remain accessible via the coach's session management but don't pollute the current chat view.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/dashboard/ChartUnifiedChat.tsx` | Fix blob-to-base64 for images; add `formatAnalysisAsText()`; remove `AnalysisBubble`; change `ayn-analysis` to `ayn-text` with formatted markdown |
-
-### What Stays the Same
-
-- `ChartAnalyzerResults.tsx` -- still used in history detail view (popover)
-- All hooks, backend, edge functions -- no changes
-- History popover, drag-and-drop, input bar layout -- no changes
+| `src/components/dashboard/ChartUnifiedChat.tsx` | Fix `prevCoachLenRef` initialization; call `coach.newChat()` on mount to start fresh |
 
