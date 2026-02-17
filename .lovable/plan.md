@@ -1,67 +1,56 @@
 
 
-## Three Critical Fixes
+## Separate Chart Analyzer History + Unified AYN View
 
-### Fix 1: Unify Performance Dashboards
+### What's happening now
 
-**Problem:** `PerformanceDashboard.tsx` (embedded in Chart Analyzer) lacks realtime subscriptions, the AI Decision Log, and the `allTrades` query that the standalone `Performance.tsx` page has.
+The Chart Analyzer page has 3 tabs: **Chat**, **History**, **Performance**.
 
-**Solution:** Replace the entire `PerformanceDashboard.tsx` content with the logic from `Performance.tsx`, minus the page-level wrapper (no Helmet, no Back button, no navigate). This means:
+- **History** tab shows chart analysis results from the `chart_analyses` table (uploaded screenshots with technical analysis, patterns, signals).
+- **Performance** tab shows AYN's paper trades from `ayn_paper_trades` (autonomous trades, P&L, equity curve).
 
-- Add Supabase realtime channels for `ayn_paper_trades` (all events) and `ayn_account_state` (UPDATE)
-- Add `isLive` state with pulsing green dot on "Open Positions" header
-- Add `allTrades` query (fetches last 50 trades for the decision log)
-- Import and render `AIDecisionLog` component after Recent Trades
-- Keep 30s polling as fallback alongside realtime
-- Clean up channels on unmount
+The problem: these two are disconnected. Chart analyses live in History, paper trades live in Performance, and there's no way to see the full picture of what AYN has been doing.
 
-**File:** `src/components/trading/PerformanceDashboard.tsx`
+### The Plan
 
----
+**1. Keep Chart Analyzer History as-is (no changes)**
 
-### Fix 2: Strengthen Anti-Fabrication (Broaden Keyword Detection)
+The History tab already works well -- it shows chart analyses with filters, search, comparison, and detail views. This stays untouched.
 
-**Problem:** The `performanceKeywords` array in `ayn-unified/index.ts` (line 755) misses common conversational phrases like "how are you", "how is it going", "doing well", etc. When a user says "tell me about your trading", the keyword check fails, no DB data is fetched, and the AI fabricates numbers.
+**2. Add "Activity Timeline" section to Performance tab**
 
-**Solution:** Two changes:
+Add a new card at the top of the Performance dashboard (before stats) that shows a unified timeline of ALL AYN activity:
 
-**A. Expand keyword list** (line 755-758):
-Add these keywords:
-- `'how are you'`, `'how is'`, `'how you doing'`, `'how\'s it going'`, `'doing'`, `'going'`, `'status'`, `'results'`, `'show me'`, `'tell me about'`, `'your trading'`, `'how much'`, `'winning'`, `'losing'`
+- **Chart analyses** (from `chart_analyses` -- "Analyzed BTC/USDT 4H chart -- BULLISH 78%")
+- **Trades opened** (from `ayn_paper_trades` -- "Opened BUY SOL_USDT @ $186.50")
+- **Trades closed** (from `ayn_paper_trades` -- "Closed SOL_USDT +2.3% ($23.00)")
 
-**B. Always inject performance data for trading-coach intent** (line 760):
-Change the condition from requiring keyword match to always fetching when `intent === 'trading-coach'`. The overhead is minimal (3 parallel queries, cached by Supabase connection pooling), and it eliminates all false negatives.
+Each entry shows a timestamp, icon, and one-line summary. This gives a chronological view of everything AYN has done -- analyses and trades together.
 
-```
-const isPerformanceQuery = intent === 'trading-coach';
-```
+**3. Link chart analyses to trades**
 
-This ensures "Tell me about your trading", "how are you doing?", or any trading-coach query gets real DB data injected.
+When clicking a chart analysis entry in the timeline, navigate to the History tab and select that item. When clicking a trade entry, scroll to it in the trades list below.
 
-**File:** `supabase/functions/ayn-unified/index.ts` (lines 755-761)
+### Technical Details
 
----
-
-### Fix 3: End-to-End Verification
-
-This is a manual test flow, not a code change. After deploying Fixes 1 and 2:
-
-1. Go to Chat tab, send "do paper testing"
-2. Verify scanner runs with real Pionex data and AI picks a token
-3. Switch to Performance tab -- trade should appear within 1-2 seconds (realtime)
-4. Send "how are you doing?" in chat
-5. Verify AI reports real balance and open positions from database
-6. Wait 5 minutes for `ayn-monitor-trades` cron to check prices
-7. Verify any TP/SL hits update the Performance tab instantly
-
----
-
-### Technical Summary
+**Files to modify:**
 
 | File | Change |
 |------|--------|
-| `src/components/trading/PerformanceDashboard.tsx` | Add realtime subscriptions, `isLive` indicator, `allTrades` fetch, `AIDecisionLog` component |
-| `supabase/functions/ayn-unified/index.ts` | Line 760: change `isPerformanceQuery` to always true for `trading-coach` intent |
+| `src/components/trading/PerformanceDashboard.tsx` | Add `chart_analyses` query (last 20), merge with trades into a sorted timeline, render new `ActivityTimeline` card at the top |
+| `src/components/trading/ActivityTimeline.tsx` (new) | Renders the unified chronological list of analyses + trades with icons and one-line summaries |
+| `src/pages/ChartAnalyzerPage.tsx` | Accept a callback from Performance tab to switch to History tab and select a specific analysis |
 
-Total: 2 files modified, no new tables, no new edge functions.
+**Data flow:**
+- Query `chart_analyses` (last 20, ordered by `created_at` desc)
+- Query `ayn_paper_trades` (last 50, already fetched as `allTrades`)
+- Merge both arrays by timestamp into a single sorted timeline
+- Render each with appropriate icon: camera icon for analyses, arrow-up for buys, arrow-down for sells, check for closed trades
 
+**No database changes needed.** Both tables already exist with all required columns.
+
+### Result
+
+- Chart Analyzer keeps its own dedicated History tab for deep-diving into chart analyses
+- Performance tab gets a unified "Activity Timeline" showing everything AYN has done chronologically
+- You can see the full story: "AYN analyzed BTC chart -> found bullish setup -> opened trade -> hit TP1"
