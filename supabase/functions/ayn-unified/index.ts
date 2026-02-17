@@ -857,6 +857,27 @@ NOTE: Account just launched. No trades executed yet.`;
       console.log('[ayn-unified] No account data found, injected default state');
     }
 
+    // Inject market scan results for autonomous trading
+    let scanContext = '';
+    if (scanResults && scanResults.opportunities.length > 0) {
+      scanContext = `\n\nMARKET SCAN RESULTS (LIVE FROM PIONEX API — USE THIS DATA):
+Scanned: ${scanResults.scannedPairs} pairs
+Top Opportunities: ${scanResults.opportunities.length}
+
+${scanResults.opportunities.map((opp: any, i: number) => `${i + 1}. ${opp.ticker}
+   Score: ${opp.score}/100
+   Price: $${opp.price}
+   24h Change: ${opp.priceChange24h > 0 ? '+' : ''}${opp.priceChange24h.toFixed(2)}%
+   Volume: $${(opp.volume24h / 1e6).toFixed(1)}M
+   Signals: ${opp.signals.join(', ')}`).join('\n\n')}
+
+You are AUTHORIZED to pick the best one and open a trade. Include EXECUTE_TRADE JSON at the end of your response.`;
+      console.log(`[ayn-unified] Injected scan results: ${scanResults.opportunities.length} opportunities from ${scanResults.scannedPairs} pairs`);
+    } else if (wantsAutonomousTrading) {
+      scanContext = `\n\nMARKET SCAN RESULTS: Scan complete but no opportunities scored above 65. Tell the user: "Scanned the market — no high-conviction setups right now. I'll wait for better conditions."`;
+      console.log('[ayn-unified] Market scan found no qualifying opportunities');
+    }
+
     // Build system prompt with user message for language detection AND user memories
     let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + performanceContext + scanContext + INJECTION_GUARD;
 
@@ -1359,27 +1380,6 @@ NOTE: Account just launched. No trades executed yet.`;
       // Temporarily disabled - treat as regular chat
       intent = 'chat';
       systemPrompt = buildSystemPrompt('chat', language, context, userMessage, userContext);
-    }
-
-    // Inject market scan results for autonomous trading
-    let scanContext = '';
-    if (scanResults && scanResults.opportunities.length > 0) {
-      scanContext = `\n\nMARKET SCAN RESULTS (LIVE FROM PIONEX API — USE THIS DATA):
-Scanned: ${scanResults.scannedPairs} pairs
-Top Opportunities: ${scanResults.opportunities.length}
-
-${scanResults.opportunities.map((opp: any, i: number) => `${i + 1}. ${opp.ticker}
-   Score: ${opp.score}/100
-   Price: $${opp.price}
-   24h Change: ${opp.priceChange24h > 0 ? '+' : ''}${opp.priceChange24h.toFixed(2)}%
-   Volume: $${(opp.volume24h / 1e6).toFixed(1)}M
-   Signals: ${opp.signals.join(', ')}`).join('\n\n')}
-
-You are AUTHORIZED to pick the best one and open a trade. Include EXECUTE_TRADE JSON at the end of your response.`;
-      console.log(`[ayn-unified] Injected scan results: ${scanResults.opportunities.length} opportunities from ${scanResults.scannedPairs} pairs`);
-    } else if (wantsAutonomousTrading) {
-      scanContext = `\n\nMARKET SCAN RESULTS: Scan complete but no opportunities scored above 65. Tell the user: "Scanned the market — no high-conviction setups right now. I'll wait for better conditions."`;
-      console.log('[ayn-unified] Market scan found no qualifying opportunities');
     }
 
 
