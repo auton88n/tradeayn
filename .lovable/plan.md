@@ -1,62 +1,42 @@
 
+## Fix: Stop AYN from Fabricating Paper Trading Data
 
-## Fix: Paper Trades Not Recording to Performance Dashboard
+AYN currently invents trades and balances from its training data instead of querying the actual database. This fix ensures all performance responses use real data.
 
-### The Problem
+### Changes
 
-When AYN generates a trading signal in the chat (like the SOL/USD BUY you showed), the chat text says "I'm in. The trade is live in my paper account" -- but the trade is never actually recorded in the database. That's why the Performance tab shows $10,000, 0 trades, and no open positions.
+**1. `supabase/functions/ayn-unified/index.ts`** -- Add database query and context injection
 
-The connection between the analysis and the paper trading system exists in code but is failing silently.
+- Add a `getAccountPerformance()` function that queries:
+  - `ayn_account_state` for balance, P&L, win rate
+  - `ayn_paper_trades` with status IN ('OPEN', 'PARTIAL_CLOSE') for open positions
+  - `ayn_paper_trades` with closed statuses for recent trade history (limit 5)
+- Before building the system prompt (~line 700), detect if the user's message relates to performance using keyword matching (balance, trades, win rate, P&L, performance, how are you doing, portfolio, etc.)
+- If matched, call `getAccountPerformance()` and prepend a system message with the real data, explicitly labeled as "FROM DATABASE -- USE THIS, DO NOT FABRICATE"
 
-### Root Cause
+**2. `supabase/functions/ayn-unified/systemPrompts.ts`** -- Add anti-fabrication rules to trading-coach prompt
 
-The `analyze-trading-chart` edge function tries to call `ayn-open-trade` as a "fire-and-forget" HTTP request after generating the analysis. This call is:
-- Not awaited (so failures are invisible)
-- Dependent on correctly parsing entry/stop prices from the AI's free-text response
-- Possibly failing due to the function not being deployed or URL issues
+Add to the trading-coach section (after the existing conversation rules):
 
-There are zero logs from `ayn-open-trade`, meaning it has never been reached.
-
-### Fix Plan
-
-**1. Deploy the `ayn-open-trade` edge function**
-
-Ensure the function is actually deployed and reachable.
-
-**2. Make the paper trade call more reliable in `analyze-trading-chart`**
-
-In `supabase/functions/analyze-trading-chart/index.ts` (around line 1035):
-- Change from fire-and-forget to properly awaited with error logging
-- Add more robust price parsing with fallback extraction
-- Log the exact payload being sent so failures are traceable
-
-**3. Add a manual "Record Trade" fallback (optional but recommended)**
-
-Since the AI sometimes generates trade signals with prices embedded in markdown text rather than structured fields, add a fallback: after the analysis response is returned to the client, the frontend can parse the structured `tradingSignal` from the response and call `ayn-open-trade` directly if the server-side fire-and-forget failed.
-
-In `src/components/dashboard/ChartUnifiedChat.tsx`:
-- After receiving an analysis response that contains a BUY/SELL signal with confidence >= 60, call the `ayn-open-trade` edge function from the client as a backup
-- Show a small toast confirming the trade was recorded
+```
+PAPER TRADING ACCOUNT RULES (MANDATORY -- NEVER VIOLATE):
+- You have a REAL paper trading account tracked in the database
+- When asked about performance, you will receive REAL data injected into context
+- NEVER fabricate trades, balances, or P&L numbers
+- NEVER invent historical trades that don't exist in context
+- If context shows 0 trades: "Account is live. Balance: $10,000. No trades executed yet. Waiting for high-conviction setups."
+- If context shows trades: report ONLY the exact numbers from context
+- Transparency builds trust. Only report database facts.
+```
 
 ### Technical Details
 
-**Edge function change** (`analyze-trading-chart/index.ts`, ~line 1035):
-```
-// Before: fire-and-forget (failures invisible)
-fetch(tradeUrl, { ... }).then(...).catch(...)
+The performance query runs in parallel with the existing `Promise.all` block (limit check, user context, chart history) to avoid adding latency. The injected context goes before the system prompt so the AI treats it as ground truth.
 
-// After: await with proper logging
-try {
-  const tradeRes = await fetch(tradeUrl, { ... });
-  const tradeResult = await tradeRes.text();
-  console.log('[chart-analyzer] Paper trade result:', tradeResult);
-} catch (e) {
-  console.error('[chart-analyzer] Paper trade call FAILED:', e);
-}
-```
+Keywords that trigger the query: `performance`, `win rate`, `balance`, `trades`, `p&l`, `profit`, `loss`, `portfolio`, `how are you doing`, `how's your account`, `paper trading`, `track record`, `open positions`.
 
-**Frontend backup** (`ChartUnifiedChat.tsx`):
-- Extract `tradingSignal` from the analysis response JSON
-- If signal is actionable (BUY/SELL, confidence >= 60), call `ayn-open-trade` via `supabase.functions.invoke()`
-- Toast on success: "Trade recorded in paper account"
+### Result
 
+- "How are you doing?" returns real balance from `ayn_account_state`
+- "Show me your trades" lists actual trades from `ayn_paper_trades` or says "No trades yet"
+- AYN can never again fabricate a SOL/USD trade that doesn't exist
