@@ -317,6 +317,108 @@ async function fetchPionexData(ticker: string, timeframe: string, assetType: str
   }
 }
 
+// ─── Market Intelligence from Pionex Data ───
+function extractMarketIntelligence(pionexData: any): { text: string; context: any } {
+  if (!pionexData) return { text: '', context: null };
+
+  const intelligence: string[] = [];
+  const open24h = pionexData.high24h && pionexData.low24h ? null : null; // We use change24h directly
+  const priceChange24h = pionexData.change24h ? parseFloat(pionexData.change24h) : null;
+  const volume24h = pionexData.quoteVolume24h || pionexData.volume24h || null;
+
+  // 1. Price momentum
+  if (priceChange24h !== null) {
+    intelligence.push(`24h Price Change: ${priceChange24h > 0 ? '+' : ''}${priceChange24h.toFixed(2)}%`);
+    if (Math.abs(priceChange24h) > 10) {
+      intelligence.push(`⚠️ HIGH VOLATILITY: ${Math.abs(priceChange24h).toFixed(0)}% move in 24h`);
+    }
+  }
+
+  // 2. Volume
+  if (volume24h) {
+    intelligence.push(`24h Volume: $${(volume24h / 1e6).toFixed(1)}M`);
+    if (volume24h < 100000) {
+      intelligence.push(`⚠️ VERY LOW VOLUME (<$100K) - Liquidity risk`);
+    }
+  }
+
+  // 3. Session timing
+  const now = new Date();
+  const hourUTC = now.getUTCHours();
+  let session = '';
+  if (hourUTC >= 0 && hourUTC < 8) session = 'Asian Session (Low volume)';
+  else if (hourUTC >= 8 && hourUTC < 13) session = 'London Session (Volume picking up)';
+  else if (hourUTC >= 13 && hourUTC < 21) session = 'New York Session (Highest volume)';
+  else session = 'After Hours (Lower liquidity)';
+  intelligence.push(`Current Session: ${session}`);
+
+  // 4. Weekend warning
+  const dayOfWeek = now.getUTCDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  if (isWeekend) {
+    intelligence.push(`⚠️ WEEKEND TRADING: Lower liquidity, avoid large positions`);
+  }
+
+  const volatility: 'high' | 'normal' = (priceChange24h !== null && Math.abs(priceChange24h) > 10) ? 'high' : 'normal';
+
+  const text = intelligence.length > 0 ? `
+=== MARKET INTELLIGENCE ===
+${intelligence.join('\n')}
+Use these conditions when evaluating the trade setup.
+=== END MARKET INTELLIGENCE ===
+` : '';
+
+  return {
+    text,
+    context: {
+      priceChange24h: priceChange24h,
+      volume24h: volume24h,
+      session,
+      isWeekend,
+      volatility,
+    }
+  };
+}
+
+// ─── Scam Signal Detection ───
+function checkScamSignals(ticker: string, pionexData: any): {
+  isHighRisk: boolean;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  flags: string[];
+} {
+  const flags: string[] = [];
+  let severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'LOW';
+
+  const volume24h = pionexData?.quoteVolume24h || pionexData?.volume24h || 0;
+  const priceChange24h = pionexData?.change24h ? parseFloat(pionexData.change24h) : 0;
+
+  if (volume24h > 0 && volume24h < 100000) {
+    flags.push('Very low volume (<$100K/day) - Liquidity risk');
+    severity = 'HIGH';
+  }
+
+  if (Math.abs(priceChange24h) > 50) {
+    flags.push('Extreme price movement (>50% in 24h) - Possible manipulation');
+    severity = severity === 'HIGH' ? 'CRITICAL' : 'HIGH';
+  }
+
+  const suspiciousPatterns = [/MOON/i, /SAFE/i, /ELON/i, /\d{2,}$/];
+  const cleanTicker = ticker.replace(/\/USDT|\/USD|_USDT/i, '');
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(cleanTicker)) {
+      flags.push('Suspicious ticker pattern - Common in scam tokens');
+      severity = severity === 'LOW' ? 'MEDIUM' : severity;
+      break;
+    }
+  }
+
+  return {
+    isHighRisk: severity === 'CRITICAL' || severity === 'HIGH',
+    severity,
+    flags,
+  };
+}
+
 // ─── Step 2: News Fetch via Firecrawl (with caching + filtering) ───
 async function fetchTickerNews(ticker: string, assetType: string) {
   console.log(`[chart-analyzer] Step 2: Fetching news for ${ticker} (${assetType})`);
@@ -422,7 +524,8 @@ async function generatePrediction(
   technical: Record<string, unknown>,
   news: { headlines: string[]; raw: Array<{ title: string; url: string; description: string }> },
   apiKey: string,
-  pionexData?: any
+  pionexData?: any,
+  marketIntelligence?: string
 ) {
   console.log('[chart-analyzer] Step 3: Generating prediction with psychology & context-adjusted scoring');
 
@@ -508,7 +611,9 @@ Assess: What stage of the market cycle? What emotions are driving price? What mi
 ## Psychology: Skip psychologyWarnings (normal price action, no extremes detected). Set psychologyWarnings to null.
 `;
 
-  const prompt = `## TRADING KNOWLEDGE BASE
+  const prompt = `${marketIntelligence || ''}
+
+## TRADING KNOWLEDGE BASE
 ${tradingContext}
 
 ---
@@ -798,8 +903,16 @@ Deno.serve(async (req) => {
     // Step 2.5: Pionex market data (crypto only, graceful fallback)
     const pionexData = await fetchPionexData(technical.ticker, technical.timeframe, technical.assetType);
 
+    // Step 2.6: Extract market intelligence + scam detection from Pionex data
+    const marketIntel = extractMarketIntelligence(pionexData);
+    const scamCheck = checkScamSignals(technical.ticker, pionexData);
+    let marketIntelText = marketIntel.text;
+    if (scamCheck.isHighRisk) {
+      marketIntelText += `\n⚠️ RISK FLAGS DETECTED:\n${scamCheck.flags.map(f => `- ${f}`).join('\n')}\nSeverity: ${scamCheck.severity}\n${scamCheck.severity === 'CRITICAL' ? 'RECOMMENDATION: DO NOT TRADE' : 'RECOMMENDATION: EXTREME CAUTION - Reduce position 75%'}\n`;
+    }
+
     // Step 3: Sentiment + Prediction (enhanced with psychology & context + market data)
-    const prediction = await generatePrediction(technical, news, LOVABLE_API_KEY, pionexData);
+    const prediction = await generatePrediction(technical, news, LOVABLE_API_KEY, pionexData, marketIntelText);
 
     // Step 4: Store in DB
     const analysisId = await storeAnalysis(
@@ -898,6 +1011,8 @@ Deno.serve(async (req) => {
       imageUrl,
       analysisId: analysisId || null,
       disclaimer: '⚠️ TESTING MODE - Experimental AI advisor. Signals may be inaccurate. Use paper trading only. Not financial advice.',
+      ...(marketIntel.context ? { marketContext: marketIntel.context } : {}),
+      ...(scamCheck.flags.length > 0 ? { scamWarning: scamCheck } : {}),
     };
 
     console.log('[chart-analyzer] ✅ Analysis complete for', technical.ticker, '| Signal:', prediction.signal, '| Confidence:', result.prediction.confidence);

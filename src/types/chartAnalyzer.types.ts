@@ -136,6 +136,20 @@ export interface ChartPrediction {
   tradingSignal?: TradingSignal;
 }
 
+export interface MarketContext {
+  priceChange24h: number | null;
+  volume24h: number | null;
+  session: string;
+  isWeekend: boolean;
+  volatility: 'high' | 'normal';
+}
+
+export interface ScamWarning {
+  isHighRisk: boolean;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  flags: string[];
+}
+
 export interface ChartAnalysisResult {
   ticker: string;
   assetType: AssetType;
@@ -146,6 +160,8 @@ export interface ChartAnalysisResult {
   imageUrl: string;
   analysisId: string | null;
   disclaimer: string;
+  marketContext?: MarketContext;
+  scamWarning?: ScamWarning;
 }
 
 export type ChartAnalyzerStep = 'idle' | 'uploading' | 'analyzing' | 'fetching-news' | 'predicting' | 'done' | 'error';

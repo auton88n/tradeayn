@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, Minus, Clock, BarChart3, Newspaper, Target, Shield, Award, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Volume2, Brain, Crosshair, Bell, Bot, Copy, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Clock, BarChart3, Newspaper, Target, Shield, Award, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Volume2, Brain, Crosshair, Bell, Bot, Copy, ChevronRight, Activity } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import type { ChartAnalysisResult, ChartPattern, PatternBreakdown, PsychologyWarnings, DisciplineReminders, ConfidenceBreakdown, TradingSignal } from '@/types/chartAnalyzer.types';
 
 interface Props {
@@ -375,6 +376,60 @@ export default function ChartAnalyzerResults({ result }: Props) {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-500">
+      {/* ─── Market Context (from Pionex data) ─── */}
+      {result.marketContext && (
+        <Card className="border-border/50 bg-blue-500/5">
+          <CardContent className="pt-4 pb-4">
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Market Context
+            </h3>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <div className="text-muted-foreground text-xs">24h Change</div>
+                <div className={`font-bold ${
+                  (result.marketContext.priceChange24h ?? 0) > 0 ? 'text-green-500' : 'text-red-500'
+                }`}>
+                  {(result.marketContext.priceChange24h ?? 0) > 0 ? '+' : ''}{(result.marketContext.priceChange24h ?? 0).toFixed(2)}%
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-xs">24h Volume</div>
+                <div className="font-bold">
+                  ${result.marketContext.volume24h ? (result.marketContext.volume24h / 1e6).toFixed(1) + 'M' : 'N/A'}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-xs">Session</div>
+                <div className="font-bold text-xs">{result.marketContext.session}</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-xs">Volatility</div>
+                <div className={`font-bold ${result.marketContext.volatility === 'high' ? 'text-red-500' : 'text-green-500'}`}>
+                  {result.marketContext.volatility === 'high' ? 'High' : 'Normal'}
+                </div>
+              </div>
+            </div>
+            {result.marketContext.isWeekend && (
+              <p className="text-xs text-amber-500 mt-2">⚠️ Weekend trading — lower liquidity</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ─── Scam Warning ─── */}
+      {result.scamWarning?.isHighRisk && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Risk Warning ({result.scamWarning.severity})</AlertTitle>
+          <AlertDescription>
+            {result.scamWarning.flags.map((flag, i) => (
+              <div key={i} className="text-xs">{flag}</div>
+            ))}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* ─── Quick View: Always Visible ─── */}
       <Card className="border-border/50">
         <CardContent className="pt-6">
