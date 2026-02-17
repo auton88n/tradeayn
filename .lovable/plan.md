@@ -1,38 +1,76 @@
 
 
-## Fix: Coach Chat API Sync Bug
+## Upgrade to Gemini 3 + Live Pionex in Coach + Smart Stale Chart Handling
 
-### The Problem
+### 1. Upgrade Chart Analyzer to Gemini 3
 
-The chat API IS working, but there's a sync bug causing confusing behavior:
+Both AI calls in `analyze-trading-chart` still use `google/gemini-2.5-flash`. Upgrade to `google/gemini-3-flash-preview`.
 
-1. **Stale messages on load**: The `useChartCoach` hook loads old messages from localStorage on mount. But the sync mechanism (`prevCoachLenRef` starts at 0) treats ALL those old messages as "new" and dumps them into the chat thread. This causes old conversations to appear unexpectedly.
+- **Line 144** (vision call): `google/gemini-2.5-flash` -> `google/gemini-3-flash-preview`
+- **Line 674** (prediction call): `google/gemini-2.5-flash` -> `google/gemini-3-flash-preview`
 
-2. **Dual state conflict**: Both `ChartUnifiedChat` and `useChartCoach` maintain separate `messages` arrays. The sync effect tries to bridge them but is fragile -- it can miss messages or create duplicates.
+### 2. Smart Stale Chart Detection (AI Asks the User)
 
-### The Fix
+When Pionex live price differs >5% from the chart-detected price, instead of silently overriding, the AI will acknowledge the discrepancy and **use the live price by default** -- but phrase it so the user knows what happened and can say "just analyze the image as-is" if they want.
 
-**In `src/components/dashboard/ChartUnifiedChat.tsx`:**
+In the prediction prompt (around line 525), add an explicit block:
 
-1. **Initialize `prevCoachLenRef` to the coach's current message count** so old localStorage messages are skipped on mount:
+```text
+If chart's currentPrice and Pionex currentPrice differ by more than 5%:
 
-```typescript
-const prevCoachLenRef = useRef(coach.messages.length);
+WARNING TO AI: The uploaded chart appears OUTDATED.
+- Chart shows: ~{chartPrice}
+- Live price: {pionexPrice} ({diffPercent}% difference)
+
+DEFAULT BEHAVIOR: Use the LIVE Pionex price for all entry/SL/TP calculations.
+Tell the user: "Your chart appears outdated (shows ~X, live price is Y).
+I've based my analysis on the current live price. If you want me to
+analyze purely based on the chart image, just let me know."
 ```
 
-2. **Start a fresh coach session on mount** so the unified chat always starts clean (no leftover localStorage messages bleeding in):
+This way:
+- By default, the AI uses the correct live price
+- The user sees a clear note about the discrepancy
+- If the user says "just analyze the image" in a follow-up, the coach will respect that
 
-```typescript
-useEffect(() => {
-  coach.newChat();
-}, []);
-```
+### 3. Add Live Pionex Data to Coach Chat (`ayn-unified`)
 
-This way the unified chat owns the conversation display, and the coach hook is just the API transport layer. Old sessions remain accessible via the coach's session management but don't pollute the current chat view.
+Currently, follow-up questions in the coach chat have NO live market data. Add a `fetchPionexData()` function to `ayn-unified` (same HMAC signing logic) and call it in the `trading-coach` intent block (line 703) in parallel with Firecrawl tasks.
+
+The live data gets injected into the system prompt so the AI can answer "What's the price now?" or "Is the setup still valid?" with real numbers.
+
+### 4. Pass Ticker Context from Frontend
+
+Update `useChartCoach.ts` to send `ticker`, `assetType`, and `timeframe` explicitly in the request body context, so the backend knows what to fetch without parsing the fileContext string.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/dashboard/ChartUnifiedChat.tsx` | Fix `prevCoachLenRef` initialization; call `coach.newChat()` on mount to start fresh |
+| `supabase/functions/analyze-trading-chart/index.ts` | Upgrade model to `google/gemini-3-flash-preview` (lines 144, 674). Add explicit stale chart warning block in prediction prompt when Pionex price differs >5% from chart price. |
+| `supabase/functions/ayn-unified/index.ts` | Add `fetchPionexData()` function with HMAC-SHA256 signing. In the `trading-coach` block (line 703), fetch live Pionex data in parallel with Firecrawl tasks and inject into system prompt. |
+| `src/hooks/useChartCoach.ts` | Pass `ticker`, `assetType`, `timeframe` from the analysis result in the context body. |
+
+### How It Works After the Fix
+
+```text
+User uploads chart (old or new)
+  -> analyze-trading-chart (Gemini 3 Flash)
+     -> Vision detects ticker + price levels
+     -> Pionex fetches LIVE price
+     -> If chart price differs >5%:
+        AI tells user: "Your chart shows ~65,000 but live price is 68,520.
+        I've used the live price. Say 'analyze the image only' if you prefer."
+     -> All entry/SL/TP based on live price by default
+
+User asks follow-up question
+  -> ayn-unified (trading-coach intent)
+     -> Fetches fresh Pionex data for the ticker
+     -> AI sees current price, 24h change, volume, recent candles
+     -> Gives accurate, real-time answers
+
+User says "just analyze the chart image"
+  -> Coach understands from conversation context
+  -> Uses only chart-visible levels, ignores live data
+```
 
