@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { TrendingUp, TrendingDown, Activity, Target, BarChart3, Clock, Award, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, Target, BarChart3, Clock, Award, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
@@ -148,6 +150,7 @@ function TradeRow({ trade }: { trade: PaperTrade }) {
 
 // ─── Main Page ───
 export default function Performance() {
+  const navigate = useNavigate();
   const [account, setAccount] = useState<AccountState | null>(null);
   const [openTrades, setOpenTrades] = useState<PaperTrade[]>([]);
   const [closedTrades, setClosedTrades] = useState<PaperTrade[]>([]);
@@ -199,6 +202,16 @@ export default function Performance() {
       </Helmet>
 
       <div className="max-w-6xl mx-auto py-6 px-4 space-y-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/')}
+          className="gap-2 bg-muted/50 backdrop-blur-sm rounded-full px-4 hover:bg-muted"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
