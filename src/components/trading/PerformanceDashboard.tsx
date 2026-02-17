@@ -217,23 +217,9 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
     };
   }, [loadData]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <Activity className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
-          <p className="text-muted-foreground text-sm">Loading performance...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const pnlPositive = account ? account.total_pnl_dollars > 0 : false;
-
   const timelineEntries = useMemo<TimelineEntry[]>(() => {
     const entries: TimelineEntry[] = [];
 
-    // Add chart analyses
     chartAnalyses.forEach((a) => {
       entries.push({
         id: a.id,
@@ -245,7 +231,6 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
       });
     });
 
-    // Add trades
     allTrades.forEach((t) => {
       const isClosed = ['CLOSED_WIN', 'CLOSED_LOSS', 'STOPPED_OUT'].includes(t.status);
       if (isClosed && t.exit_time) {
@@ -271,6 +256,19 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
 
     return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 30);
   }, [chartAnalyses, allTrades]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <Activity className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+          <p className="text-muted-foreground text-sm">Loading performance...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const pnlPositive = account ? account.total_pnl_dollars > 0 : false;
 
   return (
     <div className="space-y-6 pb-6">
