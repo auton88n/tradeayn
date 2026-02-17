@@ -12,7 +12,6 @@ import { useChartAnalyzer } from '@/hooks/useChartAnalyzer';
 import { useChartCoach } from '@/hooks/useChartCoach';
 import { useChartHistory } from '@/hooks/useChartHistory';
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
-import ChartAnalyzerResults from './ChartAnalyzerResults';
 import ChartHistoryList from './ChartHistoryList';
 import ChartHistoryDetail from './ChartHistoryDetail';
 import ChartHistoryStats from './ChartHistoryStats';
@@ -24,9 +23,37 @@ type ChatMessage =
   | { type: 'user-text'; content: string }
   | { type: 'user-image'; imageUrl: string; content?: string }
   | { type: 'ayn-loading'; step: string }
-  | { type: 'ayn-analysis'; result: ChartAnalysisResult }
   | { type: 'ayn-text'; content: string }
   | { type: 'ayn-error'; content: string };
+
+// ─── Format analysis result as natural conversation ───
+function formatAnalysisAsText(r: ChartAnalysisResult): string {
+  const p = r.prediction;
+  const sig = p.tradingSignal;
+  const lines: string[] = [];
+
+  lines.push(`**${p.signal}** ${r.ticker} (${r.timeframe}) — ${p.confidence}% confidence`);
+  lines.push('');
+  lines.push(p.reasoning);
+
+  if (sig) {
+    lines.push('');
+    lines.push(`Entry: ${sig.entry.price} (${sig.entry.orderType})`);
+    lines.push(`Stop Loss: ${sig.stopLoss.price} (${sig.stopLoss.percentage}%)`);
+    sig.takeProfits.forEach(tp => {
+      lines.push(`TP${tp.level}: ${tp.price} (+${tp.percentage}%) — close ${tp.closePercent}%`);
+    });
+    lines.push(`R:R ${sig.riskReward} | Position ${sig.botConfig.positionSize}% | Leverage ${sig.botConfig.leverage}x`);
+    if (sig.invalidation?.condition) {
+      lines.push('');
+      lines.push(`Invalidation: ${sig.invalidation.condition}`);
+    }
+  }
+
+  lines.push('');
+  lines.push('*DYOR — signals require your own verification.*');
+  return lines.join('\n');
+}
 
 const ANALYSIS_STEPS = [
   { key: 'uploading', label: 'Uploading chart...',    icon: Upload },
@@ -96,14 +123,6 @@ const AynTextBubble = memo(({ content }: { content: string }) => (
 ));
 AynTextBubble.displayName = 'AynTextBubble';
 
-const AnalysisBubble = memo(({ result }: { result: ChartAnalysisResult }) => (
-  <div className="flex justify-start">
-    <div className="w-full max-w-[95%]">
-      <ChartAnalyzerResults result={result} />
-    </div>
-  </div>
-));
-AnalysisBubble.displayName = 'AnalysisBubble';
 
 // ─── Main Component ───
 export default function ChartUnifiedChat() {
@@ -150,9 +169,10 @@ export default function ChartUnifiedChat() {
   useEffect(() => {
     if (analyzer.result && analyzer.step === 'done') {
       setLatestResult(analyzer.result);
+      const text = formatAnalysisAsText(analyzer.result);
       setMessages(prev => {
         const withoutLoading = prev.filter(m => m.type !== 'ayn-loading');
-        return [...withoutLoading, { type: 'ayn-analysis', result: analyzer.result! }];
+        return [...withoutLoading, { type: 'ayn-text', content: text }];
       });
       history.refresh();
     }
@@ -229,10 +249,17 @@ export default function ChartUnifiedChat() {
     if (isBusy) return;
 
     if (attachedFile) {
-      // Image upload flow
-      setMessages(prev => [...prev, { type: 'user-image', imageUrl: attachedPreview!, content: text || undefined }]);
-      analyzer.reset();
-      analyzer.analyzeChart(attachedFile);
+      // Convert to base64 for persistent image URL
+      const reader = new FileReader();
+      const file = attachedFile;
+      const msgText = text || undefined;
+      reader.onload = () => {
+        const base64Url = reader.result as string;
+        setMessages(prev => [...prev, { type: 'user-image', imageUrl: base64Url, content: msgText }]);
+        analyzer.reset();
+        analyzer.analyzeChart(file);
+      };
+      reader.readAsDataURL(file);
       clearAttachment();
       setInput('');
     } else {
@@ -267,7 +294,8 @@ export default function ChartUnifiedChat() {
   // ─── Load history item ───
   const handleHistorySelect = useCallback((item: ChartHistoryItem) => {
     setLatestResult(item);
-    setMessages([{ type: 'ayn-analysis', result: item }]);
+    const text = formatAnalysisAsText(item);
+    setMessages([{ type: 'ayn-text', content: text }]);
     setHistoryOpen(false);
     history.setSelectedItem(null);
   }, [history]);
@@ -382,8 +410,6 @@ export default function ChartUnifiedChat() {
                   return <UserImageBubble key={i} imageUrl={msg.imageUrl} content={msg.content} />;
                 case 'ayn-loading':
                   return <LoadingBubble key={`loading-${i}`} currentStep={msg.step} />;
-                case 'ayn-analysis':
-                  return <AnalysisBubble key={i} result={msg.result} />;
                 case 'ayn-text':
                   return <AynTextBubble key={i} content={msg.content} />;
                 case 'ayn-error':
