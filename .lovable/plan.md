@@ -1,73 +1,67 @@
 
 
-## Live Trade Tracking + AI Decision Memory
+## Three Critical Fixes
 
-Two enhancements to the Performance tab: (1) real-time updates when trades open/close from chat, and (2) a new "AI Decision Log" section showing why AYN picked each trade.
+### Fix 1: Unify Performance Dashboards
 
-### Part 1: Real-Time Updates via Supabase Realtime
+**Problem:** `PerformanceDashboard.tsx` (embedded in Chart Analyzer) lacks realtime subscriptions, the AI Decision Log, and the `allTrades` query that the standalone `Performance.tsx` page has.
 
-Currently the Performance dashboard polls every 30 seconds. When AYN opens a trade from chat, it won't show up for up to 30 seconds. We'll add Supabase Realtime subscriptions so trades appear instantly.
+**Solution:** Replace the entire `PerformanceDashboard.tsx` content with the logic from `Performance.tsx`, minus the page-level wrapper (no Helmet, no Back button, no navigate). This means:
 
-**Database change (SQL):**
-- Add `ayn_paper_trades` and `ayn_account_state` to the Supabase realtime publication so the frontend can subscribe to INSERT/UPDATE events.
+- Add Supabase realtime channels for `ayn_paper_trades` (all events) and `ayn_account_state` (UPDATE)
+- Add `isLive` state with pulsing green dot on "Open Positions" header
+- Add `allTrades` query (fetches last 50 trades for the decision log)
+- Import and render `AIDecisionLog` component after Recent Trades
+- Keep 30s polling as fallback alongside realtime
+- Clean up channels on unmount
 
-**`src/components/trading/PerformanceDashboard.tsx`:**
-- Add a Supabase realtime subscription on `ayn_paper_trades` (INSERT and UPDATE events). On any change, call `loadData()` to refresh all data immediately.
-- Add a second subscription on `ayn_account_state` for UPDATE events (balance changes when trades close).
-- Keep the 30-second polling as a fallback, but realtime will handle instant updates.
-- Add a small pulsing green dot indicator next to "Open Positions" header to show the dashboard is live-connected.
+**File:** `src/components/trading/PerformanceDashboard.tsx`
 
-### Part 2: AI Decision Log (Reasoning Memory)
+---
 
-The `ayn_paper_trades` table already has `reasoning` (text), `market_context` (jsonb), `setup_type`, and `confidence_score` columns. The `ayn-open-trade` function already stores these when provided. The `EXECUTE_TRADE` JSON from ayn-unified already passes `reasoning` and `setupType`.
+### Fix 2: Strengthen Anti-Fabrication (Broaden Keyword Detection)
 
-We need to:
+**Problem:** The `performanceKeywords` array in `ayn-unified/index.ts` (line 755) misses common conversational phrases like "how are you", "how is it going", "doing well", etc. When a user says "tell me about your trading", the keyword check fails, no DB data is fetched, and the AI fabricates numbers.
 
-**A. Enrich the EXECUTE_TRADE data** -- `supabase/functions/ayn-unified/index.ts`
-- When auto-executing, also pass `marketContext` from the scan results (signals, score, volume data) to `ayn-open-trade`. Currently only `ticker`, `signal`, `entryPrice`, etc. are sent. Add the scan opportunity data as `marketContext` so it gets persisted.
+**Solution:** Two changes:
 
-**B. Add "AI Decision Log" card to Performance dashboard** -- `src/components/trading/PerformanceDashboard.tsx`
-- New expandable card section titled "AI Decision Log" below Recent Trades
-- Shows each trade (open and closed) with:
-  - Ticker, signal, confidence score as a badge
-  - The `reasoning` text (why AYN picked this trade)
-  - The `market_context` JSON rendered as signal tags (e.g., "Volume surge +340%", "Strong momentum +4.2%")
-  - Setup type
-  - Entry time
-  - Outcome (if closed): win/loss, P&L
-- Each row is expandable (Collapsible) to show the full reasoning and market context
-- This lets you analyze HOW AYN thinks and find patterns in its decision-making
+**A. Expand keyword list** (line 755-758):
+Add these keywords:
+- `'how are you'`, `'how is'`, `'how you doing'`, `'how\'s it going'`, `'doing'`, `'going'`, `'status'`, `'results'`, `'show me'`, `'tell me about'`, `'your trading'`, `'how much'`, `'winning'`, `'losing'`
 
-### Part 3: Enrich EXECUTE_TRADE with scan context
+**B. Always inject performance data for trading-coach intent** (line 760):
+Change the condition from requiring keyword match to always fetching when `intent === 'trading-coach'`. The overhead is minimal (3 parallel queries, cached by Supabase connection pooling), and it eliminates all false negatives.
 
-**`supabase/functions/ayn-unified/systemPrompts.ts`:**
-- Update the EXECUTE_TRADE JSON format instruction to include `reasoning` and `marketContext` fields:
-  ```
-  EXECUTE_TRADE: {"ticker":"BTC_USDT","signal":"BUY","entryPrice":51200,
-    "stopLoss":50800,"takeProfit1":52100,"takeProfit2":53000,
-    "confidence":75,"setupType":"Volume Breakout",
-    "reasoning":"Strong momentum with volume surge at key support level...",
-    "marketContext":{"score":82,"signals":["Volume surge +340%","Strong momentum +4.2%"],"volume24h":45000000}}
-  ```
-
-### Technical Details
-
-**SQL to run:**
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE ayn_paper_trades;
-ALTER PUBLICATION supabase_realtime ADD TABLE ayn_account_state;
+```
+const isPerformanceQuery = intent === 'trading-coach';
 ```
 
-**Files to modify:**
-1. `src/components/trading/PerformanceDashboard.tsx` -- Add realtime subscriptions + AI Decision Log card
-2. `supabase/functions/ayn-unified/index.ts` -- Pass scan data as `marketContext` when auto-executing trade
-3. `supabase/functions/ayn-unified/systemPrompts.ts` -- Add `reasoning` and `marketContext` to EXECUTE_TRADE format
+This ensures "Tell me about your trading", "how are you doing?", or any trading-coach query gets real DB data injected.
 
-**No new tables or edge functions needed.** All the columns already exist in `ayn_paper_trades`.
+**File:** `supabase/functions/ayn-unified/index.ts` (lines 755-761)
 
-### Result
-- Trade opens from chat --> appears on Performance tab within 1-2 seconds (realtime)
-- Trade gets stopped out or hits TP --> updates instantly
-- Every trade shows WHY AYN picked it (reasoning, signals, confidence)
-- You can scroll through the Decision Log to see patterns in AYN's thinking and find areas to improve the scoring/strategy
+---
+
+### Fix 3: End-to-End Verification
+
+This is a manual test flow, not a code change. After deploying Fixes 1 and 2:
+
+1. Go to Chat tab, send "do paper testing"
+2. Verify scanner runs with real Pionex data and AI picks a token
+3. Switch to Performance tab -- trade should appear within 1-2 seconds (realtime)
+4. Send "how are you doing?" in chat
+5. Verify AI reports real balance and open positions from database
+6. Wait 5 minutes for `ayn-monitor-trades` cron to check prices
+7. Verify any TP/SL hits update the Performance tab instantly
+
+---
+
+### Technical Summary
+
+| File | Change |
+|------|--------|
+| `src/components/trading/PerformanceDashboard.tsx` | Add realtime subscriptions, `isLive` indicator, `allTrades` fetch, `AIDecisionLog` component |
+| `supabase/functions/ayn-unified/index.ts` | Line 760: change `isPerformanceQuery` to always true for `trading-coach` intent |
+
+Total: 2 files modified, no new tables, no new edge functions.
 
