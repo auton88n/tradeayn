@@ -1010,12 +1010,62 @@ Deno.serve(async (req) => {
       },
       imageUrl,
       analysisId: analysisId || null,
-      disclaimer: '⚠️ TESTING MODE - Experimental AI advisor. Signals may be inaccurate. Use paper trading only. Not financial advice.',
+      disclaimer: 'Paper trading signals — tracked on AYN\'s live performance page.',
       ...(marketIntel.context ? { marketContext: marketIntel.context } : {}),
       ...(scamCheck.flags.length > 0 ? { scamWarning: scamCheck } : {}),
     };
 
     console.log('[chart-analyzer] ✅ Analysis complete for', technical.ticker, '| Signal:', prediction.signal, '| Confidence:', result.prediction.confidence);
+
+    // Auto-open paper trade if signal is actionable
+    const actionSignal = prediction.signal;
+    const conf = result.prediction.confidence;
+    if ((actionSignal === 'BUY' || actionSignal === 'SELL' || actionSignal === 'BULLISH' || actionSignal === 'BEARISH') && conf >= 60) {
+      try {
+        const tradingSignal = prediction.tradingSignal;
+        const entryPrice = tradingSignal?.entry?.price || (prediction.entry_zone ? parseFloat(String(prediction.entry_zone).replace(/[^0-9.]/g, '')) : null);
+        const stopLoss = tradingSignal?.stopLoss?.price || (prediction.stop_loss ? parseFloat(String(prediction.stop_loss).replace(/[^0-9.]/g, '')) : null);
+        const tp1 = tradingSignal?.takeProfits?.[0]?.price || null;
+        const tp2 = tradingSignal?.takeProfits?.[1]?.price || null;
+
+        if (entryPrice && stopLoss && entryPrice > 0 && stopLoss > 0) {
+          const serviceClient = getServiceClient();
+          const tradeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/ayn-open-trade`;
+          
+          // Fire-and-forget: don't await, don't block response
+          fetch(tradeUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            },
+            body: JSON.stringify({
+              ticker: technical.ticker,
+              timeframe: technical.timeframe,
+              signal: (actionSignal === 'BULLISH' ? 'BUY' : actionSignal === 'BEARISH' ? 'SELL' : actionSignal),
+              entryPrice,
+              stopLoss,
+              takeProfit1: tp1,
+              takeProfit2: tp2,
+              confidence: conf,
+              setupType: prediction.patternBreakdown?.[0]?.name || null,
+              reasoning: prediction.reasoning || '',
+              marketContext: result.marketContext || null,
+              chartImageUrl: imageUrl || null,
+            }),
+          }).then(r => r.text()).then(t => {
+            console.log('[chart-analyzer] Paper trade result:', t);
+          }).catch(e => {
+            console.warn('[chart-analyzer] Paper trade fire-and-forget error:', e);
+          });
+        } else {
+          console.log('[chart-analyzer] Skipping paper trade: missing entry/stop prices');
+        }
+      } catch (tradeErr) {
+        console.warn('[chart-analyzer] Paper trade setup error (non-blocking):', tradeErr);
+      }
+    }
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
