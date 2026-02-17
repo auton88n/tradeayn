@@ -205,6 +205,7 @@ async function fetchPionexData(ticker: string, timeframe: string, assetType: str
   // Map ticker to Pionex symbol format
   const cleanTicker = ticker.replace(/\/USDT|\/USD|\/BUSD/i, '').toUpperCase();
   const symbol = `${cleanTicker}_USDT`;
+  console.log('[DEBUG chart-analyzer] Ticker mapping:', ticker, '->', cleanTicker, '->', symbol);
 
   // Map timeframe to Pionex interval
   const intervalMap: Record<string, string> = {
@@ -249,6 +250,7 @@ async function fetchPionexData(ticker: string, timeframe: string, assetType: str
     }
 
     const klinesData = await klinesRes.json();
+    console.log('[DEBUG chart-analyzer] Raw klines response:', JSON.stringify(klinesData).slice(0, 500));
 
     // Fetch ticker (24h stats)
     const tickerParams = `symbol=${symbol}`;
@@ -265,6 +267,7 @@ async function fetchPionexData(ticker: string, timeframe: string, assetType: str
     let tickerInfo: any = null;
     if (tickerRes.ok) {
       const tickerData = await tickerRes.json();
+      console.log('[DEBUG chart-analyzer] Raw ticker response:', JSON.stringify(tickerData).slice(0, 500));
       const tickers = tickerData?.data?.tickers || [];
       tickerInfo = tickers.find((t: any) => t.symbol === symbol) || tickers[0] || null;
     } else {
@@ -285,6 +288,7 @@ async function fetchPionexData(ticker: string, timeframe: string, assetType: str
 
     const latestCandle = klines.length > 0 ? klines[klines.length - 1] : null;
     const currentPrice = latestCandle ? parseFloat(latestCandle.close) : null;
+    console.log('[DEBUG chart-analyzer] Symbol:', symbol, 'Price extracted:', currentPrice, 'From candle:', JSON.stringify(latestCandle));
 
     // Calculate 24h change from ticker data
     const open24h = tickerInfo ? parseFloat(tickerInfo.open) : null;

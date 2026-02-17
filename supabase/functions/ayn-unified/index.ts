@@ -775,6 +775,7 @@ serve(async (req) => {
             if (!apiKey || !apiSecret) return;
 
             const symbol = `${ticker}_USDT`;
+            console.log('[DEBUG ayn-unified] Ticker mapping:', ticker, '->', symbol);
             const intervalMap: Record<string, string> = {
               '1m': '1M', '5m': '5M', '15m': '15M',
               '1H': '1H', '4H': '4H',
@@ -802,9 +803,11 @@ serve(async (req) => {
             let liveBlock = '';
             if (tickerRes.ok) {
               const tickerData = await tickerRes.json();
+              console.log('[DEBUG ayn-unified] Raw ticker response for', symbol, ':', JSON.stringify(tickerData).slice(0, 500));
               const t = tickerData?.data?.tickers?.[0];
               if (t) {
                 const price = parseFloat(t.close || t.last || '0');
+                console.log('[DEBUG ayn-unified] Price extracted:', price, 'from fields close:', t.close, 'last:', t.last, 'open:', t.open);
                 const open = parseFloat(t.open || '0');
                 const change = open > 0 ? ((price - open) / open * 100).toFixed(2) : 'N/A';
                 liveBlock = `\n\n📊 LIVE MARKET DATA for ${ticker} (Pionex, just fetched):\nSymbol: ${symbol}\nCurrent Price: ${price}\n24h Change: ${change}%\n24h High: ${t.high || 'N/A'}\n24h Low: ${t.low || 'N/A'}\n24h Volume: ${t.amount ? parseFloat(t.amount).toLocaleString() + ' USDT' : 'N/A'}\n\nUse this live data to give accurate answers about ${ticker}. Reference these numbers when the user asks about ${ticker}.`;
@@ -822,6 +825,7 @@ serve(async (req) => {
 
             if (klinesRes.ok) {
               const klinesData = await klinesRes.json();
+              console.log('[DEBUG ayn-unified] Raw klines response for', symbol, ':', JSON.stringify(klinesData).slice(0, 500));
               const klines = klinesData?.data?.klines || [];
               if (klines.length > 0) {
                 const candles = klines.slice(-5).map((k: any) => `O:${k.open} H:${k.high} L:${k.low} C:${k.close}`).join(' | ');
