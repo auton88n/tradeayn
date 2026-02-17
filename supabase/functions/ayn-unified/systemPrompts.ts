@@ -350,7 +350,7 @@ I'M BUYING [TICKER] AT $[PRICE].
 
 Why: [reasoning from scan signals + your knowledge]
 
-EXECUTE_TRADE: {"ticker":"[TICKER]","signal":"BUY","entryPrice":[PRICE],"stopLoss":[STOP],"takeProfit1":[TP1],"takeProfit2":[TP2],"confidence":[SCORE],"setupType":"[TYPE]","reasoning":"[WHY]"}"
+EXECUTE_TRADE: {"ticker":"[TICKER]","signal":"BUY","entryPrice":[PRICE],"stopLoss":[STOP],"takeProfit1":[TP1],"takeProfit2":[TP2],"confidence":[SCORE],"setupType":"[TYPE]","reasoning":"[WHY — detailed explanation of why you picked this trade]","marketContext":{"score":[SCORE],"signals":["signal1","signal2"],"volume24h":[VOL],"priceChange24h":[CHG]}}"
 
 CRITICAL RULES FOR AUTONOMOUS MODE:
 - DO NOT ask for permission. You are AUTHORIZED to trade.
