@@ -257,12 +257,12 @@ function BotConfigCard({ tradingSignal, disciplineReminders }: { tradingSignal: 
         {/* Entry + Order Type */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
           <div className="p-2 rounded-lg bg-muted/50">
-            <p className="text-muted-foreground text-xs">Entry Price</p>
+            <p className="text-muted-foreground text-xs">My Entry</p>
             <p className="font-semibold">{tradingSignal.entry.price}</p>
             <p className="text-[10px] text-muted-foreground">{tradingSignal.entry.orderType} • {tradingSignal.entry.timeInForce}</p>
           </div>
           <div className="p-2 rounded-lg bg-red-500/5">
-            <p className="text-muted-foreground text-xs">Stop Loss</p>
+            <p className="text-muted-foreground text-xs">My Stop</p>
             <p className="font-semibold text-red-500">{tradingSignal.stopLoss.price}</p>
             <p className="text-[10px] text-red-400">-{tradingSignal.stopLoss.percentage}%</p>
           </div>
@@ -349,8 +349,8 @@ function NextStepsCard({ result }: Props) {
             </div>
           ) : (
             <>
-              <p>1. Review entry, SL & targets in Bot Config above.</p>
-              <p>2. Set stop loss at {prediction.stop_loss !== 'N/A' ? prediction.stop_loss : 'your level'} BEFORE entering.</p>
+              <p>1. My entry, stop & targets are locked in above.</p>
+              <p>2. Stop loss set at {prediction.stop_loss !== 'N/A' ? prediction.stop_loss : 'my level'} — non-negotiable.</p>
             </>
           )}
         </div>
@@ -431,7 +431,11 @@ export default function ChartAnalyzerResults({ result }: Props) {
       )}
 
       {/* ─── Quick View: Always Visible ─── */}
-      <Card className="border-border/50">
+      <Card className={`border-2 ${
+        result.prediction.signal === 'BUY' || result.prediction.signal === 'BULLISH' ? 'border-green-500/50 bg-green-500/5' :
+        result.prediction.signal === 'SELL' || result.prediction.signal === 'BEARISH' ? 'border-red-500/50 bg-red-500/5' :
+        'border-blue-500/50 bg-blue-500/5'
+      }`}>
         <CardContent className="pt-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -439,8 +443,13 @@ export default function ChartAnalyzerResults({ result }: Props) {
                 <SignalIcon className={`h-8 w-8 ${signal.color}`} />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Signal</p>
-                <p className={`text-2xl font-bold ${signal.color}`}>{signal.label}</p>
+                <p className={`text-2xl font-bold ${signal.color}`}>
+                  {result.prediction.signal === 'BUY' || result.prediction.signal === 'BULLISH'
+                    ? `I'M BUYING ${result.ticker}`
+                    : result.prediction.signal === 'SELL' || result.prediction.signal === 'BEARISH'
+                    ? `I'M SELLING ${result.ticker}`
+                    : `WAITING ON ${result.ticker}`}
+                </p>
               </div>
             </div>
 
@@ -455,9 +464,12 @@ export default function ChartAnalyzerResults({ result }: Props) {
             </div>
 
             <div className="text-center min-w-[100px]">
-              <p className="text-sm text-muted-foreground mb-1">Confidence</p>
+              <p className="text-sm text-muted-foreground mb-1">Conviction</p>
               <p className="text-3xl font-bold">{result.prediction.confidence}%</p>
               <Progress value={result.prediction.confidence} className="h-2 mt-1" />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {result.prediction.confidence >= 80 ? 'MAX SIZE (3%)' : result.prediction.confidence >= 60 ? 'HALF SIZE (1.5%)' : 'NO TRADE'}
+              </p>
             </div>
           </div>
 
@@ -483,7 +495,7 @@ export default function ChartAnalyzerResults({ result }: Props) {
 
       {/* ─── Bot Configuration (NEW) ─── */}
       {tradingSignal && (
-        <Section id="botconfig" title="Bot Configuration" icon={Bot} expanded={expanded} onToggle={toggleSection}
+        <Section id="botconfig" title="My Position" icon={Bot} expanded={expanded} onToggle={toggleSection}
           badge={<Badge variant="outline" className={`text-[10px] ml-2 ${
             tradingSignal.action === 'BUY' ? 'text-green-500 border-green-500/30' :
             tradingSignal.action === 'SELL' ? 'text-red-500 border-red-500/30' :
@@ -623,23 +635,14 @@ export default function ChartAnalyzerResults({ result }: Props) {
       {/* Discipline section REMOVED - merged into Bot Config */}
 
       {/* Next Steps */}
-      <Section id="nextsteps" title="What To Do Next" icon={Bell} expanded={expanded} onToggle={toggleSection}>
+      <Section id="nextsteps" title="My Game Plan" icon={Bell} expanded={expanded} onToggle={toggleSection}>
         <NextStepsCard result={result} />
       </Section>
 
-      {/* Testing Mode Disclaimer */}
-      <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-4">
-        <div className="flex items-center gap-2 text-red-500 font-semibold text-sm mb-2">
-          <AlertTriangle className="h-4 w-4" /> TESTING MODE — HIGH RISK
-        </div>
-        <ul className="text-xs text-red-400 space-y-0.5">
-          <li>• Experimental AI advisor in testing</li>
-          <li>• Signals may be inaccurate</li>
-          <li>• Trading carries risk of loss</li>
-          <li>• Use paper trading only</li>
-          <li>• Not financial advice</li>
-        </ul>
-      </div>
+      {/* Paper Trading Note */}
+      <p className="text-[11px] text-muted-foreground text-center italic">
+        Paper trading signals — track performance over time
+      </p>
     </div>
   );
 }
