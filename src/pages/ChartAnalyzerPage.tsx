@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, ArrowLeft, MessageSquare, Activity } from 'lucide-react';
+import { BarChart3, ArrowLeft, MessageSquare, Activity, History } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import ChartUnifiedChat from '@/components/dashboard/ChartUnifiedChat';
 import PerformanceDashboard from '@/components/trading/PerformanceDashboard';
+import ChartHistoryTab from '@/components/dashboard/ChartHistoryTab';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const ChartAnalyzerPage = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [activeTab, setActiveTab] = useState<'chat' | 'performance'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'history' | 'performance'>('chat');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -78,6 +79,18 @@ const ChartAnalyzerPage = () => {
               Chat
             </button>
             <button
+              onClick={() => setActiveTab('history')}
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
+                activeTab === 'history'
+                  ? "bg-amber-500/90 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <History className="h-3.5 w-3.5" />
+              History
+            </button>
+            <button
               onClick={() => setActiveTab('performance')}
               className={cn(
                 "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
@@ -94,9 +107,13 @@ const ChartAnalyzerPage = () => {
 
         {/* Content */}
         <div className="flex-1 min-h-0">
-          {activeTab === 'chat' ? (
-            <ChartUnifiedChat />
-          ) : (
+          {activeTab === 'chat' && <ChartUnifiedChat />}
+          {activeTab === 'history' && (
+            <ScrollArea className="h-full">
+              <ChartHistoryTab />
+            </ScrollArea>
+          )}
+          {activeTab === 'performance' && (
             <ScrollArea className="h-full">
               <div className="py-2">
                 <PerformanceDashboard />

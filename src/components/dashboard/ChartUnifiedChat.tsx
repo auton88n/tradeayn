@@ -2,21 +2,16 @@ import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUp, Upload, X, Loader2, BarChart3, Search, Brain,
-  CheckCircle2, Sparkles, History, Plus, ImageIcon,
+  CheckCircle2, Sparkles, Plus,
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 import { cn } from '@/lib/utils';
 import { useChartAnalyzer } from '@/hooks/useChartAnalyzer';
 import { useChartCoach } from '@/hooks/useChartCoach';
-import { useChartHistory } from '@/hooks/useChartHistory';
+
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
-import ChartHistoryList from './ChartHistoryList';
-import ChartHistoryDetail from './ChartHistoryDetail';
-import ChartHistoryStats from './ChartHistoryStats';
-import ChartCompareView from './ChartCompareView';
-import type { ChartAnalysisResult, ChartHistoryItem } from '@/types/chartAnalyzer.types';
+import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
 
 // ─── Types ───
 type ChatMessage =
@@ -131,7 +126,7 @@ export default function ChartUnifiedChat() {
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [attachedPreview, setAttachedPreview] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
+  
   const [latestResult, setLatestResult] = useState<ChartAnalysisResult | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -142,8 +137,6 @@ export default function ChartUnifiedChat() {
 
   const analyzer = useChartAnalyzer();
   const coach = useChartCoach(latestResult ?? undefined);
-  const history = useChartHistory();
-  const [compareItems, setCompareItems] = useState<[ChartHistoryItem, ChartHistoryItem] | null>(null);
 
   const isAnalyzing = ['uploading', 'analyzing', 'fetching-news', 'predicting'].includes(analyzer.step);
   const isBusy = isAnalyzing || coach.isLoading;
@@ -174,7 +167,6 @@ export default function ChartUnifiedChat() {
         const withoutLoading = prev.filter(m => m.type !== 'ayn-loading');
         return [...withoutLoading, { type: 'ayn-text', content: text }];
       });
-      history.refresh();
     }
   }, [analyzer.result, analyzer.step]);
 
@@ -296,14 +288,6 @@ export default function ChartUnifiedChat() {
     coach.sendMessage(text);
   }, [coach]);
 
-  // ─── Load history item ───
-  const handleHistorySelect = useCallback((item: ChartHistoryItem) => {
-    setLatestResult(item);
-    const text = formatAnalysisAsText(item);
-    setMessages([{ type: 'ayn-text', content: text }]);
-    setHistoryOpen(false);
-    history.setSelectedItem(null);
-  }, [history]);
 
   const hasMessages = messages.length > 0;
 
@@ -333,52 +317,11 @@ export default function ChartUnifiedChat() {
       </AnimatePresence>
 
       {/* Top bar */}
-      <div className="flex items-center justify-between px-1 py-2 shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-            <BarChart3 className="h-4 w-4 text-white" />
-          </div>
-          <span className="text-sm font-semibold">AYN Chart Analyzer</span>
+      <div className="flex items-center gap-2 px-1 py-2 shrink-0">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+          <BarChart3 className="h-4 w-4 text-white" />
         </div>
-        <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
-          <PopoverTrigger asChild>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-              <History className="h-3.5 w-3.5" />
-              History
-            </button>
-          </PopoverTrigger>
-          <PopoverContent side="bottom" align="end" className="w-[380px] p-0 max-h-[500px] overflow-hidden">
-            <ScrollArea className="max-h-[500px]">
-              <div className="p-3">
-                {compareItems ? (
-                  <ChartCompareView items={compareItems} onBack={() => setCompareItems(null)} />
-                ) : history.selectedItem ? (
-                  <ChartHistoryDetail
-                    item={history.selectedItem}
-                    onBack={() => history.setSelectedItem(null)}
-                    onDelete={history.deleteItem}
-                  />
-                ) : (
-                  <>
-                    <ChartHistoryStats items={history.items} />
-                    <div className="mt-2">
-                      <ChartHistoryList
-                        items={history.items}
-                        loading={history.loading}
-                        hasMore={history.hasMore}
-                        filter={history.filter}
-                        onFilterChange={history.setFilter}
-                        onSelect={(item) => handleHistorySelect(item)}
-                        onLoadMore={history.loadMore}
-                        onCompare={setCompareItems}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </ScrollArea>
-          </PopoverContent>
-        </Popover>
+        <span className="text-sm font-semibold">AYN Chart Analyzer</span>
       </div>
 
       {/* Messages area */}
