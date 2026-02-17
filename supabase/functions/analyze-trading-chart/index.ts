@@ -209,12 +209,12 @@ async function fetchPionexData(ticker: string, timeframe: string, assetType: str
 
   // Map timeframe to Pionex interval
   const intervalMap: Record<string, string> = {
-    '1m': '1M', '5m': '5M', '15m': '15M',
-    '1H': '1H', '4H': '4H',
-    'Daily': '1D', 'Weekly': '1W', 'Monthly': '1D',
-    'unknown': '1H',
+    '1m': '1M', '5m': '5M', '15m': '15M', '30m': '30M',
+    '1H': '60M', '4H': '4H', '8H': '8H', '12H': '12H',
+    'Daily': '1D', 'Weekly': '1D', 'Monthly': '1D',
+    'unknown': '60M',
   };
-  const interval = intervalMap[timeframe] || '1H';
+  const interval = intervalMap[timeframe] || '60M';
 
   // HMAC-SHA256 signing helper
   async function signRequest(queryString: string): Promise<string> {
