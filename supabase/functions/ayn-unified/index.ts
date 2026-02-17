@@ -859,18 +859,29 @@ serve(async (req) => {
         })());
       }
 
-      if (searchQuery && typeof searchQuery === 'string') {
+      // Backend fallback: generate searchQuery if frontend didn't send one but we have context
+      let effectiveSearchQuery = (searchQuery && typeof searchQuery === 'string') ? searchQuery : null;
+      if (!effectiveSearchQuery && mentionedSymbol) {
+        // Check if the message is asking a market/price question
+        const marketQuestion = /\b(price|buy|sell|hold|dump|pump|crash|surge|news|happening|analysis|forecast|prediction|why|should|worth|bullish|bearish)\b/i;
+        if (marketQuestion.test(lastMessage) || lastMessage.includes('?')) {
+          effectiveSearchQuery = `${mentionedSymbol} crypto latest price analysis today`;
+          console.log(`[ayn-unified] Backend fallback search query: "${effectiveSearchQuery}"`);
+        }
+      }
+
+      if (effectiveSearchQuery) {
         firecrawlTasks.push((async () => {
           try {
             const { searchWeb } = await import("../_shared/firecrawlHelper.ts");
             const { sanitizeForPrompt, FIRECRAWL_CONTENT_GUARD } = await import("../_shared/sanitizeFirecrawl.ts");
-            const results = await searchWeb(searchQuery, { limit: 5 });
+            const results = await searchWeb(effectiveSearchQuery!, { limit: 5 });
             if (results.success && results.data?.length) {
               const newsLines = results.data.map((r: { title: string; description: string; url: string }) =>
                 `- ${sanitizeForPrompt(r.title, 200)}: ${sanitizeForPrompt(r.description, 300)} (${r.url})`
               ).join('\n');
-              systemPrompt += `\n\n${FIRECRAWL_CONTENT_GUARD}\nLIVE MARKET NEWS (from web search for "${searchQuery}"):\n${newsLines}\n\nUse this info naturally. Cite sources when relevant. Never reveal you used Firecrawl or web search tools.`;
-              console.log(`[ayn-unified] Web search for trading coach: "${searchQuery}" - ${results.data.length} results`);
+              systemPrompt += `\n\n${FIRECRAWL_CONTENT_GUARD}\nLIVE MARKET NEWS (from web search for "${effectiveSearchQuery}"):\n${newsLines}\n\nUse this info naturally. Cite sources when relevant. Never reveal you used Firecrawl or web search tools.`;
+              console.log(`[ayn-unified] Web search for trading coach: "${effectiveSearchQuery}" - ${results.data.length} results`);
             }
           } catch (err) {
             console.error('[ayn-unified] Firecrawl search error:', err);
