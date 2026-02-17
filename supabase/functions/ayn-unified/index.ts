@@ -705,16 +705,76 @@ serve(async (req) => {
 
       const firecrawlTasks: Promise<void>[] = [];
 
-      // Fetch live Pionex data if ticker is available (crypto only)
-      if (ctxTicker && ctxAssetType === 'crypto' && ctxTicker !== 'UNKNOWN') {
+      // --- Ticker detection from user message ---
+      const CRYPTO_MAP: Record<string, string> = {
+        'bitcoin': 'BTC', 'btc': 'BTC',
+        'ethereum': 'ETH', 'eth': 'ETH', 'ether': 'ETH',
+        'solana': 'SOL', 'sol': 'SOL',
+        'xrp': 'XRP', 'ripple': 'XRP',
+        'dogecoin': 'DOGE', 'doge': 'DOGE',
+        'cardano': 'ADA', 'ada': 'ADA',
+        'polkadot': 'DOT', 'dot': 'DOT',
+        'avalanche': 'AVAX', 'avax': 'AVAX',
+        'chainlink': 'LINK', 'link': 'LINK',
+        'polygon': 'POL', 'matic': 'POL', 'pol': 'POL',
+        'litecoin': 'LTC', 'ltc': 'LTC',
+        'uniswap': 'UNI', 'uni': 'UNI',
+        'shiba': 'SHIB', 'shib': 'SHIB',
+        'tron': 'TRX', 'trx': 'TRX',
+        'cosmos': 'ATOM', 'atom': 'ATOM',
+        'near': 'NEAR', 'near protocol': 'NEAR',
+        'aptos': 'APT', 'apt': 'APT',
+        'sui': 'SUI',
+        'arbitrum': 'ARB', 'arb': 'ARB',
+        'optimism': 'OP', 'op': 'OP',
+        'filecoin': 'FIL', 'fil': 'FIL',
+        'pepe': 'PEPE',
+        'bonk': 'BONK',
+        'render': 'RENDER',
+        'injective': 'INJ', 'inj': 'INJ',
+        'sei': 'SEI',
+        'celestia': 'TIA', 'tia': 'TIA',
+        'jupiter': 'JUP', 'jup': 'JUP',
+        'bnb': 'BNB', 'binance coin': 'BNB',
+        'ton': 'TON', 'toncoin': 'TON',
+      };
+
+      function detectTickerFromMessage(msg: string): string | null {
+        const lower = msg.toLowerCase();
+        // Check longer names first to avoid partial matches
+        const sorted = Object.entries(CRYPTO_MAP).sort((a, b) => b[0].length - a[0].length);
+        for (const [name, symbol] of sorted) {
+          // Use word boundary matching
+          const regex = new RegExp(`\\b${name}\\b`, 'i');
+          if (regex.test(lower)) return symbol;
+        }
+        return null;
+      }
+
+      const mentionedSymbol = detectTickerFromMessage(lastMessage);
+      const cleanCtxTicker = ctxTicker ? ctxTicker.replace(/\/USDT|\/USD|\/BUSD/i, '').toUpperCase() : null;
+      
+      // Determine which tickers to fetch
+      const tickersToFetch = new Set<string>();
+      if (cleanCtxTicker && ctxAssetType === 'crypto' && ctxTicker !== 'UNKNOWN') {
+        tickersToFetch.add(cleanCtxTicker);
+      }
+      if (mentionedSymbol && mentionedSymbol !== cleanCtxTicker) {
+        tickersToFetch.add(mentionedSymbol);
+      }
+
+      // Anti-hallucination guard
+      systemPrompt += `\n\nCRITICAL RULE: NEVER fabricate, guess, or hallucinate any price, market data, or statistics. If you do NOT have live data for a specific coin or asset provided below, you MUST say "I don't have live data for that coin right now." Do NOT make up numbers.`;
+
+      // Fetch live Pionex data for all detected tickers
+      for (const ticker of tickersToFetch) {
         firecrawlTasks.push((async () => {
           try {
             const apiKey = Deno.env.get('PIONEX_API_KEY');
             const apiSecret = Deno.env.get('PIONEX_API_SECRET');
             if (!apiKey || !apiSecret) return;
 
-            const cleanTicker = ctxTicker.replace(/\/USDT|\/USD|\/BUSD/i, '').toUpperCase();
-            const symbol = `${cleanTicker}_USDT`;
+            const symbol = `${ticker}_USDT`;
             const intervalMap: Record<string, string> = {
               '1m': '1M', '5m': '5M', '15m': '15M',
               '1H': '1H', '4H': '4H',
@@ -747,10 +807,10 @@ serve(async (req) => {
                 const price = parseFloat(t.close || t.last || '0');
                 const open = parseFloat(t.open || '0');
                 const change = open > 0 ? ((price - open) / open * 100).toFixed(2) : 'N/A';
-                liveBlock = `\n\n📊 LIVE MARKET DATA (Pionex, just fetched):\nSymbol: ${symbol}\nCurrent Price: ${price}\n24h Change: ${change}%\n24h High: ${t.high || 'N/A'}\n24h Low: ${t.low || 'N/A'}\n24h Volume: ${t.amount ? parseFloat(t.amount).toLocaleString() + ' USDT' : 'N/A'}\n\nUse this live data to give accurate answers. If the user asks about current price or whether a setup is still valid, reference these numbers.`;
+                liveBlock = `\n\n📊 LIVE MARKET DATA for ${ticker} (Pionex, just fetched):\nSymbol: ${symbol}\nCurrent Price: ${price}\n24h Change: ${change}%\n24h High: ${t.high || 'N/A'}\n24h Low: ${t.low || 'N/A'}\n24h Volume: ${t.amount ? parseFloat(t.amount).toLocaleString() + ' USDT' : 'N/A'}\n\nUse this live data to give accurate answers about ${ticker}. Reference these numbers when the user asks about ${ticker}.`;
               }
             } else {
-              await tickerRes.text(); // consume body
+              await tickerRes.text();
             }
 
             // Fetch last 10 candles
@@ -765,7 +825,7 @@ serve(async (req) => {
               const klines = klinesData?.data?.klines || [];
               if (klines.length > 0) {
                 const candles = klines.slice(-5).map((k: any) => `O:${k.open} H:${k.high} L:${k.low} C:${k.close}`).join(' | ');
-                liveBlock += `\nRecent ${interval} candles: ${candles}`;
+                liveBlock += `\nRecent ${interval} candles for ${ticker}: ${candles}`;
               }
             } else {
               await klinesRes.text();
@@ -776,7 +836,7 @@ serve(async (req) => {
               console.log(`[ayn-unified] Injected live Pionex data for ${symbol}`);
             }
           } catch (err) {
-            console.warn('[ayn-unified] Pionex fetch error in coach:', err);
+            console.warn(`[ayn-unified] Pionex fetch error for ${ticker}:`, err);
           }
         })());
       }
