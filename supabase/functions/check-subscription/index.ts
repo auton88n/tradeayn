@@ -94,11 +94,13 @@ serve(async (req) => {
       });
     }
     
-    // Set free tier for regular users
+    // Set free tier for regular users — always sync daily limits
     await supabaseClient
       .from('user_ai_limits')
       .upsert({
         user_id: user.id,
+        daily_messages: TIER_LIMITS.free.dailyCredits,
+        daily_engineering: TIER_LIMITS.free.dailyEngineering,
         monthly_messages: TIER_LIMITS.free.dailyCredits,
         monthly_engineering: TIER_LIMITS.free.dailyEngineering,
       }, { onConflict: 'user_id' });
@@ -194,21 +196,27 @@ serve(async (req) => {
     // Update user_ai_limits with tier-appropriate limits
     // Free tier: daily limits | Paid tiers: monthly limits
     if (limits.isDaily) {
+      // Free tier: enforce correct daily limits
       await supabaseClient
         .from('user_ai_limits')
         .upsert({
           user_id: user.id,
           daily_messages: limits.dailyCredits,
           daily_engineering: limits.dailyEngineering,
+          monthly_messages: limits.dailyCredits,
+          monthly_engineering: limits.dailyEngineering,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' });
     } else {
+      // Paid tier: set monthly limits and reset daily to tier defaults
       await supabaseClient
         .from('user_ai_limits')
         .upsert({
           user_id: user.id,
           monthly_messages: limits.monthlyCredits,
           monthly_engineering: limits.monthlyEngineering,
+          daily_messages: limits.monthlyCredits,
+          daily_engineering: limits.monthlyEngineering,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' });
     }
