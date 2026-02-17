@@ -1,32 +1,31 @@
 
 
-## Fix Incorrect Free Tier User Limits
+## Fix: Prevent AYN from Sharing Personal Information About Real People
 
 ### Problem
-5 out of 6 free tier users have inflated limits (`daily_messages: 10`, `daily_engineering: 3`) instead of the correct free tier values (`daily_messages: 5`, `daily_engineering: 1`). One user also has `monthly_limit: 10000` in `access_grants`.
+AYN correctly identified the user as CEO of the AYN Team -- but this information came from the LLM's training data (public web sources). Even when accurate, surfacing personal/biographical details about real people without consent is a **privacy concern**.
 
-### Fix (2 data updates, no schema changes)
+### Updated Approach
+Instead of only blocking "fabricated" info, the guardrail should prevent AYN from sharing **any** personal details about real individuals (whether accurate or not), except information the user has explicitly shared in the current conversation.
 
-**Step 1: Fix `user_ai_limits` for all free tier users**
+### Changes
 
-Set `daily_messages = 5` and `daily_engineering = 1` for all users whose subscription tier is `free` or NULL (no subscription).
+**1. `supabase/functions/ayn-unified/systemPrompts.ts`** -- Add to the IDENTITY (CRITICAL) section:
 
-**Step 2: Fix `access_grants` for all free tier users**
+```
+PERSONAL INFORMATION (MANDATORY — NEVER VIOLATE):
+- NEVER share biographical details about real people from your training data (names, roles, employers, locations, etc.)
+- If asked "who is [person]?": "I don't share personal information about individuals. If you'd like to tell me about yourself, I'm happy to remember that for our conversations!"
+- Only reference personal details the user has explicitly told you in conversation or that are stored in their memory context
+- This applies to EVERYONE — including the AYN Team members
+```
 
-Set `monthly_limit = 5` for any free tier user with an incorrect or NULL monthly_limit.
+**2. `supabase/functions/support-bot/index.ts`** -- Add the same rule to the `AYN_KNOWLEDGE` system prompt.
 
-### Affected Users
+**3. Redeploy** both `ayn-unified` and `support-bot` edge functions.
 
-| User | Current daily_messages | Current daily_engineering | Current monthly_limit | After Fix |
-|---|---|---|---|---|
-| bf4db4d1 (Koray) | 10 | 3 | 5 | 5 / 1 / 5 |
-| 74d6614d | 10 | 3 | 5 | 5 / 1 / 5 |
-| cf5f4735 | 10 | 3 | NULL | 5 / 1 / 5 |
-| 3451ae77 | 10 | 3 | 10000 | 5 / 1 / 5 |
-| d2ceaad6 | 10 | 3 | 5 | 5 / 1 / 5 |
-| 1eb04a90 | 5 | 1 | NULL | 5 / 1 / 5 |
-
-### Prevention
-
-The `check-subscription` edge function already syncs these values correctly now (from the previous fix). These incorrect values are legacy data from before that fix was deployed. No code changes needed -- just data correction.
+### Why This Matters
+- Gemini's training data includes public info (LinkedIn, websites, articles)
+- Even if accurate, users may not want AYN revealing their personal details to others who ask
+- This protects the AYN Team and any public figure from unsolicited info disclosure
 
