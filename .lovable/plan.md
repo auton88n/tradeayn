@@ -1,53 +1,32 @@
 
 
-## Fix: Subscriptions Should Work Automatically Without Admin Approval
+## Fix Incorrect Free Tier User Limits
 
 ### Problem
-When a user upgrades their subscription through Stripe (e.g., from Free to Starter/Pro/Business), the payment goes through, but:
+5 out of 6 free tier users have inflated limits (`daily_messages: 10`, `daily_engineering: 3`) instead of the correct free tier values (`daily_messages: 5`, `daily_engineering: 1`). One user also has `monthly_limit: 10000` in `access_grants`.
 
-1. The `check-subscription` edge function only updates `user_subscriptions` and `user_ai_limits` tables
-2. It does **not** update the `access_grants` table
-3. The app checks `access_grants.is_active` and `access_grants.monthly_limit` to determine if a user can use the platform
-4. Result: paid subscribers can still appear restricted or have wrong limits because `access_grants` is out of sync
+### Fix (2 data updates, no schema changes)
 
-### Solution
-Update the `check-subscription` edge function to also sync the `access_grants` table whenever it detects a subscription change. This ensures paid users automatically get:
-- `is_active = true`
-- `monthly_limit` matching their tier
-- No admin approval needed
+**Step 1: Fix `user_ai_limits` for all free tier users**
 
-### Technical Details
+Set `daily_messages = 5` and `daily_engineering = 1` for all users whose subscription tier is `free` or NULL (no subscription).
 
-**1. Update `check-subscription` edge function**
+**Step 2: Fix `access_grants` for all free tier users**
 
-After the existing `user_subscriptions` and `user_ai_limits` upserts, add an `access_grants` upsert:
+Set `monthly_limit = 5` for any free tier user with an incorrect or NULL monthly_limit.
 
-```text
-Tier mapping for access_grants.monthly_limit:
-  free    -> 5
-  starter -> 500
-  pro     -> 1000
-  business -> 3000
-  enterprise/unlimited -> 999999 (effectively unlimited)
-```
+### Affected Users
 
-The function will upsert `access_grants` with:
-- `is_active: true` (always active for any tier)
-- `monthly_limit` matching the tier's credit allocation
-- `requires_approval: false`
+| User | Current daily_messages | Current daily_engineering | Current monthly_limit | After Fix |
+|---|---|---|---|---|
+| bf4db4d1 (Koray) | 10 | 3 | 5 | 5 / 1 / 5 |
+| 74d6614d | 10 | 3 | 5 | 5 / 1 / 5 |
+| cf5f4735 | 10 | 3 | NULL | 5 / 1 / 5 |
+| 3451ae77 | 10 | 3 | 10000 | 5 / 1 / 5 |
+| d2ceaad6 | 10 | 3 | 5 | 5 / 1 / 5 |
+| 1eb04a90 | 5 | 1 | NULL | 5 / 1 / 5 |
 
-**2. No frontend changes needed**
+### Prevention
 
-The existing `useAuth` hook already reads from `access_grants` -- once the data is correct there, everything works automatically.
+The `check-subscription` edge function already syncs these values correctly now (from the previous fix). These incorrect values are legacy data from before that fix was deployed. No code changes needed -- just data correction.
 
-### Files Modified
-
-| File | Change |
-|---|---|
-| `supabase/functions/check-subscription/index.ts` | Add `access_grants` upsert after subscription check, syncing `is_active` and `monthly_limit` with the detected tier |
-
-### Result
-- Upgrading via Stripe automatically activates the user and sets correct limits
-- Downgrading or canceling also syncs correctly
-- No admin intervention needed at any point
-- Free users also get properly synced on every check
