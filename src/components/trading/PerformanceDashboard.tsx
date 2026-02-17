@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Activity, Target, Award, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import AIDecisionLog from '@/components/trading/AIDecisionLog';
+import ActivityTimeline, { type TimelineEntry } from '@/components/trading/ActivityTimeline';
 
 // Types
 interface AccountState {
@@ -143,24 +144,39 @@ function TradeRow({ trade }: { trade: PaperTrade }) {
   );
 }
 
-export default function PerformanceDashboard() {
+interface ChartAnalysis {
+  id: string;
+  ticker: string | null;
+  timeframe: string | null;
+  prediction_signal: string | null;
+  confidence: number | null;
+  created_at: string | null;
+}
+
+interface PerformanceDashboardProps {
+  onNavigateToHistory?: (analysisId: string) => void;
+}
+
+export default function PerformanceDashboard({ onNavigateToHistory }: PerformanceDashboardProps) {
   const [account, setAccount] = useState<AccountState | null>(null);
   const [openTrades, setOpenTrades] = useState<PaperTrade[]>([]);
   const [closedTrades, setClosedTrades] = useState<PaperTrade[]>([]);
   const [allTrades, setAllTrades] = useState<PaperTrade[]>([]);
+  const [chartAnalyses, setChartAnalyses] = useState<ChartAnalysis[]>([]);
   const [snapshots, setSnapshots] = useState<DailySnapshot[]>([]);
   const [setupPerf, setSetupPerf] = useState<SetupPerf[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
 
   const loadData = useCallback(async () => {
-    const [acctRes, openRes, closedRes, snapRes, setupRes, allTradesRes] = await Promise.all([
+    const [acctRes, openRes, closedRes, snapRes, setupRes, allTradesRes, analysesRes] = await Promise.all([
       supabase.from('ayn_account_state').select('*').eq('id', '00000000-0000-0000-0000-000000000001').single(),
       supabase.from('ayn_paper_trades').select('*').in('status', ['OPEN', 'PARTIAL_CLOSE']).order('entry_time', { ascending: false }),
       supabase.from('ayn_paper_trades').select('*').in('status', ['CLOSED_WIN', 'CLOSED_LOSS', 'STOPPED_OUT']).order('exit_time', { ascending: false }).limit(20),
       supabase.from('ayn_daily_snapshots').select('*').order('snapshot_date', { ascending: true }).limit(90),
       supabase.from('ayn_setup_performance').select('*').order('total_trades', { ascending: false }),
       supabase.from('ayn_paper_trades').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('chart_analyses').select('id, ticker, timeframe, prediction_signal, confidence, created_at').order('created_at', { ascending: false }).limit(20),
     ]);
 
     if (acctRes.data) setAccount(acctRes.data as any);
@@ -169,6 +185,7 @@ export default function PerformanceDashboard() {
     if (snapRes.data) setSnapshots(snapRes.data as any);
     if (setupRes.data) setSetupPerf(setupRes.data as any);
     if (allTradesRes.data) setAllTrades(allTradesRes.data as any);
+    if (analysesRes.data) setChartAnalyses(analysesRes.data as any);
     setLoading(false);
   }, []);
 
@@ -213,8 +230,53 @@ export default function PerformanceDashboard() {
 
   const pnlPositive = account ? account.total_pnl_dollars > 0 : false;
 
+  const timelineEntries = useMemo<TimelineEntry[]>(() => {
+    const entries: TimelineEntry[] = [];
+
+    // Add chart analyses
+    chartAnalyses.forEach((a) => {
+      entries.push({
+        id: a.id,
+        type: 'analysis',
+        timestamp: a.created_at || '',
+        summary: `Analyzed ${a.ticker || 'chart'} ${a.timeframe || ''} — ${a.prediction_signal || 'N/A'} ${a.confidence ? `${a.confidence}%` : ''}`,
+        analysisId: a.id,
+        signal: a.prediction_signal || undefined,
+      });
+    });
+
+    // Add trades
+    allTrades.forEach((t) => {
+      const isClosed = ['CLOSED_WIN', 'CLOSED_LOSS', 'STOPPED_OUT'].includes(t.status);
+      if (isClosed && t.exit_time) {
+        entries.push({
+          id: `${t.id}-close`,
+          type: 'trade_close',
+          timestamp: t.exit_time,
+          summary: `Closed ${t.ticker} ${Number(t.pnl_percent) >= 0 ? '+' : ''}${Number(t.pnl_percent).toFixed(2)}%`,
+          detail: `$${Number(t.pnl_dollars) >= 0 ? '+' : ''}${Number(t.pnl_dollars).toFixed(2)} — ${t.exit_reason || t.status}`,
+          positive: Number(t.pnl_dollars) > 0,
+          signal: t.signal,
+        });
+      }
+      entries.push({
+        id: `${t.id}-open`,
+        type: 'trade_open',
+        timestamp: t.entry_time,
+        summary: `Opened ${t.signal} ${t.ticker} @ $${Number(t.entry_price).toFixed(2)}`,
+        detail: t.setup_type ? `Setup: ${t.setup_type}` : undefined,
+        signal: t.signal,
+      });
+    });
+
+    return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 30);
+  }, [chartAnalyses, allTrades]);
+
   return (
     <div className="space-y-6 pb-6">
+      {/* Activity Timeline */}
+      <ActivityTimeline entries={timelineEntries} onAnalysisClick={onNavigateToHistory} />
+
       {/* Stats Grid */}
       {account && (
         <div className="grid grid-cols-2 gap-3">

@@ -116,7 +116,10 @@ const ChartAnalyzerPage = () => {
           {activeTab === 'performance' && (
             <ScrollArea className="h-full">
               <div className="py-2">
-                <PerformanceDashboard />
+                <PerformanceDashboard onNavigateToHistory={(analysisId) => {
+                  setActiveTab('history');
+                  // History tab will pick up any selected analysis via its own state
+                }} />
               </div>
             </ScrollArea>
           )}
