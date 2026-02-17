@@ -1,37 +1,53 @@
 
 
-## Fix: New Users Should Be Active Immediately
+## Fix: Subscriptions Should Work Automatically Without Admin Approval
 
 ### Problem
-Currently, new users who sign up get `is_active = false` in their `access_grants` record, which means they appear as "Pending" and cannot use the platform until an admin manually activates them. You want all new sign-ups to start using Ayn's free subscription right away.
+When a user upgrades their subscription through Stripe (e.g., from Free to Starter/Pro/Business), the payment goes through, but:
+
+1. The `check-subscription` edge function only updates `user_subscriptions` and `user_ai_limits` tables
+2. It does **not** update the `access_grants` table
+3. The app checks `access_grants.is_active` and `access_grants.monthly_limit` to determine if a user can use the platform
+4. Result: paid subscribers can still appear restricted or have wrong limits because `access_grants` is out of sync
 
 ### Solution
-Update the `handle_new_user` database trigger to set `is_active = true` instead of `false`, and also activate any currently inactive users who were created with the old default.
+Update the `check-subscription` edge function to also sync the `access_grants` table whenever it detects a subscription change. This ensures paid users automatically get:
+- `is_active = true`
+- `monthly_limit` matching their tier
+- No admin approval needed
 
 ### Technical Details
 
-**1. Update the trigger function (SQL migration)**
+**1. Update `check-subscription` edge function**
 
-Change `is_active` from `false` to `true` in the `handle_new_user` function:
+After the existing `user_subscriptions` and `user_ai_limits` upserts, add an `access_grants` upsert:
 
-```sql
-INSERT INTO public.access_grants (user_id, is_active, monthly_limit, requires_approval)
-VALUES (NEW.id, true, 5, false)
-ON CONFLICT (user_id) DO NOTHING;
+```text
+Tier mapping for access_grants.monthly_limit:
+  free    -> 5
+  starter -> 500
+  pro     -> 1000
+  business -> 3000
+  enterprise/unlimited -> 999999 (effectively unlimited)
 ```
 
-**2. Activate existing inactive users**
+The function will upsert `access_grants` with:
+- `is_active: true` (always active for any tier)
+- `monthly_limit` matching the tier's credit allocation
+- `requires_approval: false`
 
-Set all currently inactive users to active so they can start using Ayn immediately:
+**2. No frontend changes needed**
 
-```sql
-UPDATE public.access_grants
-SET is_active = true, granted_at = now()
-WHERE is_active = false;
-```
+The existing `useAuth` hook already reads from `access_grants` -- once the data is correct there, everything works automatically.
+
+### Files Modified
+
+| File | Change |
+|---|---|
+| `supabase/functions/check-subscription/index.ts` | Add `access_grants` upsert after subscription check, syncing `is_active` and `monthly_limit` with the detected tier |
 
 ### Result
-- All future sign-ups will be **active immediately** with the free tier (5 monthly limit)
-- All existing users who were stuck as "Pending" will be activated
-- No admin intervention needed for new users to start using Ayn
-
+- Upgrading via Stripe automatically activates the user and sets correct limits
+- Downgrading or canceling also syncs correctly
+- No admin intervention needed at any point
+- Free users also get properly synced on every check
