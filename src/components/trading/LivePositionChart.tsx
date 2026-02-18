@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createChart, IChartApi, ISeriesApi, CandlestickData, Time, LineStyle, CandlestickSeries as CandlestickSeriesDef } from 'lightweight-charts';
-import { supabase } from '@/integrations/supabase/client';
 
 interface LivePositionChartProps {
   ticker: string;
@@ -177,18 +176,29 @@ export default function LivePositionChart({ ticker, entryPrice, stopLoss, tp1, t
     const built = buildChart();
     if (!built) { setLoading(false); return; }
 
-    // Fetch historical klines
+    // Fetch historical klines via direct fetch to bypass preview fetch interceptor
     try {
-      const { data, error: fnErr } = await supabase.functions.invoke('get-klines', {
-        body: { symbol: ticker, interval: tf, limit: 100 },
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const res = await fetch(`${supabaseUrl}/functions/v1/get-klines`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ symbol: ticker, interval: tf, limit: 100 }),
       });
-      if (fnErr) {
-        console.warn('[LivePositionChart] klines error (non-fatal):', fnErr);
-      } else if (data?.klines && data.klines.length > 0) {
-        built.candleSeries.setData(data.klines as CandlestickData[]);
-        built.chart.timeScale().fitContent();
-        const last = data.klines[data.klines.length - 1];
-        currentCandleRef.current = { ...last };
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.klines && data.klines.length > 0) {
+          built.candleSeries.setData(data.klines as CandlestickData[]);
+          built.chart.timeScale().fitContent();
+          const last = data.klines[data.klines.length - 1];
+          currentCandleRef.current = { ...last };
+        }
+      } else {
+        console.warn('[LivePositionChart] klines error (non-fatal):', res.status);
       }
     } catch (e: any) {
       console.warn('[LivePositionChart] klines fetch error (non-fatal):', e);
