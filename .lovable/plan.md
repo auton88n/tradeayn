@@ -1,180 +1,110 @@
 
-# Fix: Two Root Causes Confirmed via Browser Debug
+# Fix: Pionex Messages Arrive as Blob, Not String
 
-## What Was Found
-
-### Problem 1: Pionex WebSocket returns 403 (CONFIRMED via console logs)
+## Root Cause (Confirmed from Console Logs)
 
 ```
-WebSocket connection to 'wss://ws.pionex.com/wsPub' failed: Error during WebSocket handshake: Unexpected response code: 403
+SyntaxError: Unexpected token 'o', "[object Blob]" is not valid JSON
 ```
 
-Pionex blocks WebSocket connections from browser `Origin` headers they don't whitelist. The preview domain `lovableproject.com` is not whitelisted. This kills **all** live price updates — both in `useLivePrices` (the Open Positions card live P&L) and `LivePositionChart` (live candle updates).
+The `ws-relay` edge function IS working — Supabase logs confirm:
+- "Pionex connected, flushing 1 pending messages" ✅
+- Messages are flowing through
 
-**Root cause:** Direct browser WebSocket to Pionex is blocked by their CORS/Origin policy.
+But Pionex sends WebSocket messages as **binary frames** (not text frames). The browser receives them as `Blob` objects. When the code does `JSON.parse(event.data as string)`, JavaScript coerces the Blob to the string `"[object Blob]"` — which is not valid JSON.
 
-**Fix:** Proxy the WebSocket through a Supabase edge function. The edge function connects to Pionex server-side (no browser Origin restrictions), then relays messages to/from the browser. Supabase edge functions support WebSocket upgrades via `Deno.upgradeWebSocket`.
+## The Fix
 
-### Problem 2: Chart shows "Could not load chart data" even though klines arrive (CONFIRMED)
+In both `useLivePrices.ts` and `LivePositionChart.tsx`, change the `onmessage` handler to convert Blob → text before parsing:
 
-The network log confirmed the `get-klines` edge function returns 100 perfect candles. But the chart still shows the error. This means the error is thrown **in the `try` block before** the `setData` call succeeds — specifically in `buildChart()`.
-
-The likely cause: `containerRef.current.clientWidth` is **0** when `buildChart()` is called on first render. When the chart section is toggled open, the React re-render hasn't committed the full layout yet, so the `<div ref={containerRef} />` has zero width. `createChart({ width: 0, height: 320 })` in lightweight-charts v5 throws an error, which is caught by the `catch` block and sets `setError('Could not load chart data')`.
-
-**Fix:** Use `autoSize: true` in the chart options (lightweight-charts v5 native feature) instead of `width: containerRef.current.clientWidth`. This removes the need for `ResizeObserver` too.
-
----
-
-## The Solution
-
-### Fix 1: WebSocket Relay Edge Function
-
-Create `supabase/functions/ws-relay/index.ts` — a Supabase edge function that:
-1. Accepts a WebSocket connection from the browser
-2. Connects to `wss://ws.pionex.com/wsPub` server-side (no Origin restriction)
-3. Forwards all messages bidirectionally (browser ↔ Pionex)
-4. Handles cleanup when either side closes
-
-**Frontend changes:** Both `useLivePrices.ts` and `LivePositionChart.tsx` change their WebSocket URL from:
-```
-wss://ws.pionex.com/wsPub
-```
-to:
-```
-wss://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/ws-relay
-```
-
-The relay is transparent — the same subscribe/unsubscribe messages work identically. PING/PONG handling stays the same.
-
-### Fix 2: Use `autoSize: true` in the Chart
-
-In `LivePositionChart.tsx`, change `buildChart()` to:
 ```typescript
-const chart = createChart(containerRef.current, {
-  autoSize: true,   // ← lightweight-charts v5 handles sizing automatically
-  height: 320,
-  // ... rest of options unchanged
-});
+ws.onmessage = async (event) => {
+  try {
+    const text = event.data instanceof Blob
+      ? await event.data.text()
+      : (event.data as string);
+    const msg = JSON.parse(text);
+    // ... rest of handler unchanged
+  } catch (e) { ... }
+};
 ```
 
-And remove the `ResizeObserver` effect (no longer needed — `autoSize` handles it natively).
-
----
+`Blob.text()` returns a Promise that resolves to the UTF-8 string content. Since `onmessage` is already an async function in practice, making it `async` is safe.
 
 ## Files to Change
 
-### New: `supabase/functions/ws-relay/index.ts`
+### 1. `src/hooks/useLivePrices.ts`
+
+Change `ws.onmessage` from synchronous to async and add Blob conversion at the top:
 
 ```typescript
-Deno.serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
-    });
-  }
+ws.onmessage = async (event) => {
+  try {
+    const text = event.data instanceof Blob
+      ? await event.data.text()
+      : (event.data as string);
+    const msg = JSON.parse(text);
 
-  // Must be a WebSocket upgrade
-  const upgrade = req.headers.get('upgrade') ?? '';
-  if (upgrade.toLowerCase() !== 'websocket') {
-    return new Response('Expected WebSocket upgrade', { status: 426 });
-  }
-
-  // Upgrade the browser connection
-  const { socket: browserSocket, response } = Deno.upgradeWebSocket(req);
-
-  // Connect to Pionex server-side (no browser Origin restrictions here)
-  const pionexSocket = new WebSocket('wss://ws.pionex.com/wsPub');
-
-  // Browser → Pionex relay
-  browserSocket.onmessage = (event) => {
-    if (pionexSocket.readyState === WebSocket.OPEN) {
-      pionexSocket.send(event.data);
+    if (msg.op === 'PING') {
+      ws.send(JSON.stringify({ op: 'PONG', timestamp: msg.timestamp }));
+      return;
     }
-  };
 
-  // Pionex → Browser relay
-  pionexSocket.onmessage = (event) => {
-    if (browserSocket.readyState === WebSocket.OPEN) {
-      browserSocket.send(event.data);
+    if (msg.topic === 'TRADE' && msg.symbol && Array.isArray(msg.data) && msg.data.length > 0) {
+      const latestTrade = msg.data[0];
+      const price = parseFloat(latestTrade.price);
+      if (!isNaN(price)) {
+        setPrices(prev => ({
+          ...prev,
+          [msg.symbol]: { price, timestamp: latestTrade.timestamp ?? Date.now() },
+        }));
+      }
     }
-  };
-
-  // Handle close events
-  browserSocket.onclose = () => {
-    if (pionexSocket.readyState === WebSocket.OPEN) pionexSocket.close();
-  };
-  pionexSocket.onclose = () => {
-    if (browserSocket.readyState === WebSocket.OPEN) browserSocket.close();
-  };
-
-  // Handle errors
-  browserSocket.onerror = (e) => console.error('[ws-relay] browser error:', e);
-  pionexSocket.onerror = (e) => console.error('[ws-relay] pionex error:', e);
-
-  return response;
-});
+  } catch (e) {
+    console.error('[useLivePrices] parse error', e);
+  }
+};
 ```
 
-Add to `supabase/config.toml`:
-```toml
-[functions.ws-relay]
-verify_jwt = false
-```
+### 2. `src/components/trading/LivePositionChart.tsx`
 
-### Edit: `src/hooks/useLivePrices.ts`
+Same change in the `connectWs` callback's `ws.onmessage`:
 
-Change WebSocket URL (line ~20):
 ```typescript
-// Before:
-ws = new WebSocket('wss://ws.pionex.com/wsPub');
-// After:
-ws = new WebSocket('wss://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/ws-relay');
+ws.onmessage = async (event) => {
+  try {
+    const text = event.data instanceof Blob
+      ? await event.data.text()
+      : (event.data as string);
+    const msg = JSON.parse(text);
+
+    if (msg.op === 'PING') {
+      ws.send(JSON.stringify({ op: 'PONG', timestamp: msg.timestamp }));
+      return;
+    }
+
+    if (msg.topic === 'TRADE' && msg.symbol === ticker && Array.isArray(msg.data) && msg.data.length > 0) {
+      // ... existing candle logic unchanged
+    }
+  } catch (e) {
+    console.error('[LivePositionChart] WS parse error:', e);
+  }
+};
 ```
-
-### Edit: `src/components/trading/LivePositionChart.tsx`
-
-Two changes:
-
-**Change 1 — WebSocket URL in `connectWs`:**
-```typescript
-// Before:
-const ws = new WebSocket('wss://ws.pionex.com/wsPub');
-// After:
-const ws = new WebSocket('wss://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/ws-relay');
-```
-
-**Change 2 — Use `autoSize: true` in `buildChart`:**
-```typescript
-const chart = createChart(containerRef.current, {
-  autoSize: true,   // ← replaces width: containerRef.current.clientWidth
-  height: 320,
-  // rest unchanged
-});
-```
-
-Remove the `ResizeObserver` `useEffect` block (lines 198–208) since `autoSize` handles it.
-
----
-
-## File Change Summary
-
-| File | Type | Change |
-|---|---|---|
-| `supabase/functions/ws-relay/index.ts` | NEW | WebSocket relay proxy to bypass Pionex's browser Origin block |
-| `supabase/config.toml` | EDIT | Add `[functions.ws-relay] verify_jwt = false` |
-| `src/hooks/useLivePrices.ts` | EDIT | Point WebSocket URL to relay |
-| `src/components/trading/LivePositionChart.tsx` | EDIT | Point WebSocket URL to relay + use `autoSize: true` |
-
-No database changes. No new secrets needed.
-
----
 
 ## Why This Works
 
-- **Edge function WebSocket** connects to Pionex from Supabase's servers — no browser `Origin` header, no 403
-- **`autoSize: true`** lets lightweight-charts handle its own width using a ResizeObserver internally, so `width: 0` on initial render is no longer an issue
-- The relay is completely transparent — the subscribe/unsubscribe/PING/PONG protocol is unchanged
+- Blob frames from Pionex become proper UTF-8 strings via `blob.text()`
+- JSON parsing then works correctly
+- PING/PONG heartbeat responds correctly
+- TRADE messages are parsed and prices update in real-time
+- No edge function changes needed — the relay itself is working fine
+
+## File Change Summary
+
+| File | Change |
+|---|---|
+| `src/hooks/useLivePrices.ts` | `onmessage` → `async`, add `Blob.text()` conversion before `JSON.parse` |
+| `src/components/trading/LivePositionChart.tsx` | Same Blob fix in `connectWs` `onmessage` |
+
+No edge function changes. No new secrets. No DB changes.
