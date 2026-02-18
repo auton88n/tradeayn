@@ -1,182 +1,118 @@
 
-## Week 1 Essential Features — Implementation Plan
+## Critical Frontend Cleanup — Implementation Plan
 
-### What We Have Confirmed
+### What the Audit Confirmed (Exact Line Counts)
 
-- `ayn_daily_snapshots`: table exists, `UNIQUE(snapshot_date)`, has all required columns (`balance`, `daily_pnl_dollars`, `daily_pnl_percent`, `open_positions`, `trades_closed_today`, `wins_today`, `losses_today`). **Zero rows — never populated.**
-- `ayn_setup_performance`: table exists, `UNIQUE(setup_type)`, has all required columns including `profit_factor`. **Zero rows — no trigger writing to it.**
-- `ayn_circuit_breakers` / `ayn_error_log`: **Tables do not exist at all.**
-- Trigger `trigger_update_ayn_account_state` on `ayn_paper_trades` EXISTS and fires AFTER UPDATE.
-- **No daily snapshot cron job exists.** Only `ayn-monitor-trades-every-5min` is trading-related.
-- No `ayn-daily-snapshot`, `ayn-close-trade`, or `kill-switch` edge functions exist.
-- `ayn_setup_performance` has no trigger — nothing populates it.
-- Current Performance tab renders correctly (hooks are properly ordered after last fix).
+- `src/pages/Performance.tsx` — 406 lines, entirely self-contained with its own `StatsCard`, `OpenPositionCard` (no Close button), `TradeRow`, `loadData`, and 2 realtime channels. Missing: kill switch, manual close, circuit breakers, activity timeline.
+- `src/components/trading/PerformanceDashboard.tsx` — 529 lines, the correct authoritative component. Has kill switch, manual close (`onClose` prop), circuit breakers, activity timeline, `toast`-ready structure.
+- `src/components/dashboard/ChartAnalyzer.tsx` — 266 lines, confirmed orphaned. The search shows it is only referenced by itself internally. `ChartUnifiedChat.tsx` replaced it. Safe to delete.
+- `supabase/functions/ayn-daily-snapshot/index.ts` — Uses `SUPABASE_SERVICE_ROLE_KEY` internally (correct). The cron job migration uses the anon key in the HTTP header, which is a security gap but low priority since the function itself uses service role for DB access. The real risk is unauthorized triggering.
+- `PerformanceDashboard` is exported as `default` and used correctly in `ChartAnalyzerPage.tsx` already.
 
 ---
 
-### What Will Be Built
+### All 8 Changes — Exact Files and Lines
 
-#### Feature 1: Daily Snapshot Edge Function + Cron
+#### Change 1: Replace `src/pages/Performance.tsx` (CRITICAL — eliminates 366 lines)
 
-**New file:** `supabase/functions/ayn-daily-snapshot/index.ts`
+Replace the entire 406-line file with a ~40-line shell that:
+- Keeps the `Helmet`, `ArrowLeft` back button (navigate to `/`), page title, live indicator
+- Reads `isLive` from the `PerformanceDashboard`'s realtime — instead of duplicating the subscription, expose a simple `onLiveChange` callback prop on `PerformanceDashboard` OR just remove the live dot from the standalone page header (it's displayed inside `PerformanceDashboard` itself already)
+- Renders `<PerformanceDashboard />` with no `onNavigateToHistory` prop (not needed on this page — there is no History tab to jump to)
+- The `PerformanceDashboard` component already has its own loading state, kill switch, activity timeline, close buttons, and circuit breakers
 
-Logic:
-1. Fetch `ayn_account_state` (current_balance, total_trades)
-2. Fetch open positions count
-3. Fetch yesterday's last snapshot to calculate daily P&L delta
-4. Fetch all trades closed today (exit_time >= today midnight)
-5. Upsert into `ayn_daily_snapshots` with `ON CONFLICT (snapshot_date) DO UPDATE` — so re-running it same day updates rather than errors
-6. Return summary JSON
-
-**Cron job** (added via SQL insert tool, not migration):
+The new `Performance.tsx` will be approximately:
 ```
-jobname: 'ayn-daily-snapshot'
-schedule: '0 0 * * *'  (midnight UTC)
-url: https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/ayn-daily-snapshot
-```
+import Helmet, ArrowLeft, useNavigate
+import PerformanceDashboard from '@/components/trading/PerformanceDashboard'
 
-Also: **Run it immediately on first deploy** to seed today's snapshot so the equity curve has at least one data point.
-
----
-
-#### Feature 2: Setup Performance Trigger (Database Migration)
-
-**New DB trigger function** `update_setup_performance()` that fires AFTER UPDATE on `ayn_paper_trades` when status changes from OPEN/PARTIAL_CLOSE to CLOSED_WIN/CLOSED_LOSS/STOPPED_OUT.
-
-Logic uses atomic SQL:
-- `INSERT ... ON CONFLICT (setup_type) DO NOTHING` to ensure row exists (handles `NULL` setup_type by coalescing to `'UNKNOWN'`)
-- `UPDATE ayn_setup_performance SET total_trades = total_trades + 1, winning_trades = winning_trades + (CASE...), losing_trades = ...` — all increments are atomic, no off-by-one bug
-- `win_rate` calculated as `(winning_trades + new_win)::DECIMAL / (total_trades + 1) * 100` — values captured into local variables BEFORE the SET clause runs to avoid the same trigger bug as `update_ayn_account_state`
-- `avg_win_percent` updated with running average formula
-- `profit_factor` recalculated as `SUM(wins) / ABS(SUM(losses))` using a subquery on the table itself (most reliable approach to avoid accumulation drift)
-
-**Also fixes `update_ayn_account_state` trigger bug:** The win_rate calculation currently uses `winning_trades` and `total_trades` in the CASE expression BEFORE they're incremented. Fix: capture into local DECLARE variables first, then compute.
-
----
-
-#### Feature 3: Manual Trade Close — Edge Function + UI Button
-
-**New file:** `supabase/functions/ayn-close-trade/index.ts`
-
-Logic:
-1. Accept `{ tradeId, reason? }` in request body
-2. Fetch trade — validate exists and is OPEN or PARTIAL_CLOSE
-3. Attempt to get current price via same `getCurrentPrice()` helper used in `ayn-monitor-trades`
-4. If price unavailable → use `entry_price` (breakeven close)
-5. Calculate P&L: for BUY = `(exitPrice - entryPrice) * shares`, for SELL = `(entryPrice - exitPrice) * shares`
-6. Account for any partial exits already booked in `pnl_dollars`
-7. Update trade: `exit_price`, `exit_time`, `exit_reason: 'MANUAL_CLOSE'`, `pnl_dollars`, `pnl_percent`, `status: CLOSED_WIN or CLOSED_LOSS`
-8. The existing `trigger_update_ayn_account_state` fires automatically and updates account balance
-
-**UI change in `PerformanceDashboard.tsx`:**
-- Add "Close" button to each `OpenPositionCard`
-- Button calls `supabase.functions.invoke('ayn-close-trade', { body: { tradeId: trade.id } })`
-- Shows loading state, then reloads data
-- Styled: small, destructive variant, right-aligned inside the card
-
----
-
-#### Feature 4: Error Log Table (Database Migration)
-
-**New table:** `ayn_error_log`
-
-```sql
-CREATE TABLE ayn_error_log (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  error_type TEXT NOT NULL,           -- e.g. 'PRICE_FETCH_FAILED', 'TRADE_INSERT_FAILED'
-  component TEXT NOT NULL,            -- e.g. 'ayn-monitor-trades', 'ayn-open-trade'
-  operation TEXT,                     -- e.g. 'getCurrentPrice', 'insertTrade'
-  error_message TEXT,
-  context JSONB DEFAULT '{}',
-  severity TEXT DEFAULT 'ERROR',      -- 'ERROR', 'WARN', 'CRITICAL'
-  resolved BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_ayn_error_log_component ON ayn_error_log(component, created_at DESC);
-CREATE INDEX idx_ayn_error_log_unresolved ON ayn_error_log(resolved) WHERE resolved = FALSE;
-
-ALTER TABLE ayn_error_log ENABLE ROW LEVEL SECURITY;
--- Service role writes (edge functions use service role key, bypass RLS automatically)
--- Admin read
-CREATE POLICY "Admin read error log" ON ayn_error_log 
-  FOR SELECT USING ((auth.jwt() ->> 'role') = 'admin');
+export default function Performance() {
+  const navigate = useNavigate()
+  return (
+    <>
+      <Helmet title="AYN Trading Performance" />
+      <div className="max-w-5xl mx-auto py-6 px-4 space-y-6">
+        <Button ghost onClick={() => navigate('/')}>← Back</Button>
+        <div>
+          <h1>AYN's Trading Performance</h1>
+          <p>Live paper trading account — full transparency</p>
+        </div>
+        <PerformanceDashboard />
+      </div>
+    </>
+  )
+}
 ```
 
-**Update `ayn-monitor-trades`:** When `getCurrentPrice()` fails (returns null), log a row to `ayn_error_log` with `component: 'ayn-monitor-trades'`, `error_type: 'PRICE_FETCH_FAILED'`, `context: { ticker, tradeId }`. This creates an audit trail and makes stuck trades visible.
+This automatically gives `/performance` the kill switch button, manual close buttons, circuit breaker banner, activity timeline, and all future improvements.
 
----
+#### Change 2: Delete `src/components/dashboard/ChartAnalyzer.tsx` (CRITICAL — removes 266 lines)
 
-#### Feature 5: Kill Switch + Circuit Breakers
+The file is confirmed unused — no other file imports it. `ChartUnifiedChat.tsx` replaced it when the page was refactored to a conversational interface. Delete with no other changes needed.
 
-**New table:** `ayn_circuit_breakers`
+#### Change 3: Fix equity curve threshold in `PerformanceDashboard.tsx` line 418 (HIGH)
 
-```sql
-CREATE TABLE ayn_circuit_breakers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  breaker_type TEXT NOT NULL UNIQUE,  -- 'KILL_SWITCH', 'DAILY_LOSS_LIMIT'
-  is_tripped BOOLEAN DEFAULT FALSE,
-  tripped_at TIMESTAMPTZ,
-  reason TEXT,
-  threshold_value DECIMAL,
-  current_value DECIMAL,
-  auto_reset BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+Change `{snapshots.length > 1 &&` to `{snapshots.length > 0 &&`. A single-point Recharts AreaChart renders a dot on the line, which is valid and informative. Add a helper note below the chart: `"Updated daily at midnight UTC"`. This makes the equity curve visible immediately since the first snapshot has already been seeded.
 
-ALTER TABLE ayn_circuit_breakers ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public read circuit breakers" ON ayn_circuit_breakers FOR SELECT USING (true);
+#### Change 4: Fix equity curve threshold in `Performance.tsx` line 288 (HIGH — will be moot after Change 1)
+
+This is automatically resolved once `Performance.tsx` is replaced in Change 1. No separate action needed.
+
+#### Change 5: Add kill switch toast feedback in `PerformanceDashboard.tsx` lines 296–310 (HIGH)
+
+In `handleKillSwitch`:
+- **On success**: after `await loadData()`, add `toast.success(isKillSwitchActive ? 'Kill switch deactivated. Trading resumed.' : 'Kill switch activated. All trading halted.')`
+- **On error**: in the catch block, add `toast.error(\`Kill switch failed: ${err.message || 'Unknown error'}\`, { duration: 10000 })`
+
+Import `toast` from `'sonner'` at the top of the file (it's already installed — used throughout the app via `src/components/ui/sonner.tsx`).
+
+#### Change 6: Add setup performance empty state in `PerformanceDashboard.tsx` lines 499–522 (HIGH)
+
+Change the `{setupPerf.length > 0 && ...}` conditional to always render the card. When `setupPerf.length === 0`, show a muted placeholder inside the card:
+```
+"Setup performance will appear after the first trade closes.
+Win rates and profit factors are tracked per setup type automatically."
 ```
 
-Seed two rows:
-- `KILL_SWITCH` (manual override, auto_reset = FALSE, threshold_value = NULL)
-- `DAILY_LOSS_LIMIT` (auto_reset = TRUE, threshold_value = -5 meaning -5% daily loss)
+#### Change 7: Fix close error persistence in `PerformanceDashboard.tsx` lines 313–322 (MEDIUM)
 
-**New file:** `supabase/functions/ayn-kill-switch/index.ts`
+After `await loadData()` completes successfully in `handleCloseTrade`, add `setCloseError(null)`. Also add a `toast.success('Position closed successfully')` on success and `toast.error(...)` in the catch so the user gets feedback beyond the inline error banner.
 
-Actions it handles:
-- `{ action: 'trip', reason: '...' }` — sets `KILL_SWITCH.is_tripped = true`, sets `tripped_at`, logs to `ayn_activity_log`
-- `{ action: 'reset' }` — sets `is_tripped = false`, clears `tripped_at`
-- `{ action: 'status' }` — returns current state of all circuit breakers
+#### Change 8: Add auth context banner on `/performance` for unauthenticated visitors (MEDIUM)
 
-**Update `ayn-open-trade`:** Before inserting any new trade, check `ayn_circuit_breakers` for any tripped breaker. If `KILL_SWITCH.is_tripped = true`, return `{ opened: false, reason: 'Kill switch active' }` immediately.
-
-**UI change in `PerformanceDashboard.tsx`:**
-- Add "Emergency Stop" button at top of page, styled prominently in red
-- If kill switch is already active, show a green "Resume Trading" button instead
-- Calls `ayn-kill-switch` function via `supabase.functions.invoke`
-- Reads circuit breaker status from `ayn_circuit_breakers` table (already public read RLS)
+In the new `Performance.tsx`, use `useAuth()` to check if the user is logged in. If not, show a subtle info banner above the dashboard:
+```
+"This is AYN's live paper trading performance. Sign in to start your own trading analysis."
+```
+This preserves the public nature of the page while giving unauthenticated users context.
 
 ---
 
-### File Summary
+### Cron Job Security Note
 
-| File | Type | Action |
-|------|------|--------|
-| `supabase/functions/ayn-daily-snapshot/index.ts` | Edge function | Create |
-| `supabase/functions/ayn-close-trade/index.ts` | Edge function | Create |
-| `supabase/functions/ayn-kill-switch/index.ts` | Edge function | Create |
-| `supabase/functions/ayn-monitor-trades/index.ts` | Edge function | Update (add error logging) |
-| `supabase/functions/ayn-open-trade/index.ts` | Edge function | Update (add circuit breaker check) |
-| `src/components/trading/PerformanceDashboard.tsx` | React component | Update (Close button, Kill Switch button, circuit breaker state) |
-| DB migration | SQL | Create `ayn_error_log`, `ayn_circuit_breakers` tables + seed rows |
-| DB migration | SQL | Create `update_setup_performance()` trigger function + trigger |
-| DB migration | SQL | Fix `update_ayn_account_state()` win_rate calculation bug |
-| SQL insert | cron.schedule | Add `ayn-daily-snapshot` midnight cron job |
-| SQL insert | cron.schedule seed | Trigger first snapshot manually after deploy |
+The `ayn-daily-snapshot` function uses `SUPABASE_SERVICE_ROLE_KEY` **internally** for all database operations — this is correct and safe. The cron job calling it with the anon key in the Authorization header only means any user with the anon key (which is public by design in Supabase) can trigger the snapshot on demand. Since the function is idempotent (upsert, not insert), a user triggering it manually would only update today's snapshot to the current values — no data corruption. This is a low-severity issue. To fix it properly would require adding a `CRON_SECRET` environment variable and checking it in the function, which is a separate task outside this critical cleanup pass.
 
 ---
 
 ### Implementation Order
 
-1. DB migrations first (tables + triggers) — no code depends on them yet
-2. Seed circuit breakers rows
-3. Deploy `ayn-daily-snapshot` + add cron + immediately call it once to seed today's data point
-4. Deploy `ayn-close-trade`
-5. Deploy `ayn-kill-switch`
-6. Update `ayn-open-trade` (circuit breaker check)
-7. Update `ayn-monitor-trades` (error logging)
-8. Update `PerformanceDashboard.tsx` (Close button + Kill Switch UI)
+1. Delete `ChartAnalyzer.tsx` — no dependencies, zero risk
+2. Replace `Performance.tsx` — eliminates all duplicate code in one edit
+3. Fix equity curve threshold in `PerformanceDashboard.tsx` (line 418)
+4. Add kill switch toast feedback in `PerformanceDashboard.tsx` (lines 296–310)
+5. Add setup performance empty state in `PerformanceDashboard.tsx` (lines 499–522)
+6. Fix close error + add success toast in `PerformanceDashboard.tsx` (lines 313–322)
+7. Add auth banner in new `Performance.tsx`
 
-No new RLS policy issues — all new tables follow existing pattern (service role writes via edge functions, public or admin read for display).
+---
+
+### Net Change
+
+| File | Before | After | Delta |
+|---|---|---|---|
+| `src/pages/Performance.tsx` | 406 lines | ~45 lines | -361 |
+| `src/components/dashboard/ChartAnalyzer.tsx` | 266 lines | deleted | -266 |
+| `src/components/trading/PerformanceDashboard.tsx` | 529 lines | ~565 lines | +36 |
+| **Total** | | | **-591 lines** |
+
+No new dependencies needed. No database changes. No edge function changes. All 8 changes are pure frontend.
