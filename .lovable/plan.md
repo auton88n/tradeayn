@@ -1,225 +1,291 @@
 
-# Chart Analyzer UX Overhaul: Wider Layout + Sidebar History + Improved Chat Input
+# Fix: Chart Analyzer — Conversation History Sidebar + AYN-Style Chat Input
 
-## What the User Wants
+## What's Actually Wrong (Not What Was Previously Fixed)
 
-From the screenshot and message, three specific problems need fixing:
+The user is pointing out two distinct issues:
 
-1. **Chat History missing** — the main AYN chat has a collapsible history panel. The Chart Analyzer chat has no equivalent. The user wants chart analysis history accessible from within the Chat tab (or linkable to the History tab).
-2. **Chat input too basic** — currently it's a single-line box with a `+` and no send button visible. It needs to look more polished and functional.
-3. **Everything is too narrow** — both the Chat tab and the History tab are capped at `max-w-3xl` (768px). On wide screens, this leaves huge empty margins. The Performance tab already uses `max-w-5xl` — chat and history should match.
+### Issue 1: Sidebar shows wrong history
+The current "Past Analyses" sidebar shows `chart_analyses` (chart image scans with tickers, signals, confidence). The user wants **conversation history** — the sessions where they chatted with AYN Trading Coach — like the main AYN dashboard has in its left panel.
+
+**Key finding:** `useChartCoach.ts` already has a full session system built in:
+- `sessions` array — all saved `ChatSession` objects (stored in `localStorage` under `ayn-chart-coach-sessions`)
+- `activeSessionId` — currently active session
+- `switchSession(id)` — switch to a past session
+- `newChat()` — start a fresh session
+- `deleteSession(id)` — remove a session
+
+This data already exists. It just has no UI. The sidebar needs to be replaced (or the sidebar redesigned) to show **coach chat sessions** instead of chart analyses.
+
+### Issue 2: Chat input doesn't match AYN design
+The current input is a custom layout with:
+- `Upload chart` button on top-left
+- Send button on top-right
+- Textarea in middle
+- Hint text at bottom
+
+The AYN `ChatInput` has:
+- Full-width textarea at top
+- A **bottom toolbar row** with: `+ New` pill | `+` file | Mic | Sound | (center) History | (right) counter + AYN label
+- Send button appears only when text/file is present (animated in)
+- File chip animates in when a file is attached
+
+The chart input needs to adopt this same layout pattern.
 
 ---
 
-## Architecture Decisions
+## Architecture: What Changes
 
-### Layout: Two-column on desktop (sidebar + chat)
+### 1. Sidebar replacement strategy
 
-The `ChartAnalyzerPage` currently has a simple centered column layout. The fix is a **responsive two-column layout for the Chat tab**:
+**Option A (chosen):** Replace the sidebar content to show coach sessions. The `ChartAnalysisSidebar` is swapped for a new `ChartCoachSidebar` component. The "Past Analyses" sidebar (chart analysis history) is still accessible via the History tab — which is the correct place for it.
 
-- **Left sidebar** (collapsible, ~280px): Shows chart analysis history list — the same data the History tab shows, but as a slim sidebar. Clicking an entry in the sidebar populates or scrolls to that analysis in chat.
-- **Right pane**: Chat area, which expands to fill remaining space.
-- On **mobile**, the sidebar is hidden and a "History" button opens it as a sheet/drawer.
+This is cleaner than trying to show both in one sidebar.
 
-For the **History tab** — simply widen the container from `max-w-3xl` to `max-w-5xl`.
+The `ChartCoachSidebar` receives the `coach` object (from `useChartCoach`) so it can:
+- List all sessions with title + timestamp
+- Highlight the active session
+- Switch sessions (`coach.switchSession(id)`)
+- Delete sessions (`coach.deleteSession(id)`)
+- Create new chat (`coach.newChat()`)
 
-### Chat History in Sidebar vs. Separate Tab
+### 2. Chat input redesign
 
-The user said "history chat here like how ayn have it — you want to link both no problem." This means: either show history inline in the Chat tab OR link both. The cleanest solution that doesn't break existing History tab functionality:
+The `ChartUnifiedChat` input section (lines 457–553) is replaced to match AYN's `ChatInput` layout:
 
-- Add a **left sidebar** in the Chat tab that renders a slim list of past analyses (re-using `useChartHistory` hook data).
-- Clicking a sidebar item navigates to the History tab's detail view OR displays a summary inline as a read-only bubble in the chat.
-- The History tab continues to work as-is for full detail/comparison views.
+**New layout:**
+```
+┌───────────────────────────────────────────────────────────────┐
+│  [Textarea — full width, min 44px, grows to 120px]  [↑ Send] │
+│  ─────────────────────────────────────────────────────────── │
+│  [+ New] [📎] [Mic?]  |  [⏱ History N]  |  [Brain] AYN      │
+└───────────────────────────────────────────────────────────────┘
+```
 
-### Chat Input Improvements
+- Textarea is full-width on its own row, send button floats right aligned to bottom of textarea
+- Bottom toolbar: 3-column grid just like `ChatInput.tsx` lines 565–632:
+  - Left: `+ New` pill (calls `coach.newChat()`) + `📎 Upload chart` icon
+  - Center: Session history toggle button (shows session count) — clicking opens/closes the sidebar
+  - Right: AYN label with brain icon
+- Send button appears with animation when there's text or a file (matching AYN behavior)
+- File chip appears below textarea when an image is attached
 
-Current input issues:
-- The `+` button is small and unlabeled
-- No visible send button until text is typed (good UX actually, but needs polish)
-- No model of attached file type/count
-- Single-color border with no focus ring emphasis
+### 3. Session switching wires into `ChartUnifiedChat`
 
-Improvements:
-- Redesign the input container with clearer padding, taller minimum height (~52px vs current ~40px)
-- Add a **camera/upload icon** that shows `Upload Chart` label on hover as a tooltip
-- Make the send button always visible but disabled when empty (instead of animated in/out)
-- Add a subtle `Press Enter to send` hint below input
-- Add drag-and-drop visual affordance text inside the input when empty
+When a session is switched via the sidebar, the chat messages need to update. Currently `chatMessages` is lifted state in `ChartAnalyzerPage`. The flow:
 
-### Width Changes
+1. User clicks a session in `ChartCoachSidebar` → calls `coach.switchSession(id)`
+2. `coach.messages` updates to that session's messages
+3. The existing `useEffect` in `ChartUnifiedChat` that syncs coach messages to display messages needs to handle **full session load** (not just appending new messages)
 
-| Area | Current | New |
-|---|---|---|
-| Chat tab (page wrapper) | `max-w-3xl` | `max-w-6xl` (with sidebar split) |
-| History tab | `max-w-3xl` | `max-w-5xl` |
-| Performance tab | `max-w-5xl` | unchanged |
-| Top bar (Chat tab) | follows content | `max-w-6xl` |
+This requires a small change: when `activeSessionId` changes, load ALL messages from that session into the display messages array (not just append new ones).
 
 ---
 
 ## Files to Change
 
-### 1. `src/pages/ChartAnalyzerPage.tsx`
+### File 1: `src/components/dashboard/ChartUnifiedChat.tsx`
 
-**Changes:**
-- Add `sidebarOpen` state (boolean, default `true` on desktop, `false` on mobile)
-- Import `useChartHistory` and keep a single instance shared between sidebar + History tab (avoids double-fetching)
-- Lift history state up to `ChartAnalyzerPage` so both sidebar and History tab share the same data
-- Pass history state down to `ChartHistoryTab` as props (currently it fetches its own data — refactor to accept props)
-- Change Chat tab container from `max-w-3xl mx-auto` to a two-column flex layout:
-  ```
-  [Sidebar 280px] [Chat flex-1]
-  ```
-- Change History tab container from `max-w-3xl` to `max-w-5xl`
-- Change top bar max-width for chat tab from `max-w-3xl` to `max-w-6xl`
-- Add sidebar toggle button in the top bar (only visible in chat tab)
+**Input area redesign (lines 457–556):**
 
-**New layout structure for chat tab:**
+Remove the current top-row / textarea / bottom-hint layout. Replace with:
+
+```tsx
+{/* Input container — matches AYN ChatInput style */}
+<div className={cn(
+  "relative rounded-2xl",
+  "bg-background border border-border/50",
+  "shadow-lg",
+  "focus-within:border-amber-500/40 transition-all duration-200"
+)}>
+  {/* Row 1: Textarea + Send */}
+  <div className="flex items-end gap-3 px-4 pt-3 pb-2">
+    <div className="flex-1 min-w-0">
+      <Textarea
+        ref={textareaRef}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Ask about trading or upload a chart..."
+        disabled={isBusy}
+        unstyled
+        className="resize-none h-[44px] max-h-[120px] w-full text-base bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder:text-muted-foreground/50 leading-relaxed overflow-y-auto px-2 py-2"
+        rows={1}
+      />
+    </div>
+    {/* Send button — only visible when there's content (matches AYN) */}
+    <AnimatePresence>
+      {(input.trim() || attachedFile) && !isBusy && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          onClick={handleSend}
+          className="shrink-0 mb-1 w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center hover:bg-amber-600 hover:scale-105 active:scale-95 shadow-lg transition-all"
+        >
+          <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+        </motion.button>
+      )}
+      {isBusy && (
+        <div className="shrink-0 mb-1 w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+          <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+        </div>
+      )}
+    </AnimatePresence>
+  </div>
+
+  {/* Attached image chip */}
+  <AnimatePresence>
+    {attachedPreview && (
+      <motion.div ... className="px-4 pb-2">
+        {/* image thumbnail + remove X */}
+      </motion.div>
+    )}
+  </AnimatePresence>
+
+  {/* Row 2: Toolbar — 3-column grid */}
+  <div className="grid grid-cols-3 items-center px-2 py-1.5 border-t border-border/30 bg-muted/10">
+    {/* Left: + New + Upload */}
+    <div className="flex items-center gap-1">
+      <button onClick={coach.newChat} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-border text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all">
+        <Plus className="w-3.5 h-3.5" /> New
+      </button>
+      <button onClick={() => fileInputRef.current?.click()} disabled={isBusy} className="p-2 rounded-lg hover:bg-muted/60 transition-all">
+        <Upload className="w-4 h-4 text-muted-foreground" />
+      </button>
+    </div>
+
+    {/* Center: Chat sessions toggle */}
+    <div className="flex justify-center">
+      {coach.sessions.length > 0 && (
+        <button onClick={onToggleSidebar} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/80 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all">
+          <Clock className="h-3.5 w-3.5" />
+          <span>History</span>
+          <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full">{coach.sessions.length}</span>
+        </button>
+      )}
+    </div>
+
+    {/* Right: AYN label */}
+    <div className="flex items-center justify-end gap-2 text-muted-foreground px-2">
+      <Brain className="w-4 h-4 text-foreground" />
+      <span className="text-xs font-medium">AYN</span>
+    </div>
+  </div>
+</div>
 ```
-┌─────────────────────────────────────────────────────┐
-│  ← Back  [Chat] [History] [Performance]  [≡ History] │  ← top bar full width
-├──────────────┬──────────────────────────────────────┤
-│              │                                      │
-│  Past        │   AYN Chart Analyzer                 │
-│  Analyses    │                                      │
-│  Sidebar     │   [Messages area]                    │
-│  (280px)     │                                      │
-│              │   [Improved Input]                   │
-└──────────────┴──────────────────────────────────────┘
-```
 
-### 2. `src/components/dashboard/ChartAnalysisSidebar.tsx` (NEW FILE)
+**New prop needed:** `onToggleSidebar?: () => void` — called when the History button in the toolbar is clicked. This lets the parent toggle the sidebar.
 
-A new slim sidebar component showing recent chart analyses. Uses the data passed from parent (no new data fetching).
-
-**Features:**
-- Header: "Past Analyses" with item count badge + collapse button (X)
-- Search input (filters by ticker)
-- List of compact cards: each showing ticker, signal badge (colored), confidence %, timeframe, time ago
-- Active item highlighted
-- "View All" link at bottom that switches to History tab
-- On mobile: renders inside a Sheet (drawer)
+**Session sync fix:** Add a `useEffect` that watches `coach.activeSessionId`. When it changes, **replace** the display messages array entirely with the coach session's messages (converted to `ChatMessage` format) instead of just appending new ones:
 
 ```typescript
-interface ChartAnalysisSidebarProps {
-  items: ChartHistoryItem[];
-  loading: boolean;
-  onSelect: (item: ChartHistoryItem) => void;
-  onViewAll: () => void;
+const prevSessionIdRef = useRef<string | null>(null);
+
+useEffect(() => {
+  if (coach.activeSessionId !== prevSessionIdRef.current) {
+    // Session switched — reload all messages from this session
+    prevSessionIdRef.current = coach.activeSessionId;
+    if (coach.messages.length > 0) {
+      const converted: ChatMessage[] = coach.messages.map(m =>
+        m.role === 'user'
+          ? { type: 'user-text', content: m.content }
+          : { type: 'ayn-text', content: m.content }
+      );
+      setMessages(converted);
+    } else {
+      setMessages([]); // new empty session
+    }
+    prevCoachLenRef.current = coach.messages.length;
+  }
+}, [coach.activeSessionId]);
+```
+
+### File 2: `src/components/dashboard/ChartAnalysisSidebar.tsx` → replaced by `ChartCoachSidebar.tsx` (NEW)
+
+New component that shows **coach chat sessions** (not chart analyses):
+
+```typescript
+interface ChartCoachSidebarProps {
+  sessions: ChatSession[];
+  activeSessionId: string | null;
+  onSwitchSession: (id: string) => void;
+  onNewChat: () => void;
+  onDeleteSession: (id: string) => void;
   onClose: () => void;
+  // Mobile sheet mode
+  mobileMode?: boolean;
+  open?: boolean;
 }
 ```
 
-**Compact card design per item:**
+**UI per session item:**
 ```
-[↑ BTC_USDT]  BULLISH  72%
-1H · 2 hours ago
+[💬]  "How to build a trading..."   2h ago
+      3 messages                    [🗑]
 ```
+- Active session gets amber left border
+- Hover shows delete button
+- "New Chat" button at top
+- Formatted timestamps (today → "2h ago", older → date)
 
-### 3. `src/components/dashboard/ChartUnifiedChat.tsx`
+### File 3: `src/pages/ChartAnalyzerPage.tsx`
 
-**Chat input redesign (lines 457–550):**
+1. Replace `ChartAnalysisSidebar` import with `ChartCoachSidebar`
+2. The `history` state (`useChartHistory`) stays — still used by the History tab
+3. The sidebar no longer needs `history.items` — it gets `coach.sessions` from the `coach` hook
+4. But `coach` is currently instantiated inside `ChartUnifiedChat`. To share the coach sessions with the sidebar, **lift the `useChartCoach` hook to the page level**.
 
-Replace the current input area with an improved version:
+**New approach:** Pass `coach` as props down to `ChartUnifiedChat` so it doesn't create its own internal instance.
 
-**Current problems:**
-- `+` icon with no context
-- Border that barely shows
-- Send button hidden when empty
+Actually, simpler: Keep `coach` inside `ChartUnifiedChat` but expose the sessions/callbacks via additional props passed up. The cleanest solution: add a callback prop `onCoachReady?: (coach: ChartCoachAPI) => void` that fires once on mount, sharing the coach API reference with the parent.
 
-**New design:**
-```
-┌─────────────────────────────────────────────────────────────┐
-│  [📎 Upload chart]                              [↑ Send]    │
-│  Type a message or ask about trading...                     │
-│  ─────────────────────────────────────────────────────────  │
-│  Drop a chart image anywhere to analyze it                  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-Specific changes:
-- Replace the `+` button with an explicit `Upload chart` button showing the image upload icon + tooltip
-- Increase textarea `min-h` from `40px` to `52px` 
-- Make send button always visible, amber when active, muted when empty
-- Add a `⌘+Enter` / `Enter to send` hint below the input box (tiny, muted text)
-- Add drag-zone visual indicator text at the bottom of the input: `Drop chart to analyze`
-- Remove the `border-border/50` border — use `border-amber-500/20` with `focus-within:border-amber-500/50` for a more vivid active state
-- Add `shadow-lg` to the input container
-
-**No props changes** — same external interface, only internal JSX changes.
-
-### 4. `src/components/dashboard/ChartHistoryTab.tsx`
-
-Make it accept optional external data props so the parent can share the already-fetched history data. Fall back to internal `useChartHistory()` if no props provided (backward compatible).
+Even simpler: Move `useChartCoach` into `ChartAnalyzerPage` and pass it as a prop to `ChartUnifiedChat`:
 
 ```typescript
-interface ChartHistoryTabProps {
-  // Optional — if provided, uses external data. If not, fetches its own.
-  items?: ChartHistoryItem[];
-  loading?: boolean;
-  hasMore?: boolean;
-  filter?: ChartHistoryFilter;
-  onFilterChange?: (f: ChartHistoryFilter) => void;
-  onLoadMore?: () => void;
-  onCompare?: (items: [ChartHistoryItem, ChartHistoryItem]) => void;
-  onSelect?: (item: ChartHistoryItem) => void;
-  selectedItem?: ChartHistoryItem | null;
-  onBack?: () => void;
-}
-```
+// ChartAnalyzerPage.tsx
+const coach = useChartCoach(latestResult ?? undefined);
 
----
-
-## Detailed Implementation Notes
-
-### Sidebar toggle behavior
-- Desktop (`lg` and above): sidebar visible by default, toggle button in top bar hides/shows it with a smooth slide animation
-- Mobile: sidebar hidden by default, toggle button opens a `Sheet` (bottom drawer on mobile, left drawer on tablet)
-- Sidebar state persisted to `localStorage` as `chart-sidebar-open`
-
-### History data sharing pattern
-```typescript
-// In ChartAnalyzerPage.tsx:
-const history = useChartHistory(); // single instance
+// Pass to chat:
+<ChartUnifiedChat coach={coach} ... />
 
 // Pass to sidebar:
-<ChartAnalysisSidebar items={history.items} loading={history.loading} ... />
-
-// Pass to History tab:
-<ChartHistoryTab externalHistory={history} />
+<ChartCoachSidebar
+  sessions={coach.sessions}
+  activeSessionId={coach.activeSessionId}
+  onSwitchSession={coach.switchSession}
+  onNewChat={coach.newChat}
+  onDeleteSession={coach.deleteSession}
+  ...
+/>
 ```
 
-### Sidebar item click behavior
-When the user clicks an analysis in the sidebar:
-- Set `history.setSelectedItem(item)` AND switch to `'history'` tab
-- This shows the full `ChartHistoryDetail` view for that analysis
+The `ChartUnifiedChat` receives `coach` as a prop (no longer calls `useChartCoach` internally).
 
-This is the cleanest UX: sidebar is a quick-nav to any past analysis, the History tab handles the full detail view.
-
-### Input send button always visible
-Change the `AnimatePresence` wrapper around the send button to always render it, just change its appearance:
-```tsx
-<button
-  onClick={handleSend}
-  disabled={isBusy || (!input.trim() && !attachedFile)}
-  className={cn(
-    "flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200",
-    (input.trim() || attachedFile)
-      ? "bg-amber-500 text-white hover:bg-amber-600 active:scale-95"
-      : "bg-muted text-muted-foreground cursor-not-allowed"
-  )}
->
-```
+4. The sidebar toggle: the `onToggleSidebar` in `ChartUnifiedChat`'s toolbar History button calls `setSidebarOpen(o => !o)` in the parent. Wire this through as a prop.
 
 ---
 
-## Summary of File Changes
+## Summary of All Changes
 
-| File | Type | Key Change |
+| File | Type | Change |
 |---|---|---|
-| `src/pages/ChartAnalyzerPage.tsx` | EDIT | Lift history state, add sidebar state, two-column chat layout, widen history tab |
-| `src/components/dashboard/ChartAnalysisSidebar.tsx` | NEW | Compact history sidebar component |
-| `src/components/dashboard/ChartUnifiedChat.tsx` | EDIT | Improved input design, no layout constraints (parent handles width) |
-| `src/components/dashboard/ChartHistoryTab.tsx` | EDIT | Accept optional external history props |
+| `src/pages/ChartAnalyzerPage.tsx` | EDIT | Lift `useChartCoach` hook here; pass `coach` down; replace sidebar component |
+| `src/components/dashboard/ChartUnifiedChat.tsx` | EDIT | Accept `coach` as prop; redesign input to match AYN style (toolbar bottom row); fix session switch reload |
+| `src/components/dashboard/ChartCoachSidebar.tsx` | NEW | Shows coach chat sessions list with switch/delete/new; same mobile Sheet pattern as current sidebar |
+| `src/components/dashboard/ChartAnalysisSidebar.tsx` | NO CHANGE | Still exists but no longer used in `ChartAnalyzerPage` (only chart history sidebar) — can be removed if not needed elsewhere |
 
-No database changes. No new edge functions. No new dependencies (uses existing shadcn Sheet for mobile drawer).
+No database changes. No new dependencies. No edge function changes.
+
+---
+
+## Important Notes on `useChartCoach` being lifted
+
+Currently `useChartCoach(result?)` takes the `latestResult` as a parameter to build the context for AI calls. When lifted to `ChartAnalyzerPage`, the `latestResult` state is already there (`const [latestResult, setLatestResult] = useState<any>(null)`), so the hook can be called with that state directly:
+
+```typescript
+const coach = useChartCoach(latestResult ?? undefined);
+```
+
+This works correctly because `latestResult` updates when a chart is analyzed, and the hook already has a ref to the latest result value for building context in `sendMessage`.
