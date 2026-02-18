@@ -5,6 +5,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Fee/slippage model: 0.05% entry + 0.05% exit + 0.05% slippage = ~0.15% total round-trip
+function calculateCosts(positionSizeDollars: number, shares: number, exitPrice: number) {
+  const entryFee  = positionSizeDollars * 0.0005;
+  const exitFee   = shares * exitPrice * 0.0005;
+  const slippage  = positionSizeDollars * 0.0005;
+  return { entryFee, exitFee, slippage, total: entryFee + exitFee + slippage };
+}
+
 async function signPionexRequest(path: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -90,12 +98,16 @@ Deno.serve(async (req) => {
     const shares        = Number(trade.shares_or_coins);
     const prevPnl       = Number(trade.pnl_dollars ?? 0);
 
-    // P&L on remaining shares
-    const closePnl = isBuy
+    // P&L on remaining shares (gross)
+    const grossClosePnl = isBuy
       ? (currentPrice - entryPrice) * shares
       : (entryPrice - currentPrice) * shares;
 
-    const totalPnlDollars  = Math.round((prevPnl + closePnl) * 100) / 100;
+    // Deduct fees and slippage
+    const costs = calculateCosts(Number(trade.position_size_dollars), shares, currentPrice);
+    const netClosePnl = grossClosePnl - costs.total;
+
+    const totalPnlDollars  = Math.round((prevPnl + netClosePnl) * 100) / 100;
     const positionDollars  = Number(trade.position_size_dollars);
     const totalPnlPercent  = positionDollars > 0
       ? Math.round((totalPnlDollars / positionDollars) * 10000) / 100
@@ -107,19 +119,21 @@ Deno.serve(async (req) => {
     const { error: updateErr } = await supabase
       .from('ayn_paper_trades')
       .update({
-        exit_price:   currentPrice,
-        exit_time:    new Date().toISOString(),
-        exit_reason:  exitReason,
-        pnl_dollars:  totalPnlDollars,
-        pnl_percent:  totalPnlPercent,
-        status:       finalStatus,
-        updated_at:   new Date().toISOString(),
+        exit_price:    currentPrice,
+        exit_time:     new Date().toISOString(),
+        exit_reason:   exitReason,
+        pnl_dollars:   totalPnlDollars,
+        pnl_percent:   totalPnlPercent,
+        fees_paid:     Math.round((costs.entryFee + costs.exitFee) * 100) / 100,
+        slippage_cost: Math.round(costs.slippage * 100) / 100,
+        status:        finalStatus,
+        updated_at:    new Date().toISOString(),
       })
       .eq('id', tradeId);
 
     if (updateErr) throw updateErr;
 
-    console.log(`[ayn-close-trade] ✅ Closed ${trade.ticker} @ $${currentPrice} (${priceSource}) | P&L: $${totalPnlDollars} (${totalPnlPercent}%) | Reason: ${exitReason}`);
+    console.log(`[ayn-close-trade] ✅ Closed ${trade.ticker} @ $${currentPrice} (${priceSource}) | Gross: $${grossClosePnl.toFixed(2)}, Fees: $${costs.total.toFixed(2)}, Net: $${totalPnlDollars} (${totalPnlPercent}%) | Reason: ${exitReason}`);
 
     return new Response(JSON.stringify({
       success: true,

@@ -19,6 +19,8 @@ interface PaperTrade {
   reasoning: string | null;
   market_context: any;
   position_sizing_reasoning?: string[];
+  fees_paid?: number | null;
+  slippage_cost?: number | null;
 }
 
 function DecisionRow({ trade }: { trade: PaperTrade }) {
@@ -92,6 +94,17 @@ function DecisionRow({ trade }: { trade: PaperTrade }) {
             {ctx?.score && <span>Score: {ctx.score}/100</span>}
             <span>{new Date(trade.entry_time).toLocaleDateString()}</span>
           </div>
+          {isClosed && (trade.fees_paid != null || trade.slippage_cost != null) && (
+            <div className="flex gap-3 text-muted-foreground/70 pt-1 border-t border-border/20 mt-1">
+              {(trade.fees_paid ?? 0) > 0 && (
+                <span className="text-[10px]" style={{ color: 'hsl(var(--destructive) / 0.7)' }}>Fees: -${Number(trade.fees_paid).toFixed(2)}</span>
+              )}
+              {(trade.slippage_cost ?? 0) > 0 && (
+                <span className="text-[10px]" style={{ color: 'hsl(var(--destructive) / 0.7)' }}>Slip: -${Number(trade.slippage_cost).toFixed(2)}</span>
+              )}
+              <span className="text-[10px] text-muted-foreground/50">net after costs</span>
+            </div>
+          )}
         </div>
       </CollapsibleContent>
     </Collapsible>

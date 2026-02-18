@@ -5,6 +5,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Fee/slippage model: 0.05% entry + 0.05% exit + 0.05% slippage = ~0.15% total round-trip
+function calculateCosts(positionSizeDollars: number, shares: number, exitPrice: number) {
+  const entryFee   = positionSizeDollars * 0.0005;
+  const exitFee    = shares * exitPrice * 0.0005;
+  const slippage   = positionSizeDollars * 0.0005;
+  return { entryFee, exitFee, slippage, total: entryFee + exitFee + slippage };
+}
+
 // Pionex HMAC signing (same pattern as analyze-trading-chart)
 async function signPionexRequest(path: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -117,23 +125,27 @@ Deno.serve(async (req) => {
       // Check stop loss
       const stopHit = isBuy ? currentPrice <= stopLoss : currentPrice >= stopLoss;
       if (stopHit) {
-        const pnlDollars = isBuy
+        const grossPnl = isBuy
           ? (stopLoss - entryPrice) * shares
           : (entryPrice - stopLoss) * shares;
-        const pnlPercent = (pnlDollars / Number(trade.position_size_dollars)) * 100;
+        const costs = calculateCosts(Number(trade.position_size_dollars), shares, stopLoss);
+        const netPnlDollars = grossPnl - costs.total;
+        const netPnlPercent = (netPnlDollars / Number(trade.position_size_dollars)) * 100;
 
         await supabase.from('ayn_paper_trades').update({
           exit_price: currentPrice,
           exit_time: new Date().toISOString(),
           exit_reason: 'STOP_HIT',
-          pnl_dollars: Math.round(pnlDollars * 100) / 100,
-          pnl_percent: Math.round(pnlPercent * 100) / 100,
+          pnl_dollars: Math.round(netPnlDollars * 100) / 100,
+          pnl_percent: Math.round(netPnlPercent * 100) / 100,
+          fees_paid: Math.round((costs.entryFee + costs.exitFee) * 100) / 100,
+          slippage_cost: Math.round(costs.slippage * 100) / 100,
           status: 'STOPPED_OUT',
           updated_at: new Date().toISOString(),
         }).eq('id', trade.id);
 
-        console.log(`[ayn-monitor] ❌ STOPPED OUT: ${trade.ticker} @ $${currentPrice} | P&L: $${pnlDollars.toFixed(2)}`);
-        results.push({ ticker: trade.ticker, action: 'STOPPED_OUT', price: currentPrice, pnl: pnlDollars });
+        console.log(`[ayn-monitor] ❌ STOPPED OUT: ${trade.ticker} @ $${currentPrice} | Gross: $${grossPnl.toFixed(2)}, Fees: $${costs.total.toFixed(2)}, Net: $${netPnlDollars.toFixed(2)}`);
+        results.push({ ticker: trade.ticker, action: 'STOPPED_OUT', price: currentPrice, pnl: netPnlDollars });
         continue;
       }
 
@@ -145,15 +157,18 @@ Deno.serve(async (req) => {
         const tp1Hit = isBuy ? currentPrice >= tp1 : currentPrice <= tp1;
         if (tp1Hit) {
           const sharesClosing = shares * 0.5;
-          const pnlDollars = isBuy
+          const grossPnl = isBuy
             ? (tp1 - entryPrice) * sharesClosing
             : (entryPrice - tp1) * sharesClosing;
+          const partialPositionSize = Number(trade.position_size_dollars) * 0.5;
+          const costs = calculateCosts(partialPositionSize, sharesClosing, tp1);
+          const netPnl = grossPnl - costs.total;
 
           const newPartialExits = [...partialExits, {
             price: tp1,
             percent: 50,
             shares: sharesClosing,
-            pnl: Math.round(pnlDollars * 100) / 100,
+            pnl: Math.round(netPnl * 100) / 100,
             time: new Date().toISOString(),
             reason: 'TP1_HIT',
           }];
@@ -163,13 +178,15 @@ Deno.serve(async (req) => {
             shares_or_coins: shares - sharesClosing,
             stop_loss_price: entryPrice, // breakeven
             partial_exits: newPartialExits,
-            pnl_dollars: Number(trade.pnl_dollars) + Math.round(pnlDollars * 100) / 100,
+            pnl_dollars: Number(trade.pnl_dollars) + Math.round(netPnl * 100) / 100,
+            fees_paid: Math.round((costs.entryFee + costs.exitFee) * 100) / 100,
+            slippage_cost: Math.round(costs.slippage * 100) / 100,
             status: 'PARTIAL_CLOSE',
             updated_at: new Date().toISOString(),
           }).eq('id', trade.id);
 
-          console.log(`[ayn-monitor] ✅ TP1 HIT: ${trade.ticker} @ $${tp1} | Partial P&L: +$${pnlDollars.toFixed(2)} | Stop → breakeven`);
-          results.push({ ticker: trade.ticker, action: 'TP1_HIT', price: tp1, pnl: pnlDollars });
+          console.log(`[ayn-monitor] ✅ TP1 HIT: ${trade.ticker} @ $${tp1} | Gross: +$${grossPnl.toFixed(2)}, Fees: $${costs.total.toFixed(2)}, Net: +$${netPnl.toFixed(2)} | Stop → breakeven`);
+          results.push({ ticker: trade.ticker, action: 'TP1_HIT', price: tp1, pnl: netPnl });
           continue;
         }
       }
@@ -179,11 +196,13 @@ Deno.serve(async (req) => {
         const tp2Hit = isBuy ? currentPrice >= tp2 : currentPrice <= tp2;
         if (tp2Hit) {
           const remainingShares = Number(trade.shares_or_coins);
-          const pnlDollars = isBuy
+          const grossPnl = isBuy
             ? (tp2 - entryPrice) * remainingShares
             : (entryPrice - tp2) * remainingShares;
-          const totalPnl = Number(trade.pnl_dollars) + pnlDollars;
+          const costs = calculateCosts(Number(trade.position_size_dollars) * 0.5, remainingShares, tp2);
+          const totalPnl = Number(trade.pnl_dollars) + grossPnl - costs.total;
           const totalPnlPercent = (totalPnl / Number(trade.position_size_dollars)) * 100;
+          const prevFees = Number(trade.fees_paid ?? 0);
 
           await supabase.from('ayn_paper_trades').update({
             exit_price: tp2,
@@ -191,6 +210,8 @@ Deno.serve(async (req) => {
             exit_reason: 'TP2_HIT',
             pnl_dollars: Math.round(totalPnl * 100) / 100,
             pnl_percent: Math.round(totalPnlPercent * 100) / 100,
+            fees_paid: Math.round((prevFees + costs.entryFee + costs.exitFee) * 100) / 100,
+            slippage_cost: Math.round(costs.slippage * 100) / 100,
             status: 'CLOSED_WIN',
             updated_at: new Date().toISOString(),
           }).eq('id', trade.id);
