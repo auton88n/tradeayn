@@ -7,9 +7,10 @@ import { cn } from '@/lib/utils';
 import ChartUnifiedChat from '@/components/dashboard/ChartUnifiedChat';
 import PerformanceDashboard from '@/components/trading/PerformanceDashboard';
 import ChartHistoryTab from '@/components/dashboard/ChartHistoryTab';
-import ChartAnalysisSidebar from '@/components/dashboard/ChartAnalysisSidebar';
+import ChartCoachSidebar from '@/components/dashboard/ChartCoachSidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChartHistory } from '@/hooks/useChartHistory';
+import { useChartCoach } from '@/hooks/useChartCoach';
 
 const ChartAnalyzerPage = () => {
   const navigate = useNavigate();
@@ -31,7 +32,10 @@ const ChartAnalyzerPage = () => {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [latestResult, setLatestResult] = useState<any>(null);
 
-  // Shared history state — used by both sidebar and History tab
+  // Coach hook lifted to page level so sidebar can share session data
+  const coach = useChartCoach(latestResult ?? undefined);
+
+  // Shared history state — used by History tab
   const history = useChartHistory();
 
   useEffect(() => {
@@ -67,13 +71,7 @@ const ChartAnalyzerPage = () => {
     );
   }
 
-  const handleSidebarSelect = (item: any) => {
-    history.setSelectedItem(item);
-    setActiveTab('history');
-    setMobileSidebarOpen(false);
-  };
 
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
 
   // Determine max-width for the top bar based on active tab
   const topBarMax = activeTab === 'performance' ? 'max-w-5xl' : activeTab === 'chat' ? 'max-w-6xl' : 'max-w-5xl';
@@ -169,27 +167,27 @@ const ChartAnalyzerPage = () => {
         <div className="flex-1 min-h-0">
           {activeTab === 'chat' && (
             <div className={`max-w-6xl mx-auto h-full flex gap-0 overflow-hidden rounded-xl`}>
-              {/* Desktop sidebar */}
+              {/* Desktop sidebar — Chat session history */}
               {sidebarOpen && (
                 <div className="hidden lg:block h-full border border-border/50 rounded-l-xl overflow-hidden bg-background/50">
-                  <ChartAnalysisSidebar
-                    items={history.items}
-                    loading={history.loading}
-                    selectedItem={history.selectedItem}
-                    onSelect={handleSidebarSelect}
-                    onViewAll={() => setActiveTab('history')}
+                  <ChartCoachSidebar
+                    sessions={coach.sessions}
+                    activeSessionId={coach.activeSessionId}
+                    onSwitchSession={coach.switchSession}
+                    onNewChat={() => { coach.newChat(); setChatMessages([]); }}
+                    onDeleteSession={coach.deleteSession}
                     onClose={() => setSidebarOpen(false)}
                   />
                 </div>
               )}
 
               {/* Mobile sidebar (Sheet) */}
-              <ChartAnalysisSidebar
-                items={history.items}
-                loading={history.loading}
-                selectedItem={history.selectedItem}
-                onSelect={handleSidebarSelect}
-                onViewAll={() => setActiveTab('history')}
+              <ChartCoachSidebar
+                sessions={coach.sessions}
+                activeSessionId={coach.activeSessionId}
+                onSwitchSession={(id) => { coach.switchSession(id); setMobileSidebarOpen(false); }}
+                onNewChat={() => { coach.newChat(); setChatMessages([]); setMobileSidebarOpen(false); }}
+                onDeleteSession={coach.deleteSession}
                 onClose={() => setMobileSidebarOpen(false)}
                 mobileMode
                 open={mobileSidebarOpen}
@@ -202,6 +200,8 @@ const ChartAnalyzerPage = () => {
                   onMessagesChange={setChatMessages}
                   latestResult={latestResult}
                   onLatestResultChange={setLatestResult}
+                  coach={coach}
+                  onToggleSidebar={() => setSidebarOpen(o => !o)}
                 />
               </div>
             </div>
