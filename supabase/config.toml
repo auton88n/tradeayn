@@ -279,3 +279,6 @@ verify_jwt = false
 
 [functions.get-klines]
 verify_jwt = false
+
+[functions.ws-relay]
+verify_jwt = false

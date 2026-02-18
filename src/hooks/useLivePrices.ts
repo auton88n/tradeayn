@@ -23,7 +23,7 @@ export function useLivePrices(tickers: string[]): {
     let destroyed = false;
 
     function connect() {
-      ws = new WebSocket('wss://ws.pionex.com/wsPub');
+      ws = new WebSocket('wss://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/ws-relay');
 
       ws.onopen = () => {
         if (destroyed) { ws.close(); return; }

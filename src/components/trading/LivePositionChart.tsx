@@ -39,7 +39,7 @@ export default function LivePositionChart({ ticker, entryPrice, stopLoss, tp1, t
     if (!containerRef.current) return null;
 
     const chart = createChart(containerRef.current, {
-      width: containerRef.current.clientWidth,
+      autoSize: true,
       height: 320,
       layout: {
         background: { color: 'hsl(222,47%,9%)' },
@@ -113,7 +113,7 @@ export default function LivePositionChart({ ticker, entryPrice, stopLoss, tp1, t
 
   const connectWs = useCallback((tf: Timeframe) => {
     if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
-    const ws = new WebSocket('wss://ws.pionex.com/wsPub');
+    const ws = new WebSocket('wss://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/ws-relay');
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -195,17 +195,8 @@ export default function LivePositionChart({ ticker, entryPrice, stopLoss, tp1, t
     connectWs(tf);
   }, [ticker, buildChart, connectWs]);
 
-  // Resize observer
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const observer = new ResizeObserver(() => {
-      if (chartRef.current && containerRef.current) {
-        chartRef.current.applyOptions({ width: containerRef.current.clientWidth });
-      }
-    });
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, []);
+
+
 
   useEffect(() => {
     loadAndConnect(timeframe);
