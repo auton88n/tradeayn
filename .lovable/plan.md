@@ -1,213 +1,201 @@
 
-# Fix 1: Stop Fabrication + Fix 2: Fee/Slippage Modeling
+# Post-Processing Validation Layer — Implementation Plan
 
-## Root Cause Analysis (Confirmed)
+## What Is Being Built
 
-### Fabrication
-The anti-fabrication rule in `systemPrompts.ts` (lines 320–327) is buried halfway through a 403-line file, after dozens of other instructions. The model follows the most recent and most emphatic instructions — burying the prohibition weakens it. The actual rule text also lacks **concrete negative examples** and **self-check language** that forces the model to validate before responding.
+A programmatic interceptor that catches any AI-fabricated numbers or tickers **after** the AI generates its response, before the response is sent to the user. This is a belt-and-suspenders add-on to the existing prompt engineering fix.
 
-The performance data injection at line 881 of `index.ts` already says "DO NOT FABRICATE" — but it is injected as a context section *appended to* the system prompt, not as the *first thing the model reads*. When context is long, instructions near the end of a system prompt receive less attention.
+The architecture is simple:
+```text
+AI Response (may contain fabricated data)
+        ↓
+  validator.ts: extract $amounts, %, tickers
+        ↓
+  compare against accountPerformance (real DB data)
+        ↓
+  if violation → replace with verified fallback
+        ↓
+  User receives only verified data
+```
 
-Additionally, the `performanceContext` fallback (lines 892–902) correctly fills in `$10,000 / 0 trades` when `accountPerformance?.account` is null — but it does NOT include an explicit "if total_trades = 0, respond with this exact phrase" instruction. The AI sees the data but is not forced into a specific response shape for the zero-trade case.
+---
 
-### Fees/Slippage
-`ayn-monitor-trades/index.ts` computes P&L at three close events (STOP_HIT lines 120–133, TP1_HIT lines 148–169, TP2_HIT lines 182–196) with raw `(price - entry) * shares` math. Zero deductions for fees or slippage. Same issue in `ayn-close-trade/index.ts`. The `fees_paid` and `slippage_cost` columns do not exist (confirmed via live query → empty result).
+## Code Audit Findings
+
+### Key Facts Confirmed by Reading the Code
+
+**Response flow (lines 1509–1625 of `index.ts`):**
+- The LLM is called at line 1511 via `callWithFallback()`
+- Non-streaming response text lands in `responseContent` at line 1532
+- After that, the EXECUTE_TRADE parser runs (lines 1535–1586)
+- Then the safety net (lines 1588–1609)
+- Then the final `return` at line 1614
+- **The validation layer must be inserted between line 1586 and 1611** — after any trade execution rewrites `responseContent`, before the final return.
+
+**`isPerformanceQuery` = `intent === 'trading-coach'`** (line 798) — not keyword-gated. This means `accountPerformance` is always fetched for trading-coach intent. The validator only runs on non-streaming trading-coach calls (streaming skips the whole non-streaming block).
+
+**`accountPerformance` structure (lines 832–836):**
+```typescript
+{
+  account: accountRes.data,        // ayn_account_state row (single)
+  openPositions: openRes.data,     // ayn_paper_trades[] OPEN/PARTIAL_CLOSE
+  recentTrades: recentRes.data,    // ayn_paper_trades[] last 5 closed
+}
+```
+The `account` field is null when there is no row in `ayn_account_state`. The validator must handle `null` account gracefully.
+
+**`ayn_activity_log` schema (confirmed from `aynLogger.ts`):** Uses `action_type`, `summary`, `details`, `triggered_by`. The plan's proposed `activity_type` field does NOT exist — logging must use `action_type`.
+
+**Streaming responses (lines 1519–1528):** Return before reaching the validation block. The validator only covers non-streaming responses. This is acceptable — streaming is used for conversational replies where the user sees text token-by-token. The wantsAutonomousTrading path already forces `effectiveStream = false` (line 1510), meaning the highest-risk queries (performance + trade execution) always go through non-streaming and thus through the validator.
 
 ---
 
 ## What Changes
 
-### File 1: `supabase/functions/ayn-unified/systemPrompts.ts`
+### File 1: `supabase/functions/ayn-unified/validator.ts` (NEW FILE)
 
-**Change location:** The `PAPER TRADING ACCOUNT RULES` block (lines 320–327).
+A self-contained module that exports one function: `validateTradingResponse()`.
 
-**What to change:** Replace the current soft 7-line block with a substantially stronger version that:
-1. Uses all-caps section header `PAPER TRADING ACCOUNT — ABSOLUTE RULES (HIGHEST PRIORITY)`
-2. Leads with a **hard prohibition** before any positive instruction
-3. Includes **concrete bad-response examples** with `← FABRICATION. NEVER.` markers
-4. Provides **exact scripted responses** for the zero-trade and has-trades cases
-5. Adds a **self-check step**: "Before answering any performance question, verify: does my answer contain any number, trade, or ticker not present in the injected context block?"
+**Design decisions vs the plan:**
 
-The new block (replaces lines 320–327):
+The plan's `validatePerformanceResponse` extracts dollar amounts and checks them against an allowed set. This is the right approach, but needs tuning for real-world use:
 
+1. **Dollar amount tolerance**: The plan uses ±$0.02. This is too strict for larger balances. A balance of $10,000 might be formatted as "$10K" or "$10,000" with comma. The regex handles comma-stripped values, so ±$0.50 tolerance is more robust.
+
+2. **Ticker validation when totalTrades = 0**: The plan checks `allowedTickers.has(ticker)` but `allowedTickers` is empty when there are no trades. The guard condition `if (!allowedTickers.has(ticker) && injectedContext.totalTrades > 0)` in the plan correctly prevents false positives for zero-trade state.
+
+3. **Common-word exclusions**: Words like "USD", "API", "N/A", "KYC", "AML", "SMC", "RSI", "SMA", "EMA", "OB" all match the ticker regex but are not trade tickers. The exclusion set needs to be comprehensive.
+
+4. **The plan's `validatePercentageClaims` has a high false-positive rate**: Win rate discussions (e.g., "65% confidence threshold", "0.05% fee") would all flag as violations. This function is excluded from the implementation — percentage validation is too noisy to be reliable.
+
+**Final `validator.ts` structure:**
+
+```typescript
+export interface ValidationContext {
+  accountBalance: number;
+  startingBalance: number;
+  totalTrades: number;
+  winningTrades: number;
+  losingTrades: number;
+  winRate: number;
+  openPositions: Array<{ ticker: string; entryPrice: number; pnl: number }>;
+  recentTrades: Array<{ ticker: string; entryPrice: number; exitPrice: number; pnl: number }>;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  sanitizedResponse?: string;
+  violations: string[];
+}
+
+export function validateTradingResponse(
+  aiResponse: string,
+  ctx: ValidationContext
+): ValidationResult
 ```
-PAPER TRADING ACCOUNT — ABSOLUTE RULES (HIGHEST PRIORITY):
-THESE RULES OVERRIDE EVERYTHING ELSE.
 
-You have a REAL paper trading account. The database state is ALWAYS injected into your context above (look for "REAL PAPER TRADING DATA"). That injected block is your only source of truth.
+**What it checks:**
+1. **Dollar amounts** — regex extracts all `$X`, `$X,XXX`, `$X.XX` patterns. Checks each against: account balance, starting balance, P&L (absolute), each position's entry price and P&L, each recent trade's entry, exit, and P&L. Tolerance: ±$0.50.
+2. **"Recent trade" patterns when 0 trades** — regex list of fabrication-indicator phrases (`recent trade`, `last trade`, `entered at $`, `shorted at $`, `closed position`, etc.) that prove the AI invented a trade.
+3. **Ticker mentions when 0 trades** — only when `totalTrades === 0` and `openPositions.length === 0` does the ticker check run. It looks for `BTC`, `ETH`, `SOL`, etc. appearing in trade-context sentences (e.g., "I bought SOL", "opened BTC position"). An extensive exclusion set prevents words like "API", "USD", "RSI" from triggering.
 
-ABSOLUTE PROHIBITIONS — NEVER DO THESE:
-✗ NEVER invent a trade ticker (SOL, BTC, USDC, etc.) unless it appears in the injected data
-✗ NEVER invent a balance, P&L figure, or win rate
-✗ NEVER invent an entry price, exit price, or trade outcome
-✗ NEVER say "my recent trade was..." unless a trade appears in the injected context
+**When violations found, the replacement response is generated from `ctx` values, not from hardcoded strings.**
 
-BAD EXAMPLE (0 trades) — NEVER RESPOND LIKE THIS:
-"Current balance: $10,245. Recent trade: SOL short at $188.40 → exit $181.20, +$385 profit."
-← THIS IS FABRICATION. The database shows 0 trades. You are lying.
-
-GOOD EXAMPLE (0 trades):
-"My paper trading account is live with $10,000. No trades executed yet — I'm waiting for a setup that clears my 65%+ confidence threshold. I don't force trades."
-
-GOOD EXAMPLE (has trades — use exact numbers from injected data):
-"Balance: $[exact_injected_number]. [exact_trade_count] trades. Win rate: [exact_injected_number]%. [list exactly what's in the context]"
-
-SELF-CHECK: Before answering any question about your account/trades/balance, ask yourself: "Is every number and ticker I'm about to say present in the REAL PAPER TRADING DATA block?" If any number is invented → delete it. Report only database facts.
-```
+---
 
 ### File 2: `supabase/functions/ayn-unified/index.ts`
 
-**Change 1 (lines 881–902): Make the injected performance context more commanding**
-
-The current `performanceContext` injection opens with `\n\nREAL PAPER TRADING DATA (FROM DATABASE — USE THIS, DO NOT FABRICATE):`. This is good but the zero-trade fallback block (lines 892–902) ends with just `NOTE: Account just launched. No trades executed yet.` — no scripted response.
-
-Change the zero-trade fallback to:
-```
-REAL PAPER TRADING DATA — INJECTED FROM DATABASE:
-Balance: $10,000.00 | Starting: $10,000.00 | P&L: $0.00 (0.00%)
-Total Trades: 0 | Win Rate: N/A
-Open Positions: NONE
-Closed Trades: NONE
-STATUS: Account launched. Zero trades executed.
-
-MANDATORY RESPONSE FOR THIS STATE:
-Your answer MUST follow this format: "My paper trading account is live with $10,000. No trades yet — I'm being selective and waiting for a 65%+ confidence setup. [Add relevant context if user asked something specific]"
-DO NOT DEVIATE. DO NOT ADD FICTIONAL TRADES. DO NOT ADD FICTIONAL PRICES.
-```
-
-**Change 2: Move performance context BEFORE `chartSection` in the system prompt assembly (line 938)**
-
-Currently: `systemPrompt = buildSystemPrompt(...) + chartSection + performanceContext + scanContext + INJECTION_GUARD`
-
-The model reads instructions in order. `chartSection` (recent chart analyses) can be several lines long, pushing `performanceContext` further down. Change the order so performanceContext comes immediately after `buildSystemPrompt()`:
+**One targeted insertion block** after line 1586 (end of EXECUTE_TRADE parsing), before line 1588 (safety net check). This is the optimal location because:
+- `responseContent` has already been rewritten by trade execution logic (accurate)
+- We're still before the final return
+- Only non-streaming responses reach this code
 
 ```typescript
-let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + performanceContext + chartSection + scanContext + INJECTION_GUARD;
-```
+// ── 🛡️ VALIDATION LAYER: Intercept fabricated performance data ──────────────
+if (intent === 'trading-coach' && !effectiveStream && accountPerformance !== null) {
+  // Build validation context from the same data that was injected into the prompt
+  const validationCtx = {
+    accountBalance:   Number(accountPerformance.account?.current_balance  ?? 10000),
+    startingBalance:  Number(accountPerformance.account?.starting_balance ?? 10000),
+    totalTrades:      Number(accountPerformance.account?.total_trades      ?? 0),
+    winningTrades:    Number(accountPerformance.account?.winning_trades    ?? 0),
+    losingTrades:     Number(accountPerformance.account?.losing_trades     ?? 0),
+    winRate:          Number(accountPerformance.account?.win_rate           ?? 0),
+    openPositions: (accountPerformance.openPositions ?? []).map((p: any) => ({
+      ticker:     p.ticker,
+      entryPrice: Number(p.entry_price),
+      pnl:        Number(p.unrealized_pnl_percent ?? 0),
+    })),
+    recentTrades: (accountPerformance.recentTrades ?? []).map((t: any) => ({
+      ticker:     t.ticker,
+      entryPrice: Number(t.entry_price),
+      exitPrice:  Number(t.exit_price ?? t.entry_price),
+      pnl:        Number(t.pnl_percent ?? 0),
+    })),
+  };
 
-This ensures the database facts are the first context the model sees after the system rules, reducing the chance of the rules being "forgotten" by the time the model generates a response.
+  const validation = validateTradingResponse(responseContent, validationCtx);
 
----
+  if (!validation.isValid) {
+    console.error('[VALIDATOR] 🚨 Fabrication intercepted:', validation.violations);
+    responseContent = validation.sanitizedResponse!;
 
-### Database Migration: Add `fees_paid` and `slippage_cost` columns
-
-```sql
-ALTER TABLE ayn_paper_trades
-  ADD COLUMN IF NOT EXISTS fees_paid DECIMAL(10,4) DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS slippage_cost DECIMAL(10,4) DEFAULT 0;
-```
-
----
-
-### File 3: `supabase/functions/ayn-monitor-trades/index.ts`
-
-The fee/slippage calculation is added as a helper function and called at all three close events. Fee model:
-- **Entry fee**: `position_size_dollars × 0.0005` (0.05% of position value at entry)
-- **Exit fee**: `shares × exitPrice × 0.0005` (0.05% of position value at exit)
-- **Slippage**: `position_size_dollars × 0.0005` (0.05% flat on position — simulates market order slippage)
-- **Total deduction**: ~0.15% of position value per round-trip
-
-A `calculateCosts(positionSizeDollars, shares, exitPrice)` helper function is added above `Deno.serve()`:
-
-```typescript
-function calculateCosts(positionSizeDollars: number, shares: number, exitPrice: number) {
-  const entryFee    = positionSizeDollars * 0.0005;
-  const exitFee     = shares * exitPrice * 0.0005;
-  const slippage    = positionSizeDollars * 0.0005;
-  return { entryFee, exitFee, slippage, total: entryFee + exitFee + slippage };
+    // Log to activity log for monitoring (non-blocking)
+    supabase.from('ayn_activity_log').insert({
+      action_type:  'fabrication_blocked',
+      summary:      `Fabrication intercepted: ${validation.violations.slice(0, 2).join('; ')}`,
+      triggered_by: 'system',
+      details: {
+        violations:          validation.violations,
+        user_message_preview: lastMessage.substring(0, 150),
+      },
+    }).catch((e: any) => console.error('[VALIDATOR] Log failed:', e));
+  }
 }
 ```
 
-**Three close events updated:**
-
-**STOP_HIT block (lines 119–133):**
+**Import added at top of `index.ts` (line 10):**
 ```typescript
-const grossPnl = isBuy ? (stopLoss - entryPrice) * shares : (entryPrice - stopLoss) * shares;
-const costs = calculateCosts(Number(trade.position_size_dollars), shares, stopLoss);
-const netPnlDollars = grossPnl - costs.total;
-const netPnlPercent = (netPnlDollars / Number(trade.position_size_dollars)) * 100;
-
-await supabase.from('ayn_paper_trades').update({
-  exit_price: currentPrice,
-  exit_time: new Date().toISOString(),
-  exit_reason: 'STOP_HIT',
-  pnl_dollars: Math.round(netPnlDollars * 100) / 100,
-  pnl_percent: Math.round(netPnlPercent * 100) / 100,
-  fees_paid: Math.round(costs.total * 100) / 100,
-  slippage_cost: Math.round(costs.slippage * 100) / 100,
-  status: 'STOPPED_OUT',
-  updated_at: new Date().toISOString(),
-}).eq('id', trade.id);
-```
-
-**TP1_HIT block (lines 146–169):** Fee deduction applied proportionally to the 50% partial close (costs calculated on `sharesClosing * tp1` position value).
-
-**TP2_HIT block (lines 178–200):** Fee deduction applied to remaining shares at tp2 price; `fees_paid` accumulates from prior partial close.
-
----
-
-### File 4: `supabase/functions/ayn-close-trade/index.ts`
-
-Same `calculateCosts` helper is added and the P&L calculation at line ~76 is updated to deduct fees:
-
-```typescript
-const costs = calculateCosts(Number(trade.position_size_dollars), shares, currentPrice);
-const closePnl = (isBuy ? (currentPrice - entryPrice) : (entryPrice - currentPrice)) * shares;
-const totalPnlDollars = Math.round((prevPnl + closePnl - costs.total) * 100) / 100;
-// ... fees_paid and slippage_cost added to the update payload
+import { validateTradingResponse } from './validator.ts';
 ```
 
 ---
 
-### File 5: `src/components/trading/AIDecisionLog.tsx`
+## What the Validator Does NOT Check
 
-**Interface update** — add the two new optional columns:
-```typescript
-interface PaperTrade {
-  // ... existing fields
-  fees_paid?: number;
-  slippage_cost?: number;
-}
-```
-
-**UI update** — in the expanded `CollapsibleContent` section, after the entry/exit price line, add a cost breakdown when the trade is closed and has fee data:
-
-```tsx
-{isClosed && (trade.fees_paid != null || trade.slippage_cost != null) && (
-  <div className="flex gap-3 text-muted-foreground pt-1 border-t border-border/20 mt-1">
-    {trade.fees_paid != null && trade.fees_paid > 0 && (
-      <span className="text-red-400/70">Fees: -${Number(trade.fees_paid).toFixed(2)}</span>
-    )}
-    {trade.slippage_cost != null && trade.slippage_cost > 0 && (
-      <span className="text-red-400/70">Slip: -${Number(trade.slippage_cost).toFixed(2)}</span>
-    )}
-    <span className="text-muted-foreground/60 text-[10px]">net after costs</span>
-  </div>
-)}
-```
-
-This is intentionally minimal — the P&L shown in the header (`.pnl_percent`) already reflects the net number, so the breakdown is informational only.
+To avoid false positives that would block legitimate responses:
+- **Percentages** — too many legitimate percentages exist in trading discussions (confidence %, fee %, RSI levels). Excluded.
+- **General price discussions** — if the user asks "what's Bitcoin's price?" and AYN responds "$67,000", the validator does NOT flag this because the user asked about market prices, not AYN's account performance. The validator only triggers for `intent === 'trading-coach'` AND when `accountPerformance !== null`.
+- **Future/hypothetical prices** — "If BTC hits $80,000..." is not a fabricated account figure.
+- **Ticker mentions in educational context** — The ticker check only triggers for zero-trade state. Once trades exist, tickers are allowed because AYN legitimately discusses many coins.
 
 ---
 
-## Files Changed Summary
+## File Change Summary
 
 | File | Type | Change |
 |---|---|---|
-| Migration SQL | NEW | Add `fees_paid`, `slippage_cost` columns to `ayn_paper_trades` |
-| `supabase/functions/ayn-unified/systemPrompts.ts` | EDIT | Strengthen PAPER TRADING ACCOUNT RULES block with hard prohibitions, bad examples, scripted responses, self-check |
-| `supabase/functions/ayn-unified/index.ts` | EDIT | (1) Beef up zero-trade fallback context with mandatory response script; (2) Swap order: `performanceContext` before `chartSection` in system prompt assembly |
-| `supabase/functions/ayn-monitor-trades/index.ts` | EDIT | Add `calculateCosts()` helper; deduct fees + slippage at STOP_HIT, TP1_HIT, TP2_HIT |
-| `supabase/functions/ayn-close-trade/index.ts` | EDIT | Add `calculateCosts()` helper; deduct fees + slippage in manual close |
-| `src/components/trading/AIDecisionLog.tsx` | EDIT | Add `fees_paid`/`slippage_cost` to interface; render cost breakdown in expanded row |
+| `supabase/functions/ayn-unified/validator.ts` | NEW | Full validation module (~120 lines) with dollar extraction, fabrication-phrase detection, and sanitized fallback generation |
+| `supabase/functions/ayn-unified/index.ts` | EDIT | (1) Add import of `validateTradingResponse`; (2) Insert ~30-line validation block after line 1586 |
 
-## Deploy Order
+**No database migrations. No new edge functions. No frontend changes.**
 
-1. **Migration** (schema before code)
-2. **`ayn-unified`** (both files — fabrication fix is the critical path, deploy first)
-3. **`ayn-monitor-trades`** + **`ayn-close-trade`** (fee modeling, can deploy together)
-4. **Frontend** (`AIDecisionLog.tsx` — reads new columns via optional fields, safe immediately)
+---
 
-## What This Does NOT Fix
+## Edge Cases Handled
 
-The fabrication fix strengthens the prompt considerably but cannot guarantee zero hallucination — large language models can always override instructions. The most reliable long-term solution would be a **post-processing validation layer** (intercept the AI response, check any dollar figure against the injected data, redact mismatches before sending to the user). This is out of scope for this change but worth noting for Phase 4.
+| Scenario | Behavior |
+|---|---|
+| AI says "$10,000" when balance IS $10,000 | ✅ Allowed (matches DB) |
+| AI says "$10,245" when balance is $10,000 | ❌ Blocked → sanitized |
+| AI mentions "SOL trade" when 0 trades | ❌ Blocked → sanitized |
+| AI says "65% confidence threshold" (not a trade %) | ✅ Allowed (% check is excluded) |
+| Trade was just executed, AI confirms it | ✅ Allowed (EXECUTE_TRADE runs before validator, so accountPerformance reflects the updated responseContent with confirmation appended) |
+| Streaming response | ✅ Skipped (validator only runs on non-streaming) |
+| `accountPerformance` is null (fetch failed) | ✅ Skipped (guard: `accountPerformance !== null`) |
+
+---
+
+## Monitoring
+
+Fabrication events are logged to `ayn_activity_log` with `action_type = 'fabrication_blocked'`. These are visible in the existing AYN Activity Log in the admin panel (the component already reads all `action_type` values and shows them in the feed). The admin will see these events naturally alongside other AYN actions.
