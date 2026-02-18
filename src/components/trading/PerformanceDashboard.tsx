@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Activity, Target, Award, BarChart3, AlertTriangle, CheckCircle, X, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -303,8 +304,18 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
       });
       if (error) throw error;
       await loadData();
+      toast.success(
+        isKillSwitchActive
+          ? 'Kill switch deactivated. Trading resumed.'
+          : 'Kill switch activated. All trading halted.',
+        { duration: 5000 }
+      );
     } catch (err: any) {
       console.error('Kill switch error:', err);
+      toast.error(`Kill switch failed: ${err.message || 'Unknown error'}`, {
+        description: 'Please try again or contact support if the issue persists.',
+        duration: 10000,
+      });
     } finally {
       setKillSwitchLoading(false);
     }
@@ -312,14 +323,17 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
 
   const handleCloseTrade = async (tradeId: string) => {
     setCloseError(null);
-    const { data, error } = await supabase.functions.invoke('ayn-close-trade', {
+    const { error } = await supabase.functions.invoke('ayn-close-trade', {
       body: { tradeId, reason: 'MANUAL_CLOSE' },
     });
     if (error) {
       setCloseError(`Failed to close trade: ${error.message}`);
+      toast.error(`Failed to close position: ${error.message}`);
       return;
     }
     await loadData();
+    setCloseError(null);
+    toast.success('Position closed successfully.');
   };
 
   if (loading) {
@@ -415,7 +429,7 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
       )}
 
       {/* Equity Curve */}
-      {snapshots.length > 1 && (
+      {snapshots.length > 0 ? (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -437,12 +451,17 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
                 <Tooltip
                   contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
                 />
-                <Area type="monotone" dataKey="balance" stroke="hsl(var(--primary))" fill="url(#dashboardBalanceGradient)" strokeWidth={2} />
+                <Area type="monotone" dataKey="balance" stroke="hsl(var(--primary))" fill="url(#dashboardBalanceGradient)" strokeWidth={2} dot={snapshots.length === 1} />
               </AreaChart>
             </ResponsiveContainer>
+            <p className="text-[10px] text-muted-foreground text-center mt-1">
+              {snapshots.length === 1
+                ? 'First snapshot captured. Chart grows daily at midnight UTC.'
+                : `${snapshots.length} daily snapshots · Updated at midnight UTC`}
+            </p>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
       {/* Open Positions */}
       <Card>
@@ -497,29 +516,36 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
       <AIDecisionLog trades={allTrades} />
 
       {/* Setup Performance */}
-      {setupPerf.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" /> Setup Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="grid grid-cols-5 gap-2 py-2 px-3 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-b border-border">
-              <div>Setup</div><div>Trades</div><div>Win Rate</div><div>Avg Win</div><div>P/F</div>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" /> Setup Performance
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {setupPerf.length === 0 ? (
+            <div className="px-4 py-8 text-center space-y-1">
+              <p className="text-sm text-muted-foreground">Setup performance will appear after the first trade closes.</p>
+              <p className="text-xs text-muted-foreground/60">Win rates and profit factors are tracked per setup type automatically.</p>
             </div>
-            {setupPerf.map(s => (
-              <div key={s.setup_type} className="grid grid-cols-5 gap-2 py-2 px-3 text-xs border-b border-border/30">
-                <div className="font-medium">{s.setup_type}</div>
-                <div>{s.total_trades} ({s.winning_trades}W)</div>
-                <div className={Number(s.win_rate) >= 60 ? 'text-green-500' : 'text-muted-foreground'}>{Number(s.win_rate).toFixed(0)}%</div>
-                <div className="text-green-500">+{Number(s.avg_win_percent).toFixed(1)}%</div>
-                <div>{Number(s.profit_factor).toFixed(2)}</div>
+          ) : (
+            <>
+              <div className="grid grid-cols-5 gap-2 py-2 px-3 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-b border-border">
+                <div>Setup</div><div>Trades</div><div>Win Rate</div><div>Avg Win</div><div>P/F</div>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+              {setupPerf.map(s => (
+                <div key={s.setup_type} className="grid grid-cols-5 gap-2 py-2 px-3 text-xs border-b border-border/30">
+                  <div className="font-medium">{s.setup_type}</div>
+                  <div>{s.total_trades} ({s.winning_trades}W)</div>
+                  <div className={Number(s.win_rate) >= 60 ? 'text-green-500' : 'text-muted-foreground'}>{Number(s.win_rate).toFixed(0)}%</div>
+                  <div className="text-green-500">+{Number(s.avg_win_percent).toFixed(1)}%</div>
+                  <div>{Number(s.profit_factor).toFixed(2)}</div>
+                </div>
+              ))}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <p className="text-[11px] text-muted-foreground text-center italic">
         Paper trading account starting at $10,000. All trades are automatically generated by AYN's chart analysis.
