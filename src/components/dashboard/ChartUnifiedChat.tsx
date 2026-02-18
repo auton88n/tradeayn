@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUp, Upload, X, Loader2, BarChart3, Search, Brain,
-  CheckCircle2, Sparkles, Plus,
+  CheckCircle2, Sparkles,
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -481,70 +481,73 @@ export default function ChartUnifiedChat({
         <div className={cn(
           "relative rounded-2xl overflow-visible",
           "bg-background/95 backdrop-blur-xl",
-          "border border-border/50",
-          "shadow-lg shadow-black/5",
+          "border border-amber-500/20",
+          "shadow-lg shadow-black/10",
           "transition-all duration-200",
-          "hover:border-amber-500/30"
+          "focus-within:border-amber-500/50 focus-within:shadow-amber-500/10"
         )}>
-          <div className="flex items-end gap-2 px-3 py-2">
-            {/* Attach button */}
+          {/* Top row: Upload button label + Send */}
+          <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isBusy}
-              className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-amber-500 transition-colors disabled:opacity-40 group"
             >
-              <Plus className="w-5 h-5" />
+              <Upload className="w-3.5 h-3.5 group-hover:text-amber-500 transition-colors" />
+              <span>Upload chart</span>
             </button>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) attachFile(file);
-                e.target.value = '';
-              }}
-            />
-
-            {/* Textarea */}
-            <div className="flex-1">
-              <Textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type a message or drop a chart..."
-                disabled={isBusy}
-                unstyled
-                className="resize-none py-2.5 min-h-[40px] max-h-[120px] w-full text-sm placeholder:text-muted-foreground/50"
-                rows={1}
-              />
-            </div>
-
-            {/* Send button */}
-            <AnimatePresence>
-              {(input.trim() || attachedFile) && (
-                <motion.button
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  onClick={handleSend}
-                  disabled={isBusy}
-                  className={cn(
-                    "flex-shrink-0 w-9 h-9 rounded-xl",
-                    "flex items-center justify-center",
-                    "bg-amber-500 text-white",
-                    "hover:bg-amber-600 active:scale-95",
-                    "transition-all duration-200",
-                    "disabled:opacity-50"
-                  )}
-                >
-                  {isBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" strokeWidth={2.5} />}
-                </motion.button>
+            <button
+              onClick={handleSend}
+              disabled={isBusy || (!input.trim() && !attachedFile)}
+              className={cn(
+                "flex-shrink-0 w-8 h-8 rounded-xl",
+                "flex items-center justify-center",
+                "transition-all duration-200",
+                (input.trim() || attachedFile)
+                  ? "bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-sm"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
               )}
-            </AnimatePresence>
+            >
+              {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" strokeWidth={2.5} />}
+            </button>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) attachFile(file);
+              e.target.value = '';
+            }}
+          />
+
+          {/* Textarea */}
+          <div className="px-3 pb-1">
+            <Textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message or ask about trading..."
+              disabled={isBusy}
+              unstyled
+              className="resize-none py-1 min-h-[52px] max-h-[120px] w-full text-sm placeholder:text-muted-foreground/50"
+              rows={2}
+            />
+          </div>
+
+          {/* Bottom hint */}
+          <div className="flex items-center justify-between px-3 pb-2">
+            <span className="text-[10px] text-muted-foreground/50">
+              Drop a chart image anywhere to analyze it
+            </span>
+            <span className="text-[10px] text-muted-foreground/40">
+              Enter to send
+            </span>
           </div>
         </div>
       </div>

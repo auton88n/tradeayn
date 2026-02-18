@@ -4,10 +4,15 @@ import ChartHistoryStats from './ChartHistoryStats';
 import ChartHistoryList from './ChartHistoryList';
 import ChartHistoryDetail from './ChartHistoryDetail';
 import ChartCompareView from './ChartCompareView';
-import type { ChartHistoryItem } from '@/types/chartAnalyzer.types';
+import type { ChartHistoryItem, ChartHistoryFilter } from '@/types/chartAnalyzer.types';
 
-export default function ChartHistoryTab() {
-  const history = useChartHistory();
+interface ChartHistoryTabProps {
+  externalHistory?: ReturnType<typeof useChartHistory>;
+}
+
+export default function ChartHistoryTab({ externalHistory }: ChartHistoryTabProps = {}) {
+  const internalHistory = useChartHistory();
+  const history = externalHistory ?? internalHistory;
   const [compareItems, setCompareItems] = useState<[ChartHistoryItem, ChartHistoryItem] | null>(null);
 
   if (compareItems) {
