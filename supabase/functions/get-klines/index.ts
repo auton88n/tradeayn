@@ -5,10 +5,10 @@ const corsHeaders = {
 
 // Interval mapping: frontend short-hand → Pionex API format
 const INTERVAL_MAP: Record<string, string> = {
-  '1m': '1MIN',
-  '5m': '5MIN',
-  '15m': '15MIN',
-  '1h': '1HOUR',
+  '1m': '1M',
+  '5m': '5M',
+  '15m': '15M',
+  '1h': '60M',
 };
 
 async function signPionexRequest(path: string, secret: string): Promise<string> {
@@ -64,16 +64,26 @@ Deno.serve(async (req) => {
     }
 
     const data = await res.json();
-    const rawKlines: Array<[number, string, string, string, string, string]> = data?.data?.klines ?? [];
 
-    // Map Pionex kline format [timestamp, open, high, low, close, volume]
+    interface PionexKline {
+      time: number;
+      open: string;
+      high: string;
+      low: string;
+      close: string;
+      volume: string;
+    }
+
+    const rawKlines: PionexKline[] = data?.data?.klines ?? [];
+
+    // Map Pionex kline objects { time, open, high, low, close, volume }
     // to { time (seconds), open, high, low, close }
-    const klines = rawKlines.map(([ts, o, h, l, c]) => ({
-      time: Math.floor(ts / 1000),
-      open: parseFloat(o),
-      high: parseFloat(h),
-      low: parseFloat(l),
-      close: parseFloat(c),
+    const klines = rawKlines.map((k) => ({
+      time: Math.floor(k.time / 1000),
+      open: parseFloat(k.open),
+      high: parseFloat(k.high),
+      low: parseFloat(k.low),
+      close: parseFloat(k.close),
     }));
 
     return new Response(JSON.stringify({ klines }), {

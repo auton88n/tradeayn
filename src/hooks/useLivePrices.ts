@@ -38,6 +38,13 @@ export function useLivePrices(tickers: string[]): {
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data as string);
+
+          // Respond to server heartbeat to keep connection alive
+          if (msg.op === 'PING') {
+            ws.send(JSON.stringify({ op: 'PONG', timestamp: msg.timestamp }));
+            return;
+          }
+
           if (msg.topic === 'TRADE' && msg.symbol && Array.isArray(msg.data) && msg.data.length > 0) {
             const latestTrade = msg.data[0];
             const price = parseFloat(latestTrade.price);
