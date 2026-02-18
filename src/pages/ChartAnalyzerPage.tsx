@@ -15,6 +15,10 @@ const ChartAnalyzerPage = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [activeTab, setActiveTab] = useState<'chat' | 'history' | 'performance'>('chat');
 
+  // Lifted chat state — persists across tab switches
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [latestResult, setLatestResult] = useState<any>(null);
+
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -52,9 +56,9 @@ const ChartAnalyzerPage = () => {
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,_hsl(25_80%_45%_/_0.04)_0%,_transparent_70%)]" />
       </div>
 
-      <div className="relative max-w-3xl mx-auto pt-4 px-4 h-screen flex flex-col">
+      <div className="relative pt-4 px-4 h-screen flex flex-col">
         {/* Top bar: Back + Tabs */}
-        <div className="flex items-center gap-3 mb-2 shrink-0">
+        <div className={`flex items-center gap-3 mb-2 shrink-0 ${activeTab !== 'performance' ? 'max-w-3xl mx-auto w-full' : 'max-w-5xl mx-auto w-full'}`}>
           <Button
             variant="ghost"
             size="sm"
@@ -107,18 +111,28 @@ const ChartAnalyzerPage = () => {
 
         {/* Content */}
         <div className="flex-1 min-h-0">
-          {activeTab === 'chat' && <ChartUnifiedChat />}
+          {activeTab === 'chat' && (
+            <div className="max-w-3xl mx-auto h-full">
+              <ChartUnifiedChat
+                messages={chatMessages}
+                onMessagesChange={setChatMessages}
+                latestResult={latestResult}
+                onLatestResultChange={setLatestResult}
+              />
+            </div>
+          )}
           {activeTab === 'history' && (
             <ScrollArea className="h-full">
-              <ChartHistoryTab />
+              <div className="max-w-3xl mx-auto">
+                <ChartHistoryTab />
+              </div>
             </ScrollArea>
           )}
           {activeTab === 'performance' && (
             <ScrollArea className="h-full">
-              <div className="py-2">
-                <PerformanceDashboard onNavigateToHistory={(analysisId) => {
+              <div className="max-w-5xl mx-auto py-2 px-1">
+                <PerformanceDashboard onNavigateToHistory={() => {
                   setActiveTab('history');
-                  // History tab will pick up any selected analysis via its own state
                 }} />
               </div>
             </ScrollArea>
