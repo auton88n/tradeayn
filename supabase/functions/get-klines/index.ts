@@ -78,13 +78,15 @@ Deno.serve(async (req) => {
 
     // Map Pionex kline objects { time, open, high, low, close, volume }
     // to { time (seconds), open, high, low, close }
-    const klines = rawKlines.map((k) => ({
-      time: Math.floor(k.time / 1000),
-      open: parseFloat(k.open),
-      high: parseFloat(k.high),
-      low: parseFloat(k.low),
-      close: parseFloat(k.close),
-    }));
+    const klines = rawKlines
+      .map((k) => ({
+        time: Math.floor(k.time / 1000),
+        open: parseFloat(k.open),
+        high: parseFloat(k.high),
+        low: parseFloat(k.low),
+        close: parseFloat(k.close),
+      }))
+      .sort((a, b) => a.time - b.time);
 
     return new Response(JSON.stringify({ klines }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
