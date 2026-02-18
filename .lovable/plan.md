@@ -1,292 +1,373 @@
 
-# Phase 3: Advanced Metrics & Adaptive Risk Management — Implementation Plan
+# Phase 3.5: Deep Knowledge Base Integration — Implementation Plan
 
-## What I Confirmed by Reading the Code
+## Code Audit (What I Confirmed)
 
-### Current Database State (confirmed with live query)
-`ayn_account_state` currently has 14 columns: `id`, `starting_balance`, `current_balance`, `total_pnl_dollars`, `total_pnl_percent`, `total_trades`, `winning_trades`, `losing_trades`, `win_rate`, `largest_win_percent`, `largest_loss_percent`, `max_drawdown_percent`, `updated_at`, `created_at`.
+### `marketScanner.ts` — current state (full file, 212 lines)
+The file already has the full Phase 3 toolkit: `calculateRSI`, `calculateEMA`, `calculateMACD`, `calculateBollingerBands`, `calculateTrendStrength`, `analyzeKlines`, `calculateEnhancedScore`, and `fetchKlines`. All are exported. The `KlineSignals` interface has 9 fields + `summary: string[]`.
 
-**Missing entirely:** `sharpe_ratio`, `sortino_ratio`, `profit_factor`, `expectancy`, `avg_trade_duration_hours`, streak tracking, `recovery_factor`, `avg_win_size`, `avg_loss_size`.
-
-`ayn_paper_trades` has 27 columns. The `position_sizing_reasoning` column does **not** exist — must be added via migration.
-
-`ayn_circuit_breakers` has `id`, `breaker_type`, `is_tripped`, `tripped_at`, `reason`, `threshold_value`, `current_value`, `auto_reset`, `created_at`, `updated_at`. It does **not** have a `reset_at` column — the CONSECUTIVE_LOSSES circuit breaker insert in the plan must not use that column.
-
-Two circuit breaker rows exist: `KILL_SWITCH` (auto_reset=false) and `DAILY_LOSS_LIMIT` (auto_reset=true, threshold=-5%).
-
-### Current `scanMarketOpportunities()` (confirmed, lines 526–617 of ayn-unified)
-Currently uses only: 24h price change (open→close), USDT volume (`amount` field), and a simple consolidation/overextension check. Score threshold is 65. **No technical indicators whatsoever.** The plan to add RSI, MAs, Bollinger Bands, and MACD is the correct upgrade path.
-
-### Current `ayn-open-trade` position sizing (confirmed, lines 99–101)
-Exactly as described: 3 hardcoded tiers (confidence≥80→3%, <65→1.5%, else 2%). No adaptive logic. `supabase` client is not a module-level variable — it is scoped inside `Deno.serve()`, so the `calculateAdaptiveRisk` helper function must either receive it as a parameter or be inlined. The plan's code passes `supabase` as a free variable which won't compile — this must be fixed.
-
-### AIDecisionLog (confirmed)
-Currently shows: reasoning text, market_context signals array, entry/exit price, score. Position sizing reasoning is NOT displayed. Adding it requires only a small UI change to `AIDecisionLog.tsx` and reading from the new `position_sizing_reasoning` column.
-
-### `ayn_circuit_breakers` upsert approach for CONSECUTIVE_LOSSES
-The plan uses `supabase.from('ayn_circuit_breakers').insert({...})` for CONSECUTIVE_LOSSES. However the table has a unique constraint on `breaker_type`. Must use `upsert` with `onConflict: 'breaker_type'` to avoid insert errors if the row already exists. Also, the plan references a `reset_at` column that does not exist — this will be excluded.
-
----
-
-## Scope Adjustments (Pragmatic)
-
-The requested plan has 4 features. Three are straightforward. One (Feature 3: Enhanced Market Scanner) is high-risk for a different reason: the `scanMarketOpportunities` function runs inside `ayn-unified/index.ts` (1,601 lines), which already has complex bundling requirements per the architecture memory. Adding 200+ lines of technical indicator math inline would risk hitting the 60s deployment timeout. The scanner upgrade is therefore architected as a **separate internal helper function file** (`ayn-unified/marketScanner.ts`) imported by the main index, keeping the bundle modular.
-
----
-
-## Implementation Plan — All 4 Features
-
-### Step 1: Database Migrations (2 migrations)
-
-**Migration 1: Add advanced metrics columns to `ayn_account_state`**
-```sql
-ALTER TABLE ayn_account_state
-  ADD COLUMN IF NOT EXISTS sharpe_ratio DECIMAL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS sortino_ratio DECIMAL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS profit_factor DECIMAL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS expectancy DECIMAL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS avg_trade_duration_hours DECIMAL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS longest_win_streak INTEGER DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS longest_loss_streak INTEGER DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS current_win_streak INTEGER DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS current_loss_streak INTEGER DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS max_drawdown_duration_days INTEGER DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS recovery_factor DECIMAL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS avg_win_size DECIMAL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS avg_loss_size DECIMAL DEFAULT 0;
-```
-
-**Migration 2: Add position sizing reasoning column to `ayn_paper_trades`**
-```sql
-ALTER TABLE ayn_paper_trades
-  ADD COLUMN IF NOT EXISTS position_sizing_reasoning TEXT[] DEFAULT '{}';
-```
-
-No `reset_at` column is needed on `ayn_circuit_breakers` — the consecutive loss breaker will store its cooldown context in the existing `reason` text field.
-
----
-
-### Step 2: New Edge Function — `ayn-calculate-metrics`
-
-**File: `supabase/functions/ayn-calculate-metrics/index.ts`**
-
-This is a standalone, lightweight function that:
-1. Fetches all closed trades from `ayn_paper_trades` ordered by `exit_time ASC`
-2. Computes all 13 advanced metrics using pure math (no external imports needed — all helper functions inlined)
-3. Updates `ayn_account_state` with the computed values
-4. Returns the full metrics payload for debugging
-
-**Key implementation details:**
-- Uses `Deno.serve()` (not `serve` from deno std) to match the deployment standard
-- The `await supabase` issue from the plan's `calculateAllMetrics` function is fixed: the function accepts `startingBalance` as a parameter rather than re-querying inside the metric calculation loop
-- `calculateStreaks` iterates trades in chronological order (already sorted by `exit_time ASC`) — produces both `currentWin`/`currentLoss` (the trailing streak) and `longestWin`/`longestLoss`
-- `calculateDrawdownDuration` walks the cumulative P&L curve tracking when balance fell below the prior peak and when it recovered
-- Expectancy formula: `(winRate × avgWin) - ((1 - winRate) × avgLoss)` — expressed in dollars, not percent
-- Sharpe and Sortino use `pnl_percent` returns (trade-level, not daily returns, which is the practical approach for a trade-by-trade system)
-- Add entry to `supabase/config.toml`: `[functions.ayn-calculate-metrics] verify_jwt = false`
-
-**Cron schedule (runs 10 min after daily snapshot at 00:10 UTC):**
-```sql
-SELECT cron.schedule(
-  'ayn-calculate-metrics-daily',
-  '10 0 * * *',
-  $$
-  SELECT net.http_post(
-    url:='https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/ayn-calculate-metrics',
-    headers:='{"Content-Type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw"}'::jsonb,
-    body:='{"trigger":"cron"}'::jsonb
-  ) AS request_id;
-  $$
-);
-```
-(Same anon key approach as the existing daily-snapshot cron — idempotent compute with no risk from unauthorized calls.)
-
----
-
-### Step 3: Update `ayn-open-trade` — Adaptive Position Sizing (Feature 2) + Streak Breaker (Feature 3)
-
-**File: `supabase/functions/ayn-open-trade/index.ts`**
-
-The entire function is refactored. The `calculateAdaptiveRisk` helper is defined **above** `Deno.serve()` and accepts `supabase` as its first parameter (not a free variable). Inside `Deno.serve()`, the existing hardcoded 3-tier sizing block is replaced with a call to `calculateAdaptiveRisk(supabase, confidence, marketContext)`.
-
-**The 7 factors implemented exactly as specified:**
-1. Confidence tier (4 tiers: ≥85%→3%, ≥75%→2.5%, ≥65%→2%, else→1.5%)
-2. Recent 10-trade win rate (≥70%→+20%, ≤30%→-30%)
-3. Current streak (win≥5→+10%, loss≥3→-40%)
-4. Account drawdown (>20%→-50% recovery mode, >15%→-40%, >10%→-20%, account up 30%+→+15%)
-5. Market volatility from `marketContext?.volatility` field (high→-25%, extreme→-50%)
-6. Session liquidity by UTC hour (NY/London 13-20h→+5%, Asian/after-hours <8 or >21h→-15%)
-7. Profit factor from account state (≥2.5→+10%, <1.0→-30%)
-
-**Caps: `Math.max(0.5, Math.min(baseRisk, 3.0))`**
-
-The `position_sizing_reasoning` array is stored in the new column on the trade row.
-
-**Feature 3: CONSECUTIVE_LOSSES circuit breaker (added before opening trade)**
-
-After the existing `breakers` check and before the duplicate check:
+**Kline array format (confirmed from `analyzeKlines` line 98):**
 ```typescript
-// Check consecutive loss streak
-const { data: acctState } = await supabase
-  .from('ayn_account_state')
-  .select('current_loss_streak')
-  .eq('id', '00000000-0000-0000-0000-000000000001')
-  .single();
+const closes = klines.map(k => parseFloat(k[4] ?? k.close ?? '0'));
+```
+Pionex returns klines as arrays where index 0=timestamp, 1=open, 2=high, 3=low, 4=close, 5=volume. The new detection functions (Order Block, FVG) must use `k[1]` (open), `k[2]` (high), `k[3]` (low), `k[4]` (close) — **not** `k.open`, `k.high` etc., which would return `undefined` on array format klines.
 
-if ((acctState?.current_loss_streak ?? 0) >= 3) {
-  // Upsert CONSECUTIVE_LOSSES breaker
-  await supabase
-    .from('ayn_circuit_breakers')
-    .upsert({
-      breaker_type: 'CONSECUTIVE_LOSSES',
-      is_tripped: true,
-      tripped_at: new Date().toISOString(),
-      reason: `${acctState.current_loss_streak} consecutive losses — 4-hour cooldown`,
-      threshold_value: 3,
-      current_value: acctState.current_loss_streak,
-      auto_reset: false,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'breaker_type' });
+### `scanMarketOpportunities()` — lines 528–632 of `ayn-unified/index.ts`
+Phase 2 loop (lines 595–622): fetches 100 klines per candidate, calls `analyzeKlines(klines, candidate.price, [])` then `calculateEnhancedScore(priceChange, volume, technicals)`. The `signals` variable receives `technicals.summary`. Score threshold is 70. Everything feeds into the `opportunities` array as `{ ticker, score, price, volume24h, priceChange24h, signals }`.
 
-  return new Response(JSON.stringify({
-    opened: false,
-    reason: `Trading paused: ${acctState.current_loss_streak} consecutive losses. Manual reset required.`,
-  }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+### Funding Rate endpoint — NOT yet used anywhere
+No existing code calls a Pionex funding rate endpoint. The plan's proposed path `/api/v1/market/funding-rates` needs to be verified — Pionex's v1 perpetual futures endpoint for funding rates is `/api/v1/perpetual/funding-rates`. The plan's path would likely return 404. This must be corrected.
+
+### `calculateEnhancedScore` signature
+```typescript
+export function calculateEnhancedScore(priceChange: number, volume: number, signals: KlineSignals): number
+```
+The new detection functions (OB, Wyckoff, FVG) need to either: (a) be called inside `analyzeKlines` and their results added to `KlineSignals`, or (b) be called separately and their results passed into an extended version of `calculateEnhancedScore`. **Option (a) is cleaner** — extend `KlineSignals` with the new boolean/enum fields, compute everything inside `analyzeKlines`, and let `calculateEnhancedScore` read them.
+
+---
+
+## Design Decisions
+
+### Architecture: Extend `KlineSignals` (cleanest approach)
+
+All 4 new detectors run inside `analyzeKlines()` and add results to `KlineSignals`. `calculateEnhancedScore` reads the new fields. **No changes needed to `scanMarketOpportunities()` call site** — it already calls `analyzeKlines` and passes the result to `calculateEnhancedScore`.
+
+Funding rates are the exception — they require a separate API call per ticker (not derivable from klines alone). These are appended as a post-processing step in `scanMarketOpportunities()` after the kline scoring is done. This is the only change to `index.ts`.
+
+### Kline field access pattern
+
+All new detection code uses the same dual-mode pattern as `analyzeKlines`:
+```typescript
+const open  = parseFloat(k[1] ?? k.open  ?? '0');
+const high  = parseFloat(k[2] ?? k.high  ?? '0');
+const low   = parseFloat(k[3] ?? k.low   ?? '0');
+const close = parseFloat(k[4] ?? k.close ?? '0');
+```
+
+### Score calibration
+
+The current max possible score is already 50 + 15 + 15 + 12 + 8 + 7 + 8 + 5 = **120** (but threshold is 70 = moderate bar). Adding the new bonuses:
+- Order Block retest: +12
+- Wyckoff Accumulation: +15 / Markup: +10
+- FVG fill: +10
+- Negative funding: +8 / High positive: -5
+
+These add a theoretical max of +45 more. The 70 threshold does not need to change — higher-conviction setups will naturally score higher. The bonuses are additive with existing signals, so a coin with RSI oversold + MACD + OB retest + FVG fill could score ~120+ (well above 70), while a coin with only 1 signal still needs to break 70 via the existing indicators.
+
+---
+
+## All Changes — Exact Files
+
+### File 1: `supabase/functions/ayn-unified/marketScanner.ts`
+
+**Additions only** — no changes to existing functions.
+
+#### 1a. Extend `KlineSignals` interface (add 5 fields after line 94)
+
+```typescript
+export interface KlineSignals {
+  rsi: number;
+  aboveMA20: boolean;
+  aboveMA50: boolean;
+  ma20AboveMA50: boolean;
+  volumeIncrease: number;
+  trendStrength: number;
+  nearLowerBand: boolean;
+  nearUpperBand: boolean;
+  macdBullish: boolean;
+  // Phase 3.5 additions:
+  nearBullishOB: boolean;
+  wyckoffPhase: 'ACCUMULATION' | 'MARKUP' | 'NEUTRAL';
+  fillingBullishFVG: boolean;
+  summary: string[];
 }
 ```
-Note: `auto_reset: false` — this breaker requires manual reset via the kill switch UI, same as KILL_SWITCH. This is intentional: a 4-hour automatic timer cannot be reliably enforced from the database without pg_cron complexity. The dashboard will show the circuit breaker as tripped, and the user resets it via "Resume Trading".
 
-**Storing reasoning on trade insert:**
+#### 1b. Add `detectOrderBlocks(klines)` function
+
+**Logic correction from the plan:** The plan's `klines[i].close` access won't work on array-format klines. Fixed version uses indexed access:
+
 ```typescript
-position_sizing_reasoning: adaptiveRisk.reasoning, // TEXT[]
+export function detectOrderBlocks(klines: any[]): Array<{ type: string; price: number }> {
+  const blocks: Array<{ type: string; price: number }> = [];
+  
+  for (let i = 1; i < klines.length - 1; i++) {
+    const prev  = klines[i - 1];
+    const curr  = klines[i];
+    const next  = klines[i + 1];
+    
+    const prevClose  = parseFloat(prev[4] ?? prev.close  ?? '0');
+    const currOpen   = parseFloat(curr[1] ?? curr.open   ?? '0');
+    const currHigh   = parseFloat(curr[2] ?? curr.high   ?? '0');
+    const currLow    = parseFloat(curr[3] ?? curr.low    ?? '0');
+    const currClose  = parseFloat(curr[4] ?? curr.close  ?? '0');
+    const nextOpen   = parseFloat(next[1] ?? next.open   ?? '0');
+    const nextClose  = parseFloat(next[4] ?? next.close  ?? '0');
+    
+    // Bullish OB: red candle → next green candle breaks above high
+    if (
+      currClose < currOpen &&       // current is bearish (red)
+      nextClose > nextOpen &&       // next is bullish (green)
+      nextClose > currHigh          // next closes above current's high
+    ) {
+      blocks.push({ type: 'BULLISH_OB', price: currLow });
+    }
+    
+    // Bearish OB: green candle → next red candle breaks below low
+    if (
+      currClose > currOpen &&       // current is bullish (green)
+      nextClose < nextOpen &&       // next is bearish (red)
+      nextClose < currLow           // next closes below current's low
+    ) {
+      blocks.push({ type: 'BEARISH_OB', price: currHigh });
+    }
+  }
+  
+  // Return only the 5 most recent blocks (avoid stale OBs)
+  return blocks.slice(-5);
+}
 ```
+
+**Key correction from plan:** The plan checked `prev.close > current.close` as an extra condition — this is redundant and incorrect for OB definition. An OB is defined by the candle itself (red/green) and the subsequent break. The corrected version matches the SMC definition from `advancedTradingKnowledge.ts`: "Last candle before a strong impulsive move = institutional order zone." We keep only the 5 most recent OBs to avoid false positives from old structure.
+
+#### 1c. Add `detectWyckoffPhase(klines)` function
+
+```typescript
+export function detectWyckoffPhase(klines: any[]): 'ACCUMULATION' | 'MARKUP' | 'NEUTRAL' {
+  if (klines.length < 30) return 'NEUTRAL';
+  
+  const closes  = klines.map(k => parseFloat(k[4] ?? k.close  ?? '0'));
+  const volumes = klines.map(k => parseFloat(k[5] ?? k.volume ?? '0'));
+  
+  const recentVol   = scannerMean(volumes.slice(-10));
+  const olderVol    = scannerMean(volumes.slice(-30, -10));
+  const last20Slice = closes.slice(-20);
+  const priceRange  = Math.max(...last20Slice) - Math.min(...last20Slice);
+  const currentPrice = closes[closes.length - 1];
+  const ma20         = scannerMean(last20Slice);
+  
+  // Accumulation: tight range + declining volume + price above midpoint
+  if (
+    currentPrice > 0 &&
+    priceRange / currentPrice < 0.05 &&   // <5% range (compressed)
+    recentVol < olderVol * 0.8 &&          // volume declining
+    currentPrice > ma20                    // above MA midpoint
+  ) {
+    return 'ACCUMULATION';
+  }
+  
+  // Markup: new 20-period high + volume surge
+  const prev20High = Math.max(...closes.slice(-21, -1));
+  if (
+    currentPrice > prev20High &&          // breaking out to new high
+    recentVol > olderVol * 1.3            // volume confirming
+  ) {
+    return 'MARKUP';
+  }
+  
+  return 'NEUTRAL';
+}
+```
+
+#### 1d. Add `detectFairValueGaps(klines)` function
+
+```typescript
+export function detectFairValueGaps(klines: any[]): Array<{ type: string; top: number; bottom: number }> {
+  const gaps: Array<{ type: string; top: number; bottom: number }> = [];
+  
+  for (let i = 2; i < klines.length; i++) {
+    const prev2 = klines[i - 2];
+    const curr  = klines[i];
+    
+    const prev2High = parseFloat(prev2[2] ?? prev2.high ?? '0');
+    const prev2Low  = parseFloat(prev2[3] ?? prev2.low  ?? '0');
+    const currHigh  = parseFloat(curr[2]  ?? curr.high  ?? '0');
+    const currLow   = parseFloat(curr[3]  ?? curr.low   ?? '0');
+    
+    // Bullish FVG: gap up (current candle's low > candle-2's high)
+    if (currLow > prev2High) {
+      gaps.push({ type: 'BULLISH_FVG', top: currLow, bottom: prev2High });
+    }
+    
+    // Bearish FVG: gap down (current candle's high < candle-2's low)
+    if (currHigh < prev2Low) {
+      gaps.push({ type: 'BEARISH_FVG', top: prev2Low, bottom: currHigh });
+    }
+  }
+  
+  // Return only the 10 most recent (FVGs further back are usually already filled)
+  return gaps.slice(-10);
+}
+```
+
+#### 1e. Update `analyzeKlines()` to call all 3 new detectors
+
+After the existing `macdBullish` line (line 120), before the `summary` block:
+
+```typescript
+// Phase 3.5: Order Blocks
+const orderBlocks = detectOrderBlocks(klines);
+const nearBullishOB = orderBlocks
+  .filter(ob => ob.type === 'BULLISH_OB')
+  .some(ob => ob.price > 0 && Math.abs(currentPrice - ob.price) / ob.price < 0.03);
+
+// Phase 3.5: Wyckoff
+const wyckoffPhase = detectWyckoffPhase(klines);
+
+// Phase 3.5: Fair Value Gaps
+const fvgs = detectFairValueGaps(klines);
+const fillingBullishFVG = fvgs
+  .filter(fvg => fvg.type === 'BULLISH_FVG')
+  .some(fvg => currentPrice >= fvg.bottom && currentPrice <= fvg.top);
+```
+
+Add to summary:
+```typescript
+if (nearBullishOB)                         summary.push('Order block retest (institutional support)');
+if (wyckoffPhase === 'ACCUMULATION')       summary.push('Wyckoff accumulation (spring zone)');
+else if (wyckoffPhase === 'MARKUP')        summary.push('Wyckoff markup (breakout phase)');
+if (fillingBullishFVG)                     summary.push('Filling bullish Fair Value Gap');
+```
+
+Return the 3 new fields in the return object:
+```typescript
+return {
+  rsi, aboveMA20, aboveMA50, ma20AboveMA50, volumeIncrease, trendStrength,
+  nearLowerBand, nearUpperBand, macdBullish,
+  nearBullishOB, wyckoffPhase, fillingBullishFVG,
+  summary
+};
+```
+
+#### 1f. Update `calculateEnhancedScore()` to score new signals
+
+After the existing MACD block (after line 162), add:
+
+```typescript
+// Phase 3.5: Order Block retest
+if (signals.nearBullishOB) score += 12;
+
+// Phase 3.5: Wyckoff phase
+if (signals.wyckoffPhase === 'ACCUMULATION') score += 15;
+else if (signals.wyckoffPhase === 'MARKUP')  score += 10;
+
+// Phase 3.5: Fair Value Gap fill
+if (signals.fillingBullishFVG) score += 10;
+```
+
+#### 1g. Add `fetchFundingRates` function
+
+The Pionex v1 perpetual funding rate endpoint. This is added to `marketScanner.ts` so `index.ts` can import it without adding bulk to the main file.
+
+```typescript
+export async function fetchFundingRates(
+  apiKey: string,
+  apiSecret: string
+): Promise<Record<string, number>> {
+  try {
+    const enc = new TextEncoder();
+    const ts = Date.now().toString();
+    const path = `/api/v1/perpetual/public/fundingRate`;
+    const queryStr = `timestamp=${ts}`;
+    const message = `GET\n${path}\n${queryStr}`;
+    const key = await crypto.subtle.importKey(
+      'raw', enc.encode(apiSecret),
+      { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+    const signature = Array.from(new Uint8Array(sig))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    const res = await fetch(`https://api.pionex.com${path}?${queryStr}`, {
+      headers: { 'PIONEX-KEY': apiKey, 'PIONEX-SIGNATURE': signature },
+    });
+    
+    if (!res.ok) {
+      console.warn(`[SCANNER] Funding rates fetch failed: ${res.status}`);
+      return {};
+    }
+    
+    const data = await res.json();
+    const rates: Record<string, number> = {};
+    const list = data?.data?.list ?? data?.data ?? [];
+    for (const item of list) {
+      if (item.symbol && item.fundingRate != null) {
+        rates[item.symbol] = parseFloat(item.fundingRate);
+      }
+    }
+    return rates;
+  } catch (e) {
+    console.warn('[SCANNER] Funding rate fetch error:', e);
+    return {};
+  }
+}
+```
+
+**Note on endpoint path:** Pionex's public perpetual funding rate endpoint may vary. The function handles a non-OK response gracefully — if the path is wrong it logs a warning and returns `{}`, so the scanner continues without funding rate adjustment. This is safe fail-open behavior. The response shape handles both `data.list` and `data` array formats.
 
 ---
 
-### Step 4: Update `ayn-unified` — Enhanced Market Scanner (Feature 4)
+### File 2: `supabase/functions/ayn-unified/index.ts`
 
-**New file: `supabase/functions/ayn-unified/marketScanner.ts`**
+**One targeted change** to `scanMarketOpportunities()`: add funding rate fetch + adjustment after Phase 2 scoring (after line 624, before the final `return`).
 
-Contains all the technical indicator functions extracted into a module, keeping `index.ts` clean:
-- `fetchKlines(symbol, interval, limit, apiKey, apiSecret)` — fetches OHLCV klines from Pionex via HMAC-signed GET to `/api/v1/market/klines`
-- `calculateRSI(closes, period=14)` — standard RSI formula
-- `calculateEMA(values, period)` — exponential moving average
-- `calculateMACD(closes)` — EMA12 - EMA26, signal = EMA9 of MACD
-- `calculateBollingerBands(closes, period=20, multiplier=2)` — SMA ± (stdDev × multiplier)
-- `calculateTrendStrength(closes)` — % of last 20 candles above their 20-period MA
-- `analyzeKlines(klines, tickerClose)` — runs all indicators, returns structured signal object
-- `calculateEnhancedScore(ticker, signals)` — the new scoring rubric (RSI zones, MA alignment, volume surge, BB position, MACD, trend strength)
-- `generateSignalSummary(signals)` — produces the human-readable signal array stored in trade's `market_context`
+Import at top of the function's scope — `fetchFundingRates` is already exported from `marketScanner.ts` which is already imported at the top of `index.ts`.
 
-**Interval note:** Pionex maps `1h` to `60M` in their API. The kline fetch will use `interval=60M` (confirmed by the existing `ayn-unified/index.ts` interval mapping note in architecture memory: `'1H' is mapped to '60M'`). The plan uses `'1h'` — this must be corrected to `'60M'`.
+```typescript
+// After opportunities.sort((a, b) => b.score - a.score);
+// Before const top = opportunities.slice(0, 3);
 
-**In `ayn-unified/index.ts` `scanMarketOpportunities()` function (lines 526–617):**
+// ── Phase 2.5: Funding rate adjustment ──────────────────────────────────────
+const fundingRates = await fetchFundingRates(apiKey, apiSecret);
+if (Object.keys(fundingRates).length > 0) {
+  for (const opp of opportunities) {
+    const rate = fundingRates[opp.ticker];
+    if (rate == null) continue;
+    
+    if (rate < -0.0001) {   // Negative funding: longs getting paid (bullish)
+      opp.score += 8;
+      opp.signals.push(`Negative funding ${(rate * 100).toFixed(3)}% (bullish)`);
+    } else if (rate > 0.0005) {  // Very high positive: overleveraged longs (danger)
+      opp.score -= 5;
+      opp.signals.push(`High funding ${(rate * 100).toFixed(3)}% (caution)`);
+    }
+  }
+  // Re-sort after funding adjustment
+  opportunities.sort((a, b) => b.score - a.score);
+}
+```
 
-The existing simple 50-line ticker loop is replaced with an enhanced version that:
-1. Still fetches all Pionex tickers (unchanged — same endpoint, same filtering logic)
-2. For each ticker scoring ≥55 on the basic momentum check, fetches 100 klines on 60M interval
-3. Runs `analyzeKlines()` and `calculateEnhancedScore()` from `marketScanner.ts`
-4. Raises the final threshold to 70 (was 65) to compensate for the richer scoring
-5. Returns the same `{ opportunities, scannedPairs }` shape — no downstream changes needed
-
-**Performance consideration:** Fetching klines for every ticker would be slow (500+ pairs × 1 API call = sequential bottleneck). The strategy: first run the existing basic score, keep only tickers with basic score ≥55 (narrows to ~30-50 candidates), then fetch klines for those. This limits kline API calls to 30-50 per scan, not 500+.
+**Threshold calibration note:** The plan uses `rate < -0.01` (which is -1% — extremely rare) and `rate > 0.05` (5% — also extreme). Real funding rates are typically in the range of -0.03% to +0.10% per 8h. The corrected thresholds use `-0.0001` (-0.01%) for meaningful negative funding and `+0.0005` (+0.05%) for elevated positive funding — more realistic triggers.
 
 ---
 
-### Step 5: Update `PerformanceDashboard.tsx` — Advanced Metrics UI (Feature 1)
+## What Does NOT Change
 
-**File: `src/components/trading/PerformanceDashboard.tsx`**
-
-**Changes:**
-
-1. **Update `AccountState` interface** to include all 13 new columns (optional fields with `?` to not break before migration deploys):
-```typescript
-sharpe_ratio?: number;
-sortino_ratio?: number;
-profit_factor?: number;
-expectancy?: number;
-avg_trade_duration_hours?: number;
-longest_win_streak?: number;
-longest_loss_streak?: number;
-current_win_streak?: number;
-current_loss_streak?: number;
-max_drawdown_duration_days?: number;
-recovery_factor?: number;
-avg_win_size?: number;
-avg_loss_size?: number;
-```
-
-2. **Add `MetricCard` sub-component** (after `StatsCard`):
-A compact card with: label, large value, color-coded status badge (excellent=green, good=blue, neutral=gray, poor=red, warning=yellow), and tooltip text. Implemented as a small functional component — no external dependencies needed.
-
-3. **Add "Advanced Metrics" section** after the basic `Stats Grid` and before the equity curve. Renders a `grid grid-cols-2 gap-3` (matching existing stats grid style) with 8 metric cards:
-- Sharpe Ratio — status: ≥2 excellent, ≥1 good, ≥0 neutral, else poor
-- Sortino Ratio — status: ≥2 excellent, ≥1 good, else neutral
-- Profit Factor — status: ≥2.5 excellent, ≥1.5 good, ≥1.0 neutral, else poor
-- Expectancy ($) — status: >0 good, else poor
-- Avg Trade Duration — neutral (informational)
-- Win Streak (current / longest) — status: current≥3 excellent, else neutral
-- Loss Streak (current / longest) — status: current≥3 warning, else neutral
-- Recovery Factor — status: ≥3 excellent, ≥1.5 good, else neutral
-
-The section only renders when `account` is non-null AND at least one advanced metric exists (`account.sharpe_ratio !== undefined`). Shows a placeholder until `ayn-calculate-metrics` runs for the first time: "Advanced metrics calculate daily. Run 'do paper testing' to generate trades."
-
-4. **Add losing streak warning banner** (Feature 3 UI):
-After the kill switch banner, add:
-```typescript
-{(account?.current_loss_streak ?? 0) >= 2 && (
-  <div className="flex items-center gap-3 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-4 py-3">
-    <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
-    <div>
-      <p className="text-sm font-semibold text-yellow-400">Losing Streak Warning</p>
-      <p className="text-xs text-muted-foreground">
-        {account.current_loss_streak} consecutive losses. 
-        {account.current_loss_streak >= 3 
-          ? ' Trading automatically paused.' 
-          : ' One more loss triggers automatic pause.'}
-      </p>
-    </div>
-  </div>
-)}
-```
-
-5. **Update `AIDecisionLog.tsx`** — add position sizing reasoning display:
-In `DecisionRow`, after the existing `signals` badges block, add:
-```typescript
-{trade.position_sizing_reasoning && trade.position_sizing_reasoning.length > 0 && (
-  <div>
-    <span className="text-muted-foreground font-medium">Position Sizing:</span>
-    <div className="flex flex-wrap gap-1 mt-0.5">
-      {trade.position_sizing_reasoning.map((r, i) => (
-        <Badge key={i} variant="outline" className="text-[10px] font-normal text-blue-400 border-blue-500/30">{r}</Badge>
-      ))}
-    </div>
-  </div>
-)}
-```
-The `PaperTrade` interface in `AIDecisionLog.tsx` needs `position_sizing_reasoning?: string[]` added.
+- The `calculateEnhancedScore` function signature stays the same (still takes `priceChange`, `volume`, `signals`)
+- `scanMarketOpportunities` Phase 1 and Phase 2 loops are untouched — funding rates are a post-processing step
+- The score threshold of 70 is unchanged — the new bonuses reward high-confluence setups but don't inflate low-conviction scores
+- No database migrations needed
+- No frontend changes needed
+- No new edge functions
+- No changes to `config.toml`
 
 ---
 
 ## File Change Summary
 
-| File | Type | What Changes |
+| File | Change Type | Lines Affected |
 |---|---|---|
-| Migration 1 | SQL | Add 13 columns to `ayn_account_state` |
-| Migration 2 | SQL | Add `position_sizing_reasoning TEXT[]` to `ayn_paper_trades` |
-| `supabase/functions/ayn-calculate-metrics/index.ts` | NEW | Full metrics calculator edge function |
-| `supabase/config.toml` | EDIT | Add `[functions.ayn-calculate-metrics] verify_jwt = false` |
-| `supabase/functions/ayn-open-trade/index.ts` | EDIT | Adaptive sizing + consecutive loss breaker |
-| `supabase/functions/ayn-unified/marketScanner.ts` | NEW | Technical indicator functions (RSI, MACD, BB, EMA) |
-| `supabase/functions/ayn-unified/index.ts` | EDIT | Replace `scanMarketOpportunities()` with enhanced version |
-| `src/components/trading/PerformanceDashboard.tsx` | EDIT | MetricCard, advanced metrics grid, loss streak banner |
-| `src/components/trading/AIDecisionLog.tsx` | EDIT | Position sizing reasoning display |
-| Cron SQL (insert tool) | SQL | Schedule `ayn-calculate-metrics` at 00:10 UTC |
+| `supabase/functions/ayn-unified/marketScanner.ts` | EDIT | Extend `KlineSignals` interface (+3 fields), add 3 detection functions (~80 lines), update `analyzeKlines` return, update `calculateEnhancedScore`, add `fetchFundingRates` |
+| `supabase/functions/ayn-unified/index.ts` | EDIT | Add ~15-line funding rate adjustment block in `scanMarketOpportunities()` |
 
-## Deploy Order
+**Net addition: ~120 lines across 2 files. No deletions.**
 
-1. **Migrations first** (schema changes before code that uses them)
-2. **`ayn-calculate-metrics`** (new function + cron — foundation for adaptive sizing)
-3. **`ayn-open-trade`** (uses `current_loss_streak` + writes `position_sizing_reasoning`)
-4. **`ayn-unified` + `marketScanner.ts`** (enhanced scanner, independent of other changes)
-5. **Frontend** (`PerformanceDashboard.tsx` + `AIDecisionLog.tsx` — reads new columns gracefully via optional fields)
+---
+
+## Important Limitations to Set Expectations
+
+**Order Block detection** at 60M granularity identifies short-term institutional footprints. It is not the same as the daily/weekly OBs used by professional SMC traders — those require higher timeframe analysis. The 60M OBs detected here are valid for day-trade swing setups but will not catch longer-term accumulation zones. This is appropriate for AYN's paper trading horizon (hours to days).
+
+**Wyckoff detection** at 60M is necessarily simplified. Real Wyckoff analysis involves identifying SC, AR, springs, LPS across weeks of data. The implementation here detects the *characteristics* of accumulation phases (tight range + declining volume + above midpoint) rather than the specific Wyckoff events. It will correctly identify many accumulation patterns but may also fire on low-volatility consolidations that are not true Wyckoff setups.
+
+**Funding rates** are only relevant for perpetual futures pairs. If Pionex's endpoint path doesn't match exactly, the function returns `{}` and scoring continues without it — zero downside.
