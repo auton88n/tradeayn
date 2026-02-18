@@ -1623,7 +1623,9 @@ You may discuss trading concepts, strategy, and education freely — just don't 
             violations:           validation.violations,
             user_message_preview: lastMessage.substring(0, 150),
           },
-        }).catch((e: any) => console.error('[VALIDATOR] Log failed:', e));
+        }).then(({ error }) => {
+          if (error) console.error('[VALIDATOR] Log failed:', error);
+        });
       }
     }
 
