@@ -217,7 +217,7 @@ function OpenPositionCard({ trade, onClose, livePrice }: {
         <div><span className="text-muted-foreground">Entry</span><br /><span className="font-medium">${entryPrice.toFixed(2)}</span></div>
         <div><span className="text-muted-foreground">Stop</span><br /><span className="font-medium text-red-400">${Number(trade.stop_loss_price).toFixed(2)}</span></div>
         <div><span className="text-muted-foreground">TP1</span><br /><span className="font-medium text-green-400">{trade.take_profit_1_price ? `$${Number(trade.take_profit_1_price).toFixed(2)}` : '—'}</span></div>
-        <div><span className="text-muted-foreground">Size</span><br /><span className="font-medium">{trade.position_size_percent}%</span></div>
+        <div><span className="text-muted-foreground">Size</span><br /><span className="font-medium">${positionSizeDollars.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span><br /><span className="text-[10px] text-muted-foreground">{trade.position_size_percent}%</span></div>
       </div>
 
       {trade.partial_exits && trade.partial_exits.length > 0 && (
