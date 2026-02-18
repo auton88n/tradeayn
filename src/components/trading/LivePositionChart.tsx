@@ -123,6 +123,13 @@ export default function LivePositionChart({ ticker, entryPrice, stopLoss, tp1, t
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data as string);
+
+        // Keep connection alive
+        if (msg.op === 'PING') {
+          ws.send(JSON.stringify({ op: 'PONG', timestamp: msg.timestamp }));
+          return;
+        }
+
         if (msg.topic === 'TRADE' && msg.symbol === ticker && Array.isArray(msg.data) && msg.data.length > 0) {
           const trade = msg.data[0];
           const price = parseFloat(trade.price);
