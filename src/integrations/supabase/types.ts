@@ -626,6 +626,7 @@ export type Database = {
           exit_price: number | null
           exit_reason: string | null
           exit_time: string | null
+          fees_paid: number | null
           id: string
           market_context: Json | null
           partial_exits: Json | null
@@ -638,6 +639,7 @@ export type Database = {
           setup_type: string | null
           shares_or_coins: number
           signal: string
+          slippage_cost: number | null
           status: string
           stop_loss_price: number
           take_profit_1_percent: number | null
@@ -657,6 +659,7 @@ export type Database = {
           exit_price?: number | null
           exit_reason?: string | null
           exit_time?: string | null
+          fees_paid?: number | null
           id?: string
           market_context?: Json | null
           partial_exits?: Json | null
@@ -669,6 +672,7 @@ export type Database = {
           setup_type?: string | null
           shares_or_coins: number
           signal: string
+          slippage_cost?: number | null
           status?: string
           stop_loss_price: number
           take_profit_1_percent?: number | null
@@ -688,6 +692,7 @@ export type Database = {
           exit_price?: number | null
           exit_reason?: string | null
           exit_time?: string | null
+          fees_paid?: number | null
           id?: string
           market_context?: Json | null
           partial_exits?: Json | null
@@ -700,6 +705,7 @@ export type Database = {
           setup_type?: string | null
           shares_or_coins?: number
           signal?: string
+          slippage_cost?: number | null
           status?: string
           stop_loss_price?: number
           take_profit_1_percent?: number | null

@@ -891,15 +891,16 @@ Recent Closed Trades: ${recentTrades.length}${recentTrades.length > 0 ? '\n' + r
       console.log('[ayn-unified] Injected real performance data into trading context');
     } else if (isPerformanceQuery) {
       // Performance query but no account data found
-      performanceContext = `\n\nREAL PAPER TRADING DATA (FROM DATABASE — USE THIS, DO NOT FABRICATE):
-Balance: $10,000.00
-Starting: $10,000.00
-Total P&L: $0.00 (0.00%)
-Total Trades: 0
-Win Rate: 0.0%
-Open Positions: 0
-Recent Closed Trades: 0
-NOTE: Account just launched. No trades executed yet.`;
+      performanceContext = `\n\nREAL PAPER TRADING DATA — INJECTED FROM DATABASE:
+Balance: $10,000.00 | Starting: $10,000.00 | P&L: $0.00 (0.00%)
+Total Trades: 0 | Win Rate: N/A
+Open Positions: NONE
+Closed Trades: NONE
+STATUS: Account launched. Zero trades executed.
+
+MANDATORY RESPONSE FOR THIS STATE:
+Your answer MUST say: "My paper trading account is live with $10,000. No trades yet — I'm being selective and waiting for a 65%+ confidence setup."
+DO NOT DEVIATE. DO NOT ADD FICTIONAL TRADES. DO NOT ADD FICTIONAL PRICES. DO NOT INVENT BALANCES OTHER THAN $10,000.`;
       
       console.log('[ayn-unified] No account data found, injected default state');
     }
@@ -935,7 +936,7 @@ You may discuss trading concepts, strategy, and education freely — just don't 
     }
 
     // Build system prompt with user message for language detection AND user memories
-    let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + performanceContext + scanContext + INJECTION_GUARD;
+    let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + performanceContext + chartSection + scanContext + INJECTION_GUARD;
 
     // === FIRECRAWL + LIVE PIONEX INTEGRATION FOR TRADING COACH ===
     if (intent === 'trading-coach') {
