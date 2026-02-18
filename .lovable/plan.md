@@ -1,145 +1,180 @@
 
-# Fix: Live Prices Not Showing — Three Root Causes
+# Fix: Two Root Causes Confirmed via Browser Debug
 
-## The Problems Diagnosed
+## What Was Found
 
-### Problem 1: Klines API returns objects, not arrays (CRITICAL — chart shows nothing)
+### Problem 1: Pionex WebSocket returns 403 (CONFIRMED via console logs)
 
-The `get-klines` edge function destructures klines as arrays:
-```typescript
-const rawKlines: Array<[number, string, string, string, string, string]> = data?.data?.klines ?? [];
-const klines = rawKlines.map(([ts, o, h, l, c]) => ({ ... }));
+```
+WebSocket connection to 'wss://ws.pionex.com/wsPub' failed: Error during WebSocket handshake: Unexpected response code: 403
 ```
 
-But the Pionex API actually returns **objects** like:
-```json
-{ "time": 1691649240000, "open": "1851.27", "close": "1851.32", "high": "1851.32", "low": "1851.27", "volume": "0.542" }
-```
+Pionex blocks WebSocket connections from browser `Origin` headers they don't whitelist. The preview domain `lovableproject.com` is not whitelisted. This kills **all** live price updates — both in `useLivePrices` (the Open Positions card live P&L) and `LivePositionChart` (live candle updates).
 
-So `rawKlines.map(([ts, o, h, l, c]) => ...)` produces empty/broken results. The `klines: []` response confirmed this.
+**Root cause:** Direct browser WebSocket to Pionex is blocked by their CORS/Origin policy.
 
-**Fix:** Change the mapping to use object properties instead of array destructuring.
+**Fix:** Proxy the WebSocket through a Supabase edge function. The edge function connects to Pionex server-side (no browser Origin restrictions), then relays messages to/from the browser. Supabase edge functions support WebSocket upgrades via `Deno.upgradeWebSocket`.
 
-### Problem 2: Wrong interval format (CRITICAL — API returns no data)
+### Problem 2: Chart shows "Could not load chart data" even though klines arrive (CONFIRMED)
 
-Current mapping in `get-klines`:
-```
-'1m' → '1MIN'   ❌  (Pionex uses '1M')
-'5m' → '5MIN'   ❌  (Pionex uses '5M')
-'15m' → '15MIN' ❌  (Pionex uses '15M')
-'1h' → '1HOUR'  ❌  (Pionex uses '60M')
-```
+The network log confirmed the `get-klines` edge function returns 100 perfect candles. But the chart still shows the error. This means the error is thrown **in the `try` block before** the `setData` call succeeds — specifically in `buildChart()`.
 
-The Pionex docs confirm valid intervals are: `1M, 5M, 15M, 30M, 60M, 4H, 8H, 12H, 1D`.
+The likely cause: `containerRef.current.clientWidth` is **0** when `buildChart()` is called on first render. When the chart section is toggled open, the React re-render hasn't committed the full layout yet, so the `<div ref={containerRef} />` has zero width. `createChart({ width: 0, height: 320 })` in lightweight-charts v5 throws an error, which is caught by the `catch` block and sets `setError('Could not load chart data')`.
 
-**Fix:** Update `INTERVAL_MAP` in the edge function.
-
-### Problem 3: No PING/PONG heartbeat (CRITICAL — WebSocket dies after ~45 seconds)
-
-From the Pionex docs:
-> "Our server sends PING heartbeat every 15 seconds. Client sends PONG after receiving PING. If server does not receive PONG after 3 PINGs, it closes the connection."
-
-Neither `useLivePrices` nor `LivePositionChart`'s `connectWs` handle the PING. So after 45 seconds (3 missed PINGs), Pionex closes the connection silently. The reconnect logic then kicks in but immediately fails again — no live prices ever appear in practice.
-
-**Fix:** Add PING/PONG handling to both `useLivePrices` and `LivePositionChart`'s WebSocket `onmessage`:
-```typescript
-// In onmessage handler, before parsing trade data:
-if (msg.op === 'PING') {
-  ws.send(JSON.stringify({ op: 'PONG', timestamp: msg.timestamp }));
-  return;
-}
-```
+**Fix:** Use `autoSize: true` in the chart options (lightweight-charts v5 native feature) instead of `width: containerRef.current.clientWidth`. This removes the need for `ResizeObserver` too.
 
 ---
 
-## Files to Fix
+## The Solution
 
-### Fix 1 + 2: `supabase/functions/get-klines/index.ts`
+### Fix 1: WebSocket Relay Edge Function
+
+Create `supabase/functions/ws-relay/index.ts` — a Supabase edge function that:
+1. Accepts a WebSocket connection from the browser
+2. Connects to `wss://ws.pionex.com/wsPub` server-side (no Origin restriction)
+3. Forwards all messages bidirectionally (browser ↔ Pionex)
+4. Handles cleanup when either side closes
+
+**Frontend changes:** Both `useLivePrices.ts` and `LivePositionChart.tsx` change their WebSocket URL from:
+```
+wss://ws.pionex.com/wsPub
+```
+to:
+```
+wss://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/ws-relay
+```
+
+The relay is transparent — the same subscribe/unsubscribe messages work identically. PING/PONG handling stays the same.
+
+### Fix 2: Use `autoSize: true` in the Chart
+
+In `LivePositionChart.tsx`, change `buildChart()` to:
+```typescript
+const chart = createChart(containerRef.current, {
+  autoSize: true,   // ← lightweight-charts v5 handles sizing automatically
+  height: 320,
+  // ... rest of options unchanged
+});
+```
+
+And remove the `ResizeObserver` effect (no longer needed — `autoSize` handles it natively).
+
+---
+
+## Files to Change
+
+### New: `supabase/functions/ws-relay/index.ts`
+
+```typescript
+Deno.serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      },
+    });
+  }
+
+  // Must be a WebSocket upgrade
+  const upgrade = req.headers.get('upgrade') ?? '';
+  if (upgrade.toLowerCase() !== 'websocket') {
+    return new Response('Expected WebSocket upgrade', { status: 426 });
+  }
+
+  // Upgrade the browser connection
+  const { socket: browserSocket, response } = Deno.upgradeWebSocket(req);
+
+  // Connect to Pionex server-side (no browser Origin restrictions here)
+  const pionexSocket = new WebSocket('wss://ws.pionex.com/wsPub');
+
+  // Browser → Pionex relay
+  browserSocket.onmessage = (event) => {
+    if (pionexSocket.readyState === WebSocket.OPEN) {
+      pionexSocket.send(event.data);
+    }
+  };
+
+  // Pionex → Browser relay
+  pionexSocket.onmessage = (event) => {
+    if (browserSocket.readyState === WebSocket.OPEN) {
+      browserSocket.send(event.data);
+    }
+  };
+
+  // Handle close events
+  browserSocket.onclose = () => {
+    if (pionexSocket.readyState === WebSocket.OPEN) pionexSocket.close();
+  };
+  pionexSocket.onclose = () => {
+    if (browserSocket.readyState === WebSocket.OPEN) browserSocket.close();
+  };
+
+  // Handle errors
+  browserSocket.onerror = (e) => console.error('[ws-relay] browser error:', e);
+  pionexSocket.onerror = (e) => console.error('[ws-relay] pionex error:', e);
+
+  return response;
+});
+```
+
+Add to `supabase/config.toml`:
+```toml
+[functions.ws-relay]
+verify_jwt = false
+```
+
+### Edit: `src/hooks/useLivePrices.ts`
+
+Change WebSocket URL (line ~20):
+```typescript
+// Before:
+ws = new WebSocket('wss://ws.pionex.com/wsPub');
+// After:
+ws = new WebSocket('wss://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/ws-relay');
+```
+
+### Edit: `src/components/trading/LivePositionChart.tsx`
 
 Two changes:
 
-**Interval map** (line 7–12):
+**Change 1 — WebSocket URL in `connectWs`:**
 ```typescript
-const INTERVAL_MAP: Record<string, string> = {
-  '1m': '1M',
-  '5m': '5M',
-  '15m': '15M',
-  '1h': '60M',
-};
+// Before:
+const ws = new WebSocket('wss://ws.pionex.com/wsPub');
+// After:
+const ws = new WebSocket('wss://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/ws-relay');
 ```
 
-**Kline mapping** (lines 67–77): Pionex returns objects, not tuples:
+**Change 2 — Use `autoSize: true` in `buildChart`:**
 ```typescript
-interface PionexKline {
-  time: number;
-  open: string;
-  high: string;
-  low: string;
-  close: string;
-  volume: string;
-}
-
-const rawKlines: PionexKline[] = data?.data?.klines ?? [];
-
-const klines = rawKlines.map((k) => ({
-  time: Math.floor(k.time / 1000), // ms → seconds for lightweight-charts
-  open: parseFloat(k.open),
-  high: parseFloat(k.high),
-  low: parseFloat(k.low),
-  close: parseFloat(k.close),
-}));
+const chart = createChart(containerRef.current, {
+  autoSize: true,   // ← replaces width: containerRef.current.clientWidth
+  height: 320,
+  // rest unchanged
+});
 ```
 
-### Fix 3: `src/hooks/useLivePrices.ts`
-
-Add PING/PONG handling inside `ws.onmessage`:
-```typescript
-ws.onmessage = (event) => {
-  try {
-    const msg = JSON.parse(event.data as string);
-    
-    // Respond to server heartbeat to keep connection alive
-    if (msg.op === 'PING') {
-      ws.send(JSON.stringify({ op: 'PONG', timestamp: msg.timestamp }));
-      return;
-    }
-    
-    if (msg.topic === 'TRADE' && msg.symbol && Array.isArray(msg.data) && msg.data.length > 0) {
-      // ... existing price handling
-    }
-  } catch (e) { ... }
-};
-```
-
-### Fix 4: `src/components/trading/LivePositionChart.tsx`
-
-Same PING/PONG fix in `connectWs`'s `ws.onmessage` handler (line 123):
-```typescript
-ws.onmessage = (event) => {
-  try {
-    const msg = JSON.parse(event.data as string);
-    
-    // Keep connection alive
-    if (msg.op === 'PING') {
-      ws.send(JSON.stringify({ op: 'PONG', timestamp: msg.timestamp }));
-      return;
-    }
-    
-    if (msg.topic === 'TRADE' && msg.symbol === ticker && ...) {
-      // ... existing candle building logic
-    }
-  } catch (e) { ... }
-};
-```
+Remove the `ResizeObserver` `useEffect` block (lines 198–208) since `autoSize` handles it.
 
 ---
 
-## Summary
+## File Change Summary
 
-| File | Fix |
-|---|---|
-| `supabase/functions/get-klines/index.ts` | Fix interval names (`1M` not `1MIN`) + fix kline parsing (objects not arrays) |
-| `src/hooks/useLivePrices.ts` | Add PING→PONG heartbeat reply to keep WebSocket alive |
-| `src/components/trading/LivePositionChart.tsx` | Add PING→PONG heartbeat reply to keep WebSocket alive |
+| File | Type | Change |
+|---|---|---|
+| `supabase/functions/ws-relay/index.ts` | NEW | WebSocket relay proxy to bypass Pionex's browser Origin block |
+| `supabase/config.toml` | EDIT | Add `[functions.ws-relay] verify_jwt = false` |
+| `src/hooks/useLivePrices.ts` | EDIT | Point WebSocket URL to relay |
+| `src/components/trading/LivePositionChart.tsx` | EDIT | Point WebSocket URL to relay + use `autoSize: true` |
 
-After these three fixes: the chart will load historical candles, the WebSocket will stay connected indefinitely, and live prices will appear in the `OpenPositionCard` with the amber LIVE badge.
+No database changes. No new secrets needed.
+
+---
+
+## Why This Works
+
+- **Edge function WebSocket** connects to Pionex from Supabase's servers — no browser `Origin` header, no 403
+- **`autoSize: true`** lets lightweight-charts handle its own width using a ResizeObserver internally, so `width: 0` on initial render is no longer an issue
+- The relay is completely transparent — the subscribe/unsubscribe/PING/PONG protocol is unchanged
