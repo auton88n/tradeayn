@@ -182,16 +182,17 @@ export default function LivePositionChart({ ticker, entryPrice, stopLoss, tp1, t
       const { data, error: fnErr } = await supabase.functions.invoke('get-klines', {
         body: { symbol: ticker, interval: tf, limit: 100 },
       });
-      if (fnErr) throw fnErr;
-      if (data?.klines && data.klines.length > 0) {
+      if (fnErr) {
+        console.warn('[LivePositionChart] klines error (non-fatal):', fnErr);
+      } else if (data?.klines && data.klines.length > 0) {
         built.candleSeries.setData(data.klines as CandlestickData[]);
         built.chart.timeScale().fitContent();
         const last = data.klines[data.klines.length - 1];
         currentCandleRef.current = { ...last };
       }
     } catch (e: any) {
-      console.error('[LivePositionChart] klines error:', e);
-      setError('Could not load chart data');
+      console.warn('[LivePositionChart] klines fetch error (non-fatal):', e);
+      // Don't show error — chart will still work with live data only
     }
 
     setLoading(false);
@@ -250,7 +251,7 @@ export default function LivePositionChart({ ticker, entryPrice, stopLoss, tp1, t
       </div>
 
       {/* Chart */}
-      <div className="relative bg-[hsl(222,47%,9%)]">
+      <div className="relative bg-[hsl(222,47%,9%)]" style={{ height: 320 }}>
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center z-10 bg-card/80">
             <span className="text-xs text-muted-foreground">Loading chart…</span>
@@ -261,7 +262,7 @@ export default function LivePositionChart({ ticker, entryPrice, stopLoss, tp1, t
             <span className="text-xs text-red-400">{error}</span>
           </div>
         )}
-        <div ref={containerRef} />
+        <div ref={containerRef} style={{ height: 320 }} />
       </div>
 
       {/* Legend */}
