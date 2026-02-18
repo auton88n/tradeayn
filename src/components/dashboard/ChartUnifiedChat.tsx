@@ -2,18 +2,20 @@ import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUp, Upload, X, Loader2, BarChart3, Search, Brain,
-  CheckCircle2, Sparkles,
+  CheckCircle2, Sparkles, Plus, Clock,
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 import { cn } from '@/lib/utils';
 import { useChartAnalyzer } from '@/hooks/useChartAnalyzer';
-import { useChartCoach } from '@/hooks/useChartCoach';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import type { ChartAnalysisResult } from '@/types/chartAnalyzer.types';
+import { useChartCoach } from '@/hooks/useChartCoach';
+
+type CoachAPI = ReturnType<typeof useChartCoach>;
 
 // ─── Types ───
 type ChatMessage =
@@ -127,6 +129,8 @@ interface ChartUnifiedChatProps {
   onMessagesChange?: (messages: ChatMessage[]) => void;
   latestResult?: ChartAnalysisResult | null;
   onLatestResultChange?: (result: ChartAnalysisResult | null) => void;
+  coach: CoachAPI;
+  onToggleSidebar?: () => void;
 }
 
 // ─── Main Component ───
@@ -135,7 +139,9 @@ export default function ChartUnifiedChat({
   onMessagesChange,
   latestResult: externalLatestResult,
   onLatestResultChange,
-}: ChartUnifiedChatProps = {}) {
+  coach,
+  onToggleSidebar,
+}: ChartUnifiedChatProps) {
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -164,7 +170,6 @@ export default function ChartUnifiedChat({
   const dragCounter = useRef(0);
 
   const analyzer = useChartAnalyzer();
-  const coach = useChartCoach(latestResult ?? undefined);
 
   const isAnalyzing = ['uploading', 'analyzing', 'fetching-news', 'predicting'].includes(analyzer.step);
   const isBusy = isAnalyzing || coach.isLoading;
@@ -241,26 +246,42 @@ export default function ChartUnifiedChat({
   }, [analyzer.error, analyzer.step]);
 
   // ─── Sync coach messages ───
-  // Initialize to current coach length so remounts don't replay existing messages
   const prevCoachLenRef = useRef(coach.messages.length);
+  const prevSessionIdRef = useRef<string | null>(coach.activeSessionId);
+
+  // When session switches, replace all messages with the new session's messages
+  useEffect(() => {
+    if (coach.activeSessionId !== prevSessionIdRef.current) {
+      prevSessionIdRef.current = coach.activeSessionId;
+      if (coach.messages.length > 0) {
+        const converted: ChatMessage[] = coach.messages.map(m =>
+          m.role === 'user'
+            ? { type: 'user-text' as const, content: m.content }
+            : { type: 'ayn-text' as const, content: m.content }
+        );
+        setMessages(converted);
+      } else {
+        setMessages([]);
+      }
+      prevCoachLenRef.current = coach.messages.length;
+    }
+  }, [coach.activeSessionId]);
 
   useEffect(() => {
     // Only start a new chat session if there are no existing messages (first ever load)
-    // If messages exist, we're remounting after a tab switch — preserve the coach session
     if (messages.length === 0) {
       coach.newChat();
     }
-    // Update prevCoachLenRef to current coach state to avoid replaying prior messages
     prevCoachLenRef.current = coach.messages.length;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   useEffect(() => {
     if (coach.messages.length > prevCoachLenRef.current) {
       const newMsgs = coach.messages.slice(prevCoachLenRef.current);
       const chatMsgs: ChatMessage[] = newMsgs.map(m =>
-        m.role === 'user' ? { type: 'user-text', content: m.content } : { type: 'ayn-text', content: m.content }
+        m.role === 'user' ? { type: 'user-text' as const, content: m.content } : { type: 'ayn-text' as const, content: m.content }
       );
-      // Only add assistant messages (user messages are already added by handleSend)
       const assistantOnly = chatMsgs.filter(m => m.type === 'ayn-text');
       if (assistantOnly.length > 0) {
         setMessages(prev => [...prev, ...assistantOnly]);
@@ -454,102 +475,136 @@ export default function ChartUnifiedChat({
         )}
       </div>
 
-      {/* Input bar */}
+      {/* Input bar — AYN style */}
       <div className="shrink-0 px-1 pb-2 pt-2">
-        {/* Attached image preview */}
-        <AnimatePresence>
-          {attachedPreview && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="mb-2"
-            >
-              <div className="relative inline-block">
-                <img src={attachedPreview} alt="Attached chart" className="h-20 rounded-lg border border-border object-contain" />
-                <button
-                  onClick={clearAttachment}
-                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-foreground text-background flex items-center justify-center hover:scale-110 transition-transform"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <div className={cn(
-          "relative rounded-2xl overflow-visible",
+          "relative rounded-2xl overflow-hidden",
           "bg-background/95 backdrop-blur-xl",
-          "border border-amber-500/20",
-          "shadow-lg shadow-black/10",
+          "border border-border/50",
+          "shadow-lg",
           "transition-all duration-200",
-          "focus-within:border-amber-500/50 focus-within:shadow-amber-500/10"
+          "focus-within:border-amber-500/40"
         )}>
-          {/* Top row: Upload button label + Send */}
-          <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isBusy}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-amber-500 transition-colors disabled:opacity-40 group"
-            >
-              <Upload className="w-3.5 h-3.5 group-hover:text-amber-500 transition-colors" />
-              <span>Upload chart</span>
-            </button>
+          {/* Row 1: Textarea + animated Send button */}
+          <div className="flex items-end gap-2 px-4 pt-3 pb-2">
+            <div className="flex-1 min-w-0">
+              <Textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask about trading or upload a chart..."
+                disabled={isBusy}
+                unstyled
+                className="resize-none min-h-[44px] max-h-[120px] w-full text-sm bg-transparent placeholder:text-muted-foreground/50 leading-relaxed overflow-y-auto"
+                rows={1}
+              />
+            </div>
 
-            <button
-              onClick={handleSend}
-              disabled={isBusy || (!input.trim() && !attachedFile)}
-              className={cn(
-                "flex-shrink-0 w-8 h-8 rounded-xl",
-                "flex items-center justify-center",
-                "transition-all duration-200",
-                (input.trim() || attachedFile)
-                  ? "bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-sm"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
+            {/* Send / Loading button */}
+            <AnimatePresence mode="wait">
+              {isBusy ? (
+                <motion.div
+                  key="loading"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  className="shrink-0 mb-1 w-9 h-9 rounded-xl bg-muted flex items-center justify-center"
+                >
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                </motion.div>
+              ) : (input.trim() || attachedFile) ? (
+                <motion.button
+                  key="send"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  onClick={handleSend}
+                  className="shrink-0 mb-1 w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center hover:bg-amber-600 hover:scale-105 active:scale-95 shadow-md transition-all"
+                >
+                  <ArrowUp className="w-4 h-4" strokeWidth={2.5} />
+                </motion.button>
+              ) : null}
+            </AnimatePresence>
+          </div>
+
+          {/* Attached image chip */}
+          <AnimatePresence>
+            {attachedPreview && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="px-4 pb-2"
+              >
+                <div className="relative inline-block">
+                  <img src={attachedPreview} alt="Attached chart" className="h-16 rounded-lg border border-border object-contain" />
+                  <button
+                    onClick={clearAttachment}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-foreground text-background flex items-center justify-center hover:scale-110 transition-transform"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Row 2: Toolbar — 3-column grid (matches AYN ChatInput) */}
+          <div className="grid grid-cols-3 items-center px-2 py-1.5 border-t border-border/30 bg-muted/10">
+            {/* Left: + New + Upload */}
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={() => { coach.newChat(); setMessages([]); }}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-border text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isBusy}
+                className="p-1.5 rounded-lg hover:bg-muted/60 transition-all disabled:opacity-40"
+                title="Upload chart"
+              >
+                <Upload className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Center: Chat history toggle */}
+            <div className="flex justify-center">
+              {coach.sessions.length > 0 && (
+                <button
+                  onClick={onToggleSidebar}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-card/80 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-95 transition-all"
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">History</span>
+                  <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full">{coach.sessions.length}</span>
+                </button>
               )}
-            >
-              {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" strokeWidth={2.5} />}
-            </button>
-          </div>
+            </div>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) attachFile(file);
-              e.target.value = '';
-            }}
-          />
-
-          {/* Textarea */}
-          <div className="px-3 pb-1">
-            <Textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type a message or ask about trading..."
-              disabled={isBusy}
-              unstyled
-              className="resize-none py-1 min-h-[52px] max-h-[120px] w-full text-sm placeholder:text-muted-foreground/50"
-              rows={2}
-            />
-          </div>
-
-          {/* Bottom hint */}
-          <div className="flex items-center justify-between px-3 pb-2">
-            <span className="text-[10px] text-muted-foreground/50">
-              Drop a chart image anywhere to analyze it
-            </span>
-            <span className="text-[10px] text-muted-foreground/40">
-              Enter to send
-            </span>
+            {/* Right: AYN label */}
+            <div className="flex items-center justify-end gap-1.5 text-muted-foreground px-1">
+              <Brain className="w-4 h-4 text-foreground" />
+              <span className="text-xs font-medium hidden sm:inline">AYN</span>
+            </div>
           </div>
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) attachFile(file);
+            e.target.value = '';
+          }}
+        />
       </div>
     </div>
   );
