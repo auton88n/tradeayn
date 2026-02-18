@@ -276,3 +276,6 @@ verify_jwt = false
 
 [functions.ayn-calculate-metrics]
 verify_jwt = false
+
+[functions.get-klines]
+verify_jwt = false
