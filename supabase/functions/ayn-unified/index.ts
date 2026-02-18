@@ -6,6 +6,7 @@ import { buildSystemPrompt } from "./systemPrompts.ts";
 import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../_shared/sanitizePrompt.ts";
 import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
 import { uploadImageToStorage } from "../_shared/storageUpload.ts";
+import { analyzeKlines, calculateEnhancedScore, fetchKlines } from "./marketScanner.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -523,7 +524,7 @@ async function checkUserLimit(supabase: ReturnType<typeof createClient>, userId:
   }
 }
 
-// Scan Pionex market for autonomous trading opportunities
+// Scan Pionex market for autonomous trading opportunities (enhanced with technical indicators)
 async function scanMarketOpportunities(): Promise<{ opportunities: any[]; scannedPairs: number } | null> {
   const apiKey = Deno.env.get('PIONEX_API_KEY');
   const apiSecret = Deno.env.get('PIONEX_API_SECRET');
@@ -543,7 +544,7 @@ async function scanMarketOpportunities(): Promise<{ opportunities: any[]; scanne
     const ts = Date.now().toString();
     const tickerPath = `/api/v1/market/tickers?timestamp=${ts}`;
     const tickerSig = await signReq(tickerPath);
-    
+
     const res = await fetch(`https://api.pionex.com${tickerPath}`, {
       headers: { 'PIONEX-KEY': apiKey, 'PIONEX-SIGNATURE': tickerSig },
     });
@@ -556,51 +557,65 @@ async function scanMarketOpportunities(): Promise<{ opportunities: any[]; scanne
     const data = await res.json();
     const tickers = data?.data?.tickers || [];
     console.log(`[SCAN] Fetched ${tickers.length} tickers from Pionex`);
-    if (tickers.length > 0) {
-      const sample = tickers[0];
-      console.log(`[SCAN] Sample ticker fields: ${JSON.stringify({ symbol: sample.symbol, open: sample.open, close: sample.close, high: sample.high, low: sample.low, volume: sample.volume, amount: sample.amount, count: sample.count, priceChangePercent: sample.priceChangePercent })}`);
-    }
 
-    const opportunities: any[] = [];
+    // ── Phase 1: basic momentum filter (narrows to ~30–50 candidates) ─────────
+    const phase1Candidates: any[] = [];
 
     for (const t of tickers) {
       const symbol = t.symbol || '';
       if (!symbol.endsWith('_USDT')) continue;
       if (symbol.startsWith('USDC_') || symbol.startsWith('USDT_') || symbol.startsWith('DAI_') || symbol.startsWith('TUSD_')) continue;
 
-      const volume = parseFloat(t.amount || '0'); // amount = USDT volume, not base currency
+      const volume = parseFloat(t.amount || '0');
       if (volume < 100000) continue;
 
       const open = parseFloat(t.open || '0');
       const price = parseFloat(t.close || t.last || '0');
       const priceChange = open > 0 ? ((price - open) / open) * 100 : 0;
 
-      let score = 50;
-      const signals: string[] = [];
+      // Quick basic score — keep anything ≥ 55 for phase 2
+      let basicScore = 50;
+      if (priceChange > 0 && priceChange <= 5) basicScore += 10;
+      else if (priceChange > 5 && priceChange <= 15) basicScore += 15;
+      if (volume > 1000000) basicScore += 8;
+      if (Math.abs(priceChange) < 2) basicScore += 5;
+      if (priceChange < -15) basicScore += 10;
+      if (priceChange > 20) basicScore -= 15;
 
-      // Momentum
-      if (priceChange > 0 && priceChange <= 5) { score += 10; signals.push(`Positive momentum (+${priceChange.toFixed(1)}%)`); }
-      else if (priceChange > 5 && priceChange <= 15) { score += 15; signals.push(`Strong momentum (+${priceChange.toFixed(1)}%)`); }
+      if (basicScore >= 55) {
+        phase1Candidates.push({ symbol, price, volume, priceChange, t });
+      }
+    }
 
-      // Volume
-      if (volume > 1000000) { score += 8; signals.push(`High liquidity ($${(volume / 1e6).toFixed(1)}M)`); }
+    console.log(`[SCAN] Phase 1: ${phase1Candidates.length} candidates for kline analysis`);
 
-      // Consolidation
-      if (Math.abs(priceChange) < 2) { score += 5; signals.push('Consolidating'); }
+    // ── Phase 2: fetch klines and score with technical indicators ─────────────
+    const opportunities: any[] = [];
 
-      // Deep pullback
-      if (priceChange < -15) { score += 10; signals.push('Deep pullback opportunity'); }
+    for (const candidate of phase1Candidates) {
+      const klines = await fetchKlines(candidate.symbol, '60M', 100, apiKey, apiSecret);
 
-      // Overextended penalty
-      if (priceChange > 20) { score -= 15; signals.push(`⚠️ Overextended (+${priceChange.toFixed(0)}%)`); }
+      let score: number;
+      let signals: string[];
 
-      if (score >= 65) {
+      if (!klines || klines.length < 20) {
+        // Fallback: use basic score if klines unavailable
+        score = 50 + (candidate.priceChange > 0 && candidate.priceChange <= 15 ? 15 : 0)
+               + (candidate.volume > 1000000 ? 8 : 0);
+        signals = [`Momentum ${candidate.priceChange.toFixed(1)}%`, candidate.volume > 1000000 ? 'High liquidity' : ''];
+      } else {
+        const technicals = analyzeKlines(klines, candidate.price, []);
+        score = calculateEnhancedScore(candidate.priceChange, candidate.volume, technicals);
+        signals = technicals.summary;
+      }
+
+      if (score >= 70) {
         opportunities.push({
-          ticker: symbol,
+          ticker: candidate.symbol,
           score,
-          price,
-          volume24h: volume,
-          priceChange24h: priceChange,
+          price: candidate.price,
+          volume24h: candidate.volume,
+          priceChange24h: candidate.priceChange,
           signals,
         });
       }
@@ -608,13 +623,14 @@ async function scanMarketOpportunities(): Promise<{ opportunities: any[]; scanne
 
     opportunities.sort((a, b) => b.score - a.score);
     const top = opportunities.slice(0, 3);
-    console.log(`[SCAN] Found ${opportunities.length} opportunities, returning top ${top.length}`);
+    console.log(`[SCAN] Phase 2: ${opportunities.length} qualified opportunities (score≥70), returning top ${top.length}`);
     return { opportunities: top, scannedPairs: tickers.length };
   } catch (err) {
     console.error('[SCAN] Market scan error:', err);
     return null;
   }
 }
+
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {

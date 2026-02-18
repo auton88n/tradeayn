@@ -18,6 +18,7 @@ interface PaperTrade {
   setup_type: string | null;
   reasoning: string | null;
   market_context: any;
+  position_sizing_reasoning?: string[];
 }
 
 function DecisionRow({ trade }: { trade: PaperTrade }) {
@@ -73,6 +74,16 @@ function DecisionRow({ trade }: { trade: PaperTrade }) {
               {signals.map((s, i) => (
                 <Badge key={i} variant="secondary" className="text-[10px] font-normal">{s}</Badge>
               ))}
+            </div>
+          )}
+          {trade.position_sizing_reasoning && trade.position_sizing_reasoning.length > 0 && (
+            <div className="mt-1">
+              <span className="text-muted-foreground font-medium">Position Sizing:</span>
+              <div className="flex flex-wrap gap-1 mt-0.5">
+                {trade.position_sizing_reasoning.map((r, i) => (
+                  <Badge key={i} variant="outline" className="text-[10px] font-normal">{r}</Badge>
+                ))}
+              </div>
             </div>
           )}
           <div className="flex gap-4 text-muted-foreground pt-1">

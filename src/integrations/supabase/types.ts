@@ -354,13 +354,26 @@ export type Database = {
       }
       ayn_account_state: {
         Row: {
+          avg_loss_size: number | null
+          avg_trade_duration_hours: number | null
+          avg_win_size: number | null
           created_at: string | null
           current_balance: number
+          current_loss_streak: number | null
+          current_win_streak: number | null
+          expectancy: number | null
           id: string
           largest_loss_percent: number | null
           largest_win_percent: number | null
+          longest_loss_streak: number | null
+          longest_win_streak: number | null
           losing_trades: number
+          max_drawdown_duration_days: number | null
           max_drawdown_percent: number | null
+          profit_factor: number | null
+          recovery_factor: number | null
+          sharpe_ratio: number | null
+          sortino_ratio: number | null
           starting_balance: number
           total_pnl_dollars: number
           total_pnl_percent: number
@@ -370,13 +383,26 @@ export type Database = {
           winning_trades: number
         }
         Insert: {
+          avg_loss_size?: number | null
+          avg_trade_duration_hours?: number | null
+          avg_win_size?: number | null
           created_at?: string | null
           current_balance?: number
+          current_loss_streak?: number | null
+          current_win_streak?: number | null
+          expectancy?: number | null
           id?: string
           largest_loss_percent?: number | null
           largest_win_percent?: number | null
+          longest_loss_streak?: number | null
+          longest_win_streak?: number | null
           losing_trades?: number
+          max_drawdown_duration_days?: number | null
           max_drawdown_percent?: number | null
+          profit_factor?: number | null
+          recovery_factor?: number | null
+          sharpe_ratio?: number | null
+          sortino_ratio?: number | null
           starting_balance?: number
           total_pnl_dollars?: number
           total_pnl_percent?: number
@@ -386,13 +412,26 @@ export type Database = {
           winning_trades?: number
         }
         Update: {
+          avg_loss_size?: number | null
+          avg_trade_duration_hours?: number | null
+          avg_win_size?: number | null
           created_at?: string | null
           current_balance?: number
+          current_loss_streak?: number | null
+          current_win_streak?: number | null
+          expectancy?: number | null
           id?: string
           largest_loss_percent?: number | null
           largest_win_percent?: number | null
+          longest_loss_streak?: number | null
+          longest_win_streak?: number | null
           losing_trades?: number
+          max_drawdown_duration_days?: number | null
           max_drawdown_percent?: number | null
+          profit_factor?: number | null
+          recovery_factor?: number | null
+          sharpe_ratio?: number | null
+          sortino_ratio?: number | null
           starting_balance?: number
           total_pnl_dollars?: number
           total_pnl_percent?: number
@@ -594,6 +633,7 @@ export type Database = {
           pnl_percent: number | null
           position_size_dollars: number
           position_size_percent: number
+          position_sizing_reasoning: string[] | null
           reasoning: string | null
           setup_type: string | null
           shares_or_coins: number
@@ -624,6 +664,7 @@ export type Database = {
           pnl_percent?: number | null
           position_size_dollars: number
           position_size_percent: number
+          position_sizing_reasoning?: string[] | null
           reasoning?: string | null
           setup_type?: string | null
           shares_or_coins: number
@@ -654,6 +695,7 @@ export type Database = {
           pnl_percent?: number | null
           position_size_dollars?: number
           position_size_percent?: number
+          position_sizing_reasoning?: string[] | null
           reasoning?: string | null
           setup_type?: string | null
           shares_or_coins?: number

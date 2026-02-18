@@ -273,3 +273,6 @@ verify_jwt = false
 
 [functions.ayn-monitor-trades]
 verify_jwt = false
+
+[functions.ayn-calculate-metrics]
+verify_jwt = false

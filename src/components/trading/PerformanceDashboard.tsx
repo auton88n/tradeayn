@@ -21,6 +21,20 @@ interface AccountState {
   win_rate: number;
   largest_win_percent: number;
   largest_loss_percent: number;
+  // Advanced metrics (populated by ayn-calculate-metrics daily)
+  sharpe_ratio?: number;
+  sortino_ratio?: number;
+  profit_factor?: number;
+  expectancy?: number;
+  avg_trade_duration_hours?: number;
+  longest_win_streak?: number;
+  longest_loss_streak?: number;
+  current_win_streak?: number;
+  current_loss_streak?: number;
+  max_drawdown_duration_days?: number;
+  recovery_factor?: number;
+  avg_win_size?: number;
+  avg_loss_size?: number;
 }
 
 interface PaperTrade {
@@ -84,6 +98,29 @@ function StatsCard({ title, value, subtitle, positive }: {
           {value}
         </p>
         {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+      </CardContent>
+    </Card>
+  );
+}
+
+type MetricStatus = 'excellent' | 'good' | 'neutral' | 'poor' | 'warning';
+
+function MetricCard({ title, value, subtitle, status = 'neutral' }: {
+  title: string; value: string | number; subtitle?: string; status?: MetricStatus;
+}) {
+  const colorMap: Record<MetricStatus, string> = {
+    excellent: 'text-green-500',
+    good: 'text-blue-400',
+    neutral: 'text-foreground',
+    poor: 'text-red-500',
+    warning: 'text-yellow-500',
+  };
+  return (
+    <Card>
+      <CardContent className="pt-4 pb-3">
+        <p className="text-[11px] text-muted-foreground mb-1 leading-tight">{title}</p>
+        <p className={`text-xl font-bold ${colorMap[status]}`}>{value}</p>
+        {subtitle && <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>}
       </CardContent>
     </Card>
   );
@@ -371,7 +408,23 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
         </div>
       )}
 
-      {/* Kill Switch + Emergency Controls */}
+      {/* Consecutive loss streak warning banner */}
+      {(account?.current_loss_streak ?? 0) >= 2 && (
+        <div className="flex items-center gap-3 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-yellow-400">Losing Streak Warning</p>
+            <p className="text-xs text-muted-foreground">
+              {account!.current_loss_streak} consecutive losses.{' '}
+              {(account!.current_loss_streak ?? 0) >= 3
+                ? 'Trading automatically paused — click Resume Trading to reset.'
+                : 'One more loss triggers automatic trading pause.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           {isLive && (
@@ -436,6 +489,44 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
           />
         </div>
       )}
+
+      {/* Advanced Metrics Grid */}
+      {account && (account.sharpe_ratio !== undefined && account.sharpe_ratio !== null) ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" /> Advanced Metrics
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3">
+            <div className="grid grid-cols-2 gap-2">
+              {(() => {
+                const sr = account.sharpe_ratio ?? 0;
+                const so = account.sortino_ratio ?? 0;
+                const pf = account.profit_factor ?? 0;
+                const ex = account.expectancy ?? 0;
+                const rf = account.recovery_factor ?? 0;
+                return (<>
+                  <MetricCard title="Sharpe Ratio" value={sr.toFixed(2)} subtitle="Risk-adjusted return" status={sr >= 2 ? 'excellent' : sr >= 1 ? 'good' : sr >= 0 ? 'neutral' : 'poor'} />
+                  <MetricCard title="Sortino Ratio" value={so.toFixed(2)} subtitle="Downside risk adj." status={so >= 2 ? 'excellent' : so >= 1 ? 'good' : 'neutral'} />
+                  <MetricCard title="Profit Factor" value={pf.toFixed(2)} subtitle="Gross profit / loss" status={pf >= 2.5 ? 'excellent' : pf >= 1.5 ? 'good' : pf >= 1.0 ? 'neutral' : 'poor'} />
+                  <MetricCard title="Expectancy" value={`$${ex.toFixed(2)}`} subtitle="Avg $ per trade" status={ex > 0 ? 'good' : 'poor'} />
+                  <MetricCard title="Win Streak" value={`${account.current_win_streak ?? 0} / ${account.longest_win_streak ?? 0}`} subtitle="Current / Longest" status={(account.current_win_streak ?? 0) >= 3 ? 'excellent' : 'neutral'} />
+                  <MetricCard title="Loss Streak" value={`${account.current_loss_streak ?? 0} / ${account.longest_loss_streak ?? 0}`} subtitle="Current / Longest" status={(account.current_loss_streak ?? 0) >= 3 ? 'warning' : 'neutral'} />
+                  <MetricCard title="Recovery Factor" value={rf.toFixed(2)} subtitle="Profit / Max DD" status={rf >= 3 ? 'excellent' : rf >= 1.5 ? 'good' : 'neutral'} />
+                  <MetricCard title="Avg Duration" value={`${Number(account.avg_trade_duration_hours ?? 0).toFixed(1)}h`} subtitle="Per trade" status="neutral" />
+                </>);
+              })()}
+            </div>
+          </CardContent>
+        </Card>
+      ) : account && account.total_trades > 0 ? (
+        <Card>
+          <CardContent className="py-4 px-4">
+            <p className="text-xs text-muted-foreground text-center">Advanced metrics calculate daily at 00:10 UTC. Check back tomorrow or trigger manually.</p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Equity Curve */}
       {snapshots.length > 0 ? (
