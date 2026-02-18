@@ -1,110 +1,78 @@
 
-# Fix: Pionex Messages Arrive as Blob, Not String
+# Fix: Klines Are Returned Newest-First, Must Be Sorted Oldest-First
 
-## Root Cause (Confirmed from Console Logs)
+## The Problem (Confirmed by Live Test)
+
+Calling `get-klines` right now returns this:
+```json
+{ "time": 1771430400 },  ← newest
+{ "time": 1771426800 },
+{ "time": 1771423200 },
+{ "time": 1771419600 },
+{ "time": 1771416000 }   ← oldest
+```
+
+Pionex returns klines in **descending order** (most recent first). `lightweight-charts` requires data in **ascending order** (oldest first). When `setData()` is called with descending data, it throws:
 
 ```
-SyntaxError: Unexpected token 'o', "[object Blob]" is not valid JSON
+Assertion failed: data must be asc ordered by time, index=1, time=1771426800, prev time=1771430400
 ```
 
-The `ws-relay` edge function IS working — Supabase logs confirm:
-- "Pionex connected, flushing 1 pending messages" ✅
-- Messages are flowing through
-
-But Pionex sends WebSocket messages as **binary frames** (not text frames). The browser receives them as `Blob` objects. When the code does `JSON.parse(event.data as string)`, JavaScript coerces the Blob to the string `"[object Blob]"` — which is not valid JSON.
+This is caught by the `try/catch` silently (non-fatal), so the chart renders with zero candles. That's exactly what the screenshot shows — the chart frame is there, the price lines are there, but no candles.
 
 ## The Fix
 
-In both `useLivePrices.ts` and `LivePositionChart.tsx`, change the `onmessage` handler to convert Blob → text before parsing:
+**One line** in `get-klines/index.ts` — sort the klines ascending before returning:
 
 ```typescript
-ws.onmessage = async (event) => {
-  try {
-    const text = event.data instanceof Blob
-      ? await event.data.text()
-      : (event.data as string);
-    const msg = JSON.parse(text);
-    // ... rest of handler unchanged
-  } catch (e) { ... }
-};
+// Before (Pionex order = newest first = descending):
+const klines = rawKlines.map((k) => ({ ... }));
+
+// After (sort ascending = oldest first = what lightweight-charts needs):
+const klines = rawKlines
+  .map((k) => ({
+    time: Math.floor(k.time / 1000),
+    open: parseFloat(k.open),
+    high: parseFloat(k.high),
+    low: parseFloat(k.low),
+    close: parseFloat(k.close),
+  }))
+  .sort((a, b) => a.time - b.time);  // ← the fix
 ```
 
-`Blob.text()` returns a Promise that resolves to the UTF-8 string content. Since `onmessage` is already an async function in practice, making it `async` is safe.
+Then redeploy `get-klines`.
 
-## Files to Change
+## Why This Is the Only Change Needed
 
-### 1. `src/hooks/useLivePrices.ts`
+- The klines edge function already returns valid OHLCV data (confirmed live — 100 candles, correct prices around $187-194 for TAO_USDT)
+- The WebSocket is already working (live price shows $187.30 with the amber pulse)
+- `setData` will succeed with sorted data and candles will fill the chart
+- `fitContent()` will then zoom to show all 100 candles
+- Live WebSocket updates will continue appending new candles on top
 
-Change `ws.onmessage` from synchronous to async and add Blob conversion at the top:
+## File to Change
+
+### `supabase/functions/get-klines/index.ts`
+
+Change lines 81–87 (the `.map()` call) to add `.sort((a, b) => a.time - b.time)` at the end:
 
 ```typescript
-ws.onmessage = async (event) => {
-  try {
-    const text = event.data instanceof Blob
-      ? await event.data.text()
-      : (event.data as string);
-    const msg = JSON.parse(text);
-
-    if (msg.op === 'PING') {
-      ws.send(JSON.stringify({ op: 'PONG', timestamp: msg.timestamp }));
-      return;
-    }
-
-    if (msg.topic === 'TRADE' && msg.symbol && Array.isArray(msg.data) && msg.data.length > 0) {
-      const latestTrade = msg.data[0];
-      const price = parseFloat(latestTrade.price);
-      if (!isNaN(price)) {
-        setPrices(prev => ({
-          ...prev,
-          [msg.symbol]: { price, timestamp: latestTrade.timestamp ?? Date.now() },
-        }));
-      }
-    }
-  } catch (e) {
-    console.error('[useLivePrices] parse error', e);
-  }
-};
+const klines = rawKlines
+  .map((k) => ({
+    time: Math.floor(k.time / 1000),
+    open: parseFloat(k.open),
+    high: parseFloat(k.high),
+    low: parseFloat(k.low),
+    close: parseFloat(k.close),
+  }))
+  .sort((a, b) => a.time - b.time);
 ```
 
-### 2. `src/components/trading/LivePositionChart.tsx`
+Then redeploy the edge function.
 
-Same change in the `connectWs` callback's `ws.onmessage`:
+## What You'll See After
 
-```typescript
-ws.onmessage = async (event) => {
-  try {
-    const text = event.data instanceof Blob
-      ? await event.data.text()
-      : (event.data as string);
-    const msg = JSON.parse(text);
-
-    if (msg.op === 'PING') {
-      ws.send(JSON.stringify({ op: 'PONG', timestamp: msg.timestamp }));
-      return;
-    }
-
-    if (msg.topic === 'TRADE' && msg.symbol === ticker && Array.isArray(msg.data) && msg.data.length > 0) {
-      // ... existing candle logic unchanged
-    }
-  } catch (e) {
-    console.error('[LivePositionChart] WS parse error:', e);
-  }
-};
-```
-
-## Why This Works
-
-- Blob frames from Pionex become proper UTF-8 strings via `blob.text()`
-- JSON parsing then works correctly
-- PING/PONG heartbeat responds correctly
-- TRADE messages are parsed and prices update in real-time
-- No edge function changes needed — the relay itself is working fine
-
-## File Change Summary
-
-| File | Change |
-|---|---|
-| `src/hooks/useLivePrices.ts` | `onmessage` → `async`, add `Blob.text()` conversion before `JSON.parse` |
-| `src/components/trading/LivePositionChart.tsx` | Same Blob fix in `connectWs` `onmessage` |
-
-No edge function changes. No new secrets. No DB changes.
+- Chart fills with 100 historical candlesticks (1h view = ~4 days of data)
+- Live candle updates in real-time from the WebSocket
+- Entry ($193), Stop ($183.35), TP1 ($212.30), TP2 ($231.60) lines visible across the candles
+- Switching timeframes (1m/5m/15m/1h) will reload candles correctly
