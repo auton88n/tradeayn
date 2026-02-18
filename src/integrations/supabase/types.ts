@@ -436,6 +436,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ayn_circuit_breakers: {
+        Row: {
+          auto_reset: boolean | null
+          breaker_type: string
+          created_at: string | null
+          current_value: number | null
+          id: string
+          is_tripped: boolean | null
+          reason: string | null
+          threshold_value: number | null
+          tripped_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_reset?: boolean | null
+          breaker_type: string
+          created_at?: string | null
+          current_value?: number | null
+          id?: string
+          is_tripped?: boolean | null
+          reason?: string | null
+          threshold_value?: number | null
+          tripped_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_reset?: boolean | null
+          breaker_type?: string
+          created_at?: string | null
+          current_value?: number | null
+          id?: string
+          is_tripped?: boolean | null
+          reason?: string | null
+          threshold_value?: number | null
+          tripped_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ayn_daily_snapshots: {
         Row: {
           balance: number
@@ -472,6 +511,42 @@ export type Database = {
           snapshot_date?: string
           trades_closed_today?: number | null
           wins_today?: number | null
+        }
+        Relationships: []
+      }
+      ayn_error_log: {
+        Row: {
+          component: string
+          context: Json | null
+          created_at: string | null
+          error_message: string | null
+          error_type: string
+          id: string
+          operation: string | null
+          resolved: boolean | null
+          severity: string | null
+        }
+        Insert: {
+          component: string
+          context?: Json | null
+          created_at?: string | null
+          error_message?: string | null
+          error_type: string
+          id?: string
+          operation?: string | null
+          resolved?: boolean | null
+          severity?: string | null
+        }
+        Update: {
+          component?: string
+          context?: Json | null
+          created_at?: string | null
+          error_message?: string | null
+          error_type?: string
+          id?: string
+          operation?: string | null
+          resolved?: boolean | null
+          severity?: string | null
         }
         Relationships: []
       }
