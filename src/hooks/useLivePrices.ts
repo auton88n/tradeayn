@@ -35,9 +35,12 @@ export function useLivePrices(tickers: string[]): {
         console.log('[useLivePrices] Connected, subscribed to:', tickers);
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = async (event) => {
         try {
-          const msg = JSON.parse(event.data as string);
+          const text = event.data instanceof Blob
+            ? await event.data.text()
+            : (event.data as string);
+          const msg = JSON.parse(text);
 
           // Respond to server heartbeat to keep connection alive
           if (msg.op === 'PING') {
