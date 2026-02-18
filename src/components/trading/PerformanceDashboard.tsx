@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Activity, Target, Award, BarChart3 } from 'lucide-react';
+import { Activity, Target, Award, BarChart3, AlertTriangle, CheckCircle, X, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import AIDecisionLog from '@/components/trading/AIDecisionLog';
@@ -64,6 +65,13 @@ interface SetupPerf {
   profit_factor: number;
 }
 
+interface CircuitBreaker {
+  breaker_type: string;
+  is_tripped: boolean;
+  tripped_at: string | null;
+  reason: string | null;
+}
+
 function StatsCard({ title, value, subtitle, positive }: {
   title: string; value: string; subtitle?: string; positive?: boolean;
 }) {
@@ -80,11 +88,21 @@ function StatsCard({ title, value, subtitle, positive }: {
   );
 }
 
-function OpenPositionCard({ trade }: { trade: PaperTrade }) {
+function OpenPositionCard({ trade, onClose }: { trade: PaperTrade; onClose: (id: string) => Promise<void> }) {
+  const [closing, setClosing] = useState(false);
   const entryPrice = Number(trade.entry_price);
   const unrealizedPnl = Number(trade.pnl_dollars);
   const unrealizedPercent = trade.position_size_dollars > 0
     ? (unrealizedPnl / Number(trade.position_size_dollars)) * 100 : 0;
+
+  const handleClose = async () => {
+    setClosing(true);
+    try {
+      await onClose(trade.id);
+    } finally {
+      setClosing(false);
+    }
+  };
 
   return (
     <div className="bg-card/50 rounded-lg p-4 border border-border/50">
@@ -98,12 +116,23 @@ function OpenPositionCard({ trade }: { trade: PaperTrade }) {
             <Badge variant="secondary" className="ml-1 text-[10px]">{trade.setup_type}</Badge>
           )}
         </div>
-        <div className={`text-right ${unrealizedPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-          <span className="text-sm font-bold">
-            {unrealizedPnl >= 0 ? '+' : ''}{unrealizedPercent.toFixed(2)}%
-          </span>
-          <br />
-          <span className="text-xs">${unrealizedPnl.toFixed(2)}</span>
+        <div className="flex items-center gap-2">
+          <div className={`text-right ${unrealizedPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <span className="text-sm font-bold">
+              {unrealizedPnl >= 0 ? '+' : ''}{unrealizedPercent.toFixed(2)}%
+            </span>
+            <br />
+            <span className="text-xs">${unrealizedPnl.toFixed(2)}</span>
+          </div>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-7 text-[11px] px-2"
+            onClick={handleClose}
+            disabled={closing}
+          >
+            {closing ? <Loader2 className="h-3 w-3 animate-spin" /> : <><X className="h-3 w-3 mr-1" />Close</>}
+          </Button>
         </div>
       </div>
       <div className="grid grid-cols-4 gap-2 text-xs">
@@ -165,11 +194,17 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
   const [chartAnalyses, setChartAnalyses] = useState<ChartAnalysis[]>([]);
   const [snapshots, setSnapshots] = useState<DailySnapshot[]>([]);
   const [setupPerf, setSetupPerf] = useState<SetupPerf[]>([]);
+  const [circuitBreakers, setCircuitBreakers] = useState<CircuitBreaker[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
+  const [killSwitchLoading, setKillSwitchLoading] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
+
+  const killSwitch = circuitBreakers.find(b => b.breaker_type === 'KILL_SWITCH');
+  const isKillSwitchActive = killSwitch?.is_tripped === true;
 
   const loadData = useCallback(async () => {
-    const [acctRes, openRes, closedRes, snapRes, setupRes, allTradesRes, analysesRes] = await Promise.all([
+    const [acctRes, openRes, closedRes, snapRes, setupRes, allTradesRes, analysesRes, breakersRes] = await Promise.all([
       supabase.from('ayn_account_state').select('*').eq('id', '00000000-0000-0000-0000-000000000001').single(),
       supabase.from('ayn_paper_trades').select('*').in('status', ['OPEN', 'PARTIAL_CLOSE']).order('entry_time', { ascending: false }),
       supabase.from('ayn_paper_trades').select('*').in('status', ['CLOSED_WIN', 'CLOSED_LOSS', 'STOPPED_OUT']).order('exit_time', { ascending: false }).limit(20),
@@ -177,6 +212,7 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
       supabase.from('ayn_setup_performance').select('*').order('total_trades', { ascending: false }),
       supabase.from('ayn_paper_trades').select('*').order('created_at', { ascending: false }).limit(50),
       supabase.from('chart_analyses').select('id, ticker, timeframe, prediction_signal, confidence, created_at').order('created_at', { ascending: false }).limit(20),
+      supabase.from('ayn_circuit_breakers').select('breaker_type, is_tripped, tripped_at, reason'),
     ]);
 
     if (acctRes.data) setAccount(acctRes.data as any);
@@ -186,6 +222,7 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
     if (setupRes.data) setSetupPerf(setupRes.data as any);
     if (allTradesRes.data) setAllTrades(allTradesRes.data as any);
     if (analysesRes.data) setChartAnalyses(analysesRes.data as any);
+    if (breakersRes.data) setCircuitBreakers(breakersRes.data as any);
     setLoading(false);
   }, []);
 
@@ -193,7 +230,6 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
     loadData();
     const interval = setInterval(loadData, 30000);
 
-    // Realtime subscriptions
     const tradesChannel = supabase
       .channel('dashboard-trades-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ayn_paper_trades' }, () => {
@@ -257,6 +293,35 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
     return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 30);
   }, [chartAnalyses, allTrades]);
 
+  const handleKillSwitch = async () => {
+    setKillSwitchLoading(true);
+    try {
+      const action = isKillSwitchActive ? 'reset' : 'trip';
+      const reason = isKillSwitchActive ? undefined : 'Manual emergency stop from dashboard';
+      const { error } = await supabase.functions.invoke('ayn-kill-switch', {
+        body: { action, reason },
+      });
+      if (error) throw error;
+      await loadData();
+    } catch (err: any) {
+      console.error('Kill switch error:', err);
+    } finally {
+      setKillSwitchLoading(false);
+    }
+  };
+
+  const handleCloseTrade = async (tradeId: string) => {
+    setCloseError(null);
+    const { data, error } = await supabase.functions.invoke('ayn-close-trade', {
+      body: { tradeId, reason: 'MANUAL_CLOSE' },
+    });
+    if (error) {
+      setCloseError(`Failed to close trade: ${error.message}`);
+      return;
+    }
+    await loadData();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -272,6 +337,52 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
 
   return (
     <div className="space-y-6 pb-6">
+      {/* Kill Switch Banner */}
+      {isKillSwitchActive && (
+        <div className="flex items-center gap-3 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-red-400">Emergency Stop Active</p>
+            <p className="text-xs text-muted-foreground truncate">{killSwitch?.reason || 'No new trades will be opened.'}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Kill Switch + Emergency Controls */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {isLive && (
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+          )}
+          <span className="text-xs text-muted-foreground">{isLive ? 'Realtime' : 'Updates every 30s'}</span>
+        </div>
+        <Button
+          variant={isKillSwitchActive ? 'outline' : 'destructive'}
+          size="sm"
+          className={`gap-1.5 text-xs font-semibold ${isKillSwitchActive ? 'border-green-500/40 text-green-500 hover:bg-green-500/10' : ''}`}
+          onClick={handleKillSwitch}
+          disabled={killSwitchLoading}
+        >
+          {killSwitchLoading ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : isKillSwitchActive ? (
+            <><CheckCircle className="h-3 w-3" /> Resume Trading</>
+          ) : (
+            <><AlertTriangle className="h-3 w-3" /> Emergency Stop</>
+          )}
+        </Button>
+      </div>
+
+      {/* Close error feedback */}
+      {closeError && (
+        <div className="text-xs text-red-400 rounded border border-red-500/30 bg-red-500/10 px-3 py-2">
+          {closeError}
+        </div>
+      )}
+
       {/* Activity Timeline */}
       <ActivityTimeline entries={timelineEntries} onAnalysisClick={onNavigateToHistory} />
 
@@ -340,12 +451,6 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
             <Target className="h-4 w-4 text-primary" />
             Open Positions
             <Badge variant="secondary" className="text-[10px]">{openTrades.length}/3</Badge>
-            {isLive && (
-              <span className="relative flex h-2 w-2 ml-1">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -356,7 +461,7 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
           ) : (
             <div className="space-y-3">
               {openTrades.map(trade => (
-                <OpenPositionCard key={trade.id} trade={trade} />
+                <OpenPositionCard key={trade.id} trade={trade} onClose={handleCloseTrade} />
               ))}
             </div>
           )}
@@ -418,7 +523,6 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
 
       <p className="text-[11px] text-muted-foreground text-center italic">
         Paper trading account starting at $10,000. All trades are automatically generated by AYN's chart analysis.
-        {isLive ? ' • Real-time updates active' : ' • Updates every 30s'}
       </p>
     </div>
   );

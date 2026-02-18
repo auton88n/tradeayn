@@ -38,6 +38,23 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Check circuit breakers — kill switch must not be tripped
+    const { data: breakers } = await supabase
+      .from('ayn_circuit_breakers')
+      .select('breaker_type, is_tripped, reason')
+      .eq('is_tripped', true);
+
+    if (breakers && breakers.length > 0) {
+      const tripped = breakers[0];
+      console.log(`[ayn-open-trade] Circuit breaker tripped: ${tripped.breaker_type}. Aborting trade open.`);
+      return new Response(JSON.stringify({
+        opened: false,
+        reason: `Circuit breaker active: ${tripped.breaker_type} — ${tripped.reason || 'Trading halted'}`,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Check open positions (max 3)
     const { count } = await supabase
       .from('ayn_paper_trades')

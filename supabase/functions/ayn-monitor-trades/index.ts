@@ -15,6 +15,21 @@ async function signPionexRequest(path: string, secret: string): Promise<string> 
   return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+async function logError(supabase: any, component: string, errorType: string, operation: string, message: string, context: Record<string, unknown> = {}) {
+  try {
+    await supabase.from('ayn_error_log').insert({
+      error_type:    errorType,
+      component,
+      operation,
+      error_message: message,
+      context,
+      severity:      'WARN',
+    });
+  } catch (e) {
+    console.error('[ayn-monitor] Failed to log error:', e);
+  }
+}
+
 async function getCurrentPrice(ticker: string): Promise<number | null> {
   const apiKey = Deno.env.get('PIONEX_API_KEY');
   const apiSecret = Deno.env.get('PIONEX_API_SECRET');
@@ -80,6 +95,15 @@ Deno.serve(async (req) => {
       if (!currentPrice) {
         console.warn(`[ayn-monitor] Could not get price for ${trade.ticker}, skipping`);
         results.push({ ticker: trade.ticker, action: 'PRICE_UNAVAILABLE' });
+        // Log to error table for audit trail
+        await logError(
+          supabase,
+          'ayn-monitor-trades',
+          'PRICE_FETCH_FAILED',
+          'getCurrentPrice',
+          `Could not fetch price for ${trade.ticker} from Pionex`,
+          { ticker: trade.ticker, tradeId: trade.id, status: trade.status }
+        );
         continue;
       }
 
