@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, MessageSquare, Activity, History } from 'lucide-react';
+import { BarChart3, MessageSquare, Activity, History, LogOut, User, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import ChartUnifiedChat from '@/components/dashboard/ChartUnifiedChat';
@@ -10,10 +10,18 @@ import ChartCoachSidebar from '@/components/dashboard/ChartCoachSidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChartHistory } from '@/hooks/useChartHistory';
 import { useChartCoach } from '@/hooks/useChartCoach';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const ChartAnalyzerPage = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>();
+  const [userEmail, setUserEmail] = useState<string | undefined>();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [activeTab, setActiveTab] = useState<'chat' | 'history' | 'performance'>('chat');
 
@@ -44,17 +52,23 @@ const ChartAnalyzerPage = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUserId(user.id);
+      if (user) { setUserId(user.id); setUserEmail(user.email); }
       setIsCheckingAuth(false);
     };
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id);
+      setUserEmail(session?.user?.email);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut({ scope: 'local' });
+    navigate('/');
+  };
 
   useEffect(() => {
     if (!isCheckingAuth && !userId) navigate('/');
@@ -84,8 +98,15 @@ const ChartAnalyzerPage = () => {
       </div>
 
       <div className="relative pt-4 px-4 h-screen flex flex-col">
-        {/* Top bar: Back + Tabs + Sidebar Toggle */}
+        {/* Top bar: Logo + Tabs + User */}
         <div className={`flex items-center gap-3 mb-2 shrink-0 mx-auto w-full ${topBarMax}`}>
+          {/* Logo */}
+          <div className="flex items-center gap-1.5 mr-1">
+            <BarChart3 className="w-4 h-4 text-amber-500" />
+            <span className="font-display font-bold text-sm hidden sm:block">AYN Trade</span>
+          </div>
+
+          {/* Tabs */}
           <div className="flex bg-muted/50 backdrop-blur-sm rounded-full p-1 border border-border/50">
             <button
               onClick={() => setActiveTab('chat')}
@@ -125,6 +146,32 @@ const ChartAnalyzerPage = () => {
             </button>
           </div>
 
+          {/* User dropdown */}
+          <div className="ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center hover:bg-amber-500/20 transition-colors">
+                  <User className="w-4 h-4 text-amber-500" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-3 py-2">
+                  <p className="text-xs text-muted-foreground">Signed in as</p>
+                  <p className="text-sm font-medium truncate">{userEmail}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer gap-2">
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer gap-2 text-destructive focus:text-destructive">
+                  <LogOut className="w-4 h-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Content */}
