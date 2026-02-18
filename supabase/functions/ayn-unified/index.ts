@@ -7,7 +7,6 @@ import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../
 import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
 import { uploadImageToStorage } from "../_shared/storageUpload.ts";
 import { analyzeKlines, calculateEnhancedScore, fetchKlines, fetchFundingRates } from "./marketScanner.ts";
-import { validateTradingResponse } from "./validator.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -309,43 +308,47 @@ async function callWithFallback(
       // Extract token usage from non-streaming responses
       const usage = (response && typeof response === 'object' && 'usage' in response) ? (response as any).usage : null;
       
-      // Log successful usage with token counts and response time (fire-and-forget)
-      supabase.from('llm_usage_logs').insert({
-        user_id: userId,
-        intent_type: intent,
-        was_fallback: i > 0,
-        fallback_reason: i > 0 ? `Primary model failed, used ${model.display_name}` : null,
-        model_name: model.model_id,
-        input_tokens: usage?.prompt_tokens || 0,
-        output_tokens: usage?.completion_tokens || 0,
-        response_time_ms: responseTimeMs,
-      }).then(({ error }) => {
-        if (error) console.error('Failed to log usage:', error);
-      });
-      
-      if (usage) {
-        console.log(`[ayn-unified] Token usage - input: ${usage.prompt_tokens}, output: ${usage.completion_tokens}, time: ${responseTimeMs}ms, model: ${model.model_id}`);
-      }
-      
-      // Check if user has crossed 90% credit usage - send warning email (fire-and-forget)
-      if (userId !== 'internal-evaluator') {
-        checkAndSendCreditWarning(supabase, userId).catch(err => 
-          console.error('[ayn-unified] Credit warning check failed:', err)
-        );
+      // Log successful usage with token counts and response time
+      try {
+        await supabase.from('llm_usage_logs').insert({
+          user_id: userId,
+          intent_type: intent,
+          was_fallback: i > 0,
+          fallback_reason: i > 0 ? `Primary model failed, used ${model.display_name}` : null,
+          model_name: model.model_id,
+          input_tokens: usage?.prompt_tokens || 0,
+          output_tokens: usage?.completion_tokens || 0,
+          response_time_ms: responseTimeMs,
+        });
+        
+        if (usage) {
+          console.log(`[ayn-unified] Token usage - input: ${usage.prompt_tokens}, output: ${usage.completion_tokens}, time: ${responseTimeMs}ms, model: ${model.model_id}`);
+        }
+        
+        // Check if user has crossed 90% credit usage - send warning email
+        if (userId !== 'internal-evaluator') {
+          checkAndSendCreditWarning(supabase, userId).catch(err => 
+            console.error('[ayn-unified] Credit warning check failed:', err)
+          );
+        }
+      } catch (logError) {
+        console.error('Failed to log usage:', logError);
       }
       
       return { response, modelUsed: model, wasFallback: i > 0 };
     } catch (error) {
       console.error(`${model.display_name} failed:`, error);
       
-      // Log failure (fire-and-forget)
-      supabase.from('llm_failures').insert({
-        error_type: error instanceof Error && error.message.includes('429') ? '429' : 
-                    error instanceof Error && error.message.includes('402') ? '402' : 'error',
-        error_message: error instanceof Error ? error.message : 'Unknown error'
-      }).then(({ error: logErr }) => {
-        if (logErr) console.error('Failed to log failure:', logErr);
-      });
+      // Log failure
+      try {
+        await supabase.from('llm_failures').insert({
+          error_type: error instanceof Error && error.message.includes('429') ? '429' : 
+                      error instanceof Error && error.message.includes('402') ? '402' : 'error',
+          error_message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      } catch (logError) {
+        console.error('Failed to log failure:', logError);
+      }
       
       if (i === chain.length - 1) {
         // All models failed - check if any was a 402 (credits exhausted)
@@ -555,18 +558,17 @@ async function scanMarketOpportunities(): Promise<{ opportunities: any[]; scanne
     const tickers = data?.data?.tickers || [];
     console.log(`[SCAN] Fetched ${tickers.length} tickers from Pionex`);
 
-    // ── Phase 1: basic momentum filter — capped to top 10 liquid pairs ────────
-    // Only scan the 10 highest-liquidity coins to minimize HTTP calls and latency
-    const TOP_LIQUID_BASES = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE', 'ADA', 'AVAX', 'LINK', 'DOT'];
+    // ── Phase 1: basic momentum filter (narrows to ~30–50 candidates) ─────────
     const phase1Candidates: any[] = [];
 
     for (const t of tickers) {
       const symbol = t.symbol || '';
       if (!symbol.endsWith('_USDT')) continue;
-      const base = symbol.replace('_USDT', '');
-      if (!TOP_LIQUID_BASES.includes(base)) continue;
+      if (symbol.startsWith('USDC_') || symbol.startsWith('USDT_') || symbol.startsWith('DAI_') || symbol.startsWith('TUSD_')) continue;
 
       const volume = parseFloat(t.amount || '0');
+      if (volume < 100000) continue;
+
       const open = parseFloat(t.open || '0');
       const price = parseFloat(t.close || t.last || '0');
       const priceChange = open > 0 ? ((price - open) / open) * 100 : 0;
@@ -580,10 +582,12 @@ async function scanMarketOpportunities(): Promise<{ opportunities: any[]; scanne
       if (priceChange < -15) basicScore += 10;
       if (priceChange > 20) basicScore -= 15;
 
-      phase1Candidates.push({ symbol, price, volume, priceChange, t });
+      if (basicScore >= 55) {
+        phase1Candidates.push({ symbol, price, volume, priceChange, t });
+      }
     }
 
-    console.log(`[SCAN] Phase 1: ${phase1Candidates.length} liquid-pair candidates for kline analysis`);
+    console.log(`[SCAN] Phase 1: ${phase1Candidates.length} candidates for kline analysis`);
 
     // ── Phase 2: fetch klines and score with technical indicators ─────────────
     const opportunities: any[] = [];
@@ -714,8 +718,8 @@ serve(async (req) => {
     }
 
     // Trim conversation history to avoid exceeding token limits (~1M tokens)
-    // 1. Keep only last 10 messages (8 for trading-coach to reduce prompt size)
-    const MAX_CONTEXT_MESSAGES = (forcedIntent === 'trading-coach' || detectIntent(rawMessages[rawMessages.length - 1]?.content || '', false) === 'trading-coach') ? 8 : 10;
+    // 1. Keep only last 10 messages
+    const MAX_CONTEXT_MESSAGES = 10;
     let messages = rawMessages;
     if (rawMessages.length > MAX_CONTEXT_MESSAGES) {
       const systemMsgs = rawMessages.filter((m: any) => m.role === 'system');
@@ -1578,50 +1582,6 @@ You may discuss trading concepts, strategy, and education freely — just don't 
       } catch (e) {
         console.error('[AUTO-TRADE] Failed to parse/execute:', e);
         responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
-      }
-    }
-
-    // ── 🛡️ VALIDATION LAYER: Intercept fabricated performance data ──────────
-    // Skip when wantsAutonomousTrading: new trade prices won't be in the pre-trade snapshot
-    if (intent === 'trading-coach' && !effectiveStream && accountPerformance !== null && !wantsAutonomousTrading) {
-      const validationCtx = {
-        accountBalance:  Number(accountPerformance.account?.current_balance  ?? 10000),
-        startingBalance: Number(accountPerformance.account?.starting_balance ?? 10000),
-        totalTrades:     Number(accountPerformance.account?.total_trades      ?? 0),
-        winningTrades:   Number(accountPerformance.account?.winning_trades    ?? 0),
-        losingTrades:    Number(accountPerformance.account?.losing_trades     ?? 0),
-        winRate:         Number(accountPerformance.account?.win_rate           ?? 0),
-        openPositions: (accountPerformance.openPositions ?? []).map((p: any) => ({
-          ticker:     p.ticker,
-          entryPrice: Number(p.entry_price),
-          pnl:        Number(p.unrealized_pnl_percent ?? 0),
-        })),
-        recentTrades: (accountPerformance.recentTrades ?? []).map((t: any) => ({
-          ticker:     t.ticker,
-          entryPrice: Number(t.entry_price),
-          exitPrice:  Number(t.exit_price ?? t.entry_price),
-          pnl:        Number(t.pnl_percent ?? 0),
-        })),
-      };
-
-      const validation = validateTradingResponse(responseContent, validationCtx);
-
-      if (!validation.isValid) {
-        console.error('[VALIDATOR] 🚨 Fabrication intercepted:', validation.violations);
-        responseContent = validation.sanitizedResponse!;
-
-        // Log to activity log for monitoring (non-blocking, best-effort)
-        supabase.from('ayn_activity_log').insert({
-          action_type:  'fabrication_blocked',
-          summary:      `Fabrication intercepted: ${validation.violations.slice(0, 2).join('; ')}`,
-          triggered_by: 'system',
-          details: {
-            violations:           validation.violations,
-            user_message_preview: lastMessage.substring(0, 150),
-          },
-        }).then(({ error }) => {
-          if (error) console.error('[VALIDATOR] Log failed:', error);
-        });
       }
     }
 
