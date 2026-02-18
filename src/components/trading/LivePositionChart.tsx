@@ -120,9 +120,12 @@ export default function LivePositionChart({ ticker, entryPrice, stopLoss, tp1, t
       ws.send(JSON.stringify({ op: 'SUBSCRIBE', topic: 'TRADE', symbol: ticker }));
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = async (event) => {
       try {
-        const msg = JSON.parse(event.data as string);
+        const text = event.data instanceof Blob
+          ? await event.data.text()
+          : (event.data as string);
+        const msg = JSON.parse(text);
 
         // Keep connection alive
         if (msg.op === 'PING') {
