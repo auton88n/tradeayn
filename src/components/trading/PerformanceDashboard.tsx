@@ -585,10 +585,21 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
             </div>
           </CardContent>
         </Card>
-      ) : account && account.total_trades > 0 ? (
+      ) : account ? (
         <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" /> Advanced Metrics
+            </CardTitle>
+          </CardHeader>
           <CardContent className="py-4 px-4">
-            <p className="text-xs text-muted-foreground text-center">Advanced metrics calculate daily at 00:10 UTC. Check back tomorrow or trigger manually.</p>
+            {account.total_trades < 5 ? (
+              <p className="text-xs text-muted-foreground text-center">
+                📊 Metrics available after 5+ closed trades ({account.total_trades}/5 completed)
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center">Advanced metrics calculate daily at 00:10 UTC. Check back tomorrow or trigger manually.</p>
+            )}
           </CardContent>
         </Card>
       ) : null}

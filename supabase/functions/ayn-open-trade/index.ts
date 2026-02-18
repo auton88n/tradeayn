@@ -291,7 +291,16 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    console.log(`[ayn-open-trade] ✅ Trade opened: ${signal} ${ticker} @ $${entryPrice} | Risk: ${riskPercent.toFixed(2)}% ($${riskDollars.toFixed(2)}) | Size: $${positionSizeDollars.toFixed(2)}`);
+    // Deduct position size from available balance
+    await supabase
+      .from('ayn_account_state')
+      .update({
+        current_balance: balance - positionSizeDollars,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', '00000000-0000-0000-0000-000000000001');
+
+    console.log(`[ayn-open-trade] ✅ Trade opened: ${signal} ${ticker} @ $${entryPrice} | Risk: ${riskPercent.toFixed(2)}% ($${riskDollars.toFixed(2)}) | Size: $${positionSizeDollars.toFixed(2)} | Balance: $${(balance - positionSizeDollars).toFixed(2)}`);
 
     return new Response(JSON.stringify({
       opened: true,

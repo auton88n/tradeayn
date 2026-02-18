@@ -133,7 +133,20 @@ Deno.serve(async (req) => {
 
     if (updateErr) throw updateErr;
 
-    console.log(`[ayn-close-trade] ✅ Closed ${trade.ticker} @ $${currentPrice} (${priceSource}) | Gross: $${grossClosePnl.toFixed(2)}, Fees: $${costs.total.toFixed(2)}, Net: $${totalPnlDollars} (${totalPnlPercent}%) | Reason: ${exitReason}`);
+    // Return position capital + net P&L to available balance
+    const { data: acct } = await supabase
+      .from('ayn_account_state')
+      .select('current_balance')
+      .eq('id', '00000000-0000-0000-0000-000000000001')
+      .single();
+
+    const newBalance = Number(acct?.current_balance ?? 0) + positionDollars + totalPnlDollars;
+    await supabase
+      .from('ayn_account_state')
+      .update({ current_balance: Math.round(newBalance * 100) / 100, updated_at: new Date().toISOString() })
+      .eq('id', '00000000-0000-0000-0000-000000000001');
+
+    console.log(`[ayn-close-trade] ✅ Closed ${trade.ticker} @ $${currentPrice} (${priceSource}) | Gross: $${grossClosePnl.toFixed(2)}, Fees: $${costs.total.toFixed(2)}, Net: $${totalPnlDollars} (${totalPnlPercent}%) | Reason: ${exitReason} | New balance: $${newBalance.toFixed(2)}`);
 
     return new Response(JSON.stringify({
       success: true,
