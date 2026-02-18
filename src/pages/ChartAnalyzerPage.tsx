@@ -136,31 +136,6 @@ const ChartAnalyzerPage = () => {
             </button>
           </div>
 
-          {/* Sidebar toggle — only in Chat tab */}
-          {activeTab === 'chat' && (
-            <div className="flex items-center gap-1.5 ml-auto">
-              {/* Mobile sidebar trigger */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setMobileSidebarOpen(true)}
-                className="lg:hidden gap-1.5 bg-muted/50 backdrop-blur-sm rounded-full px-3 hover:bg-muted"
-              >
-                <History className="h-3.5 w-3.5" />
-                History
-              </Button>
-              {/* Desktop sidebar toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSidebarOpen(o => !o)}
-                className="hidden lg:flex gap-1.5 bg-muted/50 backdrop-blur-sm rounded-full px-3 hover:bg-muted"
-                title={sidebarOpen ? 'Hide history sidebar' : 'Show history sidebar'}
-              >
-                <PanelLeft className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Content */}
@@ -201,7 +176,10 @@ const ChartAnalyzerPage = () => {
                   latestResult={latestResult}
                   onLatestResultChange={setLatestResult}
                   coach={coach}
-                  onToggleSidebar={() => setSidebarOpen(o => !o)}
+                  onToggleSidebar={() => {
+                    if (window.innerWidth >= 1024) setSidebarOpen(o => !o);
+                    else setMobileSidebarOpen(o => !o);
+                  }}
                 />
               </div>
             </div>

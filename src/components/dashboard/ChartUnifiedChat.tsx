@@ -565,10 +565,10 @@ export default function ChartUnifiedChat({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isBusy}
-                className="p-1.5 rounded-lg hover:bg-muted/60 transition-all disabled:opacity-40"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all disabled:opacity-40"
                 title="Upload chart"
               >
-                <Upload className="w-4 h-4 text-muted-foreground" />
+                <Upload className="w-4 h-4" />
               </button>
             </div>
 
