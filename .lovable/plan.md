@@ -1,78 +1,59 @@
 
-# Fix: Klines Are Returned Newest-First, Must Be Sorted Oldest-First
+# Add Position Size in Dollars to Open Positions Card
 
-## The Problem (Confirmed by Live Test)
+## What the User Wants
 
-Calling `get-klines` right now returns this:
-```json
-{ "time": 1771430400 },  ← newest
-{ "time": 1771426800 },
-{ "time": 1771423200 },
-{ "time": 1771419600 },
-{ "time": 1771416000 }   ← oldest
+The "Size" field in the Open Positions card currently shows only the risk percentage (e.g., `2.5%`). The user wants to also see the actual dollar amount invested in the trade (e.g., `$250.00`) so they can clearly understand how much money is allocated to the position and how it relates to the $10,000 account balance.
+
+## Current State
+
+In `src/components/trading/PerformanceDashboard.tsx`, line 220:
+```tsx
+<div>
+  <span className="text-muted-foreground">Size</span>
+  <br />
+  <span className="font-medium">{trade.position_size_percent}%</span>
+</div>
 ```
 
-Pionex returns klines in **descending order** (most recent first). `lightweight-charts` requires data in **ascending order** (oldest first). When `setData()` is called with descending data, it throws:
+The `position_size_dollars` value is already available in the component — it's in the `PaperTrade` type (line 50) and assigned to `positionSizeDollars` on line 141. It's just not being rendered.
 
-```
-Assertion failed: data must be asc ordered by time, index=1, time=1771426800, prev time=1771430400
-```
+## The Fix — One Line Change
 
-This is caught by the `try/catch` silently (non-fatal), so the chart renders with zero candles. That's exactly what the screenshot shows — the chart frame is there, the price lines are there, but no candles.
+Update the Size cell to show both values stacked:
 
-## The Fix
-
-**One line** in `get-klines/index.ts` — sort the klines ascending before returning:
-
-```typescript
-// Before (Pionex order = newest first = descending):
-const klines = rawKlines.map((k) => ({ ... }));
-
-// After (sort ascending = oldest first = what lightweight-charts needs):
-const klines = rawKlines
-  .map((k) => ({
-    time: Math.floor(k.time / 1000),
-    open: parseFloat(k.open),
-    high: parseFloat(k.high),
-    low: parseFloat(k.low),
-    close: parseFloat(k.close),
-  }))
-  .sort((a, b) => a.time - b.time);  // ← the fix
+```tsx
+<div>
+  <span className="text-muted-foreground">Size</span>
+  <br />
+  <span className="font-medium">${positionSizeDollars.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+  <br />
+  <span className="text-[10px] text-muted-foreground">{trade.position_size_percent}%</span>
+</div>
 ```
 
-Then redeploy `get-klines`.
+This shows:
+- **Bold:** `$250.00` (the actual cash allocated)
+- **Small gray below:** `2.5%` (the risk percentage)
 
-## Why This Is the Only Change Needed
+## Why `positionSizeDollars` Is Already Correct
 
-- The klines edge function already returns valid OHLCV data (confirmed live — 100 candles, correct prices around $187-194 for TAO_USDT)
-- The WebSocket is already working (live price shows $187.30 with the amber pulse)
-- `setData` will succeed with sorted data and candles will fill the chart
-- `fitContent()` will then zoom to show all 100 candles
-- Live WebSocket updates will continue appending new candles on top
+`position_size_dollars` is calculated by `ayn-open-trade` edge function as:
+```
+position_size_dollars = (balance × riskPercent%) / stopDistance × entryPrice
+```
+
+For the TAO_USDT trade:
+- Balance: ~$10,000
+- Risk: 2.5%
+- This gives ~$250 in the position (the actual capital allocated)
+
+This number is stored in the DB and reflects the real account balance at the time of trade entry — so it's always accurate.
 
 ## File to Change
 
-### `supabase/functions/get-klines/index.ts`
+| File | Line | Change |
+|---|---|---|
+| `src/components/trading/PerformanceDashboard.tsx` | 220 | Show `$positionSizeDollars` as primary, `%` as secondary label |
 
-Change lines 81–87 (the `.map()` call) to add `.sort((a, b) => a.time - b.time)` at the end:
-
-```typescript
-const klines = rawKlines
-  .map((k) => ({
-    time: Math.floor(k.time / 1000),
-    open: parseFloat(k.open),
-    high: parseFloat(k.high),
-    low: parseFloat(k.low),
-    close: parseFloat(k.close),
-  }))
-  .sort((a, b) => a.time - b.time);
-```
-
-Then redeploy the edge function.
-
-## What You'll See After
-
-- Chart fills with 100 historical candlesticks (1h view = ~4 days of data)
-- Live candle updates in real-time from the WebSocket
-- Entry ($193), Stop ($183.35), TP1 ($212.30), TP2 ($231.60) lines visible across the candles
-- Switching timeframes (1m/5m/15m/1h) will reload candles correctly
+One line change, no edge function changes, no DB changes.
