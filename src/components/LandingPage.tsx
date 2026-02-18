@@ -1,893 +1,376 @@
-import { useState, useRef, useEffect, useMemo, memo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, ChevronDown, Calculator, ShieldCheck, Mountain, Ticket, Mail, MapPin, Navigation2 } from 'lucide-react';
+import { useState, memo } from 'react';
+import { BarChart3, Upload, Brain, TrendingUp, Shield, Target, ArrowRight, ChevronRight, Zap, Award, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import { AuthModal } from './auth/AuthModal';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { useScrollAnimation } from '@/hooks/useScrollAnimation';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { TypewriterText } from '@/components/shared/TypewriterText';
-import { Hero } from '@/components/landing/Hero';
-import { z } from 'zod';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { LazyLoad } from './ui/lazy-load';
-import MobileMockup from './services/MobileMockup';
-import DeviceMockups from './services/DeviceMockups';
-import AutomationFlowMockup from './services/AutomationFlowMockup';
-import AIEmployeeMockup from './services/AIEmployeeMockup';
-import EngineeringMockup from './services/EngineeringMockup';
-import TicketingMockup from './services/TicketingMockup';
-import { SEO, organizationSchema, websiteSchema, softwareApplicationSchema, createFAQSchema } from '@/components/shared/SEO';
-import { useDebugStore } from '@/stores/debugStore';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
+import { motion } from 'framer-motion';
+import { SEO } from '@/components/shared/SEO';
 
-// ScrollReveal component - defined outside to prevent recreation on re-renders
-const ScrollReveal = ({
-  children,
-  direction = 'up',
-  delay = 0,
-  debugLabel = 'ScrollReveal'
-}: {
-  children: React.ReactNode;
-  direction?: 'up' | 'left' | 'right' | 'scale';
-  delay?: number;
-  debugLabel?: string;
-}) => {
-  const [ref, isVisible] = useScrollAnimation({
-    debugLabel
-  });
-  return <div ref={ref as React.RefObject<HTMLDivElement>} className={cn('scroll-animate', direction === 'left' && 'scroll-animate-left', direction === 'right' && 'scroll-animate-right', direction === 'scale' && 'scroll-animate-scale', isVisible && 'visible')} style={{
-    transitionDelay: `${delay}s`
-  }}>
-      {children}
-    </div>;
-};
-const LandingPage = memo(() => {
-  // Use ref to avoid re-renders from debug context updates
-  const debugRef = useRef(useDebugStore.getState());
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [pendingMessage, setPendingMessage] = useState<string>('');
-  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const {
-    t,
-    language,
-    direction
-  } = useLanguage();
-  const {
-    toast
-  } = useToast();
-
-  // Debug render logging - use ref to avoid dependency on context
-  if (debugRef.current?.isDebugMode) {
-    debugRef.current.incrementRenderCount('LandingPage');
-  }
-
-  // Hover handlers with collapse delay
-  const handleMouseEnter = () => {
-    if (collapseTimeoutRef.current) {
-      clearTimeout(collapseTimeoutRef.current);
-      collapseTimeoutRef.current = null;
-    }
-    setIsMenuExpanded(true);
-  };
-  const handleMouseLeave = () => {
-    // Don't collapse if a dropdown is open
-    if (isDropdownOpen) return;
-    collapseTimeoutRef.current = setTimeout(() => {
-      setIsMenuExpanded(false);
-    }, 300);
-  };
-
-  // Handle dropdown open state to prevent menu collapse
-  const handleDropdownOpenChange = (open: boolean) => {
-    setIsDropdownOpen(open);
-    if (open && collapseTimeoutRef.current) {
-      clearTimeout(collapseTimeoutRef.current);
-      collapseTimeoutRef.current = null;
-    }
-  };
-
-  // Smooth scroll to section
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({
-        behavior: 'smooth'
-      });
-      setIsMenuExpanded(false);
-    }
-  };
-
-  // Auto-collapse on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 100 && isMenuExpanded) {
-        setIsMenuExpanded(false);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isMenuExpanded]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (collapseTimeoutRef.current) {
-        clearTimeout(collapseTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Contact form state
-  const [contactForm, setContactForm] = useState({
-    name: '',
-    email: '',
-    message: ''
-  });
-  const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  // Contact form validation schema - memoized to prevent recreation on re-renders
-  const contactSchema = useMemo(() => z.object({
-    name: z.string().trim().min(1, {
-      message: language === 'ar' ? 'الاسم مطلوب' : 'Name is required'
-    }).max(100, {
-      message: language === 'ar' ? 'الاسم يجب أن يكون أقل من 100 حرف' : 'Name must be less than 100 characters'
-    }),
-    email: z.string().trim().email({
-      message: language === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email address'
-    }).max(255, {
-      message: language === 'ar' ? 'البريد الإلكتروني يجب أن يكون أقل من 255 حرف' : 'Email must be less than 255 characters'
-    }),
-    message: z.string().trim().min(1, {
-      message: language === 'ar' ? 'الرسالة مطلوبة' : 'Message is required'
-    }).max(1000, {
-      message: language === 'ar' ? 'الرسالة يجب أن تكون أقل من 1000 حرف' : 'Message must be less than 1000 characters'
-    })
-  }), [language]);
-
-  // Handle contact form submission
-  const handleContactSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setContactErrors({});
-
-    // Validate form
-    try {
-      contactSchema.parse(contactForm);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errors: Record<string, string> = {};
-        error.errors.forEach(err => {
-          if (err.path[0]) {
-            errors[err.path[0].toString()] = err.message;
-          }
-        });
-        setContactErrors(errors);
-        return;
-      }
-    }
-    setIsSubmitting(true);
-    try {
-      // Save to database
-      const {
-        error: dbError
-      } = await supabase.from('contact_messages').insert({
-        name: contactForm.name.trim(),
-        email: contactForm.email.trim(),
-        message: contactForm.message.trim()
-      });
-      if (dbError) {
-        if (import.meta.env.DEV) {
-          console.error('Database error:', dbError);
-        }
-        throw new Error('Failed to save message');
-      }
-
-      // Send email notification
-      const {
-        error: emailError
-      } = await supabase.functions.invoke('send-contact-email', {
-        body: {
-          name: contactForm.name.trim(),
-          email: contactForm.email.trim(),
-          message: contactForm.message.trim()
-        }
-      });
-      if (emailError) {
-        if (import.meta.env.DEV) {
-          console.error('Email error:', emailError);
-        }
-        // Don't throw - message was saved, just email failed
-      }
-      setIsSubmitted(true);
-      setContactForm({
-        name: '',
-        email: '',
-        message: ''
-      });
-      toast({
-        title: language === 'ar' ? 'تم الإرسال بنجاح' : 'Message Sent',
-        description: language === 'ar' ? 'سنتواصل معك قريباً' : "We'll get back to you soon"
-      });
-
-      // Reset submitted state after 3 seconds
-      setTimeout(() => setIsSubmitted(false), 3000);
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Contact form error:', error);
-      }
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى' : 'Something went wrong. Please try again',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  const services = [{
-    number: '01',
-    slug: 'content-creator-sites',
-    title: language === 'ar' ? 'مواقع لصناع المحتوى' : language === 'fr' ? 'Sites Premium pour Créateurs' : 'Premium Content Creator Sites',
-    description: language === 'ar' ? 'موقع احترافي يعكس هويتك ويجذب فرص التعاون.' : language === 'fr' ? 'Sites web de luxe conçus pour mettre en valeur votre marque personnelle.' : 'Luxury websites custom-built to showcase your personal brand.',
-    mockup: <LazyLoad minHeight="320px" debugLabel="MobileMockup"><MobileMockup /></LazyLoad>
-  }, {
-    number: '02',
-    slug: 'ai-agents',
-    title: language === 'ar' ? 'مساعد ذكي لعملك' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents',
-    description: language === 'ar' ? 'مساعد ذكي يعمل ٢٤ ساعة لخدمة عملائك.' : language === 'fr' ? 'Assistants intelligents 24/7 formés sur votre entreprise.' : '24/7 intelligent assistants trained on your business.',
-    mockup: <LazyLoad minHeight="280px" debugLabel="DeviceMockups"><DeviceMockups /></LazyLoad>
-  }, {
-    number: '03',
-    slug: 'automation',
-    title: language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation',
-    description: language === 'ar' ? 'أتمتة المهام المتكررة لتوفير الوقت والجهد.' : language === 'fr' ? 'Automatisez les flux de travail pour gagner du temps.' : 'Automate workflows to save time and reduce errors in any business.',
-    mockup: <LazyLoad minHeight="260px" debugLabel="AutomationMockup"><AutomationFlowMockup /></LazyLoad>
-  }, {
-    number: '04',
-    slug: 'ai-employee',
-    title: language === 'ar' ? 'موظفين بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees',
-    description: language === 'ar' ? 'موظفين يعملون ٢٤ ساعة بدون إجازات أو تأمين صحي.' : language === 'fr' ? 'Employés qui travaillent 24h/24 sans vacances ni assurance santé.' : 'Employees who work 24/7 with no vacations or healthcare costs.',
-    mockup: <LazyLoad minHeight="280px" debugLabel="AIEmployeeMockup"><AIEmployeeMockup /></LazyLoad>
-  }, {
-    number: '05',
-    slug: 'engineering',
-    isInternal: true,
-    title: language === 'ar' ? 'حاسبات الهندسة المدنية' : language === 'fr' ? 'Calculateurs de Génie Civil' : 'Civil Engineering Calculators',
-    description: language === 'ar' ? 'تصميم العناصر الإنشائية مع التصور ثلاثي الأبعاد والتحليل بالذكاء الاصطناعي.' : language === 'fr' ? 'Concevez des éléments structurels avec visualisation 3D et analyse IA.' : 'Design structural elements with 3D visualization and AI-powered analysis.',
-    mockup: <LazyLoad minHeight="260px" debugLabel="EngineeringMockup"><EngineeringMockup /></LazyLoad>
-  }, {
-    number: '06',
-    slug: 'ticketing',
-    title: language === 'ar' ? 'نظام التذاكر الذكي' : language === 'fr' ? 'Billetterie Intelligente' : 'Smart Ticketing System',
-    description: language === 'ar' ? 'بيع التذاكر أونلاين والتحقق بمسح QR من الجوال.' : language === 'fr' ? 'Vendez des billets en ligne et validez par scan QR.' : 'Sell tickets online and validate with phone QR scanning.',
-    mockup: <LazyLoad minHeight="300px" debugLabel="TicketingMockup"><TicketingMockup /></LazyLoad>
-  }];
-  // FAQ Schema for rich snippets
-  const faqSchema = createFAQSchema([{
-    question: "What is AYN AI?",
-    answer: "AYN AI is a perceptive artificial intelligence platform that learns your habits, understands your goals, and helps you succeed. It offers AI employees, custom AI agents, and business automation tools."
-  }, {
-    question: "How does AYN AI learn my preferences?",
-    answer: "AYN AI uses advanced machine learning to analyze your interactions, understand your communication style, and adapt to your workflow patterns over time."
-  }, {
-    question: "What services does AYN AI offer?",
-    answer: "AYN AI offers AI employees for 24/7 customer support, custom AI agents for business automation, content creator websites, smart ticketing systems, and engineering calculation tools."
-  }, {
-    question: "Is AYN AI available in Arabic?",
-    answer: "Yes! AYN AI (عين) is fully multilingual with native support for Arabic, English, and French, making it ideal for Middle Eastern and international businesses."
-  }]);
-  return <>
-    <SEO title="AYN AI - Personal AI Assistant That Learns You | Smart AI Platform" description="AYN AI is a perceptive artificial intelligence that learns your habits, understands your goals, and helps you succeed. AI employees, custom AI agents, business automation, and more." canonical="/" keywords="AYN AI, AYN artificial intelligence, personal AI assistant, AI that learns you, perceptive AI, smart AI platform, AI employees, AI agents, business automation, Arabic AI assistant, عين AI, machine learning assistant, AI productivity tools, custom AI bots, virtual employees" jsonLd={{
-      '@graph': [organizationSchema, websiteSchema, softwareApplicationSchema, faqSchema]
-    }} />
-    <div dir={direction} className="min-h-screen bg-background scroll-smooth">
-      {/* Vertical Dropdown Navigation */}
-      <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
-        <div className="relative">
-          {/* Logo Pill - Always visible, acts as trigger - CSS transitions instead of springs */}
-          <div ref={menuRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-full shadow-2xl cursor-pointer">
-            <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center">
-              <Brain className="w-4 h-4 md:w-5 md:h-5 text-background" />
-            </div>
-            <span className={cn("text-lg md:text-xl font-bold tracking-tight overflow-hidden whitespace-nowrap transition-all duration-200", isMenuExpanded ? "w-auto opacity-100" : "w-0 opacity-0")}>
-              AYN
-            </span>
-            <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-200", isMenuExpanded && "rotate-180")} />
-          </div>
-
-          {/* Dropdown Panel - CSS transitions instead of springs */}
-          {isMenuExpanded && <div className="absolute top-full left-0 mt-2 min-w-[200px] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-              {/* Navigation Links */}
-              <div className="p-2">
-                <button onClick={() => scrollToSection('about')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
-                  {language === 'ar' ? 'عن AYN' : language === 'fr' ? 'À Propos' : 'About'}
-                </button>
-                <button onClick={() => scrollToSection('services')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
-                  {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Services' : 'Services'}
-                </button>
-                <button onClick={() => scrollToSection('contact')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
-                  {language === 'ar' ? 'تواصل معنا' : language === 'fr' ? 'Contact' : 'Contact'}
-                </button>
-              </div>
-
-              {/* Separator */}
-              <div className="h-px bg-border mx-2" />
-
-              {/* Settings Row */}
-              <div className="p-2 flex items-center justify-between px-4">
-                <LanguageSwitcher onOpenChange={handleDropdownOpenChange} />
-                <ThemeToggle />
-              </div>
-
-              {/* Separator */}
-              <div className="h-px bg-border mx-2" />
-
-              {/* CTA Button */}
-              <div className="p-3">
-                <Button onClick={() => {
-                setIsMenuExpanded(false);
-                setShowAuthModal(true);
-              }} className="w-full rounded-xl">
-                  {t('nav.getStarted')}
-                </Button>
-              </div>
-            </div>}
-        </div>
-      </nav>
-
-      {/* Mobile Sheet Navigation (fallback for small screens) */}
-      <div className="fixed top-4 right-4 z-50 md:hidden">
-        <Sheet>
-          <SheetTrigger asChild>
-            
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[280px] sm:w-[320px]">
-            <div className="flex flex-col gap-6 pt-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-foreground flex items-center justify-center">
-                  <Brain className="w-6 h-6 text-background" />
-                </div>
-                <span className="text-2xl font-bold">AYN</span>
-              </div>
-              
-              <div className="flex flex-col gap-4">
-                <button onClick={() => scrollToSection('about')} className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors">
-                  {language === 'ar' ? 'عن AYN' : language === 'fr' ? 'À Propos' : 'About'}
-                </button>
-                <button onClick={() => scrollToSection('services')} className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors">
-                  {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Services' : 'Services'}
-                </button>
-                <button onClick={() => scrollToSection('contact')} className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors">
-                  {language === 'ar' ? 'تواصل معنا' : language === 'fr' ? 'Contact' : 'Contact'}
-                </button>
-                
-                <div className="h-px bg-border my-2" />
-                
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغة' : language === 'fr' ? 'Langue' : 'Language'}</span>
-                  <LanguageSwitcher onOpenChange={handleDropdownOpenChange} />
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-muted-foreground">{language === 'ar' ? 'المظهر' : language === 'fr' ? 'Thème' : 'Theme'}</span>
-                  <ThemeToggle />
-                </div>
-                
-                <Button onClick={() => setShowAuthModal(true)} className="w-full rounded-xl">
-                  {t('nav.getStarted')}
-                </Button>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      {/* Hero Section - Premium AI Eye Experience */}
-      <Hero onGetStarted={prefillMessage => {
-        if (prefillMessage) {
-          setPendingMessage(prefillMessage);
-          localStorage.setItem('ayn_pending_message', prefillMessage);
-        }
-        setShowAuthModal(true);
-      }} />
-
-      {/* About AYN - Value Proposition Section */}
-      <section id="about" className="py-16 md:py-32 px-4 md:px-6">
-        <div className="container mx-auto max-w-6xl text-center">
-          <ScrollReveal>
-            <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-              {language === 'ar' ? 'من نحن' : language === 'fr' ? 'À Propos d\'AYN' : 'About AYN'}
-            </span>
-
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
-              {language === 'ar' ? 'ذكاء اصطناعي + أدوات هندسية' : language === 'fr' ? 'IA + Outils d\'Ingénierie' : 'AI Assistant + Engineering Tools'}
-            </h2>
-
-            <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
-              {language === 'ar' ? 'AYN يتعرّف عليك ويساعدك في مهامك اليومية، بالإضافة إلى أدوات هندسية احترافية للتصميم الإنشائي.' : language === 'fr' ? 'AYN apprend vos habitudes et vous aide à rester organisé, avec des outils d\'ingénierie professionnels.' : 'AYN learns your habits and helps you stay organized, plus professional engineering tools for structural design.'}
-            </p>
-          </ScrollReveal>
-
-          {/* 6 Value Props - 2 Rows */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-            {/* Row 1: AI Capabilities */}
-            <ScrollReveal delay={0.1}>
-              <div className="text-center space-y-3 md:space-y-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Brain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'يتكيّف معك' : language === 'fr' ? 'Compréhension Adaptative' : 'Adaptive Understanding'}
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم إرشادات تناسبك.' : language === 'fr' ? 'Apprend vos préférences et offre des conseils personnalisés.' : 'Learns your preferences and offers personalized guidance tailored to you.'}
-                </p>
-              </div>
-            </ScrollReveal>
-
-            <ScrollReveal delay={0.2}>
-              <div className="text-center space-y-3 md:space-y-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'دائماً بجانبك' : language === 'fr' ? 'Toujours Disponible' : 'Always Available'}
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'رفيق متاح ٢٤ ساعة جاهز لمساعدتك.' : language === 'fr' ? 'Un compagnon disponible 24/7, prêt à vous aider.' : 'A thoughtful companion available 24/7, ready to help whenever you need.'}
-                </p>
-              </div>
-            </ScrollReveal>
-
-            <ScrollReveal delay={0.3}>
-              <div className="text-center space-y-3 md:space-y-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Shield className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'خصوصيتك محمية' : language === 'fr' ? 'Vie Privée Protégée' : 'Your Privacy, Protected'}
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل.' : language === 'fr' ? 'Vos données sont sécurisées avec chiffrement.' : 'Your conversations and data are secured with end-to-end encryption.'}
-                </p>
-              </div>
-            </ScrollReveal>
-
-            {/* Row 2: Engineering Tools */}
-            <ScrollReveal delay={0.4}>
-              <div className="text-center space-y-3 md:space-y-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Calculator className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'حاسبات إنشائية' : language === 'fr' ? 'Calculateurs Structurels' : 'Structural Calculators'}
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'تصميم الكمرات والأعمدة والأساسات مع تصور ثلاثي الأبعاد.' : language === 'fr' ? 'Concevez poutres, colonnes et fondations avec visualisation 3D.' : 'Design beams, columns, slabs and foundations with 3D visualization.'}
-                </p>
-              </div>
-            </ScrollReveal>
-
-            <ScrollReveal delay={0.5}>
-              <div className="text-center space-y-3 md:space-y-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <ShieldCheck className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'فحص الامتثال' : language === 'fr' ? 'Conformité au Code' : 'Code Compliance'}
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'تحقق من مطابقة التصميم لكود البناء تلقائيًا.' : language === 'fr' ? 'Vérifiez automatiquement la conformité au code du bâtiment.' : 'Automated building code compliance checks and reports.'}
-                </p>
-              </div>
-            </ScrollReveal>
-
-            <ScrollReveal delay={0.6}>
-              <div className="text-center space-y-3 md:space-y-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Mountain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'تصميم التسوية' : language === 'fr' ? 'Conception de Terrassement' : 'Site Grading'}
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'تحليل التضاريس وتصميم المناسيب بالذكاء الاصطناعي.' : language === 'fr' ? 'Analyse du terrain et conception d\'élévation avec IA.' : 'Terrain analysis and elevation design with AI assistance.'}
-                </p>
-              </div>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Section - Bento Grid */}
-      <section id="services" className="py-16 md:py-32 px-4 md:px-6 overflow-x-hidden">
-        <div className="container mx-auto max-w-6xl">
-          {/* Section header */}
-          <ScrollReveal>
-            <div className="text-center mb-12 md:mb-16">
-            <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-                {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Ce Que Nous Faisons' : 'What We Do'}
-              </span>
-              <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif mb-4 md:mb-6">
-                {language === 'ar' ? <>ست طرق <span className="font-bold">لتبسيط حياتك</span></> : language === 'fr' ? <>Six Façons de <span className="font-bold">Simplifier Votre Vie</span></> : <>Six Ways We Help <span className="font-bold">Simplify Your Life</span></>}
-              </h2>
-            </div>
-          </ScrollReveal>
-
-          {/* Bento Grid - 4 Services */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column */}
-            <div className="flex flex-col gap-6">
-              {/* Top Left - Content Creator Sites */}
-              <ScrollReveal>
-                <Link to={`/services/${services[0].slug}`} className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-hidden contain-layout" whileHover={{
-                    y: -4
-                  }} transition={{
-                    duration: 0.3,
-                    ease: [0.32, 0.72, 0, 1]
-                  }}>
-                    <div className="mb-4">
-                      
-                      <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
-                        {services[0].title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {services[0].description}
-                      </p>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center overflow-hidden">
-                      {services[0].mockup}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                      {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </motion.div>
-                </Link>
-              </ScrollReveal>
-
-              {/* Bottom Left - Automation */}
-              <ScrollReveal delay={0.2}>
-                <Link to={`/services/${services[2].slug}`} className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer contain-layout" whileHover={{
-                    y: -4
-                  }} transition={{
-                    duration: 0.3,
-                    ease: [0.32, 0.72, 0, 1]
-                  }}>
-                    <div className="flex flex-col gap-4">
-                      <div>
-                        
-                        <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
-                          {services[2].title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {services[2].description}
-                        </p>
-                      </div>
-                      <div className="flex-1 flex items-center justify-center h-[120px]">
-                        {services[2].mockup}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                        {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  </motion.div>
-                </Link>
-              </ScrollReveal>
-
-              {/* Ticketing System - Featured Card */}
-              <ScrollReveal delay={0.3}>
-                <Link to="/services/ticketing" className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[500px] flex flex-col group cursor-pointer overflow-hidden contain-layout" whileHover={{
-                    y: -4
-                  }} transition={{
-                    duration: 0.3,
-                    ease: [0.32, 0.72, 0, 1]
-                  }}>
-                    <div className="mb-4">
-                      <span className="text-xs font-mono text-purple-500 tracking-wider">NEW</span>
-                      <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-purple-500 transition-colors">
-                        {services[5].title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {services[5].description}
-                      </p>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center overflow-visible">
-                      {services[5].mockup}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                      {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </motion.div>
-                </Link>
-              </ScrollReveal>
-            </div>
-
-            {/* Right Column */}
-            <div className="flex flex-col gap-6">
-              {/* Top Right - AI Agents */}
-              <ScrollReveal delay={0.1}>
-                <Link to={`/services/${services[1].slug}`} className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer contain-layout" whileHover={{
-                    y: -4
-                  }} transition={{
-                    duration: 0.3,
-                    ease: [0.32, 0.72, 0, 1]
-                  }}>
-                    <div className="flex flex-col gap-4">
-                      <div>
-                        
-                        <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
-                          {services[1].title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {services[1].description}
-                        </p>
-                      </div>
-                      <div className="flex-1 flex items-center justify-center h-[120px]">
-                        {services[1].mockup}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                        {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  </motion.div>
-                </Link>
-              </ScrollReveal>
-
-              {/* Bottom Right - AI Employees */}
-              <ScrollReveal delay={0.3}>
-                <Link to={`/services/${services[3].slug}`} className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-card rounded-3xl p-6 md:p-8 min-h-[480px] group cursor-pointer overflow-hidden contain-layout" whileHover={{
-                    y: -4
-                  }} transition={{
-                    duration: 0.3,
-                    ease: [0.32, 0.72, 0, 1]
-                  }}>
-                    <div className="flex flex-col gap-4">
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
-                          {services[3].title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {services[3].description}
-                        </p>
-                      </div>
-                      <div className="flex-1 flex items-center justify-center min-h-[280px]">
-                        {services[3].mockup}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                        {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  </motion.div>
-                </Link>
-              </ScrollReveal>
-              
-              {/* Engineering Tools - Featured Card */}
-              <ScrollReveal delay={0.4}>
-                <Link to="/engineering" className="block">
-                  <motion.div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-hidden contain-layout" whileHover={{
-                    y: -4
-                  }} transition={{
-                    duration: 0.3,
-                    ease: [0.32, 0.72, 0, 1]
-                  }}>
-                    <div className="mb-4">
-                      <span className="text-xs font-mono text-cyan-500 tracking-wider">NEW</span>
-                      <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-cyan-500 transition-colors">
-                        {services[4].title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {services[4].description}
-                      </p>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center overflow-visible">
-                      {services[4].mockup}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                      {language === 'ar' ? 'ابدأ التصميم' : language === 'fr' ? 'Commencer la Conception' : 'Start Designing'}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </motion.div>
-                </Link>
-              </ScrollReveal>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Premium Contact Section */}
-      <section id="contact" className="py-16 md:py-32 px-4 md:px-6 bg-background">
-        <div className="container mx-auto max-w-3xl">
-          <ScrollReveal>
-            <div className="text-center mb-10 md:mb-16">
-              <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-                {language === 'ar' ? 'راسلنا' : language === 'fr' ? 'Contactez-Nous' : 'Get In Touch'}
-              </span>
-              <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
-                {language === 'ar' ? 'دعنا نتحدث' : language === 'fr' ? 'Commençons une Conversation' : "Let's Start a Conversation"}
-              </h2>
-              <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
-                {language === 'ar' ? 'شاركنا فكرتك، ودعنا نحوّلها إلى واقع' : language === 'fr' ? 'Parlez-nous de votre projet et nous vous aiderons à réaliser votre vision' : "Tell us about your project and we'll help transform your vision into reality"}
-              </p>
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.2}>
-            {isSubmitted ?
-            // Success state
-            <div className="text-center py-20 animate-scale-fade-in">
-                <div className="w-16 h-16 rounded-full bg-foreground mx-auto mb-6 flex items-center justify-center">
-                  <CheckCircle className="w-8 h-8 text-background" />
-                </div>
-                <h3 className="text-2xl font-bold mb-3">
-                  {language === 'ar' ? 'شكراً لك!' : language === 'fr' ? 'Merci!' : 'Thank You!'}
-                </h3>
-                <p className="text-muted-foreground">
-                  {language === 'ar' ? 'سنرد عليك خلال 24 ساعة' : language === 'fr' ? 'Nous vous contacterons dans 24 heures' : "We'll be in touch within 24 hours"}
-                </p>
-              </div> :
-            // Contact form
-            <form onSubmit={handleContactSubmit} className="space-y-6">
-                {/* Name input */}
-                <div className="space-y-2 group">
-                  <label htmlFor="name" className="text-sm font-mono uppercase tracking-wider text-muted-foreground">
-                    {language === 'ar' ? 'الاسم' : language === 'fr' ? 'Nom' : 'Name'}
-                  </label>
-                  <Input id="name" type="text" value={contactForm.name} onChange={e => setContactForm({
-                  ...contactForm,
-                  name: e.target.value
-                })} placeholder={language === 'ar' ? 'الاسم الكامل' : language === 'fr' ? 'Votre nom complet' : 'Your full name'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.name && "border-destructive")} disabled={isSubmitting} />
-                  {contactErrors.name && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.name}</p>}
-                </div>
-
-                {/* Email input */}
-                <div className="space-y-2 group">
-                  <label htmlFor="email" className="text-sm font-mono uppercase tracking-wider text-muted-foreground">
-                    {language === 'ar' ? 'البريد الإلكتروني' : language === 'fr' ? 'Email' : 'Email'}
-                  </label>
-                  <Input id="email" type="email" value={contactForm.email} onChange={e => setContactForm({
-                  ...contactForm,
-                  email: e.target.value
-                })} placeholder={language === 'ar' ? 'بريدك الإلكتروني' : language === 'fr' ? 'votre@email.com' : 'your@email.com'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.email && "border-destructive")} disabled={isSubmitting} />
-                  {contactErrors.email && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.email}</p>}
-                </div>
-
-                {/* Message textarea */}
-                <div className="space-y-2 group">
-                  <label htmlFor="message" className="text-sm font-mono uppercase tracking-wider text-muted-foreground">
-                    {language === 'ar' ? 'الرسالة' : language === 'fr' ? 'Message' : 'Message'}
-                  </label>
-                  <Textarea id="message" value={contactForm.message} onChange={e => setContactForm({
-                  ...contactForm,
-                  message: e.target.value
-                })} placeholder={language === 'ar' ? 'كيف يمكننا مساعدتك؟' : language === 'fr' ? 'Parlez-nous de votre projet...' : 'Tell us about your project...'} rows={6} className={cn("bg-transparent border-2 border-border rounded-none text-base transition-all duration-300 resize-none", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.message && "border-destructive")} disabled={isSubmitting} />
-                  {contactErrors.message && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.message}</p>}
-                </div>
-
-                {/* Submit button */}
-                <Button type="submit" size="lg" disabled={isSubmitting} className={cn("w-full h-14 rounded-none font-mono uppercase tracking-wider transition-all duration-300", "hover:shadow-2xl")}>
-                  {isSubmitting ? <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      {language === 'ar' ? 'جارٍ الإرسال...' : language === 'fr' ? 'Envoi...' : 'Sending...'}
-                    </> : <>
-                      {language === 'ar' ? 'أرسل' : language === 'fr' ? 'Envoyer' : 'Send Message'}
-                      <Send className="ml-2 h-5 w-5" />
-                    </>}
-                </Button>
-              </form>}
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* Professional Footer */}
-      <footer className="pt-8 pb-4">
-        <div className="container max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-6">
-            {/* Column 1: Brand */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-background" />
-                </div>
-                <span className="text-2xl font-bold">AYN</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {language === 'ar' ? 'هندسة مدعومة بالذكاء الاصطناعي' : language === 'fr' ? 'Ingénierie propulsée par l\'IA' : 'AI-Powered Engineering'}
-              </p>
-            </div>
-
-            {/* Column 2: Explore */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-sm uppercase tracking-wider text-foreground">
-                {language === 'ar' ? 'استكشف' : language === 'fr' ? 'Explorer' : 'Explore'}
-              </h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                {[
-                  { label: language === 'ar' ? 'حول' : language === 'fr' ? 'À propos' : 'About', id: 'about' },
-                  { label: language === 'ar' ? 'الخدمات' : language === 'fr' ? 'Services' : 'Services', id: 'services' },
-                  { label: language === 'ar' ? 'تواصل' : language === 'fr' ? 'Contact' : 'Contact', id: 'contact' },
-                ].map(link => (
-                  <li key={link.id}>
-                    <button onClick={() => document.getElementById(link.id)?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-foreground transition-colors">
-                      {link.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Column 3: Services */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-sm uppercase tracking-wider text-foreground">
-                {language === 'ar' ? 'الخدمات' : language === 'fr' ? 'Services' : 'Services'}
-              </h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                {[
-                  { label: language === 'ar' ? 'مواقع صناع المحتوى المميزة' : language === 'fr' ? 'Sites Créateurs Premium' : 'Premium Content Creator Sites', route: '/services/content-creator-sites' },
-                  { label: language === 'ar' ? 'وكلاء ذكاء اصطناعي مخصصون' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents', route: '/services/ai-agents' },
-                  { label: language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation', route: '/services/automation' },
-                  { label: language === 'ar' ? 'موظفون بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees', route: '/services/ai-employee' },
-                  { label: language === 'ar' ? 'الهندسة المدنية' : language === 'fr' ? 'Génie Civil' : 'Civil Engineering', route: '/services/civil-engineering' },
-                  { label: language === 'ar' ? 'نظام التذاكر الذكي' : language === 'fr' ? 'Billetterie Intelligente' : 'Smart Ticketing System', route: '/services/ticketing' },
-                ].map(service => (
-                  <li key={service.route}>
-                    <Link to={service.route} className="hover:text-foreground transition-colors">
-                      {service.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Column 4: Contact */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-sm uppercase tracking-wider text-foreground">
-                {language === 'ar' ? 'تواصل' : language === 'fr' ? 'Contact' : 'Contact'}
-              </h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  <a href="mailto:info@ayn.ca" className="hover:text-foreground transition-colors">info@ayn.ca</a>
-                </li>
-                <li className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>Nova Scotia, Canada</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Bottom bar */}
-          <Separator className="mb-6" />
-          <p className="text-center text-xs text-muted-foreground">
-            © 2026 AYN AI. {language === 'ar' ? 'جميع الحقوق محفوظة.' : language === 'fr' ? 'Tous droits réservés.' : 'All rights reserved.'}
-          </p>
-        </div>
-      </footer>
-
-      {/* Auth Modal */}
-      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
-    </div>
-  </>;
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, delay, ease: 'easeOut' as const },
 });
+
+const LandingPage = memo(() => {
+  const [showAuth, setShowAuth] = useState(false);
+
+  return (
+    <>
+      <SEO
+        title="AYN Trade — AI Chart Analysis in Seconds"
+        description="Upload any trading chart. AYN's AI reads RSI, EMA, MACD, Wyckoff patterns and delivers a full professional analysis: entry, stop loss, take profits, and R:R ratio."
+        canonical="/"
+        keywords="AI chart analysis, trading chart analyzer, technical analysis AI, RSI MACD EMA, Wyckoff analysis, trading signals, stop loss take profit, risk reward ratio"
+      />
+
+      <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+
+        {/* ── Navbar ── */}
+        <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 py-4 bg-background/80 backdrop-blur-md border-b border-border/40">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-amber-500" />
+            <span className="font-display font-bold text-lg tracking-tight">AYN Trade</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <ThemeToggle />
+            <Button
+              onClick={() => setShowAuth(true)}
+              className="bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-full px-5 h-9 text-sm"
+            >
+              Get Started
+            </Button>
+          </div>
+        </header>
+
+        {/* ── Hero ── */}
+        <section className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-16 px-6 text-center overflow-hidden">
+          {/* Ambient glow */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-[radial-gradient(ellipse_at_center,hsl(38_95%_54%_/_0.12)_0%,transparent_70%)]" />
+          </div>
+
+          <motion.div {...fadeUp(0)} className="mb-3">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold tracking-widest uppercase">
+              <Zap className="w-3 h-3" /> AI-Powered Technical Analysis
+            </span>
+          </motion.div>
+
+          <motion.h1
+            {...fadeUp(0.08)}
+            className="font-display font-bold text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[-0.03em] leading-[0.95] max-w-4xl mb-6"
+          >
+            Upload a chart.<br />
+            <span className="text-amber-500">Get a pro analysis.</span>
+          </motion.h1>
+
+          <motion.p
+            {...fadeUp(0.16)}
+            className="text-lg md:text-xl text-muted-foreground max-w-xl mb-10 leading-relaxed"
+          >
+            AYN reads RSI, EMA, MACD, Wyckoff phases and more — and returns a full trade setup in seconds. Entry, stop loss, take profits, R:R ratio, and AI coaching.
+          </motion.p>
+
+          <motion.div {...fadeUp(0.22)} className="flex flex-col sm:flex-row items-center gap-3">
+            <Button
+              onClick={() => setShowAuth(true)}
+              size="lg"
+              className="bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full px-8 h-12 text-base shadow-lg shadow-amber-500/20 group"
+            >
+              Analyze Your First Chart
+              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+            </Button>
+            <span className="text-xs text-muted-foreground">Free to start · No credit card required</span>
+          </motion.div>
+
+          {/* Chart mockup preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-16 w-full max-w-3xl mx-auto"
+          >
+            <ChartMockup />
+          </motion.div>
+        </section>
+
+        {/* ── How It Works ── */}
+        <section className="py-24 px-6">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-16"
+            >
+              <h2 className="font-display font-bold text-3xl md:text-5xl tracking-[-0.02em] mb-4">How it works</h2>
+              <p className="text-muted-foreground text-lg">Three steps from screenshot to trade setup.</p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                {
+                  step: '01',
+                  icon: <Upload className="w-6 h-6" />,
+                  title: 'Upload your chart',
+                  desc: 'Take a screenshot of any trading chart — crypto, forex, stocks. Any timeframe, any exchange.',
+                },
+                {
+                  step: '02',
+                  icon: <Brain className="w-6 h-6" />,
+                  title: 'AYN reads the technicals',
+                  desc: 'AYN identifies RSI, EMA, MACD, Bollinger Bands, Wyckoff phases, order blocks, and market structure.',
+                },
+                {
+                  step: '03',
+                  icon: <Target className="w-6 h-6" />,
+                  title: 'Get a full trade setup',
+                  desc: 'Signal direction, entry price, stop loss, two take profit levels, R:R ratio, and invalidation condition.',
+                },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.step}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className="relative p-6 rounded-2xl bg-card border border-border/60 hover:border-amber-500/40 transition-colors group"
+                >
+                  <div className="absolute top-4 right-4 text-5xl font-display font-bold text-muted/30 leading-none select-none">
+                    {item.step}
+                  </div>
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-4 group-hover:bg-amber-500/20 transition-colors">
+                    {item.icon}
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── What You Get ── */}
+        <section className="py-24 px-6 bg-muted/30">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-16"
+            >
+              <h2 className="font-display font-bold text-3xl md:text-5xl tracking-[-0.02em] mb-4">Everything in one analysis</h2>
+              <p className="text-muted-foreground text-lg">A complete trade plan — not just a vague signal.</p>
+            </motion.div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[
+                { icon: <Award className="w-4 h-4" />, label: 'Confidence Score', desc: 'How strong is the setup — 0 to 100.' },
+                { icon: <TrendingUp className="w-4 h-4" />, label: 'Entry Price & Order Type', desc: 'Limit or market, with exact price level.' },
+                { icon: <Shield className="w-4 h-4" />, label: 'Stop Loss', desc: 'With % distance from entry, clearly defined.' },
+                { icon: <Target className="w-4 h-4" />, label: 'Take Profit 1 & 2', desc: 'Two tiered exits for partial and full close.' },
+                { icon: <Activity className="w-4 h-4" />, label: 'Risk:Reward Ratio', desc: 'Calculated automatically from your levels.' },
+                { icon: <Zap className="w-4 h-4" />, label: 'Invalidation Condition', desc: 'Know exactly when the thesis is wrong.' },
+                { icon: <Brain className="w-4 h-4" />, label: 'AI Coaching', desc: 'Ask follow-up questions about the chart.' },
+                { icon: <ChevronRight className="w-4 h-4" />, label: 'Technical Indicators', desc: 'RSI, EMA, MACD, Wyckoff, Order Blocks.' },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.label}
+                  initial={{ opacity: 0, x: -12 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.05 }}
+                  className="flex items-start gap-4 p-5 rounded-xl bg-card border border-border/60"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0 mt-0.5">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm mb-0.5">{item.label}</div>
+                    <div className="text-muted-foreground text-xs leading-relaxed">{item.desc}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── AYN Paper Trading ── */}
+        <section className="py-24 px-6">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="rounded-2xl bg-gradient-to-br from-amber-500/10 via-card to-card border border-amber-500/20 p-8 md:p-12"
+            >
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold mb-4">
+                    <Activity className="w-3 h-3" /> Live Paper Trading
+                  </div>
+                  <h2 className="font-display font-bold text-2xl md:text-3xl tracking-[-0.02em] mb-3">
+                    AYN trades its own signals
+                  </h2>
+                  <p className="text-muted-foreground leading-relaxed max-w-lg">
+                    AYN paper-trades every signal it generates — live, with real market prices. Track its win rate, P&L, Sharpe ratio, and every open position in the Performance tab.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-4 shrink-0 w-full md:w-auto">
+                  {[
+                    { label: 'Live Positions', value: 'Real-time' },
+                    { label: 'Performance', value: 'Full Stats' },
+                    { label: 'History', value: 'Every Trade' },
+                  ].map((stat) => (
+                    <div key={stat.label} className="flex items-center justify-between gap-8 px-5 py-3 rounded-xl bg-background border border-border/60 min-w-[200px]">
+                      <span className="text-sm text-muted-foreground">{stat.label}</span>
+                      <span className="font-bold text-sm text-amber-500">{stat.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ── Final CTA ── */}
+        <section className="py-24 px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="max-w-2xl mx-auto"
+          >
+            <h2 className="font-display font-bold text-3xl md:text-5xl tracking-[-0.02em] mb-4">
+              Start analyzing free
+            </h2>
+            <p className="text-muted-foreground text-lg mb-8">
+              Upload your first chart today. No credit card needed.
+            </p>
+            <Button
+              onClick={() => setShowAuth(true)}
+              size="lg"
+              className="bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full px-10 h-13 text-base shadow-lg shadow-amber-500/20 group"
+            >
+              Analyze Your First Chart
+              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+            </Button>
+          </motion.div>
+        </section>
+
+        {/* ── Footer ── */}
+        <footer className="border-t border-border/40 py-8 px-6">
+          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-amber-500" />
+              <span className="font-display font-semibold text-foreground">AYN Trade</span>
+            </div>
+            <div className="flex items-center gap-6">
+              <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
+              <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
+              <a href="/pricing" className="hover:text-foreground transition-colors">Pricing</a>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+            </div>
+          </div>
+        </footer>
+
+        {showAuth && (
+          <AuthModal
+            open={showAuth}
+            onOpenChange={(v) => setShowAuth(v)}
+          />
+        )}
+      </div>
+    </>
+  );
+});
+
+// ── Inline chart mockup SVG ──
+const ChartMockup = () => (
+  <div className="relative rounded-2xl overflow-hidden border border-border/60 bg-card shadow-2xl shadow-black/10">
+    {/* Toolbar */}
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-card">
+      <div className="flex gap-1.5">
+        <div className="w-3 h-3 rounded-full bg-red-400/60" />
+        <div className="w-3 h-3 rounded-full bg-yellow-400/60" />
+        <div className="w-3 h-3 rounded-full bg-green-400/60" />
+      </div>
+      <div className="flex items-center gap-2 ml-2">
+        <BarChart3 className="w-4 h-4 text-amber-500" />
+        <span className="text-xs font-semibold text-muted-foreground">BTC/USDT · 4H</span>
+      </div>
+      <div className="ml-auto flex items-center gap-2">
+        <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 font-semibold">LONG</span>
+        <span className="text-xs text-muted-foreground">Confidence: 82%</span>
+      </div>
+    </div>
+
+    {/* Fake chart */}
+    <div className="relative h-52 sm:h-64 bg-gradient-to-b from-card to-muted/20 p-4 overflow-hidden">
+      <svg viewBox="0 0 600 200" className="w-full h-full" preserveAspectRatio="none">
+        {/* Grid lines */}
+        {[40, 80, 120, 160].map((y) => (
+          <line key={y} x1="0" y1={y} x2="600" y2={y} stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="4 4" />
+        ))}
+        {/* EMA line */}
+        <polyline
+          points="0,150 60,140 120,130 180,120 240,110 300,105 360,95 420,85 480,75 540,70 600,60"
+          fill="none" stroke="hsl(38 95% 54% / 0.5)" strokeWidth="1.5" strokeDasharray="5 3"
+        />
+        {/* Price line */}
+        <polyline
+          points="0,160 40,155 80,145 120,155 160,140 200,130 240,120 280,125 320,110 360,100 400,90 440,80 480,70 520,65 560,55 600,50"
+          fill="none" stroke="hsl(38 95% 54%)" strokeWidth="2"
+        />
+        {/* Area fill */}
+        <polygon
+          points="0,160 40,155 80,145 120,155 160,140 200,130 240,120 280,125 320,110 360,100 400,90 440,80 480,70 520,65 560,55 600,50 600,200 0,200"
+          fill="url(#areaGrad)" opacity="0.3"
+        />
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(38 95% 54%)" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="hsl(38 95% 54%)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {/* TP lines */}
+        <line x1="320" y1="85" x2="600" y2="85" stroke="#22c55e" strokeWidth="1" strokeDasharray="4 3" opacity="0.7" />
+        <line x1="320" y1="65" x2="600" y2="65" stroke="#22c55e" strokeWidth="1" strokeDasharray="4 3" opacity="0.5" />
+        {/* SL line */}
+        <line x1="320" y1="130" x2="600" y2="130" stroke="#ef4444" strokeWidth="1" strokeDasharray="4 3" opacity="0.6" />
+        {/* Entry dot */}
+        <circle cx="320" cy="110" r="5" fill="hsl(38 95% 54%)" />
+      </svg>
+
+      {/* Labels */}
+      <div className="absolute right-3 top-[38%] text-[10px] font-semibold text-green-500">TP2</div>
+      <div className="absolute right-3 top-[50%] text-[10px] font-semibold text-green-500">TP1</div>
+      <div className="absolute right-3 top-[62%] text-[10px] font-semibold text-red-400">SL</div>
+    </div>
+
+    {/* Analysis result bar */}
+    <div className="grid grid-cols-4 divide-x divide-border/60 border-t border-border/60">
+      {[
+        { label: 'Entry', value: '$67,420' },
+        { label: 'Stop Loss', value: '$65,100 −3.4%' },
+        { label: 'Take Profit', value: '$71,800 +6.5%' },
+        { label: 'R:R', value: '1:1.9' },
+      ].map((item) => (
+        <div key={item.label} className="px-3 py-3 text-center">
+          <div className="text-[10px] text-muted-foreground mb-0.5">{item.label}</div>
+          <div className="text-xs font-bold">{item.value}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default LandingPage;

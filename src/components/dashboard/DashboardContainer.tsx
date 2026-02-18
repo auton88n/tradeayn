@@ -14,7 +14,18 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AIMode, FileAttachment, AIModeConfig, ChatHistory } from '@/types/dashboard.types';
-import type { MaintenanceConfig, BetaConfig } from '@/components/Dashboard';
+interface MaintenanceConfig {
+  enabled?: boolean;
+  message?: string;
+  endTime?: string;
+  startTime?: string;
+  preMaintenanceNotice?: boolean;
+  preMaintenanceMessage?: string;
+}
+interface BetaConfig {
+  enabled?: boolean;
+  feedbackReward?: number;
+}
 
 // Import custom hooks
 import type { UseAuthReturn } from '@/types/dashboard.types';

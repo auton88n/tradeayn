@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, ArrowLeft, MessageSquare, Activity, History, PanelLeft } from 'lucide-react';
+import { BarChart3, MessageSquare, Activity, History } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import ChartUnifiedChat from '@/components/dashboard/ChartUnifiedChat';
 import PerformanceDashboard from '@/components/trading/PerformanceDashboard';
@@ -87,16 +86,6 @@ const ChartAnalyzerPage = () => {
       <div className="relative pt-4 px-4 h-screen flex flex-col">
         {/* Top bar: Back + Tabs + Sidebar Toggle */}
         <div className={`flex items-center gap-3 mb-2 shrink-0 mx-auto w-full ${topBarMax}`}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="gap-2 bg-muted/50 backdrop-blur-sm rounded-full px-4 hover:bg-muted"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-
           <div className="flex bg-muted/50 backdrop-blur-sm rounded-full p-1 border border-border/50">
             <button
               onClick={() => setActiveTab('chat')}
