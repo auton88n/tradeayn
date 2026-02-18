@@ -144,7 +144,12 @@ Deno.serve(async (req) => {
           updated_at: new Date().toISOString(),
         }).eq('id', trade.id);
 
-        console.log(`[ayn-monitor] ❌ STOPPED OUT: ${trade.ticker} @ $${currentPrice} | Gross: $${grossPnl.toFixed(2)}, Fees: $${costs.total.toFixed(2)}, Net: $${netPnlDollars.toFixed(2)}`);
+        // Return position capital + net P&L to balance
+        const { data: acctStop } = await supabase.from('ayn_account_state').select('current_balance').eq('id', '00000000-0000-0000-0000-000000000001').single();
+        const newBalanceStop = Number(acctStop?.current_balance ?? 0) + Number(trade.position_size_dollars) + netPnlDollars;
+        await supabase.from('ayn_account_state').update({ current_balance: Math.round(newBalanceStop * 100) / 100, updated_at: new Date().toISOString() }).eq('id', '00000000-0000-0000-0000-000000000001');
+
+        console.log(`[ayn-monitor] ❌ STOPPED OUT: ${trade.ticker} @ $${currentPrice} | Gross: $${grossPnl.toFixed(2)}, Fees: $${costs.total.toFixed(2)}, Net: $${netPnlDollars.toFixed(2)} | New balance: $${newBalanceStop.toFixed(2)}`);
         results.push({ ticker: trade.ticker, action: 'STOPPED_OUT', price: currentPrice, pnl: netPnlDollars });
         continue;
       }
@@ -216,7 +221,12 @@ Deno.serve(async (req) => {
             updated_at: new Date().toISOString(),
           }).eq('id', trade.id);
 
-          console.log(`[ayn-monitor] 🎯 TP2 HIT: ${trade.ticker} @ $${tp2} | Total P&L: +$${totalPnl.toFixed(2)}`);
+          // Return position capital + total P&L to balance
+          const { data: acctTp2 } = await supabase.from('ayn_account_state').select('current_balance').eq('id', '00000000-0000-0000-0000-000000000001').single();
+          const newBalanceTp2 = Number(acctTp2?.current_balance ?? 0) + Number(trade.position_size_dollars) + totalPnl;
+          await supabase.from('ayn_account_state').update({ current_balance: Math.round(newBalanceTp2 * 100) / 100, updated_at: new Date().toISOString() }).eq('id', '00000000-0000-0000-0000-000000000001');
+
+          console.log(`[ayn-monitor] 🎯 TP2 HIT: ${trade.ticker} @ $${tp2} | Total P&L: +$${totalPnl.toFixed(2)} | New balance: $${newBalanceTp2.toFixed(2)}`);
           results.push({ ticker: trade.ticker, action: 'TP2_HIT', price: tp2, pnl: totalPnl });
           continue;
         }
