@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Activity, Target, Award, BarChart3, AlertTriangle, CheckCircle, X, Loader2 } from 'lucide-react';
+import { Activity, Target, Award, BarChart3, AlertTriangle, CheckCircle, X, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import AIDecisionLog from '@/components/trading/AIDecisionLog';
 import ActivityTimeline, { type TimelineEntry } from '@/components/trading/ActivityTimeline';
+import { useLivePrices } from '@/hooks/useLivePrices';
+import LivePositionChart from '@/components/trading/LivePositionChart';
 
 // Types
 interface AccountState {
@@ -126,12 +128,27 @@ function MetricCard({ title, value, subtitle, status = 'neutral' }: {
   );
 }
 
-function OpenPositionCard({ trade, onClose }: { trade: PaperTrade; onClose: (id: string) => Promise<void> }) {
+function OpenPositionCard({ trade, onClose, livePrice }: {
+  trade: PaperTrade;
+  onClose: (id: string) => Promise<void>;
+  livePrice?: number;
+}) {
   const [closing, setClosing] = useState(false);
+  const [showChart, setShowChart] = useState(false);
   const entryPrice = Number(trade.entry_price);
-  const unrealizedPnl = Number(trade.pnl_dollars);
-  const unrealizedPercent = trade.position_size_dollars > 0
-    ? (unrealizedPnl / Number(trade.position_size_dollars)) * 100 : 0;
+  const shares = Number(trade.shares_or_coins);
+  const isBuy = trade.signal === 'BUY';
+  const positionSizeDollars = Number(trade.position_size_dollars);
+
+  // Use live price for P&L when available, fallback to DB value
+  const isLiveActive = !!livePrice;
+  const currentPrice = livePrice ?? entryPrice;
+  const liveGrossPnl = isBuy
+    ? (currentPrice - entryPrice) * shares
+    : (entryPrice - currentPrice) * shares;
+  const displayPnl = isLiveActive ? liveGrossPnl : Number(trade.pnl_dollars);
+  const displayPercent = positionSizeDollars > 0
+    ? (displayPnl / positionSizeDollars) * 100 : 0;
 
   const handleClose = async () => {
     setClosing(true);
@@ -147,21 +164,30 @@ function OpenPositionCard({ trade, onClose }: { trade: PaperTrade; onClose: (id:
       <div className="flex justify-between items-start mb-2">
         <div>
           <span className="text-lg font-bold">{trade.ticker}</span>
-          <Badge variant="outline" className={`ml-2 text-[10px] ${trade.signal === 'BUY' ? 'text-green-500 border-green-500/30' : 'text-red-500 border-red-500/30'}`}>
+          <Badge variant="outline" className={`ml-2 text-[10px] ${isBuy ? 'text-green-500 border-green-500/30' : 'text-red-500 border-red-500/30'}`}>
             {trade.signal}
           </Badge>
           {trade.setup_type && (
             <Badge variant="secondary" className="ml-1 text-[10px]">{trade.setup_type}</Badge>
           )}
+          {isLiveActive && (
+            <Badge variant="outline" className="ml-1 text-[10px] text-amber-400 border-amber-500/30">LIVE</Badge>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <div className={`text-right ${unrealizedPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+          <div className={`text-right ${displayPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
             <span className="text-sm font-bold">
-              {unrealizedPnl >= 0 ? '+' : ''}{unrealizedPercent.toFixed(2)}%
+              {displayPnl >= 0 ? '+' : ''}{displayPercent.toFixed(2)}%
             </span>
             <br />
-            <span className="text-xs">${unrealizedPnl.toFixed(2)}</span>
+            <span className="text-xs">${displayPnl.toFixed(2)}</span>
           </div>
+          <button
+            onClick={() => setShowChart(v => !v)}
+            className="h-7 px-2 text-[11px] rounded border border-border/50 flex items-center gap-1 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+          >
+            Chart {showChart ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
           <Button
             variant="destructive"
             size="sm"
@@ -173,18 +199,45 @@ function OpenPositionCard({ trade, onClose }: { trade: PaperTrade; onClose: (id:
           </Button>
         </div>
       </div>
+
+      {/* Live price row */}
+      {isLiveActive && (
+        <div className="flex items-center gap-1.5 mb-2 text-xs">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
+          </span>
+          <span className="text-muted-foreground">Current:</span>
+          <span className="font-mono font-semibold">${livePrice!.toFixed(4)}</span>
+          <span className="text-muted-foreground text-[10px]">● LIVE</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-4 gap-2 text-xs">
         <div><span className="text-muted-foreground">Entry</span><br /><span className="font-medium">${entryPrice.toFixed(2)}</span></div>
         <div><span className="text-muted-foreground">Stop</span><br /><span className="font-medium text-red-400">${Number(trade.stop_loss_price).toFixed(2)}</span></div>
         <div><span className="text-muted-foreground">TP1</span><br /><span className="font-medium text-green-400">{trade.take_profit_1_price ? `$${Number(trade.take_profit_1_price).toFixed(2)}` : '—'}</span></div>
         <div><span className="text-muted-foreground">Size</span><br /><span className="font-medium">{trade.position_size_percent}%</span></div>
       </div>
+
       {trade.partial_exits && trade.partial_exits.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border/30">
           {trade.partial_exits.map((exit: any, i: number) => (
             <p key={i} className="text-[11px] text-green-400">✓ {exit.percent}% @ ${exit.price} (+${Number(exit.pnl).toFixed(2)})</p>
           ))}
         </div>
+      )}
+
+      {/* Expandable candlestick chart */}
+      {showChart && (
+        <LivePositionChart
+          ticker={trade.ticker}
+          entryPrice={entryPrice}
+          stopLoss={Number(trade.stop_loss_price)}
+          tp1={trade.take_profit_1_price ? Number(trade.take_profit_1_price) : null}
+          tp2={trade.take_profit_2_price ? Number(trade.take_profit_2_price) : null}
+          signal={trade.signal}
+        />
       )}
     </div>
   );
@@ -246,6 +299,10 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
   const [isLive, setIsLive] = useState(false);
   const [killSwitchLoading, setKillSwitchLoading] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
+
+  // Live prices from Pionex WebSocket
+  const openTickers = useMemo(() => openTrades.map(t => t.ticker), [openTrades]);
+  const { prices: livePrices, connected: pricesConnected } = useLivePrices(openTickers);
 
   const killSwitch = circuitBreakers.find(b => b.breaker_type === 'KILL_SWITCH');
   const isKillSwitchActive = killSwitch?.is_tripped === true;
@@ -427,13 +484,21 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
 
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          {isLive && (
+          {pricesConnected && openTrades.length > 0 && (
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+            </span>
+          )}
+          {!pricesConnected && isLive && (
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
           )}
-          <span className="text-xs text-muted-foreground">{isLive ? 'Realtime' : 'Updates every 30s'}</span>
+          <span className="text-xs text-muted-foreground">
+            {pricesConnected && openTrades.length > 0 ? 'Live prices' : isLive ? 'Realtime' : 'Updates every 30s'}
+          </span>
         </div>
         <Button
           variant={isKillSwitchActive ? 'outline' : 'destructive'}
@@ -580,7 +645,12 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
           ) : (
             <div className="space-y-3">
               {openTrades.map(trade => (
-                <OpenPositionCard key={trade.id} trade={trade} onClose={handleCloseTrade} />
+                <OpenPositionCard
+                  key={trade.id}
+                  trade={trade}
+                  onClose={handleCloseTrade}
+                  livePrice={livePrices[trade.ticker]?.price}
+                />
               ))}
             </div>
           )}
