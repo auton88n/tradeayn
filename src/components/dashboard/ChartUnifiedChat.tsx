@@ -121,15 +121,41 @@ const AynTextBubble = memo(({ content }: { content: string }) => (
 AynTextBubble.displayName = 'AynTextBubble';
 
 
+// ─── Props ───
+interface ChartUnifiedChatProps {
+  messages?: ChatMessage[];
+  onMessagesChange?: (messages: ChatMessage[]) => void;
+  latestResult?: ChartAnalysisResult | null;
+  onLatestResultChange?: (result: ChartAnalysisResult | null) => void;
+}
+
 // ─── Main Component ───
-export default function ChartUnifiedChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export default function ChartUnifiedChat({
+  messages: externalMessages,
+  onMessagesChange,
+  latestResult: externalLatestResult,
+  onLatestResultChange,
+}: ChartUnifiedChatProps = {}) {
+  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [attachedPreview, setAttachedPreview] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  
-  const [latestResult, setLatestResult] = useState<ChartAnalysisResult | null>(null);
+  const [localLatestResult, setLocalLatestResult] = useState<ChartAnalysisResult | null>(null);
+
+  // Use external state if provided (lifted to parent for persistence), else local
+  const messages = externalMessages ?? localMessages;
+  const setMessages = useCallback((updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+    const next = typeof updater === 'function' ? updater(externalMessages ?? localMessages) : updater;
+    if (onMessagesChange) onMessagesChange(next);
+    else setLocalMessages(next);
+  }, [externalMessages, localMessages, onMessagesChange]);
+
+  const latestResult = externalLatestResult !== undefined ? externalLatestResult : localLatestResult;
+  const setLatestResult = useCallback((result: ChartAnalysisResult | null) => {
+    if (onLatestResultChange) onLatestResultChange(result);
+    else setLocalLatestResult(result);
+  }, [onLatestResultChange]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -215,10 +241,17 @@ export default function ChartUnifiedChat() {
   }, [analyzer.error, analyzer.step]);
 
   // ─── Sync coach messages ───
+  // Initialize to current coach length so remounts don't replay existing messages
   const prevCoachLenRef = useRef(coach.messages.length);
 
   useEffect(() => {
-    coach.newChat();
+    // Only start a new chat session if there are no existing messages (first ever load)
+    // If messages exist, we're remounting after a tab switch — preserve the coach session
+    if (messages.length === 0) {
+      coach.newChat();
+    }
+    // Update prevCoachLenRef to current coach state to avoid replaying prior messages
+    prevCoachLenRef.current = coach.messages.length;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {

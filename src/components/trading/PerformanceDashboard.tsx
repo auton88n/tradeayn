@@ -160,19 +160,28 @@ function TradeRow({ trade }: { trade: PaperTrade }) {
     : null;
 
   return (
-    <div className={`grid grid-cols-7 gap-2 py-2.5 px-3 text-xs border-b border-border/30 ${isWin ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
-      <div className="font-medium">{trade.ticker}</div>
-      <div><Badge variant="outline" className={`text-[10px] ${trade.signal === 'BUY' ? 'text-green-500' : 'text-red-500'}`}>{trade.signal}</Badge></div>
-      <div>${Number(trade.entry_price).toFixed(2)}</div>
-      <div>{trade.exit_price ? `$${Number(trade.exit_price).toFixed(2)}` : '—'}</div>
-      <div className={isWin ? 'text-green-500 font-bold' : 'text-red-500 font-bold'}>
-        {isWin ? '+' : ''}{Number(trade.pnl_percent).toFixed(2)}%
+    <div className={`py-2.5 px-3 border-b border-border/30 text-xs ${isWin ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
+      {/* Line 1: Ticker + Signal + P&L */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-medium">{trade.ticker}</span>
+          <Badge variant="outline" className={`text-[10px] shrink-0 ${trade.signal === 'BUY' ? 'text-green-500' : 'text-red-500'}`}>{trade.signal}</Badge>
+        </div>
+        <span className={`font-bold shrink-0 ${isWin ? 'text-green-500' : 'text-red-500'}`}>
+          {isWin ? '+' : ''}{Number(trade.pnl_percent).toFixed(2)}%
+        </span>
       </div>
-      <div className="text-muted-foreground">{trade.setup_type || '—'}</div>
-      <div className="text-muted-foreground">{duration !== null ? `${duration}h` : '—'}</div>
+      {/* Line 2: Entry / Exit / Setup / Duration metadata */}
+      <div className="flex items-center gap-3 mt-1 text-muted-foreground flex-wrap">
+        <span>Entry <span className="text-foreground">${Number(trade.entry_price).toFixed(2)}</span></span>
+        {trade.exit_price && <span>Exit <span className="text-foreground">${Number(trade.exit_price).toFixed(2)}</span></span>}
+        {trade.setup_type && <span className="truncate max-w-[120px]">{trade.setup_type}</span>}
+        {duration !== null && <span>{duration}h</span>}
+      </div>
     </div>
   );
 }
+
 
 interface ChartAnalysis {
   id: string;
@@ -501,8 +510,8 @@ export default function PerformanceDashboard({ onNavigateToHistory }: Performanc
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-7 gap-2 py-2 px-3 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-b border-border">
-                <div>Ticker</div><div>Signal</div><div>Entry</div><div>Exit</div><div>P&L</div><div>Setup</div><div>Duration</div>
+              <div className="flex justify-between py-2 px-3 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-b border-border">
+                <span>Trade</span><span>P&L</span>
               </div>
               {closedTrades.map(trade => (
                 <TradeRow key={trade.id} trade={trade} />
