@@ -7,6 +7,7 @@ import { sanitizeUserPrompt, detectInjectionAttempt, INJECTION_GUARD } from "../
 import { activateMaintenanceMode } from "../_shared/maintenanceGuard.ts";
 import { uploadImageToStorage } from "../_shared/storageUpload.ts";
 import { analyzeKlines, calculateEnhancedScore, fetchKlines, fetchFundingRates } from "./marketScanner.ts";
+import { validateTradingResponse } from "./validator.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1582,6 +1583,47 @@ You may discuss trading concepts, strategy, and education freely — just don't 
       } catch (e) {
         console.error('[AUTO-TRADE] Failed to parse/execute:', e);
         responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
+      }
+    }
+
+    // ── 🛡️ VALIDATION LAYER: Intercept fabricated performance data ──────────
+    if (intent === 'trading-coach' && !effectiveStream && accountPerformance !== null) {
+      const validationCtx = {
+        accountBalance:  Number(accountPerformance.account?.current_balance  ?? 10000),
+        startingBalance: Number(accountPerformance.account?.starting_balance ?? 10000),
+        totalTrades:     Number(accountPerformance.account?.total_trades      ?? 0),
+        winningTrades:   Number(accountPerformance.account?.winning_trades    ?? 0),
+        losingTrades:    Number(accountPerformance.account?.losing_trades     ?? 0),
+        winRate:         Number(accountPerformance.account?.win_rate           ?? 0),
+        openPositions: (accountPerformance.openPositions ?? []).map((p: any) => ({
+          ticker:     p.ticker,
+          entryPrice: Number(p.entry_price),
+          pnl:        Number(p.unrealized_pnl_percent ?? 0),
+        })),
+        recentTrades: (accountPerformance.recentTrades ?? []).map((t: any) => ({
+          ticker:     t.ticker,
+          entryPrice: Number(t.entry_price),
+          exitPrice:  Number(t.exit_price ?? t.entry_price),
+          pnl:        Number(t.pnl_percent ?? 0),
+        })),
+      };
+
+      const validation = validateTradingResponse(responseContent, validationCtx);
+
+      if (!validation.isValid) {
+        console.error('[VALIDATOR] 🚨 Fabrication intercepted:', validation.violations);
+        responseContent = validation.sanitizedResponse!;
+
+        // Log to activity log for monitoring (non-blocking, best-effort)
+        supabase.from('ayn_activity_log').insert({
+          action_type:  'fabrication_blocked',
+          summary:      `Fabrication intercepted: ${validation.violations.slice(0, 2).join('; ')}`,
+          triggered_by: 'system',
+          details: {
+            violations:           validation.violations,
+            user_message_preview: lastMessage.substring(0, 150),
+          },
+        }).catch((e: any) => console.error('[VALIDATOR] Log failed:', e));
       }
     }
 
