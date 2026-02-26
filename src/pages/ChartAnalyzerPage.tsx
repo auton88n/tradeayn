@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, MessageSquare, Activity, History, LogOut, User, Settings } from 'lucide-react';
+import { BarChart3, MessageSquare, History, LogOut, User, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import ChartUnifiedChat from '@/components/dashboard/ChartUnifiedChat';
-import PerformanceDashboard from '@/components/trading/PerformanceDashboard';
 import ChartHistoryTab from '@/components/dashboard/ChartHistoryTab';
 import ChartCoachSidebar from '@/components/dashboard/ChartCoachSidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,7 +22,7 @@ const ChartAnalyzerPage = () => {
   const [userId, setUserId] = useState<string | undefined>();
   const [userEmail, setUserEmail] = useState<string | undefined>();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [activeTab, setActiveTab] = useState<'chat' | 'history' | 'performance'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'history'>('chat');
 
   // Sidebar state — persisted to localStorage
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -87,7 +86,7 @@ const ChartAnalyzerPage = () => {
 
 
   // Determine max-width for the top bar based on active tab
-  const topBarMax = activeTab === 'performance' ? 'max-w-5xl' : activeTab === 'chat' ? 'max-w-6xl' : 'max-w-5xl';
+  const topBarMax = activeTab === 'chat' ? 'max-w-6xl' : 'max-w-5xl';
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -131,18 +130,6 @@ const ChartAnalyzerPage = () => {
             >
               <History className="h-3.5 w-3.5" />
               History
-            </button>
-            <button
-              onClick={() => setActiveTab('performance')}
-              className={cn(
-                "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
-                activeTab === 'performance'
-                  ? "bg-amber-500/90 text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Activity className="h-3.5 w-3.5" />
-              Performance
             </button>
           </div>
 
@@ -224,15 +211,6 @@ const ChartAnalyzerPage = () => {
             <ScrollArea className="h-full">
               <div className="max-w-5xl mx-auto">
                 <ChartHistoryTab externalHistory={history} />
-              </div>
-            </ScrollArea>
-          )}
-          {activeTab === 'performance' && (
-            <ScrollArea className="h-full">
-              <div className="max-w-5xl mx-auto py-2 px-1">
-                <PerformanceDashboard onNavigateToHistory={() => {
-                  setActiveTab('history');
-                }} />
               </div>
             </ScrollArea>
           )}
