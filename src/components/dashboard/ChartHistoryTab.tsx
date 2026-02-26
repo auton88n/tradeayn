@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useChartHistory } from '@/hooks/useChartHistory';
-import ChartHistoryStats from './ChartHistoryStats';
 import ChartHistoryList from './ChartHistoryList';
 import ChartHistoryDetail from './ChartHistoryDetail';
 import ChartCompareView from './ChartCompareView';
@@ -37,7 +36,6 @@ export default function ChartHistoryTab({ externalHistory }: ChartHistoryTabProp
 
   return (
     <div className="py-2 space-y-4">
-      <ChartHistoryStats items={history.items} />
       <ChartHistoryList
         items={history.items}
         loading={history.loading}
