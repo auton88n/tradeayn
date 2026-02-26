@@ -78,10 +78,16 @@ const ChartAnalyzerPage = () => {
 
       <div className="relative pt-4 px-4 h-screen flex flex-col">
         {/* Top bar */}
-        <div className="flex items-center gap-3 mb-2 shrink-0 mx-auto w-full max-w-6xl">
-          <div className="flex items-center gap-1.5 mr-1">
-            <BarChart3 className="w-4 h-4 text-amber-500" />
-            <span className="font-display font-bold text-sm hidden sm:block">AYN Trade</span>
+        <div className="flex items-center gap-3 mb-3 shrink-0 mx-auto w-full max-w-6xl">
+          {/* Logo + title */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-sm">
+              <BarChart3 className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="font-bold text-sm tracking-tight">AYN Trade</span>
+              <span className="text-[10px] text-muted-foreground font-medium">Chart Analyzer</span>
+            </div>
           </div>
 
           <div className="ml-auto">

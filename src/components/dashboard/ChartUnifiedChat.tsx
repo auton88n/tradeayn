@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUp, Upload, X, Loader2, BarChart3, Brain, Plus, Clock, Sparkles } from 'lucide-react';
+import { ArrowUp, Upload, X, Loader2, Brain, Plus, Clock, Sparkles } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
@@ -240,20 +240,12 @@ export default function ChartUnifiedChat({ coach, onToggleSidebar }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <div className="flex items-center gap-2 px-1 py-2 shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-          <BarChart3 className="h-4 w-4 text-white" />
-        </div>
-        <span className="text-sm font-semibold">AYN Chart Analyzer</span>
-      </div>
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-1">
         {msgs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mb-4">
-              <BarChart3 className="h-8 w-8 text-amber-500" />
+              <Sparkles className="h-8 w-8 text-amber-500" />
             </div>
             <h3 className="text-lg font-semibold mb-1">Drop a chart or ask anything</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm">
