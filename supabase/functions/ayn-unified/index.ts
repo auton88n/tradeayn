@@ -789,21 +789,14 @@ serve(async (req) => {
     }
 
     // PARALLEL DB OPERATIONS - Critical for 30K user scale (saves 200-300ms)
-    // Performance keywords to detect if user is asking about paper trading account
-    const performanceKeywords = [
-      'performance', 'win rate', 'balance', 'trades', 'p&l', 'profit', 'loss',
-      'portfolio', 'how are you doing', "how's your account", 'paper trading',
-      'track record', 'open positions', 'how many trades', 'account'
-    ];
-    const isPerformanceQuery = intent === 'trading-coach';
+    const isPerformanceQuery = false; // Paper trading removed
 
     // Autonomous trading detection (with typo-tolerant matching)
     const autonomousTradingKeywords = [
       'find best token', 'scan market', 'look for trade', 'find opportunity',
-      'paper testing', 'pepar testing', 'peper testing', 'papar testing',
       'start trading', 'trade for me', 'what should i buy',
       'find best setup', 'hunt for trades', 'scan for opportunities',
-      'do paper testing', 'find winning trade', 'find me a trade',
+      'find winning trade', 'find me a trade',
       'scan pairs', 'best crypto', 'what to buy', 'best token',
       'chose the best', 'choose the best', 'pick the best', 'pick a token',
       'make money', 'making money', 'open a trade', 'execute trade',
@@ -813,7 +806,7 @@ serve(async (req) => {
     const wantsAutonomousTrading = intent === 'trading-coach' &&
       autonomousTradingKeywords.some(kw => msgLower.includes(kw));
 
-    const [limitCheck, userContext, chartHistory, accountPerformance, scanResults] = await Promise.all([
+    const [limitCheck, userContext, chartHistory, , scanResults] = await Promise.all([
       isInternalCall ? Promise.resolve({ allowed: true }) : checkUserLimit(supabase, userId, intent),
       isInternalCall ? Promise.resolve({}) : getUserContext(supabase, userId),
       supabase.from('chart_analyses')
@@ -821,25 +814,7 @@ serve(async (req) => {
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(5),
-      // Fetch real paper trading data when relevant
-      isPerformanceQuery ? (async () => {
-        try {
-          const [accountRes, openRes, recentRes] = await Promise.all([
-            supabase.from('ayn_account_state').select('*').maybeSingle(),
-            supabase.from('ayn_paper_trades').select('*').in('status', ['OPEN', 'PARTIAL_CLOSE']),
-            supabase.from('ayn_paper_trades').select('*').in('status', ['CLOSED_WIN', 'CLOSED_LOSS', 'STOPPED_OUT']).order('exit_time', { ascending: false }).limit(5),
-          ]);
-          return {
-            account: accountRes.data,
-            openPositions: openRes.data || [],
-            recentTrades: recentRes.data || [],
-          };
-        } catch (err) {
-          console.error('[ayn-unified] Failed to fetch account performance:', err);
-          return null;
-        }
-      })() : Promise.resolve(null),
-      // Scan market for autonomous trading
+      Promise.resolve(null), // placeholder (paper trading removed)
       wantsAutonomousTrading ? scanMarketOpportunities() : Promise.resolve(null)
     ]);
 
@@ -871,39 +846,8 @@ serve(async (req) => {
         ).join('\n')}`
       : '';
 
-    // Inject real paper trading performance data into context if available
+    // Paper trading removed — no performance context injection
     let performanceContext = '';
-    if (accountPerformance?.account) {
-      const acct = accountPerformance.account;
-      const openPos = accountPerformance.openPositions;
-      const recentTrades = accountPerformance.recentTrades;
-      
-      performanceContext = `\n\nREAL PAPER TRADING DATA (FROM DATABASE — USE THIS, DO NOT FABRICATE):
-Balance: $${Number(acct.current_balance).toFixed(2)}
-Starting: $${Number(acct.starting_balance).toFixed(2)}
-Total P&L: $${Number(acct.total_pnl_dollars).toFixed(2)} (${Number(acct.total_pnl_percent).toFixed(2)}%)
-Total Trades: ${acct.total_trades}
-Win Rate: ${Number(acct.win_rate).toFixed(1)}%
-Winning: ${acct.winning_trades} | Losing: ${acct.losing_trades}
-Open Positions: ${openPos.length}${openPos.length > 0 ? '\n' + openPos.map((t: Record<string, unknown>) => `  - ${t.ticker} ${t.signal} @ $${t.entry_price} (size: $${Number(t.position_size_dollars).toFixed(2)})`).join('\n') : ''}
-Recent Closed Trades: ${recentTrades.length}${recentTrades.length > 0 ? '\n' + recentTrades.map((t: Record<string, unknown>) => `  - ${t.ticker} ${t.signal}: entry $${t.entry_price} → exit $${t.exit_price} | P&L: $${Number(t.pnl_dollars as number).toFixed(2)} (${Number(t.pnl_percent as number).toFixed(2)}%) | ${t.status}`).join('\n') : ''}`;
-      
-      console.log('[ayn-unified] Injected real performance data into trading context');
-    } else if (isPerformanceQuery) {
-      // Performance query but no account data found
-      performanceContext = `\n\nREAL PAPER TRADING DATA — INJECTED FROM DATABASE:
-Balance: $10,000.00 | Starting: $10,000.00 | P&L: $0.00 (0.00%)
-Total Trades: 0 | Win Rate: N/A
-Open Positions: NONE
-Closed Trades: NONE
-STATUS: Account launched. Zero trades executed.
-
-MANDATORY RESPONSE FOR THIS STATE:
-Your answer MUST say: "My paper trading account is live with $10,000. No trades yet — I'm being selective and waiting for a 65%+ confidence setup."
-DO NOT DEVIATE. DO NOT ADD FICTIONAL TRADES. DO NOT ADD FICTIONAL PRICES. DO NOT INVENT BALANCES OTHER THAN $10,000.`;
-      
-      console.log('[ayn-unified] No account data found, injected default state');
-    }
 
     // Inject market scan results for autonomous trading
     let scanContext = '';
@@ -930,7 +874,7 @@ DO NOT fabricate or invent any trade. DO NOT make up prices. DO NOT suggest a sp
       // ANTI-FABRICATION: When NOT in autonomous mode, prevent the AI from inventing trades
       scanContext += `\n\nCRITICAL ANTI-FABRICATION RULE:
 You do NOT have live market data right now. DO NOT invent specific prices, entry points, or trade recommendations with made-up numbers.
-If the user asks you to trade or pick a token, tell them to say "do paper testing" or "find best token" so you can scan real Pionex market data first.
+If the user asks you to trade or pick a token, tell them to say "find best token" or "scan market" so you can scan real Pionex market data first.
 NEVER say "I'm buying X at $Y" unless you have MARKET SCAN RESULTS above with real prices from Pionex.
 You may discuss trading concepts, strategy, and education freely — just don't fabricate specific prices.`;
     }
@@ -1531,58 +1475,10 @@ You may discuss trading concepts, strategy, and education freely — just don't 
     // Non-streaming response
     let responseContent = (response as { content: string }).content;
     
-    // === AUTO-EXECUTE TRADE: Parse EXECUTE_TRADE from AI response ===
+    // Paper trading auto-execute removed — just clean up any EXECUTE_TRADE artifacts
     const tradeMatch = responseContent.match(/EXECUTE_TRADE:\s*(\{[\s\S]*?\})\s*$/m);
-    let tradeResult = null;
     if (tradeMatch) {
-      try {
-        const tradeParams = JSON.parse(tradeMatch[1]);
-        // Enrich with scan context if AI didn't include marketContext
-        if (!tradeParams.marketContext && scanResults?.opportunities?.length > 0) {
-          const matchedOpp = scanResults.opportunities.find((o: any) => o.ticker === tradeParams.ticker);
-          if (matchedOpp) {
-            tradeParams.marketContext = {
-              score: matchedOpp.score,
-              signals: matchedOpp.signals,
-              volume24h: matchedOpp.volume24h,
-              priceChange24h: matchedOpp.priceChange24h,
-            };
-          }
-        }
-        console.log('[AUTO-TRADE] AI wants to execute:', JSON.stringify(tradeParams));
-        
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const tradeRes = await fetch(`${supabaseUrl}/functions/v1/ayn-open-trade`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(tradeParams),
-        });
-        
-        if (tradeRes.ok) {
-          tradeResult = await tradeRes.json();
-          if (tradeResult.opened) {
-            // Remove the raw EXECUTE_TRADE line and append confirmation
-            responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
-            responseContent += `\n\n✅ Position opened successfully. Trade ID: ${tradeResult.trade?.id?.substring(0, 8) || 'confirmed'}\nTracking live on Performance tab.`;
-            console.log('[AUTO-TRADE] ✅ Trade opened:', tradeResult.summary);
-          } else {
-            responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
-            responseContent += `\n\n⚠️ Trade not opened: ${tradeResult.reason}`;
-            console.log('[AUTO-TRADE] Trade skipped:', tradeResult.reason);
-          }
-        } else {
-          const errText = await tradeRes.text();
-          console.error('[AUTO-TRADE] Trade function error:', errText);
-          responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
-          responseContent += `\n\n⚠️ Could not execute trade right now. Try again.`;
-        }
-      } catch (e) {
-        console.error('[AUTO-TRADE] Failed to parse/execute:', e);
-        responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
-      }
+      responseContent = responseContent.replace(/EXECUTE_TRADE:\s*\{[\s\S]*?\}\s*$/m, '').trim();
     }
 
     // === SAFETY NET: Intercept hallucinated tool calls ===
@@ -1619,7 +1515,7 @@ You may discuss trading concepts, strategy, and education freely — just don't 
       emotion: detectedEmotion,
       userEmotion,
       ...(scanResults?.opportunities ? { scanResults: scanResults.opportunities } : {}),
-      ...(tradeResult?.opened ? { tradeOpened: true, tradeId: tradeResult.trade?.id } : {})
+    }), {
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
