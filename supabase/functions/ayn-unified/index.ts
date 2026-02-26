@@ -644,7 +644,7 @@ async function scanMarketOpportunities(): Promise<{ opportunities: any[]; scanne
       console.warn('[SCAN] Funding rate adjustment skipped:', frErr);
     }
 
-    const top = opportunities.slice(0, 3);
+    const top = opportunities.slice(0, 5);
     console.log(`[SCAN] Phase 2: ${opportunities.length} qualified opportunities (score≥70), returning top ${top.length}`);
     return { opportunities: top, scannedPairs: tickers.length };
   } catch (err) {
@@ -745,7 +745,7 @@ serve(async (req) => {
     const lastMessage = messages[messages.length - 1]?.content || '';
     const fileContext = context?.fileContext;
     const hasImageFile = !!(fileContext && fileContext.type && fileContext.type.startsWith('image/'));
-    const intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : detectIntent(lastMessage, hasImageFile);
+    let intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : detectIntent(lastMessage, hasImageFile);
     console.log(`Detected intent: ${intent}`);
 
     // === PROMPT INJECTION DEFENSE ===
@@ -1436,7 +1436,7 @@ You may discuss trading concepts, strategy, and education freely — just don't 
     if (intent === 'floor_plan') {
       // Temporarily disabled - treat as regular chat
       intent = 'chat';
-      systemPrompt = buildSystemPrompt('chat', language, context, userMessage, userContext);
+      systemPrompt = buildSystemPrompt('chat', language, context, lastMessage, userContext as any);
     }
 
 
