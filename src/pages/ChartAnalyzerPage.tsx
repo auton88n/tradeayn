@@ -36,10 +36,10 @@ const ChartAnalyzerPage = () => {
 
   // Lifted chat state — persists across tab switches
   const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [latestResult, setLatestResult] = useState<any>(null);
+  
 
   // Coach hook lifted to page level so sidebar can share session data
-  const coach = useChartCoach(latestResult ?? undefined);
+  const coach = useChartCoach();
 
   // Shared history state — used by History tab
   const history = useChartHistory();
@@ -196,8 +196,6 @@ const ChartAnalyzerPage = () => {
                 <ChartUnifiedChat
                   messages={chatMessages}
                   onMessagesChange={setChatMessages}
-                  latestResult={latestResult}
-                  onLatestResultChange={setLatestResult}
                   coach={coach}
                   onToggleSidebar={() => {
                     if (window.innerWidth >= 1024) setSidebarOpen(o => !o);
