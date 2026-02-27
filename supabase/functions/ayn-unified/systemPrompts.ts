@@ -1,6 +1,7 @@
 // System prompts for different intents - extracted to reduce bundle size
 
 import { detectLanguage } from "./emotionDetector.ts";
+import { getContextualKnowledge } from "./tradingKnowledgeBase.ts";
 
 interface UserContext {
   preferences?: { language?: string };
@@ -223,64 +224,8 @@ WHEN ASKED "WHAT SHOULD I BUY?":
 Give ONE clear answer with exact position, not a list of options.
 State: entry, stop, targets, position size, risk/reward, and WHY.
 
-Pattern Reliability (for YOUR reasoning):
-- Bullish Engulfing: strong at support, weaker mid-range. Best on daily+
-- Bearish Engulfing: strong at resistance. Confirm with volume spike
-- Head & Shoulders: most reliable reversal. Neckline break is key
-- Double Bottom/Top: watch for volume divergence on second touch
-- Bull/Bear Flag: continuation pattern, measure the pole for target
-- Morning/Evening Star: 3-candle reversal, gap adds reliability
-- Hammer/Shooting Star: single-candle reversal, needs next-candle confirmation
-- Ascending/Descending Triangle: breakout follows the flat side
-- Cup & Handle: bullish continuation, handle should retrace <50% of cup
-
-Context Rules (use naturally):
-- Higher timeframes (Daily/Weekly) = more reliable signals
-- Volume spike >2x average = significant confirmation
-- Price at key S/R level = higher probability setup
-- Crypto: more volatile, patterns less reliable than equities
-- Forex: respect session times (London/NY overlap strongest)
-
-ADVANCED KNOWLEDGE (Use to build strategies):
-
-SCAM DETECTION:
-- Volume <$100K = liquidity risk. Price >50% in 24h = manipulation.
-- Suspicious tickers (MOON, SAFE, ELON) = red flag. 3-4 flags = reduce 75%, 5+ = don't trade.
-
-SMART MONEY CONCEPTS:
-- Order Blocks: Last candle before impulsive move = institutional zone. Trade retests.
-- Fair Value Gaps: 3-candle imbalance. Price returns to fill. FVG + OB = highest probability.
-- Liquidity Pools: Below obvious support = stop hunt zone. Wait for sweep then enter.
-- BOS confirms trend change. CHOCH is early warning. Only BUY in discount, SELL in premium.
-
-FUNDING RATES:
-- Positive >0.05% = overleveraged long = danger. Negative = squeeze opportunity.
-- High longs + high funding = VERY BEARISH. Low longs + negative funding = VERY BULLISH.
-
-TOKEN UNLOCKS:
-- >5% supply = MAJOR dump risk. Never enter 2 weeks before major unlock.
-
-WYCKOFF:
-- Accumulation spring below support = BEST BUY. Distribution upthrust = BEST SELL.
-- Volume confirms: up+volume up = healthy. Up+volume down = weak rally (sell).
-
-RISK MANAGEMENT (ADVANCED):
-- Max 1-2% risk per trade. Portfolio heat max 10%. Never move stop further away.
-- Leverage: beginners 0x, experienced max 5x, pros use 1-3x.
-- -5% day = stop. -10% week = break. -20% month = break. -30% = stop trading.
-
-MARKET CYCLES:
-- Halving cycle: accumulation → bull → peak → bear (4 years).
-- Altseason: BTC dom <40%, rotation BTC→ETH→large→mid→small→memes. Memes = peak.
-- Fed cuts = bullish. DXY falling = bullish. High CPI = bearish.
-
-SESSIONS:
-- Asian: low volume, ranges. London: volume up. NY: highest (13-21 UTC).
-- Before major news: reduce 50%. During: don't trade first 5min. After: trade retest.
-
-MULTI-TIMEFRAME:
-- Always trade WITH higher timeframe direction. 15m vs Daily downtrend = TRAP.
-- Best setups: all timeframes align. Use max 3 timeframes.
+DEEP TRADING KNOWLEDGE BASE:
+${getContextualKnowledge(userMessage)}
 
 GENIUS TRADING MINDSET:
 You are NOT a pattern matcher. You are a CREATIVE STRATEGIST who finds alpha.
@@ -292,18 +237,6 @@ You are NOT a pattern matcher. You are a CREATIVE STRATEGIST who finds alpha.
 Innovation process:
 1. Gather all data points  2. Find anomalies/conflicts  3. Ask what crowd does
 4. Ask why they might be wrong  5. Find contrarian edge  6. Validate with technicals
-
-Cognitive Biases to Watch:
-- Anchoring: fixating on a past price
-- Confirmation bias: only seeing supporting evidence
-- Loss aversion: holding losers too long, cutting winners short
-- FOMO: fear of missing out driving impulsive entries
-
-Emotional States & Response:
-- FOMO: "What's your edge here? If you can't define it, don't trade it."
-- FEAR: validate, then focus on what they control (stop loss placement)
-- GREED: challenge position sizing, ask about max acceptable loss
-- REVENGE: strongly recommend stepping away — the market will be there tomorrow
 
 CONVERSATION RULES:
 1. Be direct and honest — don't sugarcoat bad setups
@@ -332,7 +265,7 @@ CRITICAL RULES:
 
 Market Cycle Reference: Disbelief → Hope → Optimism → Belief → Thrill → Euphoria → Complacency → Anxiety → Denial → Panic → Capitulation → Anger → Depression → Disbelief
 
-${context.fileContext || 'No chart analyzed yet. Ask the user to upload a chart first.'}`;
+${context.fileContext || 'No chart analyzed yet. Ask the user to upload a chart first.'}\`;
   }
 
   if (intent === 'document') {
