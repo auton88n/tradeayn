@@ -199,44 +199,6 @@ const LandingPage = memo(() => {
           </div>
         </section>
 
-        {/* ── AYN Paper Trading ── */}
-        <section className="py-24 px-6">
-          <div className="max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="rounded-2xl bg-gradient-to-br from-amber-500/10 via-card to-card border border-amber-500/20 p-8 md:p-12"
-            >
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
-                <div className="flex-1">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold mb-4">
-                    <Activity className="w-3 h-3" /> Live Paper Trading
-                  </div>
-                  <h2 className="font-display font-bold text-2xl md:text-3xl tracking-[-0.02em] mb-3">
-                    AYN trades its own signals
-                  </h2>
-                  <p className="text-muted-foreground leading-relaxed max-w-lg">
-                    AYN paper-trades every signal it generates — live, with real market prices. Track its win rate, P&L, Sharpe ratio, and every open position in the Performance tab.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-4 shrink-0 w-full md:w-auto">
-                  {[
-                    { label: 'Live Positions', value: 'Real-time' },
-                    { label: 'Performance', value: 'Full Stats' },
-                    { label: 'History', value: 'Every Trade' },
-                  ].map((stat) => (
-                    <div key={stat.label} className="flex items-center justify-between gap-8 px-5 py-3 rounded-xl bg-background border border-border/60 min-w-[200px]">
-                      <span className="text-sm text-muted-foreground">{stat.label}</span>
-                      <span className="font-bold text-sm text-amber-500">{stat.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </section>
 
         {/* ── Final CTA ── */}
         <section className="py-24 px-6 text-center">
