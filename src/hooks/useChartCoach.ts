@@ -283,8 +283,9 @@ export function useChartCoach(result?: ChartAnalysisResult) {
           message: trimmed,
           messages: messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
           mode: 'trading-coach',
+          stream: false,
           enableAutonomousTrading: true,
-          userContext: {
+          context: {
             ticker: result?.ticker || null,
             assetType: result?.assetType || null,
             timeframe: result?.timeframe || null,
