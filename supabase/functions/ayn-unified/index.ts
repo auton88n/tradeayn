@@ -708,24 +708,37 @@ serve(async (req) => {
       console.log('[ayn-unified] User authenticated:', userId.substring(0, 8) + '...');
     }
 
-    const { messages: rawMessages, intent: forcedIntent, mode, context = {}, stream = true, sessionId } = await req.json();
+    const { messages: rawMessages, message: topLevelMessage, intent: forcedIntent, mode, context = {}, stream = true, sessionId } = await req.json();
 
-    if (!rawMessages || !Array.isArray(rawMessages)) {
-      return new Response(JSON.stringify({ error: 'Messages array required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // Defensive: if messages array is missing/empty, build from top-level message
+    let normalizedMessages = rawMessages;
+    if (!normalizedMessages || !Array.isArray(normalizedMessages) || normalizedMessages.length === 0) {
+      if (topLevelMessage && typeof topLevelMessage === 'string') {
+        normalizedMessages = [{ role: 'user', content: topLevelMessage }];
+        console.log('[ayn-unified] Built messages array from top-level message field');
+      } else {
+        return new Response(JSON.stringify({ error: 'Messages array required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    // Defensive: ensure last message is from user (not stale assistant turn)
+    if (normalizedMessages[normalizedMessages.length - 1]?.role !== 'user' && topLevelMessage) {
+      normalizedMessages = [...normalizedMessages, { role: 'user', content: topLevelMessage }];
+      console.log('[ayn-unified] Appended top-level message as last user turn');
     }
 
     // Trim conversation history to avoid exceeding token limits (~1M tokens)
     // 1. Keep only last 10 messages
     const MAX_CONTEXT_MESSAGES = 10;
-    let messages = rawMessages;
-    if (rawMessages.length > MAX_CONTEXT_MESSAGES) {
-      const systemMsgs = rawMessages.filter((m: any) => m.role === 'system');
-      const nonSystemMsgs = rawMessages.filter((m: any) => m.role !== 'system');
+    let messages = normalizedMessages;
+    if (normalizedMessages.length > MAX_CONTEXT_MESSAGES) {
+      const systemMsgs = normalizedMessages.filter((m: any) => m.role === 'system');
+      const nonSystemMsgs = normalizedMessages.filter((m: any) => m.role !== 'system');
       messages = [...systemMsgs, ...nonSystemMsgs.slice(-MAX_CONTEXT_MESSAGES)];
-      console.log(`[ayn-unified] Trimmed messages from ${rawMessages.length} to ${messages.length}`);
+      console.log(`[ayn-unified] Trimmed messages from ${normalizedMessages.length} to ${messages.length}`);
     }
     // 2. Truncate individual messages that are too long (e.g. base64 images, large files)
     const MAX_CHARS_PER_MESSAGE = 50000; // ~12K tokens

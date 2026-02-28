@@ -281,7 +281,7 @@ export function useChartCoach(result?: ChartAnalysisResult) {
       const { data, error } = await supabase.functions.invoke('ayn-unified', {
         body: {
           message: trimmed,
-          messages: messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+          messages: conversationMessages,
           mode: 'trading-coach',
           stream: false,
           enableAutonomousTrading: true,
@@ -295,8 +295,11 @@ export function useChartCoach(result?: ChartAnalysisResult) {
 
       if (error) throw error;
 
-      const rawContent = data?.content || "I couldn't process that. Try asking about your chart setup.";
-      const safeContent = sanitizeResponse(rawContent);
+      const rawContent = data?.content || data?.message || '';
+      if (!rawContent) {
+        console.error('[ChartCoach] Empty response from backend:', JSON.stringify(data));
+      }
+      const safeContent = sanitizeResponse(rawContent || "Something went wrong — try rephrasing your question.");
 
       setMessages(prev => [...prev, { role: 'assistant', content: safeContent }]);
     } catch (err) {
