@@ -282,6 +282,7 @@ export function useChartCoach(result?: ChartAnalysisResult) {
         body: {
           message: trimmed,
           messages: conversationMessages,
+          intent: 'trading-coach',
           mode: 'trading-coach',
           stream: false,
           enableAutonomousTrading: true,

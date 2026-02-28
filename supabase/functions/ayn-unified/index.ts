@@ -759,7 +759,7 @@ serve(async (req) => {
     const fileContext = context?.fileContext;
     const hasImageFile = !!(fileContext && fileContext.type && fileContext.type.startsWith('image/'));
     let intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : (mode && mode !== 'chat') ? mode : detectIntent(lastMessage, hasImageFile);
-    console.log(`Detected intent: ${intent}`);
+    console.log(`[ayn-unified] Intent resolved: ${intent}, forcedIntent=${forcedIntent}, mode=${mode}`);
 
     // === PROMPT INJECTION DEFENSE ===
     if (detectInjectionAttempt(lastMessage)) {
