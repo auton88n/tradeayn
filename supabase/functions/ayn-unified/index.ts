@@ -849,6 +849,7 @@ serve(async (req) => {
     let scanContext = '';
     if (scanResults && scanResults.opportunities.length > 0) {
       scanContext = `\n\nMARKET SCAN RESULTS (LIVE FROM PIONEX API — USE THIS DATA):
+Data Timestamp: ${new Date().toISOString()} UTC
 Scanned: ${scanResults.scannedPairs} pairs
 Top Opportunities: ${scanResults.opportunities.length}
 
@@ -869,14 +870,18 @@ DO NOT fabricate or invent any trade. DO NOT make up prices. Just report the sca
     } else if (intent === 'trading-coach') {
       // ANTI-FABRICATION: When NOT in autonomous mode, prevent the AI from inventing trades
       scanContext += `\n\nCRITICAL ANTI-FABRICATION RULE:
-You do NOT have live market data right now. DO NOT invent specific prices, entry points, or trade recommendations with made-up numbers.
-If the user asks to scan, tell them to say "find best token" so you can scan real Pionex market data first.
+You CAN access live market data — but only when triggered. DO NOT invent specific prices, entry points, or trade recommendations with made-up numbers.
+If the user wants a market scan or asks what to buy, tell them: "Say 'find best token' and I'll scan live Pionex data for you right now."
+NEVER say "I don't have a live connection" or "I can't access the API" — you DO have access, the user just needs to trigger it.
 NEVER say "I'm buying X at $Y" unless you have MARKET SCAN RESULTS above with real prices from Pionex.
 You may discuss trading concepts, strategy, and education freely — just don't fabricate specific prices.`;
     }
 
     // Build system prompt with user message for language detection AND user memories
     let systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext) + chartSection + scanContext + INJECTION_GUARD;
+    
+    // Inject current timestamp so the AI always knows the real date/time
+    systemPrompt += `\n\nCURRENT TIMESTAMP: ${new Date().toISOString()} UTC. Always use this as the current date/time — NEVER use dates from your training data.`;
 
     // === FIRECRAWL + LIVE PIONEX INTEGRATION FOR TRADING COACH ===
     if (intent === 'trading-coach') {
@@ -1024,7 +1029,52 @@ You may discuss trading concepts, strategy, and education freely — just don't 
         })());
       }
 
-      if (urlToScrape && typeof urlToScrape === 'string') {
+      // --- Solscan: Solana wallet address detection & on-chain lookup ---
+      const solanaAddressRegex = /\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/g;
+      const solanaAddresses = lastMessage.match(solanaAddressRegex)?.filter(addr => {
+        // Basic validation: Solana addresses are 32-44 chars base58, typically 43-44
+        return addr.length >= 32 && addr.length <= 44 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(addr);
+      }) || [];
+
+      if (solanaAddresses.length > 0) {
+        const SOLSCAN_API_KEY = Deno.env.get('SOLSCAN_API_KEY');
+        if (SOLSCAN_API_KEY) {
+          for (const addr of solanaAddresses.slice(0, 2)) { // max 2 addresses per message
+            firecrawlTasks.push((async () => {
+              try {
+                const res = await fetch(`https://pro-api.solscan.io/v2.0/account/detail?address=${addr}`, {
+                  headers: { 'token': SOLSCAN_API_KEY },
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  const account = data?.data;
+                  if (account) {
+                    const lamports = account.lamports || 0;
+                    const solBalance = (lamports / 1e9).toFixed(4);
+                    systemPrompt += `\n\n🔗 SOLANA WALLET ANALYSIS (Solscan — live on-chain data):
+Address: ${addr}
+SOL Balance: ${solBalance} SOL
+Account Type: ${account.type || 'Unknown'}
+Owner Program: ${account.owner || 'Unknown'}
+Executable: ${account.executable ? 'Yes' : 'No'}
+Rent Epoch: ${account.rentEpoch || 'N/A'}
+
+Analyze this wallet for the user. Comment on the balance, activity patterns, and any notable observations.`;
+                    console.log(`[ayn-unified] Injected Solscan data for wallet: ${addr.substring(0, 8)}...`);
+                  }
+                } else {
+                  console.warn(`[ayn-unified] Solscan API error for ${addr.substring(0, 8)}...: ${res.status}`);
+                }
+              } catch (err) {
+                console.warn(`[ayn-unified] Solscan fetch error for ${addr.substring(0, 8)}...:`, err);
+              }
+            })());
+          }
+        } else {
+          systemPrompt += `\n\nThe user shared a Solana wallet address (${solanaAddresses[0].substring(0, 8)}...) but Solscan API is not configured. Tell them: "I can see that's a Solana address, but wallet analysis isn't set up yet. Contact the AYN Team to enable on-chain analysis."`;
+        }
+      }
+
         firecrawlTasks.push((async () => {
           try {
             const { scrapeUrl: scrapeUrlFn } = await import("../_shared/firecrawlHelper.ts");
