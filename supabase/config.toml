@@ -268,14 +268,6 @@ verify_jwt = true
 [functions.analyze-trading-chart]
 verify_jwt = false
 
-[functions.ayn-open-trade]
-verify_jwt = false
-
-[functions.ayn-monitor-trades]
-verify_jwt = false
-
-[functions.ayn-calculate-metrics]
-verify_jwt = false
 
 [functions.get-klines]
 verify_jwt = false
