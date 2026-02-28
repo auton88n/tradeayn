@@ -1075,6 +1075,7 @@ Analyze this wallet for the user. Comment on the balance, activity patterns, and
         }
       }
 
+      if (urlToScrape && typeof urlToScrape === 'string') {
         firecrawlTasks.push((async () => {
           try {
             const { scrapeUrl: scrapeUrlFn } = await import("../_shared/firecrawlHelper.ts");
