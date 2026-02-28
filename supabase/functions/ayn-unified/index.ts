@@ -708,7 +708,7 @@ serve(async (req) => {
       console.log('[ayn-unified] User authenticated:', userId.substring(0, 8) + '...');
     }
 
-    const { messages: rawMessages, intent: forcedIntent, context = {}, stream = true, sessionId } = await req.json();
+    const { messages: rawMessages, intent: forcedIntent, mode, context = {}, stream = true, sessionId } = await req.json();
 
     if (!rawMessages || !Array.isArray(rawMessages)) {
       return new Response(JSON.stringify({ error: 'Messages array required' }), {
@@ -745,7 +745,7 @@ serve(async (req) => {
     const lastMessage = messages[messages.length - 1]?.content || '';
     const fileContext = context?.fileContext;
     const hasImageFile = !!(fileContext && fileContext.type && fileContext.type.startsWith('image/'));
-    let intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : detectIntent(lastMessage, hasImageFile);
+    let intent = (forcedIntent && forcedIntent !== 'chat') ? forcedIntent : (mode && mode !== 'chat') ? mode : detectIntent(lastMessage, hasImageFile);
     console.log(`Detected intent: ${intent}`);
 
     // === PROMPT INJECTION DEFENSE ===
