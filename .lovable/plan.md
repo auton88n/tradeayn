@@ -1,153 +1,56 @@
 
-# Rebuild: AYN Trade — Chart Analysis as the Brand
 
-## What You Want
+## Issues Found & Fix Plan
 
-Strip everything down to the Chart Analysis product. Make it the brand. One focused app where:
-- The **landing page** sells the Chart Analyzer
-- The **app** IS the Chart Analyzer (Chat, History, Performance tabs)
-- Everything else (services pages, engineering, ticketing, civil engineering, grading, compliance, etc.) is deleted
+### Problem 1: Build Error — `admin-notifications/index.ts` uses `npm:resend@2.0.0`
+Line 2 of `supabase/functions/admin-notifications/index.ts` imports `import { Resend } from "npm:resend@2.0.0"`. This Deno `npm:` specifier is failing because there's no `deno.json` with the right config. Fix: switch to an `esm.sh` import like the rest of the codebase uses.
 
----
+### Problem 2: AI Chat Giving Inaccurate / Fabricated Data
+The conversation shows the AI saying timestamps like "2024-05-22" and making up prices. Two root causes:
 
-## What Gets Kept (Zero Changes to Logic)
+1. **Timestamp injection missing**: The scanner injects live data but never tells the AI what the current date/time actually is. The AI falls back to training data dates.
+2. **AI claims it has no live connection**: When the scanner returns no results or isn't triggered, the anti-fabrication guard tells the AI it has no data — but then the AI tells the user "I don't have a live connection to the API", which contradicts the product. The guard language needs to tell the AI to prompt the user to say "find best token" instead of admitting architectural limitations.
+3. **Knowledge base IS connected** — `tradingKnowledgeBase.ts` (765 lines, 12 sections) is imported via `getContextualKnowledge()` and injected at line 228 of `systemPrompts.ts`. This part works correctly.
 
-| Kept As-Is | Why |
-|---|---|
-| `ChartUnifiedChat.tsx` | The core chat + upload analysis UI |
-| `ChartHistoryTab.tsx` + all sub-components | History tab |
-| `PerformanceDashboard.tsx` | Performance tab |
-| `ChartCoachSidebar.tsx` | Session sidebar |
-| `supabase/functions/analyze-trading-chart` | AI analysis engine |
-| `supabase/functions/ayn-open-trade`, `ayn-close-trade`, `ayn-monitor-trades` | Paper trading backend |
-| `useChartAnalyzer`, `useChartHistory`, `useChartCoach` hooks | All data hooks |
-| Auth system (`AuthModal`, Supabase auth) | Login/signup |
-| `ThemeToggle`, `LanguageSwitcher`, shared UI | Utilities |
+### Problem 3: Solscan API Integration Requested
+User wants to add `https://pro-api.solscan.io/pro-api-docs/v2.0/reference/v2-account-detail` — this is a Solana blockchain explorer API for on-chain wallet analysis. Will need a `SOLSCAN_API_KEY` secret and integration into the trading coach flow.
 
 ---
 
-## What Gets Deleted / Stripped
+### Implementation Steps
 
-| Removed | Replacement |
-|---|---|
-| All services pages (`/services/*`) | Gone |
-| Engineering, Grading, Compliance, Support pages | Gone |
-| Old `LandingPage.tsx` (800+ lines with services sections, AI employee mockups, etc.) | New focused landing page |
-| Old `Hero.tsx` with the Brain eye animation | Replaced with a chart-focused hero |
-| `Dashboard.tsx` (the catch-all authenticated dashboard) | Gone — auth now routes directly to `/chart-analyzer` |
-| `Index.tsx` complex routing logic | Simplified: unauthenticated = landing, authenticated = redirect to `/chart-analyzer` |
-| Service mockup components (`MobileMockup`, `DeviceMockups`, `AutomationFlowMockup`, `AIEmployeeMockup`, `EngineeringMockup`, `TicketingMockup`) | Gone |
-| All services page routes in `App.tsx` | Removed |
-| `src/pages/services/` folder | Gone |
+**Step 1: Fix admin-notifications build error**
+- Replace `import { Resend } from "npm:resend@2.0.0"` with `import { Resend } from "https://esm.sh/resend@2.0.0"` in `supabase/functions/admin-notifications/index.ts` line 2.
 
----
+**Step 2: Fix AI timestamp and anti-fabrication issues in `index.ts`**
+- Inject current UTC timestamp into the system prompt so the AI always knows the real date/time (around line 879 where `systemPrompt` is built).
+- Rewrite the anti-fabrication guard (lines 871-876) to stop the AI from saying "I don't have a live connection" — instead instruct it to say "Say 'find best token' and I'll scan live Pionex data for you."
+- Add timestamp to scan results context (line 851) so the AI uses real timestamps.
 
-## New Architecture
+**Step 3: Add Solscan API integration**
+- Request user to provide their Solscan Pro API key (stored as `SOLSCAN_API_KEY` secret).
+- Add a Solana wallet lookup function in `index.ts` that calls `https://pro-api.solscan.io/v2.0/account/detail` when the user provides a Solana address.
+- Add Solana address detection regex to the trading-coach flow (detects base58 addresses starting with common patterns).
+- Inject wallet data (SOL balance, token holdings, recent activity) into the system prompt for the AI to analyze.
 
+### Technical Details
+
+**Solscan API integration pattern:**
 ```text
-/ (root)
-├── Unauthenticated → New Landing Page (sells Chart Analyzer)
-└── Authenticated → Redirect to /chart-analyzer
-
-/chart-analyzer (the app)
-├── Tab: Chat      — upload chart, get AI analysis
-├── Tab: History   — past analyses
-└── Tab: Performance — AYN paper trading stats
+User message contains Solana address (32-44 char base58)
+  → Detect in trading-coach flow
+  → GET https://pro-api.solscan.io/v2.0/account/detail?address={addr}
+  → Headers: { token: SOLSCAN_API_KEY }
+  → Inject wallet summary into systemPrompt
+  → AI analyzes holdings and activity
 ```
 
----
-
-## New Landing Page Design
-
-A single-page, focused brand landing that replaces the entire old `LandingPage.tsx`:
-
-**Section 1 — Hero**
-- Brand name: **AYN Trade**
-- Tagline: *"Upload a chart. Get a professional trading analysis in seconds."*
-- Big CTA: "Analyze Your First Chart →" (opens auth modal)
-- A static chart screenshot/mockup visual on the right
-
-**Section 2 — How It Works (3 steps)**
-1. Upload any trading chart screenshot
-2. AYN's AI reads the technicals (RSI, EMA, MACD, Wyckoff, etc.)
-3. Get a full analysis: signal, entry, stop loss, take profits, R:R
-
-**Section 3 — What You Get**
-- Analysis confidence score
-- Entry price & order type
-- Stop Loss with percentage
-- Take Profit 1 & 2 levels
-- Risk:Reward ratio
-- Invalidation condition
-- AI coaching follow-up questions
-
-**Section 4 — AYN Paper Trading**
-- Small section: "AYN also paper-trades its own signals — live in the Performance tab"
-- Shows win rate / trades taken callout
-
-**Section 5 — CTA Footer**
-- "Start analyzing free" button
-- Theme toggle + language switcher
-
----
-
-## Files to Create/Modify
-
-| File | Action |
-|---|---|
-| `src/components/LandingPage.tsx` | **Rewrite** — new focused Chart Analyzer brand landing |
-| `src/components/landing/Hero.tsx` | **Rewrite** — chart analysis hero (no eye animation) |
-| `src/pages/Index.tsx` | **Simplify** — unauthenticated = landing, authenticated = navigate to `/chart-analyzer` |
-| `src/App.tsx` | **Trim routes** — remove all services/engineering/ticketing/compliance/grading routes |
-| `src/pages/services/` (all files) | **Delete** — all 10 service pages gone |
-| `src/pages/EngineeringWorkspacePage.tsx` | **Delete** |
-| `src/pages/CompliancePage.tsx` | **Delete** |
-| `src/pages/AIGradingDesigner.tsx` | **Delete** |
-| `src/pages/Support.tsx` | **Delete** |
-| `src/pages/Performance.tsx` | **Delete** (performance lives inside `/chart-analyzer`) |
-| `src/components/Dashboard.tsx` | **Delete** |
-| `src/components/services/` (all mockup components) | **Delete** |
-
----
-
-## New Color/Brand Identity
-
-The Chart Analyzer already uses **amber/orange** (`amber-500`) as its accent — tabs glow amber, the ambient gradient is warm orange. The new landing page will lean into this:
-
-- **Primary accent**: Amber / warm orange — signals urgency, gold, trading wins
-- **Background**: Clean white / near-black (existing dark mode)
-- **Typography**: Keep `Syne` (display) + system sans — professional, modern
-- **Logo**: `BarChart3` icon from lucide (already used on the chart analyzer page) next to "AYN Trade"
-
----
-
-## Route Map After Rebuild
-
+**Timestamp fix pattern:**
 ```text
-/                  → Landing page (unauthenticated) or redirect to /chart-analyzer (authenticated)
-/chart-analyzer    → The main app (auth-gated)
-/reset-password    → Password reset
-/pricing           → Pricing (kept — needed for subscription)
-/settings          → Settings (kept — needed for account)
-/subscription-success  → Kept
-/subscription-canceled → Kept
-/terms             → Kept
-/privacy           → Kept
-/approval-result   → Kept (needed for admin flows)
-/* → 404
+systemPrompt += `\nCURRENT TIMESTAMP: ${new Date().toISOString()} UTC`
 ```
 
-Everything else is deleted.
+**Anti-fabrication rewrite:**
+Instead of "You do NOT have live market data right now", say:
+"You can access live market data. If the user asks about specific coins, use the LIVE MARKET DATA sections injected above. If no live data is present for their coin, tell them: 'Say find best token and I'll scan the market live for you.' NEVER say you don't have API access or a live connection."
 
----
-
-## Implementation Steps (In Order)
-
-1. **Trim `App.tsx`** — remove all service/engineering/support/compliance route imports and `<Route>` entries
-2. **Rewrite `src/pages/Index.tsx`** — if authenticated, `navigate('/chart-analyzer')` immediately; if not, show new landing
-3. **Rewrite `src/components/LandingPage.tsx`** — new brand-focused 5-section page
-4. **Rewrite `src/components/landing/Hero.tsx`** — chart analysis hero
-5. **Delete** all service pages, mockup components, Dashboard.tsx, and unused pages
-6. **Update `ChartAnalyzerPage.tsx`** — remove the "Back" button (there's nowhere to go back to now — the landing is the root)
-
-No backend changes. No database changes. No edge function changes.
