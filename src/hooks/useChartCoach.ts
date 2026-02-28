@@ -280,17 +280,15 @@ export function useChartCoach(result?: ChartAnalysisResult) {
 
       const { data, error } = await supabase.functions.invoke('ayn-unified', {
         body: {
-          messages: conversationMessages,
-          intent: 'trading-coach',
-          context: {
-            fileContext,
-            scrapeUrl: urls?.[0] || null,
-            searchQuery: searchQuery || null,
+          message: trimmed,
+          messages: messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+          mode: 'trading-coach',
+          enableAutonomousTrading: true,
+          userContext: {
             ticker: result?.ticker || null,
             assetType: result?.assetType || null,
             timeframe: result?.timeframe || null,
           },
-          stream: false,
         },
       });
 
